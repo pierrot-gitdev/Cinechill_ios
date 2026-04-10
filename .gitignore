@@ -1,0 +1,2 @@
+# Ne jamais commiter de secrets (dépôt public).
+Secrets.xcconfig
