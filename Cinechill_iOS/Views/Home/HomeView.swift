@@ -68,12 +68,8 @@ struct HomeView: View {
                 CircleIconButton(systemImage: "magnifyingglass", action: {})
             }
 
-            Text("Utilisez votre assistant")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(Color.pink.opacity(0.65))
-
             Text("Que voulez-vous regarder ?")
-                .font(.system(size: 37, weight: .black, design: .rounded))
+                .font(.system(size: 24, weight: .black, design: .rounded))
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
         }
@@ -88,7 +84,7 @@ struct HomeView: View {
                 Button {} label: {
                     Image(systemName: "arrow.right")
                         .font(.headline.weight(.bold))
-                        .frame(width: 38, height: 38)
+                        .frame(width: 32, height: 32)
                         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -98,7 +94,7 @@ struct HomeView: View {
                     NavigationLink(value: category) {
                         HStack {
                             Text(category.title)
-                                .font(.system(size: 28, weight: .black, design: .rounded))
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
                                 .foregroundStyle(.primary)
                                 .multilineTextAlignment(.leading)
                                 .lineLimit(2)
@@ -220,7 +216,7 @@ struct HomeView: View {
 
     private func sectionTitle(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 36, weight: .black, design: .rounded))
+            .font(.system(size: 24, weight: .black, design: .rounded))
             .lineLimit(2)
             .minimumScaleFactor(0.8)
     }
