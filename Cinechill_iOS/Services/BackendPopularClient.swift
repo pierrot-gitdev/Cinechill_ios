@@ -4,24 +4,27 @@ enum BackendPopularClientError: LocalizedError {
     case missingBaseURL
     case invalidURL
     case unsupportedMediaType
+    case transport(message: String)
     case httpStatus(code: Int, message: String?)
-    case decoding
+    case decoding(message: String)
 
     var errorDescription: String? {
         switch self {
         case .missingBaseURL:
-            return "URL backend absente. Définissez BACKEND_BASE_URL dans Secrets.xcconfig."
+            return "URL backend absente. Définissez BACKEND_BASE_HOST dans Project.xcconfig."
         case .invalidURL:
             return "URL backend invalide."
         case .unsupportedMediaType:
             return "Le backend popular supporte uniquement les films."
+        case .transport(let message):
+            return "Erreur réseau backend popular : \(message)"
         case .httpStatus(let code, let message):
             if let message, !message.isEmpty {
                 return "Backend popular (HTTP \(code)) : \(message)"
             }
             return "Erreur backend popular (HTTP \(code))."
-        case .decoding:
-            return "Impossible de lire la réponse backend."
+        case .decoding(let message):
+            return "Impossible de lire la réponse backend. \(message)"
         }
     }
 }
@@ -42,7 +45,13 @@ struct BackendPopularClient: PopularPageFetching, Sendable {
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            throw BackendPopularClientError.transport(message: error.localizedDescription)
+        }
         guard let http = response as? HTTPURLResponse else {
             throw BackendPopularClientError.httpStatus(code: -1, message: nil)
         }
@@ -52,10 +61,12 @@ struct BackendPopularClient: PopularPageFetching, Sendable {
         }
 
         let decoder = JSONDecoder()
-        guard let decoded = try? decoder.decode(TMDBPagedResults.self, from: data) else {
-            throw BackendPopularClientError.decoding
+        do {
+            return try decoder.decode(TMDBPagedResults.self, from: data)
+        } catch {
+            let body = String(data: data, encoding: .utf8) ?? "<body non lisible>"
+            throw BackendPopularClientError.decoding(message: "URL: \(url.absoluteString) · Réponse: \(body)")
         }
-        return decoded
     }
 }
 

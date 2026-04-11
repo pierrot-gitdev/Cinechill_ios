@@ -25,7 +25,7 @@
 	<true/>
 
 	<!-- Custom -->
-	<key>BACKEND_BASE_URL</key>
-	<string>$(BACKEND_BASE_URL)</string>
+	<key>BACKEND_BASE_HOST</key>
+	<string>$(BACKEND_BASE_HOST)</string>
 </dict>
 </plist>

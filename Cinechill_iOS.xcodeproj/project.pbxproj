@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		8F24D3C32F89C10B0021A936 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8F24D3C22F89C10B0021A936 /* FirebaseCore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		8FD80F4F2F81756100066FC9 /* Cinechill_iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cinechill_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1C2E3F42F81756200000001 /* Project.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Project.xcconfig; sourceTree = "<group>"; };
@@ -24,17 +28,26 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8F24D3C32F89C10B0021A936 /* FirebaseCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		8F24D3C12F89C10B0021A936 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		8FD80F462F81756100066FC9 = {
 			isa = PBXGroup;
 			children = (
 				A1C2E3F42F81756200000001 /* Project.xcconfig */,
 				8FD80F512F81756100066FC9 /* Cinechill_iOS */,
+				8F24D3C12F89C10B0021A936 /* Frameworks */,
 				8FD80F502F81756100066FC9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -67,6 +80,7 @@
 			);
 			name = Cinechill_iOS;
 			packageProductDependencies = (
+				8F24D3C22F89C10B0021A936 /* FirebaseCore */,
 			);
 			productName = Cinechill_iOS;
 			productReference = 8FD80F4F2F81756100066FC9 /* Cinechill_iOS.app */;
@@ -259,6 +273,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_BACKEND_BASE_HOST = "$(BACKEND_BASE_HOST)";
 				INFOPLIST_KEY_CFBundleDisplayName = Cinechill;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -301,6 +316,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_BACKEND_BASE_HOST = "$(BACKEND_BASE_HOST)";
 				INFOPLIST_KEY_CFBundleDisplayName = Cinechill;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -363,6 +379,14 @@
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8F24D3C22F89C10B0021A936 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8F24D3B82F89AF790021A936 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 8FD80F472F81756100066FC9 /* Project object */;
 }

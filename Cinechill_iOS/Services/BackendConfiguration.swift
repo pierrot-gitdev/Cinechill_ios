@@ -11,12 +11,24 @@ enum BackendConfiguration {
         }
         #endif
 
-        let raw =
-            (Bundle.main.object(forInfoDictionaryKey: "BACKEND_BASE_URL") as? String)
-            ?? ""
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, trimmed != "$(BACKEND_BASE_URL)" else { return nil }
-        return URL(string: trimmed)
+        let hostRaw = (Bundle.main.object(forInfoDictionaryKey: "BACKEND_BASE_HOST") as? String) ?? ""
+        let host = hostRaw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !host.isEmpty, host != "$(BACKEND_BASE_HOST)" {
+            return URL(string: "https://\(host)")
+        }
+
+        // Legacy support if BACKEND_BASE_URL exists in user config.
+        let urlRaw = (Bundle.main.object(forInfoDictionaryKey: "BACKEND_BASE_URL") as? String) ?? ""
+        let urlTrimmed = urlRaw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !urlTrimmed.isEmpty, urlTrimmed != "$(BACKEND_BASE_URL)" else { return nil }
+
+        let normalized: String
+        if urlTrimmed.hasPrefix("\""), urlTrimmed.hasSuffix("\""), urlTrimmed.count >= 2 {
+            normalized = String(urlTrimmed.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            normalized = urlTrimmed
+        }
+        return URL(string: normalized)
     }
 }
 
