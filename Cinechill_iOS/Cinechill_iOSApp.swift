@@ -19,10 +19,25 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct Cinechill_iOSApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    @StateObject private var authService = AuthService()
+    @StateObject private var libraryStore = LibraryStore()
 
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            Group {
+                if authService.isInitializing {
+                    ProgressView("Initialisation…")
+                } else if authService.isAuthenticated {
+                    MainTabView()
+                } else {
+                    LoginView()
+                }
+            }
+            .environmentObject(authService)
+            .environmentObject(libraryStore)
+            .task {
+                libraryStore.start()
+            }
         }
     }
 }

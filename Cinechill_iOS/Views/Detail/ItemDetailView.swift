@@ -8,6 +8,7 @@ import SwiftUI
 struct ItemDetailView: View {
     let item: MediaItem
 
+    @EnvironmentObject private var libraryStore: LibraryStore
     @State private var detail: TMDBDetailResponse?
     @State private var loading = true
     @State private var errorMessage: String?
@@ -21,6 +22,7 @@ struct ItemDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header
                 metaRow
+                actions
                 synopsis
                 if let d = detail, !d.castLine.isEmpty {
                     castSection(d.castLine)
@@ -121,6 +123,40 @@ struct ItemDetailView: View {
                     .font(.footnote)
                     .foregroundStyle(.red)
             }
+        }
+    }
+
+    private var actions: some View {
+        VStack(spacing: 10) {
+            Button {
+                if libraryStore.isInGallery(displayItem) {
+                    libraryStore.removeFromGallery(displayItem)
+                } else {
+                    libraryStore.addToGallery(displayItem)
+                }
+            } label: {
+                Label(
+                    libraryStore.isInGallery(displayItem) ? "Retirer de la galerie" : "Ajouter à la galerie",
+                    systemImage: libraryStore.isInGallery(displayItem) ? "checkmark.circle.fill" : "plus.circle.fill"
+                )
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+
+            Button {
+                if libraryStore.isInWatchlist(displayItem) {
+                    libraryStore.removeFromWatchlist(displayItem)
+                } else {
+                    libraryStore.addToWatchlist(displayItem)
+                }
+            } label: {
+                Label(
+                    libraryStore.isInWatchlist(displayItem) ? "Retirer de la watchlist" : "Ajouter à la watchlist",
+                    systemImage: libraryStore.isInWatchlist(displayItem) ? "checkmark.circle.fill" : "bookmark.fill"
+                )
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
         }
     }
 

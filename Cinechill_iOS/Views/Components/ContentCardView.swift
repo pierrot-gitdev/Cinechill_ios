@@ -65,6 +65,7 @@ struct ContentCardView: View {
                     image
                         .resizable()
                         .scaledToFill()
+                        .opacity(1)
                 case .failure:
                     placeholder
                 @unknown default:
@@ -78,7 +79,7 @@ struct ContentCardView: View {
 
     private var placeholder: some View {
         ZStack {
-            Rectangle().fill(Color.secondary.opacity(0.2))
+            Rectangle().fill(Color(.secondarySystemBackground))
             Image(systemName: "film")
                 .font(.largeTitle)
                 .foregroundStyle(.secondary)
@@ -92,11 +93,11 @@ struct ContentCardView: View {
                 .foregroundStyle(.yellow)
             Text("\(item.voteAverageText)/10")
                 .font(.caption.weight(.bold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(.ultraThinMaterial, in: Capsule())
+        .background(Color.black.opacity(0.65), in: Capsule())
     }
 
     @ViewBuilder

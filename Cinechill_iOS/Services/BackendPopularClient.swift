@@ -29,18 +29,54 @@ enum BackendPopularClientError: LocalizedError {
     }
 }
 
-struct BackendPopularClient: PopularPageFetching, Sendable {
-    func popularPage(mediaType: MediaType, page: Int) async throws -> TMDBPagedResults {
+protocol HomeMetadataFetching: Sendable {
+    func movieGenres() async throws -> [TMDBGenre]
+    func movieProviders() async throws -> [TMDBWatchProvider]
+}
+
+struct BackendPopularClient: PopularPageFetching, HomeMetadataFetching, Sendable {
+    func popularPage(
+        mediaType: MediaType,
+        page: Int,
+        genreID: Int?,
+        providerIDs: [Int]
+    ) async throws -> TMDBPagedResults {
         guard mediaType == .movie else {
             throw BackendPopularClientError.unsupportedMediaType
         }
         guard BackendConfiguration.baseURL != nil else {
             throw BackendPopularClientError.missingBaseURL
         }
-        guard let url = APIEndpoints.popularMovies(page: page) else {
+        guard let url = APIEndpoints.popularMovies(page: page, genreID: genreID, providerIDs: providerIDs) else {
             throw BackendPopularClientError.invalidURL
         }
+        return try await fetch(TMDBPagedResults.self, from: url)
+    }
 
+    func movieGenres() async throws -> [TMDBGenre] {
+        guard let url = APIEndpoints.movieGenres() else {
+            throw BackendPopularClientError.invalidURL
+        }
+        let response = try await fetch(TMDBGenresResponse.self, from: url)
+        return response.genres.sorted(by: { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending })
+    }
+
+    func movieProviders() async throws -> [TMDBWatchProvider] {
+        guard let url = APIEndpoints.movieProviders() else {
+            throw BackendPopularClientError.invalidURL
+        }
+        let response = try await fetch(TMDBWatchProvidersResponse.self, from: url)
+        return response.results.sorted { lhs, rhs in
+            let leftPriority = lhs.displayPriority ?? Int.max
+            let rightPriority = rhs.displayPriority ?? Int.max
+            if leftPriority != rightPriority {
+                return leftPriority < rightPriority
+            }
+            return lhs.providerName.localizedCaseInsensitiveCompare(rhs.providerName) == .orderedAscending
+        }
+    }
+
+    private func fetch<T: Decodable>(_ type: T.Type, from url: URL) async throws -> T {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -50,6 +86,12 @@ struct BackendPopularClient: PopularPageFetching, Sendable {
         do {
             (data, response) = try await URLSession.shared.data(for: request)
         } catch {
+            if let urlError = error as? URLError, urlError.code == .cancelled {
+                throw CancellationError()
+            }
+            if error is CancellationError {
+                throw error
+            }
             throw BackendPopularClientError.transport(message: error.localizedDescription)
         }
         guard let http = response as? HTTPURLResponse else {
@@ -62,7 +104,7 @@ struct BackendPopularClient: PopularPageFetching, Sendable {
 
         let decoder = JSONDecoder()
         do {
-            return try decoder.decode(TMDBPagedResults.self, from: data)
+            return try decoder.decode(T.self, from: data)
         } catch {
             let body = String(data: data, encoding: .utf8) ?? "<body non lisible>"
             throw BackendPopularClientError.decoding(message: "URL: \(url.absoluteString) · Réponse: \(body)")

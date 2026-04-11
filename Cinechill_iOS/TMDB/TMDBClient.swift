@@ -118,4 +118,3 @@ struct TMDBClient: Sendable {
     }
 }
 
-extension TMDBClient: PopularPageFetching {}

@@ -34,7 +34,7 @@ struct MediaItem: Identifiable, Hashable, Sendable {
 }
 
 extension MediaItem {
-    init(tmdbListRow: TMDBListResultRow, mediaType: MediaType) {
+    nonisolated init(tmdbListRow: TMDBListResultRow, mediaType: MediaType) {
         self.tmdbId = tmdbListRow.id
         self.mediaType = mediaType
         self.title = (mediaType == .movie ? tmdbListRow.title : nil)

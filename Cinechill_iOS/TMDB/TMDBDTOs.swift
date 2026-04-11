@@ -43,6 +43,33 @@ struct TMDBPagedResults: Decodable, Sendable {
     }
 }
 
+struct TMDBGenre: Decodable, Sendable {
+    let id: Int
+    let name: String
+}
+
+struct TMDBGenresResponse: Decodable, Sendable {
+    let genres: [TMDBGenre]
+}
+
+struct TMDBWatchProvider: Decodable, Sendable {
+    let providerID: Int
+    let providerName: String
+    let logoPath: String?
+    let displayPriority: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case providerID = "provider_id"
+        case providerName = "provider_name"
+        case logoPath = "logo_path"
+        case displayPriority = "display_priority"
+    }
+}
+
+struct TMDBWatchProvidersResponse: Decodable, Sendable {
+    let results: [TMDBWatchProvider]
+}
+
 // MARK: - Detail
 
 struct TMDBDetailCastMember: Decodable, Sendable {

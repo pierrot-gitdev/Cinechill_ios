@@ -1,17 +1,37 @@
 import Foundation
 
 enum APIEndpoints {
-    static func popularMovies(page: Int) -> URL? {
+    static func popularMovies(page: Int, genreID: Int? = nil, providerIDs: [Int] = []) -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
-        return buildURL(baseURL: baseURL, functionName: "getpopularmovies", queryItems: [
+        var items: [URLQueryItem] = [
             URLQueryItem(name: "page", value: String(page)),
-        ])
+        ]
+        if let genreID {
+            items.append(URLQueryItem(name: "genreId", value: String(genreID)))
+        }
+        if !providerIDs.isEmpty {
+            items.append(URLQueryItem(name: "providerIds", value: providerIDs.map(String.init).joined(separator: ",")))
+            items.append(URLQueryItem(name: "watchRegion", value: "FR"))
+        }
+        return buildURL(baseURL: baseURL, functionName: "getpopularmovies", queryItems: items)
     }
 
     static func movieDetails(id: Int) -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "getmoviedetails", queryItems: [
             URLQueryItem(name: "id", value: String(id)),
+        ])
+    }
+
+    static func movieGenres() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getmoviegenres", queryItems: [])
+    }
+
+    static func movieProviders() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getmovieproviders", queryItems: [
+            URLQueryItem(name: "watchRegion", value: "FR"),
         ])
     }
 
