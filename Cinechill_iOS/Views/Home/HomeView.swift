@@ -62,12 +62,6 @@ struct HomeView: View {
 
     private var homeTopBar: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                CircleIconButton(systemImage: "chevron.left", action: {})
-                Spacer()
-                CircleIconButton(systemImage: "magnifyingglass", action: {})
-            }
-
             Text("Que voulez-vous regarder ?")
                 .font(.system(size: 24, weight: .black, design: .rounded))
                 .lineLimit(2)
@@ -81,7 +75,7 @@ struct HomeView: View {
             HStack {
                 sectionTitle("Parcourir")
                 Spacer()
-                Button {} label: {
+                NavigationLink(destination: HomeGenresListView(categories: homeModel.browseCategories, homeModel: homeModel)) {
                     Image(systemName: "arrow.right")
                         .font(.headline.weight(.bold))
                         .frame(width: 32, height: 32)
@@ -89,24 +83,21 @@ struct HomeView: View {
                 }
                 .buttonStyle(.plain)
             }
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                ForEach(homeModel.browseCategories) { category in
-                    NavigationLink(value: category) {
-                        HStack {
-                            Text(category.title)
-                                .font(.system(size: 16, weight: .medium, design: .rounded))
-                                .foregroundStyle(.primary)
-                                .multilineTextAlignment(.leading)
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.8)
-                            Spacer()
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHGrid(
+                    rows: [GridItem(.fixed(88), spacing: 10), GridItem(.fixed(88), spacing: 10)],
+                    spacing: 10
+                ) {
+                    ForEach(homeModel.browseCategories) { category in
+                        NavigationLink(value: category) {
+                            browseGenreCard(category: category)
                         }
-                        .padding(14)
-                        .frame(minHeight: 88)
-                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
+                .frame(height: 190)
+                .padding(.horizontal, 2)
             }
         }
     }
@@ -220,19 +211,43 @@ struct HomeView: View {
             .lineLimit(2)
             .minimumScaleFactor(0.8)
     }
-}
 
-private struct CircleIconButton: View {
-    let systemImage: String
-    let action: () -> Void
+    private func browseGenreCard(category: HomeBrowseCategory) -> some View {
+        ZStack(alignment: .topLeading) {
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
 
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.headline.weight(.bold))
-                .frame(width: 44, height: 44)
-                .background(Color(.secondarySystemBackground), in: Circle())
+            Text(category.title)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.leading)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .foregroundStyle(.primary)
+                .padding(12)
+                .padding(.trailing, 44)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .buttonStyle(.plain)
+        .overlay(alignment: .bottomTrailing) {
+            if let posterURL = homeModel.browsePosterURL(for: category.id) {
+                AsyncImage(url: posterURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    default:
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color.gray.opacity(0.2))
+                    }
+                }
+                .frame(width: 52, height: 74)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .rotationEffect(.degrees(10), anchor: .bottomTrailing)
+                .padding(.trailing, 6)
+                .padding(.bottom, -6)
+            }
+        }
+        .frame(width: 160, height: 80, alignment: .topLeading)
+        .clipped()
     }
 }

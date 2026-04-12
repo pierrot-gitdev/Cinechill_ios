@@ -16,6 +16,7 @@ final class HomeViewModel {
     var popularTopItems: [MediaItem] = []
     var forYouItems: [MediaItem] = []
     var browseCategories: [HomeBrowseCategory] = []
+    var browsePosterByGenreID: [Int: URL] = [:]
     var availablePlatforms: [StreamingPlatform] = []
 
     init(repository: PopularRepository, metadataClient: any HomeMetadataFetching) {
@@ -37,6 +38,7 @@ final class HomeViewModel {
 
             let genres = try await genresTask
             browseCategories = genres.map { HomeBrowseCategory(id: $0.id, title: $0.name) }
+            await preloadBrowsePosters()
 
             let providers = try await providersTask
             availablePlatforms = providers.map {
@@ -53,6 +55,7 @@ final class HomeViewModel {
             popularTopItems = []
             forYouItems = []
             browseCategories = []
+            browsePosterByGenreID = [:]
             availablePlatforms = []
         }
     }
@@ -82,5 +85,36 @@ final class HomeViewModel {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             forYouItems = []
         }
+    }
+
+    func browsePosterURL(for genreID: Int) -> URL? {
+        browsePosterByGenreID[genreID]
+    }
+
+    private func preloadBrowsePosters() async {
+        var collected: [Int: URL] = [:]
+
+        for category in browseCategories {
+            do {
+                // Fetch genre items and pick the highest TMDB rating among those with posters.
+                let items = try await repository.loadPopularTop(
+                    for: .movie,
+                    limit: 20,
+                    genreID: category.id,
+                    providerIDs: []
+                )
+                if let best = items
+                    .filter({ $0.posterURL != nil })
+                    .max(by: { ($0.voteAverage ?? 0) < ($1.voteAverage ?? 0) }),
+                   let url = best.posterURL {
+                    collected[category.id] = url
+                }
+            } catch {
+                if error is CancellationError { return }
+                continue
+            }
+        }
+
+        browsePosterByGenreID = collected
     }
 }
