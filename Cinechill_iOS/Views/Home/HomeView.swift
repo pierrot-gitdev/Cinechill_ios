@@ -54,6 +54,10 @@ struct HomeView: View {
                 await homeModel.loadHome()
                 await homeModel.refreshForYou(using: libraryStore.preferredPlatformIDs)
             }
+            .task(id: "\(homeModel.availablePlatforms.map(\.id).joined(separator: ","))-\(libraryStore.shouldInitializePreferredPlatforms)") {
+                let allPlatformIDs = Set(homeModel.availablePlatforms.map(\.id))
+                libraryStore.initializePreferredPlatformsIfNeeded(with: allPlatformIDs)
+            }
             .task(id: libraryStore.preferredPlatformIDs) {
                 await homeModel.refreshForYou(using: libraryStore.preferredPlatformIDs)
             }
@@ -104,28 +108,27 @@ struct HomeView: View {
 
     private var forYouSection: some View {
         let filtered = homeModel.forYouItems
+        let selectedPlatforms = homeModel.availablePlatforms
+            .filter { libraryStore.preferredPlatformIDs.contains($0.id) }
+        let displayedPlatforms = Array(selectedPlatforms.prefix(3))
+
         return VStack(alignment: .leading, spacing: 14) {
             HStack {
                 sectionTitle("Pour vous")
-                if !libraryStore.preferredPlatformIDs.isEmpty {
-                    activePlatformShortcuts
+
+                if !displayedPlatforms.isEmpty {
+                    selectedPlatformShortcuts(displayedPlatforms)
                 }
                 Spacer()
+
                 Button {
                     showPlatformSheet = true
                 } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "hand.draw.fill")
-                            .font(.footnote)
-                        Text("Swipe")
-                            .font(.headline.weight(.bold))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
+                    Image(systemName: "chevron.down")
+                        .font(.headline.weight(.bold))
+                        .padding(.horizontal, 6)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color(.secondarySystemBackground))
-                .foregroundStyle(.primary)
+                .buttonStyle(.plain)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -174,10 +177,10 @@ struct HomeView: View {
         }
     }
 
-    private var activePlatformShortcuts: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(homeModel.availablePlatforms.filter { libraryStore.preferredPlatformIDs.contains($0.id) }) { platform in
+    private func selectedPlatformShortcuts(_ platforms: [StreamingPlatform]) -> some View {
+        HStack(spacing: -6) {
+            ForEach(Array(platforms.enumerated()), id: \.element.id) { index, platform in
+                Group {
                     if let logoURL = platform.logoURL {
                         AsyncImage(url: logoURL) { phase in
                             switch phase {
@@ -188,21 +191,17 @@ struct HomeView: View {
                                     .font(.caption2.weight(.bold))
                             }
                         }
-                        .frame(width: 34, height: 20)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 5)
-                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .frame(width: 48, height: 30)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     } else {
                         Text(platform.shortLabel)
                             .font(.caption2.weight(.bold))
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 4)
-                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .frame(width: 48, height: 30)
                     }
                 }
+                .zIndex(Double(100 - index))
             }
         }
-        .frame(maxWidth: 140)
     }
 
     private func sectionTitle(_ title: String) -> some View {

@@ -7,6 +7,7 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var galleryItems: [GalleryEntry] = []
     @Published private(set) var watchlistItems: [WatchlistEntry] = []
     @Published private(set) var preferredPlatformIDs: Set<String> = []
+    @Published private(set) var shouldInitializePreferredPlatforms = false
     @Published private(set) var errorMessage: String?
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
@@ -101,6 +102,7 @@ final class LibraryStore: ObservableObject {
 
     func setPreferredPlatforms(_ ids: Set<String>) {
         guard let uid = Auth.auth().currentUser?.uid else { return }
+        shouldInitializePreferredPlatforms = false
         db.collection("users")
             .document(uid)
             .collection("preferences")
@@ -111,6 +113,12 @@ final class LibraryStore: ObservableObject {
                     self?.errorMessage = error.localizedDescription
                 }
             }
+    }
+
+    func initializePreferredPlatformsIfNeeded(with allPlatformIDs: Set<String>) {
+        guard shouldInitializePreferredPlatforms, !allPlatformIDs.isEmpty else { return }
+        preferredPlatformIDs = allPlatformIDs
+        setPreferredPlatforms(allPlatformIDs)
     }
 }
 
@@ -127,6 +135,7 @@ private extension LibraryStore {
                 self.galleryItems = []
                 self.watchlistItems = []
                 self.preferredPlatformIDs = []
+                self.shouldInitializePreferredPlatforms = false
 
                 guard let uid = user?.uid else { return }
                 self.startGalleryListener(uid: uid)
@@ -184,8 +193,19 @@ private extension LibraryStore {
                         self.errorMessage = error.localizedDescription
                         return
                     }
-                    let ids = snapshot?.data()?["preferredPlatformIDs"] as? [String] ?? []
+                    guard let snapshot else {
+                        self.preferredPlatformIDs = []
+                        self.shouldInitializePreferredPlatforms = true
+                        return
+                    }
+                    if !snapshot.exists {
+                        self.preferredPlatformIDs = []
+                        self.shouldInitializePreferredPlatforms = true
+                        return
+                    }
+                    let ids = snapshot.data()?["preferredPlatformIDs"] as? [String] ?? []
                     self.preferredPlatformIDs = Set(ids)
+                    self.shouldInitializePreferredPlatforms = false
                 }
             }
     }
