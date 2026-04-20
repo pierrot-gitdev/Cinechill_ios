@@ -43,61 +43,19 @@ final class LibraryStore: ObservableObject {
     }
 
     func addToGallery(_ item: MediaItem) {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        let entry = GalleryEntry(item: item)
-        db.collection("users")
-            .document(uid)
-            .collection("gallery")
-            .document(entry.id)
-            .setData(galleryData(from: entry)) { [weak self] error in
-                guard let error else { return }
-                DispatchQueue.main.async {
-                    self?.errorMessage = error.localizedDescription
-                }
-            }
+        setStatus(.seen, for: item)
     }
 
     func addToWatchlist(_ item: MediaItem) {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        let entry = WatchlistEntry(item: item)
-        db.collection("users")
-            .document(uid)
-            .collection("watchlist")
-            .document(entry.id)
-            .setData(watchlistData(from: entry)) { [weak self] error in
-                guard let error else { return }
-                DispatchQueue.main.async {
-                    self?.errorMessage = error.localizedDescription
-                }
-            }
+        setStatus(.toWatch, for: item)
     }
 
     func removeFromGallery(_ item: MediaItem) {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        db.collection("users")
-            .document(uid)
-            .collection("gallery")
-            .document(item.id)
-            .delete { [weak self] error in
-                guard let error else { return }
-                DispatchQueue.main.async {
-                    self?.errorMessage = error.localizedDescription
-                }
-            }
+        setStatus(.none, for: item)
     }
 
     func removeFromWatchlist(_ item: MediaItem) {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        db.collection("users")
-            .document(uid)
-            .collection("watchlist")
-            .document(item.id)
-            .delete { [weak self] error in
-                guard let error else { return }
-                DispatchQueue.main.async {
-                    self?.errorMessage = error.localizedDescription
-                }
-            }
+        setStatus(.none, for: item)
     }
 
     func setPreferredPlatforms(_ ids: Set<String>) {
@@ -123,6 +81,55 @@ final class LibraryStore: ObservableObject {
 }
 
 private extension LibraryStore {
+    enum MediaStatus: String {
+        case toWatch, seen, none
+    }
+
+    func setStatus(_ status: MediaStatus, for item: MediaItem) {
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await callSetMediaStatus(status: status, item: item)
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func callSetMediaStatus(status: MediaStatus, item: MediaItem) async throws {
+        guard let url = APIEndpoints.setMediaStatus() else { return }
+        guard let user = Auth.auth().currentUser else { return }
+        let token = try await user.getIDToken()
+
+        let body: [String: Any] = [
+            "status": status.rawValue,
+            "item": [
+                "id": item.id,
+                "tmdbId": item.tmdbId,
+                "mediaType": item.mediaType.rawValue,
+                "title": item.title,
+                "posterPath": item.posterPath as Any,
+                "overview": item.overview as Any,
+                "voteAverage": item.voteAverage as Any,
+                "genreIds": item.genreIds,
+                "releaseDate": item.releaseDate as Any
+            ]
+        ]
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            throw URLError(.badServerResponse)
+        }
+    }
+
     var db: Firestore { Firestore.firestore() }
 
     func observeAuthState() {

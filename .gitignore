@@ -1,2 +1,5 @@
 # Ne jamais commiter de secrets (dépôt public).
 Secrets.xcconfig
+
+# Données Xcode locales (breakpoints, préférences utilisateur)
+*.xcodeproj/xcuserdata/

@@ -127,36 +127,43 @@ struct ItemDetailView: View {
     }
 
     private var actions: some View {
-        VStack(spacing: 10) {
+        let inGallery = libraryStore.isInGallery(displayItem)
+        let inWatchlist = libraryStore.isInWatchlist(displayItem)
+
+        return VStack(spacing: 10) {
+            // "Vu" — galerie
             Button {
-                if libraryStore.isInGallery(displayItem) {
+                if inGallery {
                     libraryStore.removeFromGallery(displayItem)
                 } else {
                     libraryStore.addToGallery(displayItem)
                 }
             } label: {
                 Label(
-                    libraryStore.isInGallery(displayItem) ? "Retirer de la galerie" : "Ajouter à la galerie",
-                    systemImage: libraryStore.isInGallery(displayItem) ? "checkmark.circle.fill" : "plus.circle.fill"
+                    inGallery ? "Retiré de la galerie" : "Ajouter à la galerie",
+                    systemImage: inGallery ? "checkmark.circle.fill" : "plus.circle.fill"
                 )
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .tint(inGallery ? .green : .accentColor)
 
+            // "À voir" — watchlist (désactivé si déjà vu)
             Button {
-                if libraryStore.isInWatchlist(displayItem) {
+                if inWatchlist {
                     libraryStore.removeFromWatchlist(displayItem)
                 } else {
                     libraryStore.addToWatchlist(displayItem)
                 }
             } label: {
                 Label(
-                    libraryStore.isInWatchlist(displayItem) ? "Retirer de la watchlist" : "Ajouter à la watchlist",
-                    systemImage: libraryStore.isInWatchlist(displayItem) ? "checkmark.circle.fill" : "bookmark.fill"
+                    inWatchlist ? "Dans la watchlist" : "Ajouter à la watchlist",
+                    systemImage: inWatchlist ? "bookmark.fill" : "bookmark"
                 )
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
+            .disabled(inGallery)
         }
     }
 
