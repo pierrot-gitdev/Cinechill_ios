@@ -4,41 +4,49 @@ struct WatchlistView: View {
     @Binding var selectedTab: Int
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var profileStore: UserProfileStore
+    @State private var showProfile = false
 
     var body: some View {
-        NavigationView {
-            ZStack {
+        NavigationStack {
+            ZStack(alignment: .top) {
                 Color(.systemBackground)
                     .ignoresSafeArea()
 
-                if libraryStore.watchlistItems.isEmpty {
-                    emptyState
-                        .padding()
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(libraryStore.watchlistItems) { entry in
-                                NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
-                                    row(for: entry.mediaItem)
+                Group {
+                    if libraryStore.watchlistItems.isEmpty {
+                        emptyState
+                            .padding()
+                            .padding(.top, 54)
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                Color.clear.frame(height: 54)
+                                ForEach(libraryStore.watchlistItems) { entry in
+                                    NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
+                                        row(for: entry.mediaItem)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
+                            .padding()
                         }
-                        .padding()
                     }
                 }
+
+                AppHeaderView(onProfileTap: { showProfile = true })
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
+                    .background(.ultraThinMaterial)
+                    .zIndex(10)
             }
-            .navigationTitle("Ma watchlist")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Déconnexion") {
-                        do {
-                            try authService.signOut()
-                        } catch {
-                            // Error already exposed via auth service.
-                        }
-                    }
-                }
+            .navigationBarHidden(true)
+            .fullScreenCover(isPresented: $showProfile) {
+                ProfileView()
+                    .environmentObject(profileStore)
+                    .environmentObject(libraryStore)
+                    .environmentObject(authService)
             }
         }
     }
@@ -51,7 +59,7 @@ struct WatchlistView: View {
             Text("Votre watchlist est vide pour le moment.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
-            Button("Explorer l’accueil") {
+            Button("Explorer l'accueil") {
                 selectedTab = 0
             }
             .buttonStyle(.borderedProminent)

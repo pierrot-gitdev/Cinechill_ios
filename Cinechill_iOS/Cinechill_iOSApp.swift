@@ -21,6 +21,7 @@ struct Cinechill_iOSApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authService = AuthService()
     @StateObject private var libraryStore = LibraryStore()
+    @StateObject private var profileStore = UserProfileStore()
 
     var body: some Scene {
         WindowGroup {
@@ -35,8 +36,10 @@ struct Cinechill_iOSApp: App {
             }
             .environmentObject(authService)
             .environmentObject(libraryStore)
+            .environmentObject(profileStore)
             .task {
                 libraryStore.start()
+                profileStore.refresh()
             }
         }
     }

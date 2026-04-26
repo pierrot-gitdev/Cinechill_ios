@@ -2,32 +2,52 @@ import SwiftUI
 
 struct GalleryView: View {
     @Binding var selectedTab: Int
+    @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var profileStore: UserProfileStore
+    @State private var showProfile = false
 
     var body: some View {
-        NavigationView {
-            ZStack {
+        NavigationStack {
+            ZStack(alignment: .top) {
                 Color(.systemBackground)
                     .ignoresSafeArea()
 
-                if libraryStore.galleryItems.isEmpty {
-                    emptyState
-                        .padding()
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(libraryStore.galleryItems) { entry in
-                                NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
-                                    row(for: entry.mediaItem)
+                Group {
+                    if libraryStore.galleryItems.isEmpty {
+                        emptyState
+                            .padding()
+                            .padding(.top, 54)
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                Color.clear.frame(height: 54)
+                                ForEach(libraryStore.galleryItems) { entry in
+                                    NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
+                                        row(for: entry.mediaItem)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
+                            .padding()
                         }
-                        .padding()
                     }
                 }
+
+                AppHeaderView(onProfileTap: { showProfile = true })
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
+                    .background(.ultraThinMaterial)
+                    .zIndex(10)
             }
-            .navigationTitle("Ma galerie")
+            .navigationBarHidden(true)
+            .fullScreenCover(isPresented: $showProfile) {
+                ProfileView()
+                    .environmentObject(profileStore)
+                    .environmentObject(libraryStore)
+                    .environmentObject(authService)
+            }
         }
     }
 
@@ -39,7 +59,7 @@ struct GalleryView: View {
             Text("Votre galerie est vide pour le moment.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
-            Button("Explorer l’accueil") {
+            Button("Explorer l'accueil") {
                 selectedTab = 0
             }
             .buttonStyle(.borderedProminent)
