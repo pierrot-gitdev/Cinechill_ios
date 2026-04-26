@@ -35,6 +35,12 @@ protocol HomeMetadataFetching: Sendable {
 }
 
 struct BackendPopularClient: PopularPageFetching, HomeMetadataFetching, Sendable {
+    private let cache: DiskCache
+
+    init(cache: DiskCache = DiskCache(name: "api")) {
+        self.cache = cache
+    }
+
     func popularPage(
         mediaType: MediaType,
         page: Int,
@@ -77,6 +83,27 @@ struct BackendPopularClient: PopularPageFetching, HomeMetadataFetching, Sendable
     }
 
     private func fetch<T: Decodable>(_ type: T.Type, from url: URL) async throws -> T {
+        let key = url.absoluteString
+
+        if let cached = await cache.read(for: key), !cached.isExpired,
+           let decoded = try? JSONDecoder().decode(T.self, from: cached.data) {
+            return decoded
+        }
+
+        do {
+            let data = try await networkFetch(from: url)
+            await cache.store(data, for: key)
+            return try decode(T.self, from: data, url: url)
+        } catch {
+            if let stale = await cache.read(for: key),
+               let decoded = try? JSONDecoder().decode(T.self, from: stale.data) {
+                return decoded
+            }
+            throw error
+        }
+    }
+
+    private func networkFetch(from url: URL) async throws -> Data {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -89,26 +116,25 @@ struct BackendPopularClient: PopularPageFetching, HomeMetadataFetching, Sendable
             if let urlError = error as? URLError, urlError.code == .cancelled {
                 throw CancellationError()
             }
-            if error is CancellationError {
-                throw error
-            }
+            if error is CancellationError { throw error }
             throw BackendPopularClientError.transport(message: error.localizedDescription)
         }
         guard let http = response as? HTTPURLResponse else {
             throw BackendPopularClientError.httpStatus(code: -1, message: nil)
         }
-        guard (200 ... 299).contains(http.statusCode) else {
+        guard (200...299).contains(http.statusCode) else {
             let msg = String(data: data, encoding: .utf8)
             throw BackendPopularClientError.httpStatus(code: http.statusCode, message: msg)
         }
+        return data
+    }
 
-        let decoder = JSONDecoder()
+    private func decode<T: Decodable>(_ type: T.Type, from data: Data, url: URL) throws -> T {
         do {
-            return try decoder.decode(T.self, from: data)
+            return try JSONDecoder().decode(T.self, from: data)
         } catch {
             let body = String(data: data, encoding: .utf8) ?? "<body non lisible>"
             throw BackendPopularClientError.decoding(message: "URL: \(url.absoluteString) · Réponse: \(body)")
         }
     }
 }
-

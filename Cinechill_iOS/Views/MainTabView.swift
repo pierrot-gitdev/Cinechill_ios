@@ -6,13 +6,16 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @State private var homeModel = HomeViewModel(
-        repository: PopularRepository(
-            client: BackendPopularClient()
-        ),
-        metadataClient: BackendPopularClient()
-    )
+    @State private var homeModel: HomeViewModel
     @State private var selectedTab = 0
+
+    init() {
+        let client = BackendPopularClient()
+        _homeModel = State(initialValue: HomeViewModel(
+            repository: PopularRepository(client: client),
+            metadataClient: client
+        ))
+    }
 
     var body: some View {
         TabView(selection: $selectedTab) {
