@@ -3,17 +3,19 @@ import SwiftUI
 struct HomeView: View {
     @Bindable var homeModel: HomeViewModel
     @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var profileStore: UserProfileStore
     @State private var showPlatformSheet = false
+    @State private var showProfile = false
 
     var body: some View {
         NavigationStack {
-            ZStack {
+            ZStack(alignment: .top) {
                 Color(.systemBackground)
                     .ignoresSafeArea()
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 26) {
-                        homeTopBar
+                        Color.clear.frame(height: 54)
 
                         if let err = homeModel.errorMessage {
                             Text(err)
@@ -34,8 +36,14 @@ struct HomeView: View {
                     }
                     .padding()
                 }
+
+                AppHeaderView(onProfileTap: { showProfile = true })
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
+                    .background(.ultraThinMaterial)
+                    .zIndex(10)
             }
-            .navigationTitle("")
             .navigationBarHidden(true)
             .navigationDestination(for: MediaItem.self) { item in
                 ItemDetailView(item: item)
@@ -49,6 +57,12 @@ struct HomeView: View {
                     selectedIDs: libraryStore.preferredPlatformIDs
                 )
                 .presentationDetents([.medium, .large])
+            }
+            .fullScreenCover(isPresented: $showProfile) {
+                ProfileView()
+                    .environmentObject(profileStore)
+                    .environmentObject(libraryStore)
+                    .environmentObject(authService)
             }
             .task {
                 await homeModel.loadHome()
@@ -64,15 +78,9 @@ struct HomeView: View {
         }
     }
 
-    private var homeTopBar: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Que voulez-vous regarder ?")
-                .font(.system(size: 24, weight: .black, design: .rounded))
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
+    @EnvironmentObject private var authService: AuthService
+
+    // MARK: - Browse Section
 
     private var browseSection: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -95,7 +103,10 @@ struct HomeView: View {
                 ) {
                     ForEach(homeModel.browseCategories) { category in
                         NavigationLink(value: category) {
-                            browseGenreCard(category: category)
+                            BrowseCardView(
+                                title: category.title,
+                                posterURL: homeModel.browsePosterURL(for: category.id)
+                            )
                         }
                         .buttonStyle(.plain)
                     }
@@ -105,6 +116,8 @@ struct HomeView: View {
             }
         }
     }
+
+    // MARK: - For You Section
 
     private var forYouSection: some View {
         let filtered = homeModel.forYouItems
@@ -145,12 +158,14 @@ struct HomeView: View {
             }
 
             if filtered.isEmpty {
-                Text("Aucun film ne correspond a vos plateformes selectionnees.")
+                Text("Aucun film ne correspond à vos plateformes sélectionnées.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         }
     }
+
+    // MARK: - In Theaters Section
 
     private var inTheatersSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -176,6 +191,8 @@ struct HomeView: View {
                 }
         }
     }
+
+    // MARK: - Helpers
 
     private func selectedPlatformShortcuts(_ platforms: [StreamingPlatform]) -> some View {
         HStack(spacing: -6) {
@@ -209,43 +226,5 @@ struct HomeView: View {
             .font(.system(size: 24, weight: .black, design: .rounded))
             .lineLimit(2)
             .minimumScaleFactor(0.8)
-    }
-
-    private func browseGenreCard(category: HomeBrowseCategory) -> some View {
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-
-            Text(category.title)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .foregroundStyle(.primary)
-                .padding(12)
-                .padding(.trailing, 44)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-        }
-        .overlay(alignment: .bottomTrailing) {
-            if let posterURL = homeModel.browsePosterURL(for: category.id) {
-                AsyncImage(url: posterURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    default:
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.gray.opacity(0.2))
-                    }
-                }
-                .frame(width: 52, height: 74)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .rotationEffect(.degrees(10), anchor: .bottomTrailing)
-                .padding(.trailing, 6)
-                .padding(.bottom, -6)
-            }
-        }
-        .frame(width: 160, height: 80, alignment: .topLeading)
-        .clipped()
     }
 }
