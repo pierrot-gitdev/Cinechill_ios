@@ -218,9 +218,8 @@ struct HomeView: View {
 
             Text(category.title)
                 .font(.system(size: 12, weight: .bold, design: .rounded))
-                .multilineTextAlignment(.leading)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(1)
+                .truncationMode(.tail)
                 .foregroundStyle(.primary)
                 .padding(12)
                 .padding(.trailing, 44)

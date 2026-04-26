@@ -31,8 +31,8 @@ struct ContentCardView: View {
             Text(item.title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
+                .lineLimit(1)
+                .truncationMode(.tail)
 
             HStack {
                 Text(item.mediaType.singularLabel)
