@@ -9,7 +9,6 @@ struct ItemDetailView: View {
     @State private var detail: TMDBDetailResponse?
     @State private var loading = true
     @State private var errorMessage: String?
-    @State private var showStatusPicker = false
 
     private var displayItem: MediaItem {
         detail.map { $0.asMediaItem(mediaType: item.mediaType) } ?? item
@@ -47,17 +46,6 @@ struct ItemDetailView: View {
         .navigationTitle(displayItem.title)
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadDetail() }
-        .confirmationDialog("Statut", isPresented: $showStatusPicker) {
-            Button("À voir") { libraryStore.addToWatchlist(displayItem) }
-            Button("Vu") { libraryStore.addToGallery(displayItem) }
-            if currentStatus != .none {
-                Button("Retirer de la liste", role: .destructive) {
-                    if currentStatus == .seen { libraryStore.removeFromGallery(displayItem) }
-                    else { libraryStore.removeFromWatchlist(displayItem) }
-                }
-            }
-            Button("Annuler", role: .cancel) {}
-        }
     }
 
     // MARK: - Header
@@ -134,8 +122,15 @@ struct ItemDetailView: View {
 
     private var statusRatingRow: some View {
         HStack(spacing: 10) {
-            Button {
-                showStatusPicker = true
+            Menu {
+                Button("À voir") { libraryStore.addToWatchlist(displayItem) }
+                Button("Vu") { libraryStore.addToGallery(displayItem) }
+                if currentStatus != .none {
+                    Button("Retirer de la liste", role: .destructive) {
+                        if currentStatus == .seen { libraryStore.removeFromGallery(displayItem) }
+                        else { libraryStore.removeFromWatchlist(displayItem) }
+                    }
+                }
             } label: {
                 HStack(spacing: 6) {
                     Text(statusLabel)
