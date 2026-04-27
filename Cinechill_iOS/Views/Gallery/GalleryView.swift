@@ -9,7 +9,7 @@ struct GalleryView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .top) {
+            ZStack {
                 Color(.systemBackground)
                     .ignoresSafeArea()
 
@@ -17,11 +17,9 @@ struct GalleryView: View {
                     if libraryStore.galleryItems.isEmpty {
                         emptyState
                             .padding()
-                            .padding(.top, 54)
                     } else {
                         ScrollView {
                             LazyVStack(spacing: 12) {
-                                Color.clear.frame(height: 54)
                                 ForEach(libraryStore.galleryItems) { entry in
                                     NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
                                         row(for: entry.mediaItem)
@@ -33,13 +31,13 @@ struct GalleryView: View {
                         }
                     }
                 }
-
+            }
+            .safeAreaInset(edge: .top) {
                 AppHeaderView(onProfileTap: { showProfile = true })
                     .padding(.horizontal)
-                    .padding(.top, 8)
-                    .padding(.bottom, 8)
+                    .padding(.top, 10)
+                    .padding(.bottom, 6)
                     .background(.ultraThinMaterial)
-                    .zIndex(10)
             }
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showProfile) {

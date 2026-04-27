@@ -6,10 +6,10 @@ struct AppHeaderView: View {
     @State private var showNotifications = false
 
     var body: some View {
-        HStack(spacing: 16) {
-            appIcon
+        HStack(spacing: 12) {
+            appLogo
             Spacer()
-            bellButton
+            notificationButton
             profileButton
         }
         .overlay(alignment: .topTrailing) {
@@ -22,29 +22,35 @@ struct AppHeaderView: View {
                             withAnimation(.easeOut(duration: 0.18)) { showNotifications = false }
                         }
                     notificationDropdown
-                        .offset(x: -8, y: 48)
+                        .offset(x: -8, y: 62)
                 }
                 .zIndex(100)
             }
         }
     }
 
-    // MARK: - App Icon
+    // MARK: - App Logo
 
-    private var appIcon: some View {
-        Group {
-            if let uiImage = Self.bundleAppIcon {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
-            } else {
-                Image(systemName: "film.stack")
-                    .font(.title2)
-                    .foregroundStyle(.primary)
+    private var appLogo: some View {
+        HStack(spacing: 10) {
+            Group {
+                if let uiImage = Self.bundleAppIcon {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    Image(systemName: "film.stack")
+                        .font(.title)
+                        .foregroundStyle(.primary)
+                }
             }
+            .frame(width: 40, height: 40)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            Text("Cinéchill")
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(.primary)
         }
-        .frame(width: 34, height: 34)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private static var bundleAppIcon: UIImage? {
@@ -57,15 +63,17 @@ struct AppHeaderView: View {
         return UIImage(named: name)
     }
 
-    // MARK: - Bell
+    // MARK: - Notification
 
-    private var bellButton: some View {
+    private var notificationButton: some View {
         Button {
             withAnimation(.easeOut(duration: 0.18)) { showNotifications.toggle() }
         } label: {
-            Image(systemName: showNotifications ? "bell.fill" : "bell")
-                .font(.title3)
-                .foregroundStyle(.primary)
+            Image("notification")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 26, height: 26)
+                .opacity(showNotifications ? 0.5 : 1)
         }
     }
 
@@ -74,7 +82,7 @@ struct AppHeaderView: View {
     private var profileButton: some View {
         Button(action: onProfileTap) {
             avatarImage
-                .frame(width: 34, height: 34)
+                .frame(width: 40, height: 40)
                 .clipShape(Circle())
                 .overlay(Circle().strokeBorder(Color(.systemGray4), lineWidth: 1))
         }
@@ -120,9 +128,12 @@ struct AppHeaderView: View {
             }
 
             VStack(spacing: 10) {
-                Image(systemName: "bell.slash")
-                    .font(.system(size: 36))
-                    .foregroundStyle(.secondary)
+                Image("notification")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
+                    .foregroundStyle(Color(.systemGray3))
                 Text("Aucune notification")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
