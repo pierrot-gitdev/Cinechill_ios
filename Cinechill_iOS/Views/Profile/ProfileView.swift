@@ -56,11 +56,12 @@ struct ProfileView: View {
     private var topBar: some View {
         HStack {
             Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.headline)
+                Image("close")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
                     .padding(10)
                     .background(.ultraThinMaterial, in: Circle())
-                    .foregroundStyle(.primary)
             }
 
             Spacer()
@@ -71,11 +72,12 @@ struct ProfileView: View {
             Spacer()
 
             Button { showSettings = true } label: {
-                Image(systemName: "gearshape")
-                    .font(.headline)
+                Image("settings")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
                     .padding(10)
                     .background(.ultraThinMaterial, in: Circle())
-                    .foregroundStyle(.primary)
             }
         }
         .padding(.horizontal)

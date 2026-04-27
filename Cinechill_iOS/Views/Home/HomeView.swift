@@ -9,14 +9,12 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .top) {
+            ZStack {
                 Color(.systemBackground)
                     .ignoresSafeArea()
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 26) {
-                        Color.clear.frame(height: 54)
-
                         if let err = homeModel.errorMessage {
                             Text(err)
                                 .font(.footnote)
@@ -34,15 +32,17 @@ struct HomeView: View {
                             inTheatersSection
                         }
                     }
-                    .padding()
+                    .padding(.horizontal)
+                    .padding(.bottom)
+                    .padding(.top, 32)
                 }
-
+            }
+            .safeAreaInset(edge: .top) {
                 AppHeaderView(onProfileTap: { showProfile = true })
                     .padding(.horizontal)
-                    .padding(.top, 8)
-                    .padding(.bottom, 8)
+                    .padding(.top, 10)
+                    .padding(.bottom, 6)
                     .background(.ultraThinMaterial)
-                    .zIndex(10)
             }
             .navigationBarHidden(true)
             .navigationDestination(for: MediaItem.self) { item in
