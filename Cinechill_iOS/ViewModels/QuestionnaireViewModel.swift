@@ -5,36 +5,15 @@
 
 import Foundation
 
-enum QuestionBadgeKind {
-    case filter
-    case score
-
-    var label: String {
-        switch self {
-        case .filter: "Filtre"
-        case .score: "Score"
-        }
-    }
-}
-
 /// Les 11 questions de CinéMatch, dans l'ordre d'affichage — voir la spec produit pour le détail
-/// du mapping de chacune vers l'algorithme de recommandation.
+/// du mapping de chacune vers l'algorithme de recommandation (certaines filtrent le pool, d'autres
+/// pondèrent le score — ce n'est plus affiché à l'utilisateur mais reste vrai côté algorithme).
 enum QuestionStep: Int, CaseIterable, Hashable {
-    case genres, platforms, audience, mood, origin, mindset, dealbreaker, popularity, cast, runtime, era
-
-    var badge: QuestionBadgeKind {
-        switch self {
-        case .genres, .platforms, .audience, .dealbreaker: .filter
-        case .mood, .origin, .mindset, .popularity, .cast, .runtime, .era: .score
-        }
-    }
-
-    var isSurprise: Bool {
-        self == .mindset || self == .dealbreaker
-    }
+    case contentFormat, genres, platforms, audience, mood, origin, mindset, dealbreaker, popularity, cast, runtime, era
 
     var title: String {
         switch self {
+        case .contentFormat: "Dessin animé ou film ?"
         case .genres: "Genres qui vous attirent"
         case .platforms: "Sur quelles plateformes pouvez-vous regarder ?"
         case .audience: "Avec qui regardez-vous ?"
@@ -92,6 +71,7 @@ final class QuestionnaireViewModel {
 
     var canAdvance: Bool {
         switch currentStep {
+        case .contentFormat: answers.contentFormat != nil
         case .genres: !answers.genres.isEmpty
         case .platforms: !answers.platformIDs.isEmpty
         case .audience: answers.audience != nil

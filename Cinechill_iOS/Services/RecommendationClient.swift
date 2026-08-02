@@ -94,6 +94,7 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
     /// (with_genres, with_watch_providers, mots-clés…) est fait côté Cloud Function.
     static func requestBody(for answers: QuestionnaireAnswers) -> [String: Any] {
         [
+            "contentFormat": answers.contentFormat?.rawValue as Any,
             "genres": answers.genres.map(\.rawValue).sorted(),
             "platformIds": answers.platformIDs.sorted(),
             "watchRegion": "FR",
@@ -124,6 +125,8 @@ nonisolated private struct RecommendationRow: Decodable, Sendable {
     let releaseDate: String?
     let matchScore: Int
     let reasons: [String]
+    let trailerKey: String?
+    let providerIds: [Int]?
 
     enum CodingKeys: String, CodingKey {
         case id, title
@@ -134,6 +137,8 @@ nonisolated private struct RecommendationRow: Decodable, Sendable {
         case releaseDate = "release_date"
         case matchScore = "match_score"
         case reasons
+        case trailerKey = "trailer_key"
+        case providerIds = "provider_ids"
     }
 
     var recommendationResult: RecommendationResult {
@@ -149,7 +154,9 @@ nonisolated private struct RecommendationRow: Decodable, Sendable {
                 releaseDate: releaseDate
             ),
             matchScore: matchScore,
-            reasons: reasons
+            reasons: reasons,
+            trailerKey: trailerKey,
+            providerIDs: providerIds ?? []
         )
     }
 }

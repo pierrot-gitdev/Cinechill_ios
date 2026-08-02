@@ -30,21 +30,21 @@ struct MainTabView: View {
                 }
                 .tag(0)
 
+            QuestionnaireView(viewModel: questionnaireModel)
+                .tabItem {
+                    Label("CinéMatch", systemImage: "popcorn.fill")
+                }
+                .tag(1)
+
             GalleryView(selectedTab: $selectedTab)
                 .tabItem {
                     Label("Galerie", systemImage: "trophy.fill")
                 }
-                .tag(1)
+                .tag(2)
 
             WatchlistView(selectedTab: $selectedTab)
                 .tabItem {
                     Label("Watchlist", systemImage: "bookmark.fill")
-                }
-                .tag(2)
-
-            QuestionnaireView(viewModel: questionnaireModel)
-                .tabItem {
-                    Label("CinéMatch", systemImage: "sparkles")
                 }
                 .tag(3)
         }

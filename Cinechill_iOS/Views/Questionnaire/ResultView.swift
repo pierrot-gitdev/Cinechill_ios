@@ -33,13 +33,25 @@ struct ResultView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "popcorn.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(
+                        LinearGradient(colors: [.indigo, .pink], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                Text("CINÉMATCH")
+                    .font(.caption.weight(.bold))
+                    .tracking(1.4)
+                    .foregroundStyle(.secondary)
+            }
             Text("Votre trio du soir")
-                .font(.system(size: 26, weight: .bold, design: .rounded))
-            Text("Classé selon vos réponses — le pourcentage reflète la correspondance, pas une note du film.")
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+            Text("Classé selon vos réponses, du meilleur match au troisième.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
+        .padding(.bottom, 4)
     }
 
     private var restartButton: some View {
@@ -63,30 +75,57 @@ private struct ResultCardView: View {
     let result: RecommendationResult
 
     @EnvironmentObject private var libraryStore: LibraryStore
+    @Environment(\.openURL) private var openURL
+    @State private var isAddingToWatchlist = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 14) {
-                poster
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("#\(rank)")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.secondary)
-                    Text(result.item.title)
-                        .font(.headline)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("\(result.item.mediaType.singularLabel) · \(result.item.displayYear)")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    reasonChips
+            NavigationLink(destination: ItemDetailView(item: result.item)) {
+                VStack(alignment: .leading, spacing: 10) {
+                    rankBadge
+                    HStack(alignment: .top, spacing: 14) {
+                        poster
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(result.item.title)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("\(result.item.mediaType.singularLabel) · \(result.item.displayYear)")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 0)
+                    }
                 }
-                Spacer(minLength: 0)
-                ScoreRing(score: result.matchScore)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+
             actions
         }
         .padding(14)
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .onChange(of: libraryStore.isInWatchlist(result.item)) { _, inWatchlist in
+            if inWatchlist { isAddingToWatchlist = false }
+        }
+        .task(id: isAddingToWatchlist) {
+            guard isAddingToWatchlist else { return }
+            try? await Task.sleep(nanoseconds: 8_000_000_000)
+            if !Task.isCancelled { isAddingToWatchlist = false }
+        }
+    }
+
+    private var rankBadge: some View {
+        Text("CinéMatch n°\(rank)")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                Capsule().fill(
+                    LinearGradient(colors: [.indigo, .pink], startPoint: .leading, endPoint: .trailing)
+                )
+            )
     }
 
     private var poster: some View {
@@ -106,73 +145,77 @@ private struct ResultCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
-    private var reasonChips: some View {
-        FlowLayout(spacing: 6) {
-            ForEach(result.reasons, id: \.self) { reason in
-                Text(reason)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.indigo)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.indigo.opacity(0.12), in: Capsule())
-            }
-        }
-    }
-
     private var actions: some View {
         HStack(spacing: 10) {
-            Button {
-                libraryStore.addToWatchlist(result.item)
-            } label: {
-                Label(
-                    libraryStore.isInWatchlist(result.item) ? "Dans la watchlist" : "Ajouter",
-                    systemImage: libraryStore.isInWatchlist(result.item) ? "checkmark" : "bookmark"
-                )
-                .font(.caption.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.indigo)
-            .disabled(libraryStore.isInWatchlist(result.item))
+            watchlistButton
 
-            NavigationLink(destination: ItemDetailView(item: result.item)) {
-                Text("Voir le détail")
-                    .font(.caption.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+            if result.trailerURL != nil {
+                iconButton(systemImage: "play.rectangle.fill", action: openTrailer)
             }
-            .buttonStyle(.bordered)
+
+            if result.watchWebURL != nil {
+                iconButton(systemImage: "arrow.up.forward.app.fill", action: openStreamingApp)
+            }
         }
     }
-}
 
-/// Anneau de progression animé (0 → matchScore%) affiché sur chaque carte résultat.
-private struct ScoreRing: View {
-    let score: Int
-    @State private var animatedProgress: CGFloat = 0
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.gray.opacity(0.2), lineWidth: 5)
-            Circle()
-                .trim(from: 0, to: animatedProgress)
-                .stroke(
-                    AngularGradient(colors: [.indigo, .pink], center: .center),
-                    style: StrokeStyle(lineWidth: 5, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-            Text("\(score)%")
-                .font(.caption2.weight(.bold))
-                .contentTransition(.numericText())
-        }
-        .frame(width: 46, height: 46)
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.9).delay(0.15)) {
-                animatedProgress = CGFloat(score) / 100
+    private var watchlistButton: some View {
+        let inWatchlist = libraryStore.isInWatchlist(result.item)
+        return Button {
+            isAddingToWatchlist = true
+            libraryStore.addToWatchlist(result.item)
+        } label: {
+            Group {
+                if isAddingToWatchlist && !inWatchlist {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Label(
+                        inWatchlist ? "Dans la watchlist" : "Ajouter",
+                        systemImage: inWatchlist ? "checkmark" : "bookmark"
+                    )
+                    .font(.caption.weight(.semibold))
+                }
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
         }
+        .buttonStyle(.borderedProminent)
+        .tint(.indigo)
+        .disabled(inWatchlist || isAddingToWatchlist)
+    }
+
+    private func iconButton(systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .frame(width: 20, height: 20)
+                .padding(8)
+        }
+        .buttonStyle(.bordered)
+        .tint(.indigo)
+    }
+
+    // MARK: - Actions
+
+    private func openTrailer() {
+        guard let appURL = result.trailerAppURL, let webURL = result.trailerURL else { return }
+        if UIApplication.shared.canOpenURL(appURL) {
+            UIApplication.shared.open(appURL)
+        } else {
+            openURL(webURL)
+        }
+    }
+
+    /// Ouvre l'app native de la plateforme si elle est installée (ex. Netflix via `nflx://`),
+    /// sinon retombe sur le site web du service.
+    private func openStreamingApp() {
+        for candidate in result.watchAppURLCandidates where UIApplication.shared.canOpenURL(candidate) {
+            UIApplication.shared.open(candidate)
+            return
+        }
+        guard let webURL = result.watchWebURL else { return }
+        openURL(webURL)
     }
 }
 
@@ -192,7 +235,9 @@ private struct ScoreRing: View {
                         releaseDate: "2014-01-01"
                     ),
                     matchScore: 92,
-                    reasons: ["SF / Fantastique", "2h+", "Disponible sur Netflix"]
+                    reasons: ["SF / Fantastique", "2h+", "Disponible sur Netflix"],
+                    trailerKey: "zSWdZVtXT7E",
+                    providerIDs: [8]
                 )
             ],
             onRestart: {}

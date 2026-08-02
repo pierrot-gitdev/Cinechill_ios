@@ -15,6 +15,15 @@
 			</array>
 		</dict>
 	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>youtube</string>
+		<string>nflx</string>
+		<string>aiv</string>
+		<string>disneyplus</string>
+		<string>max</string>
+		<string>hbomax</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 </dict>

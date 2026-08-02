@@ -31,7 +31,20 @@ nonisolated extension QuestionOption {
     }
 }
 
-// MARK: - Q1 · Genres (filtre)
+// MARK: - Q1 · Dessin animé ou film (filtre)
+
+nonisolated enum ContentFormat: String, QuestionOption {
+    case animated, liveAction
+
+    var label: String {
+        switch self {
+        case .animated: "Dessin animé"
+        case .liveAction: "Film"
+        }
+    }
+}
+
+// MARK: - Q2 · Genres (filtre)
 
 nonisolated enum Genre: String, QuestionOption {
     case action, comedy, drama, thriller, scifiFantasy, horror, romance, animation, documentary
@@ -51,7 +64,7 @@ nonisolated enum Genre: String, QuestionOption {
     }
 }
 
-// MARK: - Q3 · Avec qui (filtre)
+// MARK: - Q4 · Avec qui (filtre)
 
 nonisolated enum Audience: String, QuestionOption {
     case alone, couple, friends, family
@@ -66,7 +79,7 @@ nonisolated enum Audience: String, QuestionOption {
     }
 }
 
-// MARK: - Q4 · Ambiance (score)
+// MARK: - Q5 · Ambiance (score)
 
 nonisolated enum Mood: String, QuestionOption {
     case lightFun, intense, emotional, scary, escapist, thoughtful
@@ -83,7 +96,7 @@ nonisolated enum Mood: String, QuestionOption {
     }
 }
 
-// MARK: - Q5 · Origine (score)
+// MARK: - Q6 · Origine (score)
 
 nonisolated enum OriginPreference: String, QuestionOption {
     case french, international, any
@@ -97,7 +110,7 @@ nonisolated enum OriginPreference: String, QuestionOption {
     }
 }
 
-// MARK: - Q6 · État d'esprit (score, surprise)
+// MARK: - Q7 · État d'esprit (score, surprise)
 
 nonisolated enum Mindset: String, QuestionOption {
     case noThinking, beSurprised, seeMyself, learnSomething
@@ -112,7 +125,7 @@ nonisolated enum Mindset: String, QuestionOption {
     }
 }
 
-// MARK: - Q7 · Décrocheur (filtre, surprise)
+// MARK: - Q8 · Décrocheur (filtre, surprise)
 
 nonisolated enum Dealbreaker: String, QuestionOption {
     case slowPace, predictablePlot, tooLong, heavyMood
@@ -127,7 +140,7 @@ nonisolated enum Dealbreaker: String, QuestionOption {
     }
 }
 
-// MARK: - Q8 · Blockbuster ou pépite (score)
+// MARK: - Q9 · Blockbuster ou pépite (score)
 
 nonisolated enum PopularityPreference: String, QuestionOption {
     case mainstream, wellRatedKnown, hiddenGem, any
@@ -142,7 +155,7 @@ nonisolated enum PopularityPreference: String, QuestionOption {
     }
 }
 
-// MARK: - Q9 · Casting (score)
+// MARK: - Q10 · Casting (score)
 
 nonisolated enum CastPreference: String, QuestionOption {
     case familiarFaces, any, discovery
@@ -156,7 +169,7 @@ nonisolated enum CastPreference: String, QuestionOption {
     }
 }
 
-// MARK: - Q10 · Durée (score)
+// MARK: - Q11 · Durée (score)
 
 nonisolated enum RuntimePreference: String, QuestionOption {
     case short, medium, long, any
@@ -171,7 +184,7 @@ nonisolated enum RuntimePreference: String, QuestionOption {
     }
 }
 
-// MARK: - Q11 · Récent ou vintage (score)
+// MARK: - Q12 · Récent ou vintage (score)
 
 nonisolated enum EraPreference: String, QuestionOption {
     case thisYear, lastFiveYears, any, cultClassic
@@ -189,8 +202,9 @@ nonisolated enum EraPreference: String, QuestionOption {
 /// Réponses collectées au fil du quiz CinéMatch. Sérialisé tel quel vers `getRecommendations` —
 /// tout le mapping vers les paramètres TMDB (with_genres, mots-clés, seuils…) est fait côté backend.
 nonisolated struct QuestionnaireAnswers: Equatable, Sendable {
-    static let maxGenres = 3
+    static let maxGenres = 2
 
+    var contentFormat: ContentFormat?
     var genres: Set<Genre> = []
     var platformIDs: Set<String> = []
     var audience: Audience?

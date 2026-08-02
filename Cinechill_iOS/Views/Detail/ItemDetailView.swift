@@ -295,7 +295,14 @@ struct ItemDetailView: View {
         }
     }
 
+    /// Ouvre l'app native de la plateforme si elle est installée (ex. Netflix via `nflx://`),
+    /// sinon retombe sur le site web du service.
     private func openProvider(_ provider: TMDBDetailWatchProviderItem) {
+        for candidate in StreamingProviderLink.appURLs(forProviderID: provider.providerID, title: displayItem.title)
+        where UIApplication.shared.canOpenURL(candidate) {
+            UIApplication.shared.open(candidate)
+            return
+        }
         guard let url = provider.webURL else { return }
         openURL(url)
     }
