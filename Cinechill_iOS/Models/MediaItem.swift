@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct MediaItem: Identifiable, Hashable, Sendable {
+nonisolated struct MediaItem: Identifiable, Hashable, Sendable {
     var id: String { "\(mediaType.rawValue)-\(tmdbId)" }
 
     let tmdbId: Int

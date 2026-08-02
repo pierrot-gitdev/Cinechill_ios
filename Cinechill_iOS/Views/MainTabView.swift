@@ -7,12 +7,17 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var homeModel: HomeViewModel
+    @State private var questionnaireModel: QuestionnaireViewModel
     @State private var selectedTab = 0
 
     init() {
         let client = BackendPopularClient()
         _homeModel = State(initialValue: HomeViewModel(
             repository: PopularRepository(client: client),
+            metadataClient: client
+        ))
+        _questionnaireModel = State(initialValue: QuestionnaireViewModel(
+            recommendationClient: BackendRecommendationClient(),
             metadataClient: client
         ))
     }
@@ -36,6 +41,12 @@ struct MainTabView: View {
                     Label("Watchlist", systemImage: "bookmark.fill")
                 }
                 .tag(2)
+
+            QuestionnaireView(viewModel: questionnaireModel)
+                .tabItem {
+                    Label("CinéMatch", systemImage: "sparkles")
+                }
+                .tag(3)
         }
     }
 }

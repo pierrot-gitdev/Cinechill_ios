@@ -41,7 +41,7 @@ final class HomeViewModel {
             await preloadBrowsePosters()
 
             let providers = try await providersTask
-            availablePlatforms = curatedPlatforms(from: providers)
+            availablePlatforms = StreamingPlatform.curated(from: providers)
         } catch {
             if error is CancellationError { return }
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -111,53 +111,4 @@ final class HomeViewModel {
         browsePosterByGenreID = collected
     }
 
-    private func curatedPlatforms(from providers: [TMDBWatchProvider]) -> [StreamingPlatform] {
-        struct PlatformRule {
-            let displayName: String
-            let aliases: [String]
-        }
-
-        let rules: [PlatformRule] = [
-            PlatformRule(displayName: "Netflix", aliases: ["netflix"]),
-            PlatformRule(displayName: "Prime Video", aliases: ["primevideo", "amazonprimevideo"]),
-            PlatformRule(displayName: "Disney +", aliases: ["disneyplus", "disney+"]),
-            PlatformRule(displayName: "Pathé Home", aliases: ["pathehome", "pathéhome"]),
-            PlatformRule(displayName: "Canal +", aliases: ["canal+", "canalplus"]),
-            PlatformRule(displayName: "Apple TV", aliases: ["appletv", "appletvplus"]),
-            PlatformRule(displayName: "HBO Max", aliases: ["hbomax", "max"]),
-            PlatformRule(displayName: "Paramount +", aliases: ["paramount+", "paramountplus"]),
-            PlatformRule(displayName: "Arte", aliases: ["arte"]),
-            PlatformRule(displayName: "TF1", aliases: ["tf1plus"]),
-            PlatformRule(displayName: "Molotov TV", aliases: ["molotovtv", "molotov"])
-        ]
-
-        let normalizedProviders = providers.map { provider in
-            (provider, normalize(provider.providerName))
-        }
-
-        var curated: [StreamingPlatform] = []
-        for rule in rules {
-            let ruleAliases = Set(rule.aliases.map(normalize))
-            if let matched = normalizedProviders.first(where: { _, normalizedName in
-                ruleAliases.contains(normalizedName)
-            })?.0 {
-                curated.append(
-                    StreamingPlatform(
-                        id: String(matched.providerID),
-                        providerID: matched.providerID,
-                        name: rule.displayName,
-                        logoPath: matched.logoPath
-                    )
-                )
-            }
-        }
-
-        return curated
-    }
-
-    private func normalize(_ raw: String) -> String {
-        raw
-            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
-            .replacingOccurrences(of: "[^a-z0-9+]", with: "", options: .regularExpression)
-    }
 }
