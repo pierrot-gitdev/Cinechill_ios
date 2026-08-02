@@ -27,7 +27,7 @@ struct Cinechill_iOSApp: App {
         WindowGroup {
             Group {
                 if authService.isInitializing {
-                    ProgressView("Initialisation…")
+                    SplashView()
                 } else if authService.isAuthenticated {
                     MainTabView()
                 } else {

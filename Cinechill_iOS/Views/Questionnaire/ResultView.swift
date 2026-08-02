@@ -167,8 +167,7 @@ private struct ResultCardView: View {
         } label: {
             Group {
                 if isAddingToWatchlist && !inWatchlist {
-                    ProgressView()
-                        .tint(.white)
+                    GradientSpinner(size: 16, lineWidth: 2)
                 } else {
                     Label(
                         inWatchlist ? "Dans la watchlist" : "Ajouter",

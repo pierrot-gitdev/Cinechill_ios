@@ -80,17 +80,9 @@ struct QuestionCardView: View {
                     Capsule().stroke(selected ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)
                 )
         }
-        .buttonStyle(ChipButtonStyle())
+        .buttonStyle(PressableScaleStyle())
         .sensoryFeedback(.selection, trigger: selected)
         .animation(.spring(response: 0.3, dampingFraction: 0.65), value: selected)
-    }
-}
-
-private struct ChipButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
     }
 }
 

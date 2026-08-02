@@ -89,18 +89,44 @@ struct ProfileView: View {
     // MARK: - Profile Header
 
     private var profileHeader: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 18) {
             avatarView
-                .frame(width: 84, height: 84)
+                .frame(width: 96, height: 96)
                 .clipShape(Circle())
-                .overlay(Circle().strokeBorder(Color(.systemGray4), lineWidth: 2))
+                .overlay(
+                    Circle().strokeBorder(
+                        LinearGradient(colors: [.indigo, .pink], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        lineWidth: 3
+                    )
+                )
+                .shadow(color: .indigo.opacity(0.25), radius: 18, y: 10)
 
             Text(profileStore.displayName)
-                .font(.title2.weight(.bold))
+                .font(.system(size: 25, weight: .bold, design: .rounded))
 
             statsRow
         }
-        .padding(.top, 8)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 28)
+        .padding(.horizontal, 20)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [.indigo.opacity(0.10), .pink.opacity(0.06)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 20, y: 10)
     }
 
     @ViewBuilder
@@ -127,17 +153,21 @@ struct ProfileView: View {
 
     private var statsRow: some View {
         HStack(spacing: 0) {
-            statItem(value: "0", label: "Following")
+            statItem(value: libraryStore.galleryItems.count, label: "Vus")
             Divider().frame(height: 28)
-            statItem(value: "0", label: "Followers")
+            statItem(value: libraryStore.watchlistItems.count, label: "À voir")
             Divider().frame(height: 28)
-            statItem(value: "0", label: "Cinechill")
+            statItem(value: libraryStore.preferredPlatformIDs.count, label: "Plateformes")
         }
     }
 
-    private func statItem(value: String, label: String) -> some View {
+    private func statItem(value: Int, label: String) -> some View {
         VStack(spacing: 3) {
-            Text(value).font(.headline.weight(.bold))
+            Text("\(value)")
+                .font(.system(size: 19, weight: .bold, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(colors: [.indigo, .pink], startPoint: .leading, endPoint: .trailing)
+                )
             Text(label).font(.caption).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)

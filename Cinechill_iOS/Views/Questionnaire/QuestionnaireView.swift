@@ -98,7 +98,7 @@ struct QuestionnaireView: View {
                 )
                 .shadow(color: .indigo.opacity(0.3), radius: 16, y: 8)
             }
-            .buttonStyle(ChipPressStyle())
+            .buttonStyle(PressableScaleStyle(scale: 0.97))
             .padding(.horizontal, 40)
             Spacer()
             Spacer()
@@ -277,7 +277,7 @@ struct QuestionnaireView: View {
             }
             .shadow(color: viewModel.canAdvance ? .indigo.opacity(0.3) : .clear, radius: 16, y: 8)
         }
-        .buttonStyle(ChipPressStyle())
+        .buttonStyle(PressableScaleStyle(scale: 0.97))
         .disabled(!viewModel.canAdvance)
         .padding()
     }
@@ -341,13 +341,6 @@ struct QuestionnaireView: View {
     }
 }
 
-private struct ChipPressStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
-    }
-}
 
 /// État "les résultats se compilent" : bobine de film qui tourne devant un halo de projecteur,
 /// bande perforée qui défile en dessous, et des messages à thème cinéma — plus évocateur qu'un

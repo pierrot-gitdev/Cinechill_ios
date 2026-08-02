@@ -39,16 +39,23 @@ struct AppHeaderView: View {
                         .resizable()
                         .scaledToFit()
                 } else {
-                    Image(systemName: "film.stack")
-                        .font(.title)
-                        .foregroundStyle(.primary)
+                    ZStack {
+                        LinearGradient(colors: [.indigo, .pink], startPoint: .topLeading, endPoint: .bottomTrailing)
+                        Image(systemName: "popcorn.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
                 }
             }
             .frame(width: 40, height: 40)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+            )
 
             Text("Cinéchill")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.system(size: 19, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
         }
     }
@@ -72,9 +79,13 @@ struct AppHeaderView: View {
             Image("notification")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 26, height: 26)
+                .frame(width: 19, height: 19)
                 .opacity(showNotifications ? 0.5 : 1)
+                .padding(10)
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 1))
         }
+        .buttonStyle(PressableScaleStyle(scale: 0.92))
     }
 
     // MARK: - Profile
@@ -82,10 +93,16 @@ struct AppHeaderView: View {
     private var profileButton: some View {
         Button(action: onProfileTap) {
             avatarImage
-                .frame(width: 40, height: 40)
+                .frame(width: 38, height: 38)
                 .clipShape(Circle())
-                .overlay(Circle().strokeBorder(Color(.systemGray4), lineWidth: 1))
+                .overlay(
+                    Circle().strokeBorder(
+                        LinearGradient(colors: [.indigo, .pink], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        lineWidth: 1.5
+                    )
+                )
         }
+        .buttonStyle(PressableScaleStyle(scale: 0.92))
     }
 
     @ViewBuilder
@@ -127,13 +144,15 @@ struct AppHeaderView: View {
                 }
             }
 
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 Image("notification")
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 40, height: 40)
+                    .frame(width: 26, height: 26)
                     .foregroundStyle(Color(.systemGray3))
+                    .padding(16)
+                    .background(Color(.tertiarySystemFill), in: Circle())
                 Text("Aucune notification")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
