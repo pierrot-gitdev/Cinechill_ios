@@ -18,7 +18,7 @@ nonisolated struct ChipOption: Identifiable, Hashable, Sendable {
 /// Marqué `nonisolated` (comme chaque type conforme) car le projet a `SWIFT_DEFAULT_ACTOR_ISOLATION
 /// = MainActor` : sans ça, ces types de données purs hériteraient de l'isolation MainActor et ne
 /// pourraient plus satisfaire `Sendable`, requis pour traverser les frontières d'acteurs (ex.
-/// `RecommendationClient.fetchRecommendations`, appelé hors MainActor).
+/// `BackendRecommendationClient`, appelé hors MainActor).
 nonisolated protocol QuestionOption: CaseIterable, Hashable, Identifiable, RawRepresentable, Sendable where RawValue == String {
     var label: String { get }
 }
@@ -199,6 +199,54 @@ nonisolated enum EraPreference: String, QuestionOption {
     }
 }
 
+// MARK: - Nuances par genre (score) — seulement posées si le genre correspondant a été choisi
+
+nonisolated enum HorrorFlavor: String, QuestionOption {
+    case suspense, visceral
+
+    var label: String {
+        switch self {
+        case .suspense: "Tension qui monte"
+        case .visceral: "Sensations fortes"
+        }
+    }
+}
+
+nonisolated enum ComedyFlavor: String, QuestionOption {
+    case family, edgy
+
+    var label: String {
+        switch self {
+        case .family: "Familiale et bienveillante"
+        case .edgy: "Plus corrosive"
+        }
+    }
+}
+
+nonisolated enum DramaFlavor: String, QuestionOption {
+    case social, intimate
+
+    var label: String {
+        switch self {
+        case .social: "Grande fresque"
+        case .intimate: "Histoire intime"
+        }
+    }
+}
+
+// MARK: - Question projective (score)
+
+nonisolated enum CognitiveMode: String, QuestionOption {
+    case understand, feel
+
+    var label: String {
+        switch self {
+        case .understand: "Comprendre"
+        case .feel: "Ressentir"
+        }
+    }
+}
+
 /// Réponses collectées au fil du quiz CinéMatch. Sérialisé tel quel vers `getRecommendations` —
 /// tout le mapping vers les paramètres TMDB (with_genres, mots-clés, seuils…) est fait côté backend.
 nonisolated struct QuestionnaireAnswers: Equatable, Sendable {
@@ -216,4 +264,19 @@ nonisolated struct QuestionnaireAnswers: Equatable, Sendable {
     var cast: CastPreference = .any
     var runtime: RuntimePreference = .any
     var era: EraPreference = .any
+    var horrorFlavor: HorrorFlavor?
+    var comedyFlavor: ComedyFlavor?
+    var dramaFlavor: DramaFlavor?
+    var cognitiveMode: CognitiveMode?
+
+    /// 0 = valeurs sûres, 1 = surprise totale. Curseur continu plutôt qu'un choix à puces — voir
+    /// `IntensitySliderView` — pour capturer une intensité plutôt qu'une catégorie.
+    var surpriseIntensity: Double = 0.5
+
+    /// Alimentés par les comparaisons directes entre affiches (voir `PairwiseComparisonView`) et
+    /// par l'élimination (voir `EliminationView`) — les genres des films choisis/écartés, agrégés
+    /// au fil du quiz. Contribue un léger boost/malus au score final côté backend, en plus (pas en
+    /// remplacement) de `mood`.
+    var preferredGenreIDs: Set<Int> = []
+    var avoidedGenreIDs: Set<Int> = []
 }

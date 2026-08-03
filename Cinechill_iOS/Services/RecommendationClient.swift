@@ -35,20 +35,60 @@ enum RecommendationClientError: LocalizedError {
     }
 }
 
-protocol RecommendationFetching: Sendable {
-    func fetchRecommendations(for answers: QuestionnaireAnswers) async throws -> [RecommendationResult]
+nonisolated struct CandidatePoolResponse: Sendable {
+    let candidates: [CandidateRow]
+    let notice: String?
 }
 
-/// Appelle la Cloud Function `getrecommendations` : filtres durs, pool multi-tri, scoring pondéré,
-/// exploration et diversité sont calculés côté serveur (voir la spec CinéMatch). Jamais mis en
-/// cache disque, contrairement à `BackendPopularClient` — le but est justement d'éviter de
-/// retomber toujours sur la même réponse.
+/// Les trois appels du moteur de préférence actif (voir la spec "moteur de préférence actif") —
+/// remplacent l'ancien `fetchRecommendations` unique. Le pool circule dans les deux sens en JSON
+/// brut plutôt que d'être re-dérivé côté serveur, pour que le client puisse le réduire localement
+/// entre chaque appel sans repayer un aller-retour réseau par question.
+protocol RecommendationFetching: Sendable {
+    func fetchCandidatePool(trunk: QuestionnaireAnswers) async throws -> CandidatePoolResponse
+    func enrichCandidates(_ candidates: [CandidateRow]) async throws -> [EnrichedCandidateRow]
+    func finalizeRecommendations(
+        answers: QuestionnaireAnswers, candidates: [EnrichedCandidateRow]
+    ) async throws -> [RecommendationResult]
+}
+
 nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable {
-    func fetchRecommendations(for answers: QuestionnaireAnswers) async throws -> [RecommendationResult] {
+    func fetchCandidatePool(trunk: QuestionnaireAnswers) async throws -> CandidatePoolResponse {
+        let data = try await post(to: APIEndpoints.candidatePool(), body: Self.requestBody(for: trunk))
+        let decoded = try decode(CandidatePoolResponseDTO.self, from: data)
+        return CandidatePoolResponse(
+            candidates: decoded.candidates.map(\.candidateRow),
+            notice: decoded.notice
+        )
+    }
+
+    func enrichCandidates(_ candidates: [CandidateRow]) async throws -> [EnrichedCandidateRow] {
+        guard !candidates.isEmpty else { return [] }
+        let data = try await post(to: APIEndpoints.enrichCandidates(), body: [
+            "candidates": candidates.map(\.jsonPayload),
+        ])
+        let decoded = try decode(EnrichCandidatesResponseDTO.self, from: data)
+        return decoded.candidates
+    }
+
+    func finalizeRecommendations(
+        answers: QuestionnaireAnswers, candidates: [EnrichedCandidateRow]
+    ) async throws -> [RecommendationResult] {
+        let data = try await post(to: APIEndpoints.finalizeRecommendations(), body: [
+            "answers": Self.requestBody(for: answers),
+            "candidates": candidates.map(\.jsonPayload),
+        ])
+        let decoded = try decode(FinalizeResponseDTO.self, from: data)
+        return decoded.results.map(\.recommendationResult)
+    }
+
+    // MARK: - Wire helpers
+
+    private func post(to url: URL?, body: [String: Any]) async throws -> Data {
         guard BackendConfiguration.baseURL != nil else {
             throw RecommendationClientError.missingBaseURL
         }
-        guard let url = APIEndpoints.recommendations() else {
+        guard let url else {
             throw RecommendationClientError.invalidURL
         }
         guard let user = Auth.auth().currentUser else {
@@ -61,7 +101,7 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.httpBody = try JSONSerialization.data(withJSONObject: Self.requestBody(for: answers))
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let data: Data
         let response: URLResponse
@@ -80,18 +120,22 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
         guard (200...299).contains(http.statusCode) else {
             throw RecommendationClientError.httpStatus(code: http.statusCode, message: String(data: data, encoding: .utf8))
         }
+        return data
+    }
 
+    private func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
         do {
-            let decoded = try JSONDecoder().decode(RecommendationsResponseDTO.self, from: data)
-            return decoded.results.map(\.recommendationResult)
+            return try JSONDecoder().decode(T.self, from: data)
         } catch {
             let body = String(data: data, encoding: .utf8) ?? "<body non lisible>"
-            throw RecommendationClientError.decoding(message: "URL: \(url.absoluteString) · Réponse: \(body)")
+            throw RecommendationClientError.decoding(message: "\(error) · Réponse: \(body)")
         }
     }
 
-    /// Contrat attendu par `getrecommendations` — tout le mapping vers les paramètres TMDB
+    /// Contrat attendu côté backend — tout le mapping vers les paramètres TMDB
     /// (with_genres, with_watch_providers, mots-clés…) est fait côté Cloud Function.
+    /// Réutilisé pour le socle (T1-T4, champs restants à leurs valeurs par défaut) comme pour
+    /// l'ensemble des réponses collectées à la finalisation.
     static func requestBody(for answers: QuestionnaireAnswers) -> [String: Any] {
         [
             "contentFormat": answers.contentFormat?.rawValue as Any,
@@ -106,16 +150,69 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
             "popularity": answers.popularity.rawValue,
             "cast": answers.cast.rawValue,
             "runtime": answers.runtime.rawValue,
-            "era": answers.era.rawValue
+            "era": answers.era.rawValue,
+            "surpriseIntensity": answers.surpriseIntensity,
+            "preferredGenreIds": Array(answers.preferredGenreIDs),
+            "avoidedGenreIds": Array(answers.avoidedGenreIDs),
         ]
     }
 }
 
-nonisolated private struct RecommendationsResponseDTO: Decodable, Sendable {
+// MARK: - DTOs
+
+private struct CandidatePoolResponseDTO: Decodable, Sendable {
+    let candidates: [CandidateRowDTO]
+    let notice: String?
+}
+
+private struct EnrichCandidatesResponseDTO: Decodable, Sendable {
+    let candidates: [EnrichedCandidateRow]
+}
+
+private struct CandidateRowDTO: Decodable, Sendable {
+    let id: Int
+    let title: String?
+    let overview: String?
+    let posterPath: String?
+    let voteAverage: Double?
+    let voteCount: Int?
+    let popularity: Double?
+    let genreIds: [Int]?
+    let releaseDate: String?
+    let originCountry: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, overview
+        case posterPath = "poster_path"
+        case voteAverage = "vote_average"
+        case voteCount = "vote_count"
+        case popularity
+        case genreIds = "genre_ids"
+        case releaseDate = "release_date"
+        case originCountry = "origin_country"
+    }
+
+    var candidateRow: CandidateRow {
+        CandidateRow(
+            id: id,
+            title: title,
+            overview: overview,
+            posterPath: posterPath,
+            voteAverage: voteAverage,
+            voteCount: voteCount,
+            popularity: popularity,
+            genreIds: genreIds ?? [],
+            releaseDate: releaseDate,
+            originCountry: originCountry ?? []
+        )
+    }
+}
+
+private struct FinalizeResponseDTO: Decodable, Sendable {
     let results: [RecommendationRow]
 }
 
-nonisolated private struct RecommendationRow: Decodable, Sendable {
+private struct RecommendationRow: Decodable, Sendable {
     let id: Int
     let title: String
     let posterPath: String?

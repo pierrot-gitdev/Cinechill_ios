@@ -40,9 +40,19 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "setmediastatus", queryItems: [])
     }
 
-    static func recommendations() -> URL? {
+    static func candidatePool() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
-        return buildURL(baseURL: baseURL, functionName: "getrecommendations", queryItems: [])
+        return buildURL(baseURL: baseURL, functionName: "getcandidatepool", queryItems: [])
+    }
+
+    static func enrichCandidates() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "enrichcandidates", queryItems: [])
+    }
+
+    static func finalizeRecommendations() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "finalizerecommendations", queryItems: [])
     }
 
     private static func buildURL(baseURL: URL, functionName: String, queryItems: [URLQueryItem]) -> URL? {

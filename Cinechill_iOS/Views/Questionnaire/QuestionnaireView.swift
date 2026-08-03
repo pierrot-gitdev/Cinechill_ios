@@ -44,10 +44,22 @@ struct QuestionnaireView: View {
         switch viewModel.phase {
         case .intro:
             introView
-        case .question:
-            questionFlow
-        case .loading:
-            loadingView
+        case .trunk:
+            trunkFlow
+        case .poolLoading:
+            LoadingAnimationView(messages: [
+                "On regarde ce qui correspond à vos premiers critères…",
+                "On prépare un pool de films sur mesure…",
+            ])
+        case .tier1, .tier2:
+            adaptiveFlow
+        case .enriching:
+            LoadingAnimationView(messages: [
+                "On affine — on regarde ces films de plus près…",
+                "Durée, casting, bande-annonce… on creuse les meilleurs candidats.",
+            ])
+        case .finalizing:
+            LoadingAnimationView()
         case .results:
             ResultView(results: viewModel.results, onRestart: { viewModel.restart() })
         case .error(let message):
@@ -106,16 +118,16 @@ struct QuestionnaireView: View {
         .padding()
     }
 
-    // MARK: - Question flow
+    // MARK: - Socle (T1-T4)
 
-    private var questionFlow: some View {
+    private var trunkFlow: some View {
         VStack(spacing: 0) {
-            progressHeader
+            trunkProgressHeader
             ScrollView {
-                questionCard(for: viewModel.currentStep)
+                trunkQuestionCard(for: viewModel.currentTrunkStep)
                     .padding(.horizontal)
                     .padding(.top, 24)
-                    .id(viewModel.currentStep)
+                    .id(viewModel.currentTrunkStep)
                     .transition(
                         .asymmetric(
                             insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -123,56 +135,56 @@ struct QuestionnaireView: View {
                         )
                     )
             }
-            navigationBar
+            trunkNavigationBar
         }
-        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: viewModel.stepIndex)
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: viewModel.trunkIndex)
     }
 
-    private var progressHeader: some View {
+    private var trunkProgressHeader: some View {
         VStack(spacing: 12) {
             HStack {
                 Button {
-                    if viewModel.isFirstStep {
+                    if viewModel.isFirstTrunkStep {
                         viewModel.restart()
                     } else {
-                        viewModel.goBack()
+                        viewModel.goBackTrunk()
                     }
                 } label: {
-                    Image(systemName: viewModel.isFirstStep ? "xmark" : "chevron.left")
+                    Image(systemName: viewModel.isFirstTrunkStep ? "xmark" : "chevron.left")
                         .font(.body.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .frame(width: 32, height: 32)
                         .background(.ultraThinMaterial, in: Circle())
                 }
                 Spacer()
-                Text("\(viewModel.stepIndex + 1) / \(viewModel.steps.count)")
+                Text("\(viewModel.trunkIndex + 1) / 4")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
-            stepDots
+            trunkStepDots
         }
         .padding(.horizontal)
         .padding(.top, 8)
     }
 
-    /// Indicateur de progression en pastilles plutôt qu'une simple barre — chaque question
-    /// franchie se voit distinctement, avec la question courante mise en avant.
-    private var stepDots: some View {
+    /// Indicateur de progression en pastilles — le socle a un total connu (4), contrairement à
+    /// la phase adaptative qui suit (voir `adaptiveProgressHeader`).
+    private var trunkStepDots: some View {
         HStack(spacing: 5) {
-            ForEach(viewModel.steps, id: \.self) { step in
+            ForEach(0..<4, id: \.self) { index in
                 Capsule()
-                    .fill(dotColor(for: step))
-                    .frame(width: step == viewModel.currentStep ? 20 : 6, height: 6)
+                    .fill(trunkDotColor(for: index))
+                    .frame(width: index == viewModel.trunkIndex ? 20 : 6, height: 6)
             }
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.stepIndex)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.trunkIndex)
     }
 
-    private func dotColor(for step: QuestionStep) -> AnyShapeStyle {
-        if step.rawValue < viewModel.stepIndex {
+    private func trunkDotColor(for index: Int) -> AnyShapeStyle {
+        if index < viewModel.trunkIndex {
             return AnyShapeStyle(Color.indigo)
-        } else if step == viewModel.currentStep {
+        } else if index == viewModel.trunkIndex {
             return AnyShapeStyle(LinearGradient(colors: [.indigo, .pink], startPoint: .leading, endPoint: .trailing))
         } else {
             return AnyShapeStyle(Color.gray.opacity(0.25))
@@ -180,7 +192,7 @@ struct QuestionnaireView: View {
     }
 
     @ViewBuilder
-    private func questionCard(for step: QuestionStep) -> some View {
+    private func trunkQuestionCard(for step: QuestionStep) -> some View {
         switch step {
         case .contentFormat:
             singleSelectCard(step: step, options: ContentFormat.chipOptions, current: viewModel.answers.contentFormat) { id in
@@ -206,10 +218,119 @@ struct QuestionnaireView: View {
             singleSelectCard(step: step, options: Audience.chipOptions, current: viewModel.answers.audience) { id in
                 if let value = Audience(rawValue: id) { viewModel.select(value, in: \.audience) }
             }
-        case .mood:
-            singleSelectCard(step: step, options: Mood.chipOptions, current: viewModel.answers.mood) { id in
-                if let value = Mood(rawValue: id) { viewModel.select(value, in: \.mood) }
+        default:
+            EmptyView()
+        }
+    }
+
+    private var trunkNavigationBar: some View {
+        Button {
+            viewModel.goNextTrunk()
+        } label: {
+            HStack(spacing: 8) {
+                Text("Suivant")
+                    .font(.headline)
+                Image(systemName: "arrow.right")
+                    .font(.subheadline.weight(.bold))
             }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background {
+                Capsule().fill(
+                    viewModel.canAdvanceTrunk ?
+                        LinearGradient(colors: [.indigo, .pink], startPoint: .leading, endPoint: .trailing) :
+                        LinearGradient(colors: [.gray.opacity(0.35)], startPoint: .leading, endPoint: .trailing)
+                )
+            }
+            .shadow(color: viewModel.canAdvanceTrunk ? .indigo.opacity(0.3) : .clear, radius: 16, y: 8)
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.97))
+        .disabled(!viewModel.canAdvanceTrunk)
+        .padding()
+    }
+
+    private func singleSelectCard<T: QuestionOption>(
+        step: QuestionStep,
+        options: [ChipOption],
+        current: T?,
+        onSelect: @escaping (String) -> Void
+    ) -> some View {
+        QuestionCardView(
+            step: step,
+            options: options,
+            selectedIDs: current.map { [$0.rawValue] } ?? [],
+            onToggle: onSelect
+        )
+    }
+
+    // MARK: - Phase adaptative (tier 1 / tier 2)
+
+    private var adaptiveFlow: some View {
+        VStack(spacing: 0) {
+            adaptiveProgressHeader
+            ScrollView {
+                Group {
+                    if let options = viewModel.pairwiseOptions {
+                        PairwiseComparisonView(optionA: options.0, optionB: options.1) { winner, loser in
+                            viewModel.recordPairwiseChoice(winner: winner, loser: loser)
+                        }
+                    } else if let options = viewModel.eliminationOptions {
+                        EliminationView(options: options) { loser in
+                            viewModel.recordElimination(loser: loser)
+                        }
+                    } else if let dimension = viewModel.currentDimension {
+                        adaptiveQuestionCard(for: dimension)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top, 24)
+                .id(viewModel.currentDimension)
+                .transition(
+                    .asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    )
+                )
+            }
+            adaptiveNavigationBar
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: viewModel.currentDimension)
+    }
+
+    private var adaptiveProgressHeader: some View {
+        HStack {
+            Button {
+                if viewModel.canGoBackAdaptive {
+                    viewModel.goBackAdaptive()
+                } else {
+                    viewModel.restart()
+                }
+            } label: {
+                Image(systemName: viewModel.canGoBackAdaptive ? "chevron.left" : "xmark")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 32, height: 32)
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+            Spacer()
+            Text("Question \(viewModel.questionsAskedCount + 1)")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .padding(.horizontal)
+        .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private func adaptiveQuestionCard(for dimension: AdaptiveDimension) -> some View {
+        let step = dimension.questionStep
+        switch dimension {
+        case .mood:
+            EmptyView() // Toujours présentée en comparaison directe — voir `pairwiseOptions`.
+        case .elimination:
+            EmptyView() // Toujours présentée en grille d'élimination — voir `eliminationOptions`.
         case .origin:
             singleSelectCard(step: step, options: OriginPreference.chipOptions, current: viewModel.answers.origin) { id in
                 if let value = OriginPreference(rawValue: id) { viewModel.select(value, in: \.origin) }
@@ -238,54 +359,74 @@ struct QuestionnaireView: View {
             singleSelectCard(step: step, options: EraPreference.chipOptions, current: viewModel.answers.era) { id in
                 if let value = EraPreference(rawValue: id) { viewModel.select(value, in: \.era) }
             }
+        case .horrorFlavor:
+            singleSelectCard(step: step, options: HorrorFlavor.chipOptions, current: viewModel.answers.horrorFlavor) { id in
+                if let value = HorrorFlavor(rawValue: id) { viewModel.select(value, in: \.horrorFlavor) }
+            }
+        case .comedyFlavor:
+            singleSelectCard(step: step, options: ComedyFlavor.chipOptions, current: viewModel.answers.comedyFlavor) { id in
+                if let value = ComedyFlavor(rawValue: id) { viewModel.select(value, in: \.comedyFlavor) }
+            }
+        case .dramaFlavor:
+            singleSelectCard(step: step, options: DramaFlavor.chipOptions, current: viewModel.answers.dramaFlavor) { id in
+                if let value = DramaFlavor(rawValue: id) { viewModel.select(value, in: \.dramaFlavor) }
+            }
+        case .cognitiveMode:
+            singleSelectCard(step: step, options: CognitiveMode.chipOptions, current: viewModel.answers.cognitiveMode) { id in
+                if let value = CognitiveMode(rawValue: id) { viewModel.select(value, in: \.cognitiveMode) }
+            }
+        case .surpriseIntensity:
+            IntensitySliderView(value: Binding(
+                get: { viewModel.answers.surpriseIntensity },
+                set: { viewModel.answers.surpriseIntensity = $0 }
+            ))
         }
     }
 
-    private func singleSelectCard<T: QuestionOption>(
-        step: QuestionStep,
-        options: [ChipOption],
-        current: T?,
-        onSelect: @escaping (String) -> Void
-    ) -> some View {
-        QuestionCardView(
-            step: step,
-            options: options,
-            selectedIDs: current.map { [$0.rawValue] } ?? [],
-            onToggle: onSelect
-        )
-    }
+    /// Le "Suivant" ne s'affiche que pour les chips classiques — la comparaison directe avance
+    /// d'elle-même au tap. "Voir mes films maintenant" reste toujours accessible en dessous : c'est
+    /// elle qui porte le compromis "plus de questions = plus précis, mais vous décidez où vous
+    /// arrêter" (voir la spec).
+    private var adaptiveNavigationBar: some View {
+        VStack(spacing: 10) {
+            if viewModel.pairwiseOptions == nil && viewModel.eliminationOptions == nil {
+                Button {
+                    viewModel.goNextAdaptive()
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Suivant")
+                            .font(.headline)
+                        Image(systemName: "arrow.right")
+                            .font(.subheadline.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background {
+                        Capsule().fill(
+                            viewModel.canAdvanceAdaptive ?
+                                LinearGradient(colors: [.indigo, .pink], startPoint: .leading, endPoint: .trailing) :
+                                LinearGradient(colors: [.gray.opacity(0.35)], startPoint: .leading, endPoint: .trailing)
+                        )
+                    }
+                    .shadow(color: viewModel.canAdvanceAdaptive ? .indigo.opacity(0.3) : .clear, radius: 16, y: 8)
+                }
+                .buttonStyle(PressableScaleStyle(scale: 0.97))
+                .disabled(!viewModel.canAdvanceAdaptive)
+            }
 
-    private var navigationBar: some View {
-        Button {
-            viewModel.goNext()
-        } label: {
-            HStack(spacing: 8) {
-                Text(viewModel.isLastStep ? "Voir mes films" : "Suivant")
-                    .font(.headline)
-                Image(systemName: viewModel.isLastStep ? "sparkles" : "arrow.right")
-                    .font(.subheadline.weight(.bold))
+            Button {
+                viewModel.finishNow()
+            } label: {
+                Text("Voir mes films maintenant")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.indigo)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
             }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background {
-                Capsule().fill(
-                    viewModel.canAdvance ?
-                        LinearGradient(colors: [.indigo, .pink], startPoint: .leading, endPoint: .trailing) :
-                        LinearGradient(colors: [.gray.opacity(0.35)], startPoint: .leading, endPoint: .trailing)
-                )
-            }
-            .shadow(color: viewModel.canAdvance ? .indigo.opacity(0.3) : .clear, radius: 16, y: 8)
+            .buttonStyle(.plain)
         }
-        .buttonStyle(PressableScaleStyle(scale: 0.97))
-        .disabled(!viewModel.canAdvance)
         .padding()
-    }
-
-    // MARK: - Loading
-
-    private var loadingView: some View {
-        LoadingAnimationView()
     }
 
     // MARK: - Error
@@ -312,13 +453,14 @@ struct QuestionnaireView: View {
 
     // MARK: - Background
 
-    /// Le fond dérive subtilement vers la couleur de l'ambiance choisie (Q4) une fois répondue —
-    /// signature visuelle du quiz décrite dans la spec (section Design & UX).
+    /// Un léger halo de marque (indigo/rose) dès que le quiz est en cours — l'ambiance ne se
+    /// choisit plus par chip (voir `PairwiseComparisonView`), donc plus de teinte dynamique par
+    /// mood ; on garde un fond identifiable pendant tout le parcours plutôt qu'une valeur figée.
     private var backgroundGradient: some View {
         Group {
-            if let mood = viewModel.answers.mood, viewModel.phase == .question || viewModel.phase == .loading {
+            if viewModel.phase != .intro && viewModel.phase != .results {
                 LinearGradient(
-                    colors: [moodColor(mood).opacity(0.18), Color(.systemBackground)],
+                    colors: [Color.indigo.opacity(0.08), Color(.systemBackground)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -326,18 +468,7 @@ struct QuestionnaireView: View {
                 Color(.systemBackground)
             }
         }
-        .animation(.easeInOut(duration: 0.6), value: viewModel.answers.mood)
-    }
-
-    private func moodColor(_ mood: Mood) -> Color {
-        switch mood {
-        case .lightFun: .yellow
-        case .intense: .red
-        case .emotional: .blue
-        case .scary: .purple
-        case .escapist: .teal
-        case .thoughtful: .indigo
-        }
+        .animation(.easeInOut(duration: 0.6), value: viewModel.phase)
     }
 }
 
@@ -346,13 +477,14 @@ struct QuestionnaireView: View {
 /// bande perforée qui défile en dessous, et des messages à thème cinéma — plus évocateur qu'un
 /// simple `ProgressView`.
 private struct LoadingAnimationView: View {
-    private static let messages = [
+    static let defaultMessages = [
         "On prépare la projection…",
         "On croise vos réponses avec des dizaines de milliers de films…",
         "On sélectionne les meilleures bobines…",
         "Le clap va tomber…"
     ]
 
+    var messages: [String] = Self.defaultMessages
     @State private var messageIndex = 0
 
     var body: some View {
@@ -360,7 +492,7 @@ private struct LoadingAnimationView: View {
             FilmReelView()
             FilmstripMarquee()
                 .frame(width: 220)
-            Text(Self.messages[messageIndex])
+            Text(messages[messageIndex % messages.count])
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -374,7 +506,7 @@ private struct LoadingAnimationView: View {
                 try? await Task.sleep(nanoseconds: 1_700_000_000)
                 guard !Task.isCancelled else { return }
                 withAnimation(.easeInOut(duration: 0.35)) {
-                    messageIndex = (messageIndex + 1) % Self.messages.count
+                    messageIndex = (messageIndex + 1) % messages.count
                 }
             }
         }

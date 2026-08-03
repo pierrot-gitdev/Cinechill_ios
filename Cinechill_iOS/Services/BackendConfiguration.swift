@@ -1,6 +1,9 @@
 import Foundation
 
-enum BackendConfiguration {
+/// `nonisolated` car lu depuis `BackendRecommendationClient`, appelé hors MainActor (voir la note
+/// sur `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` dans `QuestionnaireAnswer.swift`) — sans ça,
+/// hériterait de l'isolation MainActor par défaut du projet.
+nonisolated enum BackendConfiguration {
     static var baseURL: URL? {
         #if DEBUG
         if let env = ProcessInfo.processInfo.environment["BACKEND_BASE_URL"]?
