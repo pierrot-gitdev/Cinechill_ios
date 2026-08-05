@@ -9,6 +9,9 @@ struct MainTabView: View {
     @State private var homeModel: HomeViewModel
     @State private var questionnaireModel: QuestionnaireViewModel
     @State private var swipeModel = SwipeDeckViewModel()
+    @State private var galleryModel = GalleryViewModel()
+    @State private var watchlistModel = WatchlistViewModel()
+    @State private var catalog = MediaCatalog()
     @State private var selectedTab = 0
     /// Onglets déjà ouverts au moins une fois. Ils restent montés pour garder
     /// leur état — position de scroll, pile de navigation, réponses en cours —
@@ -57,6 +60,7 @@ struct MainTabView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             AppTabBar(selectedTab: $selectedTab)
         }
+        .environment(catalog)
         .onChange(of: selectedTab) { _, tab in
             mountedTabs.insert(tab)
         }
@@ -78,9 +82,9 @@ struct MainTabView: View {
         case 2:
             SwipeDeckView(model: swipeModel, selectedTab: $selectedTab)
         case 3:
-            GalleryView(selectedTab: $selectedTab)
+            GalleryView(model: galleryModel, selectedTab: $selectedTab)
         default:
-            WatchlistView(selectedTab: $selectedTab)
+            WatchlistView(model: watchlistModel, selectedTab: $selectedTab)
         }
     }
 }
