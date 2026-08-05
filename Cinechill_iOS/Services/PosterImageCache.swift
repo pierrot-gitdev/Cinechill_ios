@@ -1,0 +1,117 @@
+//
+//  PosterImageCache.swift
+//  Cinechill_iOS
+//
+
+import SwiftUI
+import UIKit
+
+/// Cache mémoire d'affiches, avec préchargement.
+///
+/// `AsyncImage` ne sait pas précharger : chaque carte du deck partirait en
+/// chargement au moment où elle devient visible, donc juste après un swipe —
+/// exactement le moment où la fluidité compte le plus. Ici les affiches des
+/// cartes suivantes sont téléchargées et décodées à l'avance, et la vue les
+/// récupère de façon synchrone, sans une frame de placeholder.
+final class PosterImageCache: @unchecked Sendable {
+    static let shared = PosterImageCache()
+
+    /// `NSCache` est thread-safe par contrat Apple — seul le suivi des
+    /// téléchargements en cours a besoin d'une exclusion mutuelle, portée par
+    /// un acteur plutôt qu'un `NSLock` : verrouiller à cheval sur un point de
+    /// suspension `await` n'est pas permis en mode strict Swift 6.
+    private let cache = NSCache<NSURL, UIImage>()
+    private let inFlight = InFlightURLs()
+
+    private init() {
+        cache.countLimit = 120
+    }
+
+    /// Affiche déjà en cache, ou `nil`. Synchrone : c'est ce qui permet
+    /// d'afficher la carte suivante sans transition.
+    func cached(_ url: URL?) -> UIImage? {
+        guard let url else { return nil }
+        return cache.object(forKey: url as NSURL)
+    }
+
+    func image(for url: URL) async -> UIImage? {
+        if let hit = cache.object(forKey: url as NSURL) { return hit }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            guard let image = UIImage(data: data) else { return nil }
+            cache.setObject(image, forKey: url as NSURL)
+            return image
+        } catch {
+            return nil
+        }
+    }
+
+    /// Précharge en tâche de fond, sans doublonner les téléchargements déjà en
+    /// cours — le deck redemande les mêmes URLs à chaque swipe.
+    func prefetch(_ urls: [URL?]) {
+        for case let url? in urls {
+            guard cache.object(forKey: url as NSURL) == nil else { continue }
+
+            Task.detached(priority: .utility) { [weak self] in
+                guard let self, await self.inFlight.begin(url) else { return }
+                _ = await self.image(for: url)
+                await self.inFlight.end(url)
+            }
+        }
+    }
+}
+
+/// Suivi async-safe des URLs en cours de téléchargement.
+private actor InFlightURLs {
+    private var urls: Set<URL> = []
+
+    func begin(_ url: URL) -> Bool {
+        guard !urls.contains(url) else { return false }
+        urls.insert(url)
+        return true
+    }
+
+    func end(_ url: URL) {
+        urls.remove(url)
+    }
+}
+
+/// Affiche une image du `PosterImageCache`, en la prenant en cache dès l'init
+/// pour éviter tout clignotement au changement de carte.
+struct PosterImageView: View {
+    private let url: URL?
+    @State private var image: UIImage?
+
+    init(url: URL?) {
+        self.url = url
+        _image = State(initialValue: PosterImageCache.shared.cached(url))
+    }
+
+    var body: some View {
+        ZStack {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                placeholder
+            }
+        }
+        .task(id: url) {
+            guard image == nil, let url else { return }
+            let loaded = await PosterImageCache.shared.image(for: url)
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.2)) { image = loaded }
+        }
+    }
+
+    private var placeholder: some View {
+        ZStack {
+            Rectangle().fill(Color(.secondarySystemBackground))
+            Image(systemName: "film")
+                .font(.system(size: 34, weight: .light))
+                .foregroundStyle(.tertiary)
+        }
+    }
+}
