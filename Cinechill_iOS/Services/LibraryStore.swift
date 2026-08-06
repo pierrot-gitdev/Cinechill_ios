@@ -16,6 +16,8 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var bannedGenreIDs: Set<Int> = []
     /// Décennie de naissance déclarée — calibre le score « probablement vu ».
     @Published private(set) var birthDecade: Int?
+    /// Le badge choisi comme signature du profil.
+    @Published private(set) var displayedBadgeID: String?
     @Published private(set) var errorMessage: String?
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
@@ -92,6 +94,30 @@ final class LibraryStore: ObservableObject {
         ])
     }
 
+    func setDisplayedBadge(_ badgeID: String?) {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        displayedBadgeID = badgeID
+        writePreferences(uid: uid, document: "profile", data: [
+            "displayedBadgeId": badgeID as Any,
+        ])
+    }
+
+    /// Variante enrichie pour la fiche film, seule à connaître le réalisateur
+    /// et la saga — deux champs qu'aucune autre entrée ne peut renseigner et
+    /// dont dépendent les badges « Signature » et « L'Intégrale ».
+    func addToGallery(
+        _ item: MediaItem,
+        director: String?,
+        collectionID: Int?,
+        collectionTotal: Int?
+    ) {
+        setStatus(.seen, for: item, extras: [
+            "director": director as Any,
+            "collectionId": collectionID as Any,
+            "collectionTotal": collectionTotal as Any,
+        ])
+    }
+
     // MARK: - Compte
 
     /// Nombre de films encore en cooldown après un swipe « pas vu ».
@@ -158,11 +184,11 @@ private extension LibraryStore {
         case toWatch, seen, none
     }
 
-    func setStatus(_ status: MediaStatus, for item: MediaItem) {
+    func setStatus(_ status: MediaStatus, for item: MediaItem, extras: [String: Any] = [:]) {
         Task { [weak self] in
             guard let self else { return }
             do {
-                try await callSetMediaStatus(status: status, item: item)
+                try await callSetMediaStatus(status: status, item: item, extras: extras)
             } catch {
                 await MainActor.run {
                     self.errorMessage = error.localizedDescription
@@ -171,25 +197,27 @@ private extension LibraryStore {
         }
     }
 
-    func callSetMediaStatus(status: MediaStatus, item: MediaItem) async throws {
+    func callSetMediaStatus(
+        status: MediaStatus, item: MediaItem, extras: [String: Any] = [:]
+    ) async throws {
         guard let url = APIEndpoints.setMediaStatus() else { return }
         guard let user = Auth.auth().currentUser else { return }
         let token = try await user.getIDToken()
 
-        let body: [String: Any] = [
-            "status": status.rawValue,
-            "item": [
-                "id": item.id,
-                "tmdbId": item.tmdbId,
-                "mediaType": item.mediaType.rawValue,
-                "title": item.title,
-                "posterPath": item.posterPath as Any,
-                "overview": item.overview as Any,
-                "voteAverage": item.voteAverage as Any,
-                "genreIds": item.genreIds,
-                "releaseDate": item.releaseDate as Any
-            ]
+        var payload: [String: Any] = [
+            "id": item.id,
+            "tmdbId": item.tmdbId,
+            "mediaType": item.mediaType.rawValue,
+            "title": item.title,
+            "posterPath": item.posterPath as Any,
+            "overview": item.overview as Any,
+            "voteAverage": item.voteAverage as Any,
+            "genreIds": item.genreIds,
+            "releaseDate": item.releaseDate as Any
         ]
+        payload.merge(extras) { _, extra in extra }
+
+        let body: [String: Any] = ["status": status.rawValue, "item": payload]
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -218,6 +246,7 @@ private extension LibraryStore {
                 self.preferredPlatformIDs = []
                 self.bannedGenreIDs = []
                 self.birthDecade = nil
+                self.displayedBadgeID = nil
 
                 guard let uid = user?.uid else { return }
                 self.startGalleryListener(uid: uid)
@@ -305,10 +334,12 @@ private extension LibraryStore {
                     guard let data = snapshot?.data(), snapshot?.exists == true else {
                         self.bannedGenreIDs = []
                         self.birthDecade = nil
+                        self.displayedBadgeID = nil
                         return
                     }
                     self.bannedGenreIDs = Set(data["bannedGenreIds"] as? [Int] ?? [])
                     self.birthDecade = data["birthDecade"] as? Int
+                    self.displayedBadgeID = data["displayedBadgeId"] as? String
                 }
             }
     }

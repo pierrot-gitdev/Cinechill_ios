@@ -10,6 +10,7 @@ struct QuestionnaireView: View {
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
+    @Environment(BadgesViewModel.self) private var badgesModel
     @State private var showProfile = false
 
     var body: some View {
@@ -31,7 +32,7 @@ struct QuestionnaireView: View {
             }
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showProfile) {
-                ProfileView()
+                ProfileView(badgesModel: badgesModel)
                     .environmentObject(profileStore)
                     .environmentObject(libraryStore)
                     .environmentObject(authService)

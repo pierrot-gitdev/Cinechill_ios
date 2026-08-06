@@ -12,6 +12,7 @@ struct MainTabView: View {
     @State private var galleryModel = GalleryViewModel()
     @State private var watchlistModel = WatchlistViewModel()
     @State private var catalog = MediaCatalog()
+    @State private var badgesModel = BadgesViewModel()
     @State private var selectedTab = 0
     /// Onglets déjà ouverts au moins une fois. Ils restent montés pour garder
     /// leur état — position de scroll, pile de navigation, réponses en cours —
@@ -68,6 +69,7 @@ struct MainTabView: View {
             AppTabBar(selectedTab: $selectedTab)
         }
         .environment(catalog)
+        .environment(badgesModel)
         .onChange(of: selectedTab) { _, tab in
             mountedTabs.insert(tab)
         }

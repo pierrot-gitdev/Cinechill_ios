@@ -152,6 +152,9 @@ struct TMDBDetailResponse: Decodable, Sendable {
     let director: String?
     let trailerKey: String?
     let genreNames: [String]?
+    /// La saga et son nombre d'épisodes — alimentent le badge « L'Intégrale ».
+    let collectionID: Int?
+    let collectionCount: Int?
     let credits: TMDBDetailCredits?
     let watchProvidersFR: [TMDBDetailWatchProviderItem]?
 
@@ -171,6 +174,8 @@ struct TMDBDetailResponse: Decodable, Sendable {
         case director
         case trailerKey = "trailer_key"
         case genreNames = "genre_names"
+        case collectionID = "collection_id"
+        case collectionCount = "collection_count"
         case credits
         case watchProvidersFR = "watch_providers_fr"
     }

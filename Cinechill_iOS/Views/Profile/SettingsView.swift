@@ -25,7 +25,6 @@ struct SettingsView: View {
     @State private var pendingSkips: Int?
     @State private var isWorking = false
     @State private var actionMessage: String?
-    @FocusState private var nameFieldFocused: Bool
 
     private var email: String? { Auth.auth().currentUser?.email }
 
@@ -33,7 +32,7 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 22) {
-                    heroCard
+                    profileHeader
                     subscriptionsSection
                     bannedGenresSection
                     generationSection
@@ -310,116 +309,51 @@ struct SettingsView: View {
         return "\(pendingSkips) film\(pendingSkips > 1 ? "s" : "") en attente de réapparition"
     }
 
-    // MARK: - Hero Card
+    // MARK: - Profil
 
-    /// Avatar + nom en carte dégradée, moment d'ouverture de l'écran — le nom s'enregistre
-    /// automatiquement en quittant le champ, sans bouton dédié.
-    private var heroCard: some View {
-        VStack(spacing: 16) {
-            PhotosPicker(selection: $photoItem, matching: .images) {
-                ZStack(alignment: .bottomTrailing) {
-                    currentAvatar
-                        .frame(width: 100, height: 100)
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle().strokeBorder(
-                                LinearGradient(colors: [.indigo, .pink], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                lineWidth: 3
-                            )
-                        )
-                        .shadow(color: .indigo.opacity(0.25), radius: 18, y: 10)
-
-                    Image(systemName: "camera.fill")
-                        .font(.footnote.weight(.bold))
-                        .foregroundStyle(.white)
-                        .padding(8)
-                        .background(
-                            Circle().fill(
-                                LinearGradient(colors: [.indigo, .pink], startPoint: .top, endPoint: .bottom)
-                            )
-                        )
-                        .overlay(Circle().strokeBorder(Color(.secondarySystemGroupedBackground), lineWidth: 3))
+    /// La même carte que l'écran profil, en mode éditable : l'avatar ouvre le
+    /// sélecteur de photo, le nom devient un champ. Le nom s'enregistre en
+    /// quittant le champ, sans bouton dédié.
+    private var profileHeader: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ProfileSignatureCard(
+                isEditable: true,
+                nameField: $nameField,
+                photoItem: $photoItem,
+                onNameFocusChange: { isFocused in
+                    if !isFocused { Task { await saveNameIfNeeded() } }
                 }
-            }
-            .buttonStyle(PressableScaleStyle(scale: 0.95))
+            )
 
-            VStack(spacing: 6) {
-                TextField("Nom d'affichage", text: $nameField)
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .autocorrectionDisabled()
-                    .focused($nameFieldFocused)
-                    .submitLabel(.done)
-                    .onSubmit { Task { await saveNameIfNeeded() } }
-
+            HStack(spacing: 10) {
                 if let email {
                     Text(email)
-                        .font(.subheadline)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
+
+                if isSavingName {
+                    GradientSpinner(size: 14, lineWidth: 2, colors: [.indigo, .pink.opacity(0.1)])
+                }
+
+                if profileStore.customPhotoData != nil {
+                    Button("Supprimer la photo") { showRemovePhotoAlert = true }
+                        .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.red)
                 }
             }
+            .padding(.horizontal, 6)
 
-            if isSavingName {
-                GradientSpinner(size: 16, lineWidth: 2, colors: [.indigo, .pink.opacity(0.1)])
-            } else if let nameError {
+            if let nameError {
                 Text(nameError)
                     .font(.caption)
                     .foregroundStyle(.red)
-                    .multilineTextAlignment(.center)
-            }
-
-            if profileStore.customPhotoData != nil {
-                Button("Supprimer la photo") { showRemovePhotoAlert = true }
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.red)
+                    .padding(.horizontal, 6)
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 28)
-        .padding(.horizontal, 20)
-        .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [.indigo.opacity(0.10), .pink.opacity(0.06)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
-                    )
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.05), radius: 20, y: 10)
-        .onChange(of: nameFieldFocused) { wasFocused, isFocused in
-            if wasFocused, !isFocused { Task { await saveNameIfNeeded() } }
-        }
-    }
-
-    @ViewBuilder
-    private var currentAvatar: some View {
-        if let data = profileStore.avatarData, let uiImage = UIImage(data: data) {
-            Image(uiImage: uiImage).resizable().scaledToFill()
-        } else if let url = profileStore.avatarURL {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image): image.resizable().scaledToFill()
-                default: placeholderAvatar
-                }
-            }
-        } else {
-            placeholderAvatar
-        }
-    }
-
-    private var placeholderAvatar: some View {
-        Image(systemName: "person.circle.fill")
-            .resizable()
-            .foregroundStyle(Color(.systemGray3))
     }
 
     // MARK: - Sign Out

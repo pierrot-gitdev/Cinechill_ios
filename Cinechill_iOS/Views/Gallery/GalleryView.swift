@@ -19,6 +19,7 @@ struct GalleryView: View {
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
+    @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(MediaCatalog.self) private var catalog
 
     @State private var showProfile = false
@@ -43,7 +44,7 @@ struct GalleryView: View {
             }
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showProfile) {
-                ProfileView()
+                ProfileView(badgesModel: badgesModel)
                     .environmentObject(profileStore)
                     .environmentObject(libraryStore)
                     .environmentObject(authService)

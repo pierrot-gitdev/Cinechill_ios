@@ -12,6 +12,7 @@ struct SwipeDeckView: View {
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
+    @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(\.scenePhase) private var scenePhase
 
     /// Distance à parcourir pour valider un verdict.
@@ -61,7 +62,7 @@ struct SwipeDeckView: View {
             .navigationBarHidden(true)
             .overlay { milestoneOverlay }
             .fullScreenCover(isPresented: $showProfile) {
-                ProfileView()
+                ProfileView(badgesModel: badgesModel)
                     .environmentObject(profileStore)
                     .environmentObject(libraryStore)
                     .environmentObject(authService)

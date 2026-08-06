@@ -253,7 +253,15 @@ struct ItemDetailView: View {
         return Button {
             Haptics.impact(.medium)
             if status == .seen {
-                libraryStore.addToGallery(displayItem)
+                // La fiche est le seul écran à connaître le réalisateur et la
+                // saga : c'est ici qu'ils entrent en galerie, pour les badges
+                // « Signature » et « L'Intégrale ».
+                libraryStore.addToGallery(
+                    displayItem,
+                    director: detail?.director,
+                    collectionID: detail?.collectionID,
+                    collectionTotal: detail?.collectionCount
+                )
             } else {
                 libraryStore.addToWatchlist(displayItem)
             }

@@ -70,6 +70,11 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "gethomerows", queryItems: [])
     }
 
+    static func evaluateBadges() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "evaluatebadges", queryItems: [])
+    }
+
     static func resetSwipeSkips() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "resetswipeskips", queryItems: [])
