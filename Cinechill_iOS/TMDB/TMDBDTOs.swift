@@ -141,9 +141,12 @@ struct TMDBDetailResponse: Decodable, Sendable {
     let title: String?
     let name: String?
     let overview: String?
+    let tagline: String?
     let posterPath: String?
     let backdropPath: String?
     let voteAverage: Double?
+    let voteCount: Int?
+    let runtime: Int?
     let releaseDate: String?
     let firstAirDate: String?
     let director: String?
@@ -157,9 +160,12 @@ struct TMDBDetailResponse: Decodable, Sendable {
         case title
         case name
         case overview
+        case tagline
         case posterPath = "poster_path"
         case backdropPath = "backdrop_path"
         case voteAverage = "vote_average"
+        case voteCount = "vote_count"
+        case runtime
         case releaseDate = "release_date"
         case firstAirDate = "first_air_date"
         case director
@@ -210,5 +216,17 @@ struct TMDBDetailResponse: Decodable, Sendable {
 
     var firstGenre: String? {
         genreNames?.first
+    }
+
+    var backdropURL: URL? {
+        guard let path = backdropPath, !path.isEmpty else { return nil }
+        return URL(string: "https://image.tmdb.org/t/p/w780\(path)")
+    }
+
+    var runtimeText: String? {
+        guard let runtime, runtime > 0 else { return nil }
+        let hours = runtime / 60
+        let minutes = runtime % 60
+        return hours > 0 ? "\(hours) h \(String(format: "%02d", minutes))" : "\(minutes) min"
     }
 }

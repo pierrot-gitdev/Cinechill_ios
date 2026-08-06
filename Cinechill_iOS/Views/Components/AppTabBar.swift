@@ -14,8 +14,9 @@ import SwiftUI
 struct AppTabBar: View {
     @Binding var selectedTab: Int
 
-    /// Hauteur de la pilule, hors bouton central qui la déborde par le haut.
     private static let barHeight: CGFloat = 58
+    /// Le bouton central tient entièrement dans la pilule : le faire déborder
+    /// par le haut le détachait visuellement de la barre.
     private static let centerSize: CGFloat = 56
 
     var body: some View {
@@ -31,8 +32,7 @@ struct AppTabBar: View {
         .overlay(Capsule().strokeBorder(Color.primary.opacity(0.07), lineWidth: 1))
         .shadow(color: .black.opacity(0.10), radius: 18, y: 6)
         .padding(.horizontal, 16)
-        // Laisse la place au débord du bouton central.
-        .padding(.top, 20)
+        .padding(.top, 8)
         .padding(.bottom, 4)
     }
 
@@ -65,18 +65,18 @@ struct AppTabBar: View {
                 Circle()
                     .fill(selectedGradient)
                 Image(systemName: "rectangle.stack.fill")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.white)
             }
             .frame(width: Self.centerSize, height: Self.centerSize)
             .overlay(Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 1))
-            .shadow(color: .indigo.opacity(selectedTab == 2 ? 0.45 : 0.28), radius: 14, y: 6)
-            .scaleEffect(selectedTab == 2 ? 1.05 : 1)
+            .shadow(color: .indigo.opacity(selectedTab == 2 ? 0.45 : 0.28), radius: 10, y: 4)
+            .scaleEffect(selectedTab == 2 ? 1.06 : 1)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedTab)
         }
         .buttonStyle(PressableScaleStyle(scale: 0.92))
         .frame(maxWidth: .infinity)
-        .offset(y: -16)
+        .offset(y: -8)
         .accessibilityLabel("Découvrir")
         .accessibilityAddTraits(selectedTab == 2 ? [.isSelected] : [])
     }

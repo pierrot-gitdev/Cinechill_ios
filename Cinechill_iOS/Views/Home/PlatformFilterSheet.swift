@@ -33,7 +33,9 @@ struct PlatformFilterSheet: View {
                 Divider()
 
                 HStack {
-                    Button("Tout effacer") {
+                    // Ne rien cocher ne veut plus dire « aucun résultat » mais
+                    // « pas de filtre » — le libellé le dit désormais.
+                    Button("Tout décocher") {
                         draftSelection = []
                     }
                     .foregroundStyle(.primary)
@@ -48,7 +50,7 @@ struct PlatformFilterSheet: View {
                 }
                 .padding()
             }
-            .navigationTitle("Filtrer vos recommandations")
+            .navigationTitle("Mes abonnements")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

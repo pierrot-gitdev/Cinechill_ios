@@ -42,22 +42,29 @@ struct MainTabView: View {
         // le `ZStack` prendrait la taille de son plus grand enfant, et un seul
         // onglet au contenu plus large que l'écran suffirait à faire déborder
         // la mise en page de tous les autres.
-        GeometryReader { proxy in
-            ZStack {
-                ForEach(0 ..< Self.tabCount, id: \.self) { tab in
-                    if visibleTabs.contains(tab) {
-                        content(for: tab)
-                            .frame(width: proxy.size.width, height: proxy.size.height)
-                            .opacity(selectedTab == tab ? 1 : 0)
-                            .allowsHitTesting(selectedTab == tab)
-                            .accessibilityHidden(selectedTab != tab)
-                            .zIndex(selectedTab == tab ? 1 : 0)
+        // La barre est un frère du contenu dans un `VStack`, et non un
+        // `safeAreaInset` : celui-ci ne réduit pas le cadre de mise en page mais
+        // seulement la zone sûre, que tout `ignoresSafeArea` en descendant
+        // annule — d'où le bas des écrans systématiquement rogné. En frère, la
+        // place prise par la barre est retirée de la hauteur disponible, et
+        // l'occultation devient structurellement impossible.
+        VStack(spacing: 0) {
+            GeometryReader { proxy in
+                ZStack {
+                    ForEach(0 ..< Self.tabCount, id: \.self) { tab in
+                        if visibleTabs.contains(tab) {
+                            content(for: tab)
+                                .frame(width: proxy.size.width, height: proxy.size.height)
+                                .opacity(selectedTab == tab ? 1 : 0)
+                                .allowsHitTesting(selectedTab == tab)
+                                .accessibilityHidden(selectedTab != tab)
+                                .zIndex(selectedTab == tab ? 1 : 0)
+                        }
                     }
                 }
+                .frame(width: proxy.size.width, height: proxy.size.height)
             }
-            .frame(width: proxy.size.width, height: proxy.size.height)
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+
             AppTabBar(selectedTab: $selectedTab)
         }
         .environment(catalog)

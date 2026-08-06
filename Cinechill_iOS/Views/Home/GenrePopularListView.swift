@@ -3,6 +3,7 @@ import SwiftUI
 struct GenrePopularListView: View {
     let category: HomeBrowseCategory
     let homeModel: HomeViewModel
+    @EnvironmentObject private var libraryStore: LibraryStore
     @State private var items: [MediaItem] = []
     @State private var loading = false
     @State private var errorMessage: String?
@@ -30,7 +31,11 @@ struct GenrePopularListView: View {
                     LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(items) { item in
                             NavigationLink(value: item) {
-                                ContentCardView(item: item)
+                                ContentCardView(
+                                    item: item,
+                                    inGallery: libraryStore.isInGallery(item),
+                                    inWatchlist: libraryStore.isInWatchlist(item)
+                                )
                             }
                             .buttonStyle(.plain)
                         }

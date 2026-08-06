@@ -1,9 +1,16 @@
 import SwiftUI
 
+/// L'accueil — l'écran de découverte.
+///
+/// Cinq rangées, chacune avec une intention distincte et un titre qui dit
+/// exactement ce qu'elle contient. Le contenu périssable — ce qui est en salle
+/// — passe en tête ; la navigation permanente descend.
 struct HomeView: View {
     @Bindable var homeModel: HomeViewModel
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
+    @EnvironmentObject private var authService: AuthService
+
     @State private var showPlatformSheet = false
     @State private var showProfile = false
 
@@ -14,7 +21,7 @@ struct HomeView: View {
                     .ignoresSafeArea()
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 26) {
+                    VStack(alignment: .leading, spacing: 28) {
                         if let err = homeModel.errorMessage {
                             Text(err)
                                 .font(.footnote)
@@ -22,19 +29,19 @@ struct HomeView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
 
-                        if homeModel.loading && homeModel.popularTopItems.isEmpty {
-                            ProgressView("Chargement…")
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 30)
+                        if !homeModel.hasLoadedOnce {
+                            loadingState
                         } else {
-                            browseSection
-                            forYouSection
                             inTheatersSection
+                            becauseYouWatchedSection
+                            trendingSection
+                            popularSection
+                            browseSection
                         }
                     }
                     .padding(.horizontal)
                     .padding(.bottom)
-                    .padding(.top, 32)
+                    .padding(.top, 28)
                 }
             }
             .safeAreaInset(edge: .top) {
@@ -65,22 +72,185 @@ struct HomeView: View {
                     .environmentObject(authService)
             }
             .task {
-                await homeModel.loadHome()
-                await homeModel.refreshForYou(using: libraryStore.preferredPlatformIDs)
-            }
-            .task(id: "\(homeModel.availablePlatforms.map(\.id).joined(separator: ","))-\(libraryStore.shouldInitializePreferredPlatforms)") {
-                let allPlatformIDs = Set(homeModel.availablePlatforms.map(\.id))
-                libraryStore.initializePreferredPlatformsIfNeeded(with: allPlatformIDs)
+                await homeModel.loadAll(preferredPlatformIDs: libraryStore.preferredPlatformIDs)
             }
             .task(id: libraryStore.preferredPlatformIDs) {
-                await homeModel.refreshForYou(using: libraryStore.preferredPlatformIDs)
+                guard homeModel.hasLoadedOnce else { return }
+                await homeModel.refreshPopular(using: libraryStore.preferredPlatformIDs)
+            }
+            .task(id: libraryStore.bannedGenreIDs) {
+                homeModel.applyBannedGenres(libraryStore.bannedGenreIDs)
             }
         }
     }
 
-    @EnvironmentObject private var authService: AuthService
+    private var loadingState: some View {
+        VStack(spacing: 14) {
+            GradientSpinner(size: 30, lineWidth: 3, colors: [.indigo, .pink.opacity(0.1)])
+            Text("Chargement…")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+    }
 
-    // MARK: - Browse Section
+    // MARK: - Au cinéma
+
+    /// Le seul contenu périssable de l'écran, donc le premier. L'ancienneté de
+    /// la sortie est affichée : savoir qu'un film va bientôt quitter l'affiche
+    /// est ce qui déclenche une décision.
+    @ViewBuilder
+    private var inTheatersSection: some View {
+        if !homeModel.rows.inTheaters.isEmpty {
+            VStack(alignment: .leading, spacing: 14) {
+                sectionTitle("Au cinéma en ce moment")
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 12) {
+                        ForEach(homeModel.rows.inTheaters) { item in
+                            NavigationLink(value: item) {
+                                TheaterCardView(
+                                    item: item,
+                                    inGallery: libraryStore.isInGallery(item),
+                                    inWatchlist: libraryStore.isInWatchlist(item)
+                                )
+                            }
+                            .buttonStyle(PressableScaleStyle(scale: 0.96))
+                        }
+                    }
+                    .padding(.horizontal, 2)
+                }
+                .scrollClipDisabled()
+            }
+        }
+    }
+
+    // MARK: - Parce que vous avez vu…
+
+    /// Le titre nomme le film qui a semé la rangée : la recommandation
+    /// s'explique d'elle-même au lieu de tomber du ciel.
+    @ViewBuilder
+    private var becauseYouWatchedSection: some View {
+        if let seeded = homeModel.rows.becauseYouWatched, !seeded.items.isEmpty {
+            VStack(alignment: .leading, spacing: 14) {
+                sectionTitle(seeded.seedTitle.map { "Parce que vous avez vu \($0)" } ?? "Dans la même veine")
+                posterRail(seeded.items)
+            }
+        }
+    }
+
+    // MARK: - Tendances
+
+    /// Le rang porte une information réelle — `trending/week` mesure un
+    /// mouvement hebdomadaire, là où « populaire » bouge à peine d'un jour sur
+    /// l'autre — d'où le chiffre affiché.
+    @ViewBuilder
+    private var trendingSection: some View {
+        if !homeModel.rows.trending.isEmpty {
+            VStack(alignment: .leading, spacing: 14) {
+                sectionTitle("Tendances de la semaine")
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .bottom, spacing: 2) {
+                        ForEach(Array(homeModel.rows.trending.prefix(10).enumerated()), id: \.element.id) { index, item in
+                            NavigationLink(value: item) {
+                                HStack(alignment: .bottom, spacing: -10) {
+                                    Text("\(index + 1)")
+                                        .font(.system(size: 64, weight: .black, design: .rounded))
+                                        .foregroundStyle(Color.primary.opacity(0.16))
+                                        .monospacedDigit()
+
+                                    posterCell(item, width: 88)
+                                }
+                            }
+                            .buttonStyle(PressableScaleStyle(scale: 0.95))
+                        }
+                    }
+                    .padding(.horizontal, 2)
+                }
+                .scrollClipDisabled()
+            }
+        }
+    }
+
+    // MARK: - Populaire
+
+    private var popularSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 9) {
+                sectionTitle(selectedPlatforms.isEmpty ? "Populaire en ce moment" : "Populaire sur")
+
+                if !selectedPlatforms.isEmpty {
+                    platformLogos(Array(selectedPlatforms.prefix(3)))
+                }
+
+                Spacer(minLength: 0)
+
+                Button {
+                    showPlatformSheet = true
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32)
+                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(PressableScaleStyle(scale: 0.92))
+                .accessibilityLabel("Choisir vos plateformes")
+            }
+
+            posterRail(homeModel.popularItems)
+
+            if homeModel.popularItems.isEmpty, !homeModel.loading {
+                Text(emptyPopularMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var selectedPlatforms: [StreamingPlatform] {
+        homeModel.availablePlatforms
+            .filter { libraryStore.preferredPlatformIDs.contains($0.id) }
+    }
+
+    /// Les logos plutôt que les noms : ils sont reconnus plus vite qu'ils ne
+    /// sont lus, et trois marques écrites en toutes lettres mangeaient la
+    /// largeur du titre.
+    private func platformLogos(_ platforms: [StreamingPlatform]) -> some View {
+        HStack(spacing: -7) {
+            ForEach(Array(platforms.enumerated()), id: \.element.id) { index, platform in
+                Group {
+                    if let logoURL = platform.logoURL {
+                        PosterImageView(url: logoURL)
+                    } else {
+                        Text(platform.shortLabel)
+                            .font(.system(size: 9, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color(.tertiarySystemFill))
+                    }
+                }
+                .frame(width: 26, height: 26)
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .strokeBorder(Color(.systemBackground), lineWidth: 1.5)
+                )
+                .zIndex(Double(platforms.count - index))
+                .accessibilityLabel(platform.name)
+            }
+        }
+    }
+
+    private var emptyPopularMessage: String {
+        libraryStore.preferredPlatformIDs.isEmpty
+            ? "Rien à afficher pour le moment."
+            : "Aucun film disponible sur vos plateformes en ce moment."
+    }
+
+    // MARK: - Parcourir
 
     private var browseSection: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -117,114 +287,152 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - For You Section
-
-    private var forYouSection: some View {
-        let filtered = homeModel.forYouItems
-        let selectedPlatforms = homeModel.availablePlatforms
-            .filter { libraryStore.preferredPlatformIDs.contains($0.id) }
-        let displayedPlatforms = Array(selectedPlatforms.prefix(3))
-
-        return VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                sectionTitle("Pour vous")
-
-                if !displayedPlatforms.isEmpty {
-                    selectedPlatformShortcuts(displayedPlatforms)
-                }
-                Spacer()
-
-                Button {
-                    showPlatformSheet = true
-                } label: {
-                    Image(systemName: "chevron.down")
-                        .font(.headline.weight(.bold))
-                        .padding(.horizontal, 6)
-                }
-                .buttonStyle(.plain)
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    ForEach(filtered) { item in
-                        NavigationLink(value: item) {
-                            ContentCardView(item: item)
-                                .frame(width: 175)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 2)
-            }
-
-            if filtered.isEmpty {
-                Text("Aucun film ne correspond à vos plateformes sélectionnées.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    // MARK: - In Theaters Section
-
-    private var inTheatersSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionTitle("Pour vous au cinéma")
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color(.secondarySystemBackground), Color(.systemGray6)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .frame(height: 110)
-                .overlay(alignment: .leading) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Bientot disponible")
-                            .font(.headline)
-                        Text("Les sorties cinema seront ajoutees dans une prochaine etape.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding()
-                }
-        }
-    }
-
     // MARK: - Helpers
 
-    private func selectedPlatformShortcuts(_ platforms: [StreamingPlatform]) -> some View {
-        HStack(spacing: -6) {
-            ForEach(Array(platforms.enumerated()), id: \.element.id) { index, platform in
-                Group {
-                    if let logoURL = platform.logoURL {
-                        AsyncImage(url: logoURL) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image.resizable().scaledToFit()
-                            default:
-                                Text(platform.shortLabel)
-                                    .font(.caption2.weight(.bold))
-                            }
-                        }
-                        .frame(width: 48, height: 30)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    } else {
-                        Text(platform.shortLabel)
-                            .font(.caption2.weight(.bold))
-                            .frame(width: 48, height: 30)
+    private func posterRail(_ items: [MediaItem]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: 12) {
+                ForEach(items) { item in
+                    NavigationLink(value: item) {
+                        posterCell(item, width: 108)
                     }
+                    .buttonStyle(PressableScaleStyle(scale: 0.95))
                 }
-                .zIndex(Double(100 - index))
             }
+            .padding(.horizontal, 2)
+        }
+        .scrollClipDisabled()
+    }
+
+    /// Les pastilles galerie et watchlist sont enfin renseignées : sur un écran
+    /// de découverte, distinguer d'un coup d'œil ce qu'on a déjà vu vaut plus
+    /// que n'importe quelle rangée supplémentaire.
+    private func posterCell(_ item: MediaItem, width: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ZStack(alignment: .topTrailing) {
+                PosterTile(
+                    posterPath: item.posterPath,
+                    title: item.title,
+                    width: width,
+                    cornerRadius: 10
+                )
+
+                LibraryBadge(
+                    inGallery: libraryStore.isInGallery(item),
+                    inWatchlist: libraryStore.isInWatchlist(item)
+                )
+                .padding(6)
+            }
+
+            Text(item.title)
+                .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                // Deux lignes réservées quoi qu'il arrive : sans hauteur fixe,
+                // un titre court et un titre long ne donnent pas la même
+                // hauteur de carte, et les affiches se désalignent.
+                .frame(width: width, height: Self.titleHeight, alignment: .topLeading)
         }
     }
+
+    /// Hauteur réservée au titre sous une affiche — deux lignes.
+    static let titleHeight: CGFloat = 30
 
     private func sectionTitle(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 24, weight: .black, design: .rounded))
+            .font(.system(size: 22, weight: .black, design: .rounded))
             .lineLimit(2)
-            .minimumScaleFactor(0.8)
+            .minimumScaleFactor(0.75)
+    }
+}
+
+/// Pastille d'état, commune à toutes les affiches de l'accueil.
+struct LibraryBadge: View {
+    let inGallery: Bool
+    let inWatchlist: Bool
+
+    var body: some View {
+        if inGallery {
+            badge(icon: "checkmark", color: .green, label: "Déjà vu")
+        } else if inWatchlist {
+            badge(icon: "bookmark.fill", color: .blue, label: "Dans votre watchlist")
+        }
+    }
+
+    private func badge(icon: String, color: Color, label: String) -> some View {
+        Image(systemName: icon)
+            .font(.system(size: 8, weight: .heavy))
+            .foregroundStyle(.white)
+            .frame(width: 18, height: 18)
+            .background(color, in: Circle())
+            .overlay(Circle().strokeBorder(.white.opacity(0.35), lineWidth: 1))
+            .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
+            .accessibilityLabel(label)
+    }
+}
+
+/// Carte des sorties en salle.
+///
+/// Reste au format portrait — TMDB ne fournit qu'une affiche ici, et la rogner
+/// en paysage ne donnerait qu'une bande horizontale souvent illisible. C'est le
+/// bandeau d'ancienneté, pas le format, qui distingue cette rangée.
+struct TheaterCardView: View {
+    let item: MediaItem
+    let inGallery: Bool
+    let inWatchlist: Bool
+
+    private let width: CGFloat = 128
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            ZStack(alignment: .topLeading) {
+                PosterTile(
+                    posterPath: item.posterPath,
+                    title: item.title,
+                    width: width,
+                    cornerRadius: 11
+                )
+
+                if let freshness {
+                    Text(freshness)
+                        .font(.system(size: 8, weight: .heavy, design: .rounded))
+                        .kerning(0.6)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 4)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .environment(\.colorScheme, .dark)
+                        .padding(7)
+                }
+
+                LibraryBadge(inGallery: inGallery, inWatchlist: inWatchlist)
+                    .padding(7)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .frame(width: width)
+
+            Text(item.title)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .frame(width: width, height: HomeView.titleHeight, alignment: .topLeading)
+        }
+    }
+
+    /// « Cette semaine » puis « depuis N jours » — l'ancienneté est ce qui dit
+    /// combien de temps il reste pour le voir, pas la date de sortie.
+    private var freshness: String? {
+        guard let releaseDate = item.releaseDate else { return nil }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        guard let date = formatter.date(from: releaseDate) else { return nil }
+
+        let days = Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
+        guard days >= 0 else { return "BIENTÔT" }
+        if days <= 7 { return "CETTE SEMAINE" }
+        return "DEPUIS \(days) J"
     }
 }

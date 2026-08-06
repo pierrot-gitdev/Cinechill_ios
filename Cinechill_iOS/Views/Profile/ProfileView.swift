@@ -47,6 +47,7 @@ struct ProfileView: View {
             SettingsView()
                 .environmentObject(profileStore)
                 .environmentObject(authService)
+                .environmentObject(libraryStore)
         }
         .onAppear { profileStore.refresh() }
     }

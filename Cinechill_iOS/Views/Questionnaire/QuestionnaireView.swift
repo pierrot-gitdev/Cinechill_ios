@@ -93,7 +93,10 @@ struct QuestionnaireView: View {
                     .padding(.horizontal, 32)
             }
             Button {
-                viewModel.start(preferredPlatformIDs: libraryStore.preferredPlatformIDs)
+                viewModel.start(
+                    preferredPlatformIDs: libraryStore.preferredPlatformIDs,
+                    bannedGenreIDs: libraryStore.bannedGenreIDs
+                )
             } label: {
                 HStack(spacing: 8) {
                     Text("Commencer le quiz")

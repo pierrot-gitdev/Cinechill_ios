@@ -65,6 +65,21 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "recordswipes", queryItems: [])
     }
 
+    static func homeRows() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "gethomerows", queryItems: [])
+    }
+
+    static func resetSwipeSkips() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "resetswipeskips", queryItems: [])
+    }
+
+    static func deleteAccount() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "deleteaccount", queryItems: [])
+    }
+
     private static func buildURL(baseURL: URL, functionName: String, queryItems: [URLQueryItem]) -> URL? {
         guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
             return nil

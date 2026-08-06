@@ -89,6 +89,10 @@ struct WatchlistView: View {
                     .id(pick.item.id)
                 }
 
+                if libraryStore.preferredPlatformIDs.isEmpty {
+                    declarePlatformsBanner
+                }
+
                 ForEach(model.groups) { group in
                     groupSection(group)
                 }
@@ -148,6 +152,45 @@ struct WatchlistView: View {
         .padding(.horizontal, 18)
         .padding(.top, 14)
         .padding(.bottom, 14)
+    }
+
+    /// Sans abonnement déclaré, « Disponible chez vous » ne peut rien vouloir
+    /// dire : on le remplace par l'invitation à les déclarer, plutôt que
+    /// d'afficher un groupe systématiquement vide.
+    private var declarePlatformsBanner: some View {
+        Button {
+            showProfile = true
+        } label: {
+            HStack(spacing: 11) {
+                Image(systemName: "tv.badge.wifi")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.indigo)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Déclarez vos abonnements")
+                        .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
+                    Text("Pour savoir ce que vous pouvez lancer tout de suite.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(13)
+            .background(Color.indigo.opacity(0.09), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Color.indigo.opacity(0.22), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.98))
+        .padding(.horizontal, 18)
+        .padding(.top, 6)
     }
 
     private func groupSection(_ group: WatchlistGroup) -> some View {

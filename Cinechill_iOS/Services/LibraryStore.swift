@@ -6,14 +6,23 @@ import FirebaseFirestore
 final class LibraryStore: ObservableObject {
     @Published private(set) var galleryItems: [GalleryEntry] = []
     @Published private(set) var watchlistItems: [WatchlistEntry] = []
+    /// Les plateformes auxquelles l'utilisateur a déclaré être abonné.
+    ///
+    /// Vide ne veut pas dire « toutes » mais « pas encore déclaré » : chaque
+    /// écran qui s'en sert doit alors cesser de filtrer plutôt que de tout
+    /// exclure. C'est ce qui rend « Disponible chez vous » signifiant.
     @Published private(set) var preferredPlatformIDs: Set<String> = []
-    @Published private(set) var shouldInitializePreferredPlatforms = false
+    /// Genres que l'utilisateur ne veut jamais voir proposés.
+    @Published private(set) var bannedGenreIDs: Set<Int> = []
+    /// Décennie de naissance déclarée — calibre le score « probablement vu ».
+    @Published private(set) var birthDecade: Int?
     @Published private(set) var errorMessage: String?
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
     private var galleryListener: ListenerRegistration?
     private var watchlistListener: ListenerRegistration?
     private var preferencesListener: ListenerRegistration?
+    private var profileListener: ListenerRegistration?
     private var hasStarted = false
 
     init() {
@@ -32,6 +41,7 @@ final class LibraryStore: ObservableObject {
         galleryListener?.remove()
         watchlistListener?.remove()
         preferencesListener?.remove()
+        profileListener?.remove()
     }
 
     func isInGallery(_ item: MediaItem) -> Bool {
@@ -60,12 +70,63 @@ final class LibraryStore: ObservableObject {
 
     func setPreferredPlatforms(_ ids: Set<String>) {
         guard let uid = Auth.auth().currentUser?.uid else { return }
-        shouldInitializePreferredPlatforms = false
+        preferredPlatformIDs = ids
+        writePreferences(uid: uid, document: "home", data: [
+            "preferredPlatformIDs": Array(ids).sorted(),
+        ])
+    }
+
+    func setBannedGenres(_ ids: Set<Int>) {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        bannedGenreIDs = ids
+        writePreferences(uid: uid, document: "profile", data: [
+            "bannedGenreIds": Array(ids).sorted(),
+        ])
+    }
+
+    func setBirthDecade(_ decade: Int?) {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        birthDecade = decade
+        writePreferences(uid: uid, document: "profile", data: [
+            "birthDecade": decade as Any,
+        ])
+    }
+
+    // MARK: - Compte
+
+    /// Nombre de films encore en cooldown après un swipe « pas vu ».
+    /// Renvoie `nil` si la lecture échoue — l'information est indicative, elle
+    /// ne doit jamais bloquer l'ouverture des réglages.
+    func pendingSkipCount() async -> Int? {
+        guard let uid = Auth.auth().currentUser?.uid else { return nil }
+        let snapshot = try? await db.collection("users")
+            .document(uid)
+            .collection("swipeSkips")
+            .whereField("resurfaceAt", isGreaterThan: Timestamp(date: Date()))
+            .count
+            .getAggregation(source: .server)
+        return snapshot.map { Int(truncating: $0.count) }
+    }
+
+    func resetSwipeSkips() async throws -> Int {
+        let data = try await callAccountFunction(APIEndpoints.resetSwipeSkips())
+        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return (json?["deleted"] as? Int) ?? 0
+    }
+
+    /// Efface le compte côté serveur, puis termine la session locale. La
+    /// déconnexion vient en dernier : sans jeton valide, l'appel échouerait.
+    func deleteAccount() async throws {
+        _ = try await callAccountFunction(APIEndpoints.deleteAccount())
+        try? Auth.auth().signOut()
+    }
+
+    private func writePreferences(uid: String, document: String, data: [String: Any]) {
         db.collection("users")
             .document(uid)
             .collection("preferences")
-            .document("home")
-            .setData(["preferredPlatformIDs": Array(ids).sorted()]) { [weak self] error in
+            .document(document)
+            .setData(data, merge: true) { [weak self] error in
                 guard let error else { return }
                 DispatchQueue.main.async {
                     self?.errorMessage = error.localizedDescription
@@ -73,10 +134,22 @@ final class LibraryStore: ObservableObject {
             }
     }
 
-    func initializePreferredPlatformsIfNeeded(with allPlatformIDs: Set<String>) {
-        guard shouldInitializePreferredPlatforms, !allPlatformIDs.isEmpty else { return }
-        preferredPlatformIDs = allPlatformIDs
-        setPreferredPlatforms(allPlatformIDs)
+    private func callAccountFunction(_ url: URL?) async throws -> Data {
+        guard let url else { throw URLError(.badURL) }
+        guard let user = Auth.auth().currentUser else { throw URLError(.userAuthenticationRequired) }
+        let token = try await user.getIDToken()
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = Data("{}".utf8)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+        return data
     }
 }
 
@@ -139,15 +212,18 @@ private extension LibraryStore {
                 self.galleryListener?.remove()
                 self.watchlistListener?.remove()
                 self.preferencesListener?.remove()
+                self.profileListener?.remove()
                 self.galleryItems = []
                 self.watchlistItems = []
                 self.preferredPlatformIDs = []
-                self.shouldInitializePreferredPlatforms = false
+                self.bannedGenreIDs = []
+                self.birthDecade = nil
 
                 guard let uid = user?.uid else { return }
                 self.startGalleryListener(uid: uid)
                 self.startWatchlistListener(uid: uid)
                 self.startPreferencesListener(uid: uid)
+                self.startProfileListener(uid: uid)
             }
         }
     }
@@ -200,19 +276,39 @@ private extension LibraryStore {
                         self.errorMessage = error.localizedDescription
                         return
                     }
-                    guard let snapshot else {
+                    // Absence de document = rien de déclaré. On ne pré-coche
+                    // plus toutes les plateformes : « toutes » rendait le
+                    // filtre de l'accueil inopérant et « Disponible chez vous »
+                    // vide de sens.
+                    guard let snapshot, snapshot.exists else {
                         self.preferredPlatformIDs = []
-                        self.shouldInitializePreferredPlatforms = true
-                        return
-                    }
-                    if !snapshot.exists {
-                        self.preferredPlatformIDs = []
-                        self.shouldInitializePreferredPlatforms = true
                         return
                     }
                     let ids = snapshot.data()?["preferredPlatformIDs"] as? [String] ?? []
                     self.preferredPlatformIDs = Set(ids)
-                    self.shouldInitializePreferredPlatforms = false
+                }
+            }
+    }
+
+    func startProfileListener(uid: String) {
+        profileListener = db.collection("users")
+            .document(uid)
+            .collection("preferences")
+            .document("profile")
+            .addSnapshotListener { [weak self] snapshot, error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if let error {
+                        self.errorMessage = error.localizedDescription
+                        return
+                    }
+                    guard let data = snapshot?.data(), snapshot?.exists == true else {
+                        self.bannedGenreIDs = []
+                        self.birthDecade = nil
+                        return
+                    }
+                    self.bannedGenreIDs = Set(data["bannedGenreIds"] as? [Int] ?? [])
+                    self.birthDecade = data["birthDecade"] as? Int
                 }
             }
     }

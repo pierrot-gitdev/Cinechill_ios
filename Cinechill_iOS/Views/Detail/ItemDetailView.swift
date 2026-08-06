@@ -1,10 +1,17 @@
 import SwiftUI
 
+/// La fiche film — « La Fiche ».
+///
+/// Point d'arrivée de tous les autres écrans. L'affiche et le backdrop portent
+/// l'écran ; le statut y parle le même vocabulaire que le deck (vu / à voir),
+/// et le bloc « Dans votre galerie » relie le film à votre collection plutôt
+/// que d'en faire une page TMDB de plus.
 struct ItemDetailView: View {
     let item: MediaItem
 
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(\.openURL) private var openURL
+    @Environment(\.dismiss) private var dismiss
 
     @State private var detail: TMDBDetailResponse?
     @State private var loading = true
@@ -14,204 +21,390 @@ struct ItemDetailView: View {
         detail.map { $0.asMediaItem(mediaType: item.mediaType) } ?? item
     }
 
-    private var currentStatus: MediaStatus {
+    private var currentStatus: DetailStatus {
         if libraryStore.isInGallery(displayItem) { return .seen }
         if libraryStore.isInWatchlist(displayItem) { return .toWatch }
         return .none
     }
 
-    private var statusLabel: String {
-        switch currentStatus {
-        case .seen: return "Vu"
-        case .toWatch: return "À voir"
-        case .none: return "Ajouter"
-        }
-    }
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                headerSection
-                statusRatingRow
-                if let d = detail {
-                    watchOnlineSection(d)
+                hero
+                factsLine
+                decisionBar
+
+                if let connection = galleryConnection {
+                    connectionCard(connection)
                 }
+
+                watchSection
                 synopsisSection
+
                 if let cast = detail?.credits?.cast, !cast.isEmpty {
                     castSection(cast)
                 }
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .padding(.horizontal, 20)
+                }
             }
-            .padding()
+            .padding(.bottom, 32)
         }
-        .navigationTitle(displayItem.title)
-        .navigationBarTitleDisplayMode(.inline)
+        .background(Color(.systemBackground))
+        .ignoresSafeArea(edges: .top)
+        .navigationBarHidden(true)
+        .overlay(alignment: .topLeading) { backButton }
         .task { await loadDetail() }
     }
 
-    // MARK: - Header
+    // MARK: - Hero
 
-    private var headerSection: some View {
-        HStack(alignment: .top, spacing: 14) {
-            posterView
-            VStack(alignment: .leading, spacing: 6) {
-                Text(detail?.displayTitle ?? item.title)
-                    .font(.title3.weight(.bold))
-                    .fixedSize(horizontal: false, vertical: true)
+    /// Le `backdrop_path` était déjà renvoyé par le backend et n'était affiché
+    /// nulle part : il devient l'image d'ouverture, avec l'affiche posée dessus.
+    private var hero: some View {
+        ZStack(alignment: .bottom) {
+            // `Color.clear` fixe la boîte, l'image est posée en `overlay` : un
+            // overlay ne participe jamais au calcul de taille du parent. Sans
+            // ça, une image en `scaledToFill` impose sa largeur à toute la vue,
+            // `.clipped()` ne rognant que le dessin, pas la mise en page.
+            Color.clear
+                .frame(maxWidth: .infinity)
+                .frame(height: 260)
+                .overlay { backdrop }
+                .clipped()
+                .overlay(scrim)
 
-                if let director = detail?.director {
-                    Text("De \(director)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+            HStack(alignment: .bottom, spacing: 14) {
+                PosterTile(
+                    posterPath: detail?.posterPath ?? item.posterPath,
+                    title: displayItem.title,
+                    width: 84,
+                    cornerRadius: 10
+                )
 
-                let year = detail?.displayYear ?? item.displayYear
-                let genre = detail?.firstGenre
-                Text([year, genre].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(displayItem.title)
+                        .font(.system(size: 24, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.7)
+                        .shadow(color: .black.opacity(0.5), radius: 8, y: 2)
 
-                if loading {
-                    ProgressView().scaleEffect(0.8).padding(.top, 4)
-                }
-
-                if let error = errorMessage {
-                    Text(error).font(.caption).foregroundStyle(.red)
-                }
-
-                Spacer(minLength: 8)
-
-                if detail?.trailerKey != nil {
-                    trailerButton
-                }
-            }
-        }
-    }
-
-    private var posterView: some View {
-        Group {
-            if let url = detail?.posterDetailURL ?? item.posterURL {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    default:
-                        Color.secondary.opacity(0.25)
+                    if let tagline = detail?.tagline, !tagline.isEmpty {
+                        Text(tagline)
+                            .font(.system(size: 11))
+                            .italic()
+                            .foregroundStyle(.white.opacity(0.82))
+                            .lineLimit(2)
                     }
                 }
-            } else {
-                Color.secondary.opacity(0.25)
+
+                Spacer(minLength: 0)
             }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 14)
         }
-        .frame(width: 110, height: 165)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .frame(height: 260)
+        .overlay(alignment: .center) { trailerButton }
     }
-
-    private var trailerButton: some View {
-        Button {
-            openTrailer()
-        } label: {
-            Label("Bande-annonce", systemImage: "play.fill")
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.bordered)
-        .tint(.primary)
-    }
-
-    // MARK: - Status + Rating
-
-    private var statusRatingRow: some View {
-        HStack(spacing: 10) {
-            Menu {
-                Button("À voir") { libraryStore.addToWatchlist(displayItem) }
-                Button("Vu") { libraryStore.addToGallery(displayItem) }
-                if currentStatus != .none {
-                    Button("Retirer de la liste", role: .destructive) {
-                        if currentStatus == .seen { libraryStore.removeFromGallery(displayItem) }
-                        else { libraryStore.removeFromWatchlist(displayItem) }
-                    }
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Text(statusLabel)
-                        .font(.subheadline.weight(.semibold))
-                    Image(systemName: "chevron.down")
-                        .font(.caption.weight(.semibold))
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .tint(statusTint)
-
-            if let rating = detail?.voteAverage ?? item.voteAverage {
-                HStack(spacing: 5) {
-                    Image(systemName: "star.fill")
-                    Text(String(format: "%.1f/10", rating))
-                        .font(.subheadline.weight(.semibold))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .foregroundStyle(.white)
-            }
-        }
-    }
-
-    private var statusTint: Color {
-        switch currentStatus {
-        case .seen: return .green
-        case .toWatch: return .accentColor
-        case .none: return .primary
-        }
-    }
-
-    // MARK: - Watch Online
 
     @ViewBuilder
-    private func watchOnlineSection(_ d: TMDBDetailResponse) -> some View {
-        let providers = (d.watchProvidersFR ?? []).filter {
-            libraryStore.preferredPlatformIDs.contains(String($0.providerID))
+    private var backdrop: some View {
+        if let url = detail?.backdropURL {
+            PosterImageView(url: url)
+        } else {
+            LinearGradient(
+                colors: [.indigo.opacity(0.55), .pink.opacity(0.35), Color(.systemBackground)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         }
-        if !providers.isEmpty {
+    }
+
+    private var scrim: some View {
+        LinearGradient(
+            stops: [
+                .init(color: .black.opacity(0.35), location: 0),
+                .init(color: .black.opacity(0.15), location: 0.35),
+                .init(color: .black.opacity(0.72), location: 0.8),
+                .init(color: Color(.systemBackground), location: 1),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private var trailerButton: some View {
+        if detail?.trailerKey != nil {
+            Button(action: openTrailer) {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 52, height: 52)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .overlay(Circle().strokeBorder(.white.opacity(0.5), lineWidth: 1.5))
+                    .shadow(color: .black.opacity(0.35), radius: 12, y: 4)
+            }
+            .buttonStyle(PressableScaleStyle(scale: 0.9))
+            .offset(y: -22)
+            .accessibilityLabel("Voir la bande-annonce")
+        }
+    }
+
+    private var backButton: some View {
+        Button { dismiss() } label: {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 34, height: 34)
+                .background(Color.black.opacity(0.35), in: Circle())
+                .overlay(Circle().strokeBorder(.white.opacity(0.2), lineWidth: 1))
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.9))
+        .padding(.leading, 16)
+        .padding(.top, 54)
+        .accessibilityLabel("Retour")
+    }
+
+    // MARK: - Faits
+
+    private var factsLine: some View {
+        HStack(spacing: 0) {
+            Text(facts)
+                .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 8)
+
+            if loading {
+                GradientSpinner(size: 13, lineWidth: 1.8, colors: [.indigo, .pink.opacity(0.1)])
+            }
+
+            if let rating = detail?.voteAverage ?? item.voteAverage {
+                HStack(spacing: 4) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.yellow)
+                    Text(String(format: "%.1f", rating))
+                        .font(.system(size: 12.5, weight: .heavy, design: .rounded))
+                        .monospacedDigit()
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private var facts: String {
+        var parts: [String] = []
+        let year = detail?.displayYear ?? item.displayYear
+        if !year.isEmpty, year != "—" { parts.append(year) }
+        if let runtime = detail?.runtimeText { parts.append(runtime) }
+        if let genres = detail?.genreNames, !genres.isEmpty {
+            parts.append(genres.prefix(2).joined(separator: ", "))
+        }
+        if let director = detail?.director, !director.isEmpty { parts.append(director) }
+        return parts.joined(separator: " · ")
+    }
+
+    // MARK: - Décision
+
+    /// Trois boutons explicites plutôt qu'un menu déroulant : toute l'app dit
+    /// déjà « vu / à voir », la fiche était le seul écran à parler autrement.
+    private var decisionBar: some View {
+        HStack(spacing: 8) {
+            decisionButton(.seen, label: "Vu", icon: "checkmark", tint: .green)
+            decisionButton(.toWatch, label: "À voir", icon: "bookmark.fill", tint: .blue)
+
+            if currentStatus != .none {
+                Button {
+                    Haptics.impact(.light)
+                    if currentStatus == .seen {
+                        libraryStore.removeFromGallery(displayItem)
+                    } else {
+                        libraryStore.removeFromWatchlist(displayItem)
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, height: 40)
+                        .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(PressableScaleStyle(scale: 0.94))
+                .transition(.scale.combined(with: .opacity))
+                .accessibilityLabel("Retirer de mes listes")
+            }
+        }
+        .padding(.horizontal, 20)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: currentStatus)
+    }
+
+    private func decisionButton(
+        _ status: DetailStatus, label: String, icon: String, tint: Color
+    ) -> some View {
+        let isOn = currentStatus == status
+        return Button {
+            Haptics.impact(.medium)
+            if status == .seen {
+                libraryStore.addToGallery(displayItem)
+            } else {
+                libraryStore.addToWatchlist(displayItem)
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 11, weight: .bold))
+                Text(label)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+            }
+            .foregroundStyle(isOn ? tint : .secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 11)
+            .background(
+                isOn ? tint.opacity(0.15) : Color(.tertiarySystemFill),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(isOn ? tint : .clear, lineWidth: 1.5)
+            )
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.96))
+        .accessibilityAddTraits(isOn ? [.isSelected] : [])
+    }
+
+    // MARK: - Lien avec la galerie
+
+    /// Ce qui distingue la fiche d'une page TMDB : elle sait ce que vous avez
+    /// déjà vu. Calculé en local, sans un appel réseau de plus.
+    private var galleryConnection: String? {
+        let gallery = libraryStore.galleryItems
+        guard gallery.count >= 3 else { return nil }
+
+        // Le réalisateur n'est pas stocké dans les entrées de galerie : le seul
+        // recoupement possible sans appel réseau supplémentaire est le genre,
+        // affiné par la décennie quand elle est connue.
+        guard let genreID = displayItem.genreIds.first else { return nil }
+
+        if let decade = decadeOfItem {
+            let sameVein = gallery.filter { entry in
+                entry.genreIds.contains(genreID) && decadeOf(entry.releaseDate) == decade
+            }.count
+            if sameVein >= 2 {
+                return "Vous avez déjà \(sameVein) films du même genre sur cette décennie."
+            }
+        }
+
+        let sameGenre = gallery.filter { $0.genreIds.contains(genreID) }.count
+        guard sameGenre >= 3 else { return nil }
+        return "Vous avez déjà \(sameGenre) films de ce genre dans votre galerie."
+    }
+
+    private var decadeOfItem: Int? {
+        decadeOf(detail?.releaseDate ?? item.releaseDate)
+    }
+
+    private func decadeOf(_ releaseDate: String?) -> Int? {
+        guard let releaseDate, releaseDate.count >= 4,
+              let year = Int(releaseDate.prefix(4)) else { return nil }
+        return year / 10 * 10
+    }
+
+    private func connectionCard(_ text: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "trophy.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(.indigo)
+
+            Text(text)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(Color.indigo.opacity(0.09), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.indigo.opacity(0.22), lineWidth: 1)
+        )
+        .padding(.horizontal, 20)
+    }
+
+    // MARK: - Où le voir
+
+    /// Vos plateformes d'abord, les autres en retrait — mais jamais rien de
+    /// caché : l'ancienne version masquait toute la section quand vous n'étiez
+    /// abonné à aucune, alors que l'information existait.
+    @ViewBuilder
+    private var watchSection: some View {
+        let all = detail?.watchProvidersFR ?? []
+        if !all.isEmpty {
+            let mine = all.filter { libraryStore.preferredPlatformIDs.contains(String($0.providerID)) }
+            let others = all.filter { !libraryStore.preferredPlatformIDs.contains(String($0.providerID)) }
+
             VStack(alignment: .leading, spacing: 10) {
-                Text("Regarder en ligne")
-                    .font(.headline)
+                sectionTitle("OÙ LE VOIR")
+
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(providers, id: \.providerID) { provider in
-                            Button {
-                                openProvider(provider)
-                            } label: {
-                                providerLogo(provider)
-                            }
-                            .buttonStyle(.plain)
+                    HStack(spacing: 10) {
+                        ForEach(mine, id: \.providerID) { provider in
+                            providerButton(provider, isMine: true)
+                        }
+
+                        if !mine.isEmpty, !others.isEmpty {
+                            Rectangle()
+                                .fill(Color.secondary.opacity(0.25))
+                                .frame(width: 1, height: 26)
+                                .padding(.horizontal, 2)
+                        }
+
+                        ForEach(others, id: \.providerID) { provider in
+                            providerButton(provider, isMine: false)
                         }
                     }
+                    .padding(.horizontal, 20)
                 }
+                .scrollClipDisabled()
             }
         }
     }
 
-    private func providerLogo(_ provider: TMDBDetailWatchProviderItem) -> some View {
-        Group {
-            if let url = provider.logoURL {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFit()
-                    default:
-                        Color.secondary.opacity(0.2)
-                    }
+    private func providerButton(_ provider: TMDBDetailWatchProviderItem, isMine: Bool) -> some View {
+        Button {
+            openProvider(provider)
+        } label: {
+            Group {
+                if let url = provider.logoURL {
+                    PosterImageView(url: url)
+                } else {
+                    Text(provider.providerName)
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color(.tertiarySystemFill))
                 }
-            } else {
-                Text(provider.providerName)
-                    .font(.caption2)
-                    .padding(6)
-                    .background(Color.secondary.opacity(0.15))
             }
+            .frame(width: 46, height: 46)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(isMine ? Color.indigo : Color.clear, lineWidth: 2)
+            )
+            .opacity(isMine ? 1 : 0.42)
+            .saturation(isMine ? 1 : 0.3)
         }
-        .frame(width: 52, height: 52)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .buttonStyle(PressableScaleStyle(scale: 0.92))
+        .accessibilityLabel(provider.providerName)
+        .accessibilityValue(isMine ? "Dans vos abonnements" : "Hors de vos abonnements")
     }
 
     // MARK: - Synopsis
@@ -220,67 +413,71 @@ struct ItemDetailView: View {
     private var synopsisSection: some View {
         if let text = detail?.overview ?? item.overview, !text.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Synopsis")
-                    .font(.headline)
+                sectionTitle("SYNOPSIS")
                 Text(text)
-                    .font(.body)
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
+                    .lineSpacing(2)
+                    .padding(.horizontal, 20)
             }
         }
     }
 
-    // MARK: - Cast
+    // MARK: - Casting
 
     private func castSection(_ cast: [TMDBDetailCastMember]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Casting")
-                .font(.headline)
+            sectionTitle("CASTING")
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 14) {
                     ForEach(cast, id: \.name) { member in
                         VStack(spacing: 6) {
                             Group {
                                 if let url = member.profileURL {
-                                    AsyncImage(url: url) { phase in
-                                        switch phase {
-                                        case .success(let image):
-                                            image.resizable().scaledToFill()
-                                        default:
-                                            personPlaceholder
-                                        }
-                                    }
+                                    PosterImageView(url: url)
                                 } else {
                                     personPlaceholder
                                 }
                             }
-                            .frame(width: 64, height: 64)
+                            .frame(width: 60, height: 60)
                             .clipShape(Circle())
+                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.07), lineWidth: 1))
 
                             Text(member.name)
-                                .font(.caption.weight(.semibold))
+                                .font(.system(size: 10, weight: .bold, design: .rounded))
                                 .multilineTextAlignment(.center)
                                 .lineLimit(2)
 
                             if let character = member.character, !character.isEmpty {
                                 Text(character)
-                                    .font(.caption2)
+                                    .font(.system(size: 9))
                                     .foregroundStyle(.secondary)
                                     .multilineTextAlignment(.center)
                                     .lineLimit(2)
                             }
                         }
-                        .frame(width: 72)
+                        .frame(width: 70)
                     }
                 }
-                .padding(.bottom, 4)
+                .padding(.horizontal, 20)
             }
+            .scrollClipDisabled()
         }
     }
 
     private var personPlaceholder: some View {
         Circle()
-            .fill(Color.secondary.opacity(0.2))
+            .fill(Color(.tertiarySystemFill))
             .overlay(Image(systemName: "person.fill").foregroundStyle(.secondary))
+    }
+
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .heavy, design: .rounded))
+            .kerning(1)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 20)
     }
 
     // MARK: - Actions
@@ -320,8 +517,8 @@ struct ItemDetailView: View {
     }
 }
 
-// MARK: - Status enum (miroir de LibraryStore)
+// MARK: - Statut (miroir de LibraryStore)
 
-private enum MediaStatus {
+private enum DetailStatus {
     case toWatch, seen, none
 }

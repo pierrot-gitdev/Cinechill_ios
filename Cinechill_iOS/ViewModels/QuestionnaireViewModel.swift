@@ -121,9 +121,16 @@ final class QuestionnaireViewModel {
         }
     }
 
-    func start(preferredPlatformIDs: Set<String>) {
+    /// - Parameters:
+    ///   - preferredPlatformIDs: abonnements déclarés dans les réglages. Ils
+    ///     pré-cochent la question plateformes sans la valider — l'utilisateur
+    ///     garde la main pour une soirée chez quelqu'un d'autre.
+    ///   - bannedGenreIDs: genres exclus dans les réglages. Le backend les
+    ///     refiltre de son côté ; les transmettre évite de gaspiller le vivier.
+    func start(preferredPlatformIDs: Set<String>, bannedGenreIDs: Set<Int> = []) {
         answers = QuestionnaireAnswers()
         answers.platformIDs = preferredPlatformIDs
+        answers.avoidedGenreIDs = bannedGenreIDs
         coarsePool = []
         enrichedPool = []
         askedDimensions = []
