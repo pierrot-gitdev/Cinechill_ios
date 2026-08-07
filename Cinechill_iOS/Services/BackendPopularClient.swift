@@ -37,7 +37,11 @@ protocol HomeMetadataFetching: Sendable {
 struct BackendPopularClient: PopularPageFetching, HomeMetadataFetching, Sendable {
     private let cache: DiskCache
 
-    init(cache: DiskCache = DiskCache(name: "api")) {
+    // Le suffixe de version isole ce cache de celui d'avant le correctif du
+    // filtre plateformes (location/achat exclus) : sans lui, les réponses déjà
+    // sur disque continueraient de servir l'ancien résultat jusqu'à leur
+    // expiration naturelle, jusqu'à 6 h après le déploiement du correctif.
+    init(cache: DiskCache = DiskCache(name: "api_v2")) {
         self.cache = cache
     }
 
