@@ -18,6 +18,12 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var birthDecade: Int?
     /// Le badge choisi comme signature du profil.
     @Published private(set) var displayedBadgeID: String?
+    /// Passe à `true` dès la première réponse du listener Firestore, même si
+    /// la galerie est vide. C'est le seul signal fiable pour distinguer « le
+    /// premier chargement vient d'arriver » d'un vrai ajout de film — sans
+    /// lui, la transition 0 → N du premier chargement se ferait passer pour
+    /// un ajout massif aux yeux de tout ce qui célèbre la progression.
+    @Published private(set) var hasLoadedGalleryOnce = false
     @Published private(set) var errorMessage: String?
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
@@ -247,6 +253,7 @@ private extension LibraryStore {
                 self.bannedGenreIDs = []
                 self.birthDecade = nil
                 self.displayedBadgeID = nil
+                self.hasLoadedGalleryOnce = false
 
                 guard let uid = user?.uid else { return }
                 self.startGalleryListener(uid: uid)
@@ -271,6 +278,7 @@ private extension LibraryStore {
                     let docs = snapshot?.documents ?? []
                     self.galleryItems = docs.compactMap { self.galleryEntry(from: $0.data()) }
                         .sorted(by: { $0.addedAt > $1.addedAt })
+                    self.hasLoadedGalleryOnce = true
                 }
             }
     }

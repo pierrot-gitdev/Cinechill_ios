@@ -6,6 +6,8 @@
 import SwiftUI
 
 struct MainTabView: View {
+    @EnvironmentObject private var libraryStore: LibraryStore
+
     @State private var homeModel: HomeViewModel
     @State private var questionnaireModel: QuestionnaireViewModel
     @State private var swipeModel = SwipeDeckViewModel()
@@ -70,8 +72,50 @@ struct MainTabView: View {
         }
         .environment(catalog)
         .environment(badgesModel)
+        .overlay { celebrationOverlay }
         .onChange(of: selectedTab) { _, tab in
             mountedTabs.insert(tab)
+        }
+        // Le seul signal commun à tout ce qui peut débloquer un badge ou
+        // faire franchir un palier — swipe, fiche film, CinéMatch — c'est la
+        // galerie qui grossit. `hasLoadedGalleryOnce` sert à distinguer
+        // l'arrivée du tout premier chargement d'un vrai ajout : sans lui, le
+        // 0 → N initial se ferait passer pour une avalanche de déblocages.
+        .onChange(of: libraryStore.hasLoadedGalleryOnce) { _, loaded in
+            if loaded {
+                Task { await badgesModel.checkForNewAchievements(galleryCount: libraryStore.galleryItems.count) }
+            } else {
+                badgesModel.resetAchievementTracking()
+            }
+        }
+        .onChange(of: libraryStore.galleryItems.count) { _, newCount in
+            guard libraryStore.hasLoadedGalleryOnce else { return }
+            Task { await badgesModel.checkForNewAchievements(galleryCount: newCount) }
+        }
+    }
+
+    @ViewBuilder
+    private var celebrationOverlay: some View {
+        if let celebration = badgesModel.currentCelebration {
+            AchievementCelebrationOverlay(
+                celebration: celebration,
+                onEquip: {
+                    if case .badge(let badge) = celebration {
+                        libraryStore.setDisplayedBadge(badge.id)
+                    }
+                    withAnimation(.easeOut(duration: 0.22)) {
+                        badgesModel.dismissCurrentCelebration()
+                    }
+                },
+                onDismiss: {
+                    withAnimation(.easeOut(duration: 0.22)) {
+                        badgesModel.dismissCurrentCelebration()
+                    }
+                }
+            )
+            .id(celebration.id)
+            .transition(.opacity)
+            .zIndex(10)
         }
     }
 
