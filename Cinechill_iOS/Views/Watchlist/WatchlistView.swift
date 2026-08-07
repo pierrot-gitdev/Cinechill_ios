@@ -34,11 +34,7 @@ struct WatchlistView: View {
                 }
             }
             .safeAreaInset(edge: .top) {
-                AppHeaderView(onProfileTap: { showProfile = true })
-                    .padding(.horizontal)
-                    .padding(.top, 10)
-                    .padding(.bottom, 6)
-                    .background(.ultraThinMaterial)
+                AppHeaderView(title: "Watchlist", onProfileTap: { showProfile = true })
             }
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showProfile) {

@@ -23,11 +23,7 @@ struct QuestionnaireView: View {
             }
             .safeAreaInset(edge: .top) {
                 if viewModel.phase == .intro {
-                    AppHeaderView(onProfileTap: { showProfile = true })
-                        .padding(.horizontal)
-                        .padding(.top, 10)
-                        .padding(.bottom, 6)
-                        .background(.ultraThinMaterial)
+                    AppHeaderView(title: "CinéMatch", onProfileTap: { showProfile = true })
                 }
             }
             .navigationBarHidden(true)

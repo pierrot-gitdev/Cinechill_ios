@@ -46,11 +46,7 @@ struct HomeView: View {
                 }
             }
             .safeAreaInset(edge: .top) {
-                AppHeaderView(onProfileTap: { showProfile = true })
-                    .padding(.horizontal)
-                    .padding(.top, 10)
-                    .padding(.bottom, 6)
-                    .background(.ultraThinMaterial)
+                AppHeaderView(title: "Accueil", onProfileTap: { showProfile = true })
             }
             .navigationBarHidden(true)
             .navigationDestination(for: MediaItem.self) { item in

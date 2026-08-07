@@ -44,6 +44,10 @@ struct Cinechill_iOSApp: App {
             }
             .animation(.easeInOut(duration: 0.45), value: splashFinished)
             .animation(.easeInOut(duration: 0.45), value: authService.isInitializing)
+            // L'identité — étain, cyan, nuit — est dessinée pour le sombre ; le clair n'est
+            // qu'un filet de sécurité pour du code encore non porté. On verrouille donc l'app
+            // plutôt que de maintenir deux palettes dont une seule est réellement dessinée.
+            .preferredColorScheme(.dark)
             .environmentObject(authService)
             .environmentObject(libraryStore)
             .environmentObject(profileStore)
