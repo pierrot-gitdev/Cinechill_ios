@@ -87,7 +87,7 @@ struct HomeView: View {
 
     private var loadingState: some View {
         VStack(spacing: 14) {
-            GradientSpinner(size: 30, lineWidth: 3, colors: [.indigo, .pink.opacity(0.1)])
+            CinechillSpinner(size: 32)
             Text("Chargement…")
                 .font(.footnote)
                 .foregroundStyle(.secondary)

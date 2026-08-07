@@ -234,7 +234,7 @@ struct SwipeDeckView: View {
                 )
             } else if model.isLoading {
                 VStack(spacing: 16) {
-                    GradientSpinner(size: 34, lineWidth: 3, colors: [.indigo, .pink.opacity(0.1)])
+                    CinechillSpinner(size: 36)
                     Text("On prépare votre sélection…")
                         .font(.footnote)
                         .foregroundStyle(.secondary)

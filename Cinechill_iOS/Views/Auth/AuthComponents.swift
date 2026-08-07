@@ -98,7 +98,7 @@ struct AuthPrimaryButton: View {
         Button(action: action) {
             Group {
                 if isLoading {
-                    GradientSpinner(size: 20, lineWidth: 2.5)
+                    CinechillSpinner(size: 22, tint: .onAccent)
                 } else {
                     Text(title).font(.headline)
                 }

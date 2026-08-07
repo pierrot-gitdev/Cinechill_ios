@@ -5,92 +5,171 @@
 
 import SwiftUI
 
-/// Écran affiché le temps que Firebase Auth détermine l'état de connexion au lancement —
-/// remplace un `ProgressView` nu par quelque chose qui porte l'identité de l'app. Ce n'est
-/// pas le launch screen natif (statique, généré par Xcode) : celui-ci prend le relais dès que
-/// SwiftUI démarre, pendant la brève fenêtre où on ne sait pas encore si on va vers le login
-/// ou l'app.
+/// L'ouverture de l'app : le faisceau entre par la droite, allume la cabine, traverse la salle,
+/// embrase l'écran — puis la lumière court tout autour du mur et dessine le C.
+///
+/// Ce n'est pas un indicateur de chargement : la séquence se joue **en entier**, même si Firebase
+/// a déjà répondu. C'est un choix, pas un oubli — le splash est le seul moment où la marque a
+/// l'écran pour elle. Les données, elles, se chargent en tâche de fond pendant ce temps (les
+/// stores démarrent dans `Cinechill_iOSApp`), si bien que l'animation ne coûte du temps que
+/// lorsqu'elle est plus lente que le réseau.
+///
+/// `onFinished` est appelé à la fin de la séquence ; c'est l'appelant qui décide de passer la
+/// main, une fois que l'animation **et** l'auth sont prêtes.
 struct SplashView: View {
-    @State private var badgePulse = false
-    @State private var glowPulse = false
+    var onFinished: () -> Void = {}
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var bladeOffset: CGFloat = 1
+    @State private var bladeOpacity: Double = 0
+    @State private var boothGlow: Double = 0
+    @State private var lightReach: CGFloat = 0
+    @State private var rimTrim: Double = 0
+    @State private var wallReveal: Double = 0
+    @State private var seatsOpacity: Double = 0
+    @State private var markScale: CGFloat = 0.94
+    @State private var titleOpacity: Double = 0
+    @State private var titleOffset: CGFloat = 10
+
+    private let markSize: CGFloat = 216
 
     var body: some View {
         ZStack {
-            backgroundLayer
+            background
 
-            VStack(spacing: 20) {
+            VStack(spacing: 34) {
                 ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [.indigo.opacity(0.45), .clear],
-                                center: .center, startRadius: 4, endRadius: 100
-                            )
-                        )
-                        .frame(width: 200, height: 200)
-                        .scaleEffect(glowPulse ? 1.15 : 0.88)
-
-                    RoundedRectangle(cornerRadius: 30, style: .continuous)
-                        .fill(
-                            LinearGradient(colors: [.indigo, .pink], startPoint: .topLeading, endPoint: .bottomTrailing)
-                        )
-                        .frame(width: 104, height: 104)
-                        .shadow(color: .indigo.opacity(0.45), radius: 26, y: 14)
-
-                    Image(systemName: "popcorn.fill")
-                        .font(.system(size: 44, weight: .semibold))
-                        .foregroundStyle(.white)
+                    halo
+                    incomingBlade
+                    CinechillMark(
+                        wallReveal: wallReveal,
+                        rimTrim: rimTrim,
+                        lightReach: lightReach,
+                        seatsOpacity: seatsOpacity,
+                        boothGlow: boothGlow
+                    )
+                    .frame(width: markSize, height: markSize)
                 }
-                .scaleEffect(badgePulse ? 1.05 : 1)
+                .frame(width: markSize, height: markSize)
+                .scaleEffect(markScale)
 
                 Text("Cinechill")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .font(.system(size: 27, weight: .semibold, design: .rounded))
+                    .tracking(1.6)
                     .foregroundStyle(.white)
-
-                LoadingDotsView()
-                    .padding(.top, 4)
+                    .opacity(titleOpacity)
+                    .offset(y: titleOffset)
             }
         }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                badgePulse = true
-                glowPulse = true
-            }
-        }
+        .task { await run() }
     }
 
-    private var backgroundLayer: some View {
+    // MARK: Décor
+
+    private var background: some View {
         ZStack {
-            Color(red: 0.05, green: 0.05, blue: 0.09)
+            LinearGradient(
+                colors: [CinechillPalette.night, CinechillPalette.nightMid, CinechillPalette.nightDeep],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
             RadialGradient(
-                colors: [.indigo.opacity(0.28), .clear],
-                center: UnitPoint(x: 0.5, y: 0.32), startRadius: 10, endRadius: 420
+                colors: [CinechillPalette.light.opacity(0.10 * wallReveal), .clear],
+                center: UnitPoint(x: 0.5, y: 0.42), startRadius: 20, endRadius: 420
             )
         }
         .ignoresSafeArea()
     }
-}
 
-/// Trois points qui pulsent en cascade — signal d'activité minimal, cohérent avec le reste
-/// des états de chargement de l'app plutôt qu'un `ProgressView` générique.
-private struct LoadingDotsView: View {
-    @State private var animate = false
+    /// Lueur froide qui monte derrière le mark à mesure que la salle s'éclaire.
+    private var halo: some View {
+        Circle()
+            .fill(
+                RadialGradient(
+                    colors: [CinechillPalette.light.opacity(0.22), .clear],
+                    center: .center, startRadius: 6, endRadius: markSize * 0.78
+                )
+            )
+            .frame(width: markSize * 1.7, height: markSize * 1.7)
+            .opacity(wallReveal)
+    }
 
-    var body: some View {
-        HStack(spacing: 7) {
-            ForEach(0..<3, id: \.self) { index in
-                Circle()
-                    .fill(.white.opacity(0.75))
-                    .frame(width: 7, height: 7)
-                    .scaleEffect(animate ? 1 : 0.4)
-                    .opacity(animate ? 1 : 0.4)
-                    .animation(
-                        .easeInOut(duration: 0.6).repeatForever(autoreverses: true).delay(Double(index) * 0.15),
-                        value: animate
-                    )
-            }
+    /// La lame de lumière qui arrive de la droite et vient se loger dans la cabine. Elle porte la
+    /// même inclinaison que le mark, pour entrer exactement dans l'ouverture.
+    private var incomingBlade: some View {
+        let unit = markSize / CinechillMarkMetrics.canvas
+
+        return ZStack {
+            LinearGradient(
+                colors: [
+                    .clear,
+                    CinechillPalette.light.opacity(0.45),
+                    CinechillPalette.lightPale,
+                    CinechillPalette.lightPale.opacity(0)
+                ],
+                startPoint: .trailing, endPoint: .leading
+            )
+            .frame(width: 440 * unit, height: 24 * unit)
+            .blur(radius: 5 * unit)
+            .position(x: 566 * unit, y: 256 * unit)
         }
-        .onAppear { animate = true }
+        .frame(width: markSize, height: markSize)
+        .rotationEffect(CinechillMarkMetrics.tilt)
+        .offset(x: bladeOffset * markSize)
+        .opacity(bladeOpacity)
+    }
+
+    // MARK: Séquence
+
+    private func run() async {
+        guard !reduceMotion else {
+            // Même destination, sans le voyage.
+            withAnimation(.easeOut(duration: 0.3)) {
+                boothGlow = 1; lightReach = 512; rimTrim = 1
+                wallReveal = 1; seatsOpacity = 1; markScale = 1
+                titleOpacity = 1; titleOffset = 0
+            }
+            await sleep(700)
+            onFinished()
+            return
+        }
+
+        // 1 — la lame arrive de la droite.
+        withAnimation(.easeOut(duration: 0.16)) { bladeOpacity = 1 }
+        withAnimation(.easeOut(duration: 0.46)) { bladeOffset = 0 }
+        await sleep(430)
+
+        // 2 — elle atteint la cabine, qui s'allume.
+        withAnimation(.easeOut(duration: 0.20)) { boothGlow = 1 }
+        withAnimation(.easeIn(duration: 0.35)) { bladeOpacity = 0.35 }
+        await sleep(130)
+
+        // 3 — la projection traverse la salle et embrase l'écran.
+        withAnimation(.easeOut(duration: 0.55)) { lightReach = 340 }
+        await sleep(300)
+
+        // 4 — la lumière court autour du mur : c'est elle qui dessine le C.
+        withAnimation(.easeInOut(duration: 0.70)) { rimTrim = 1 }
+        withAnimation(.easeIn(duration: 0.75).delay(0.10)) { wallReveal = 1 }
+        withAnimation(.easeOut(duration: 0.95)) { markScale = 1 }
+        await sleep(540)
+
+        // 5 — la salle se remplit.
+        withAnimation(.easeOut(duration: 0.45)) { seatsOpacity = 1 }
+        await sleep(230)
+
+        // 6 — le nom.
+        withAnimation(.easeOut(duration: 0.45)) {
+            titleOpacity = 1
+            titleOffset = 0
+        }
+        await sleep(430)
+
+        onFinished()
+    }
+
+    private func sleep(_ milliseconds: UInt64) async {
+        try? await Task.sleep(nanoseconds: milliseconds * 1_000_000)
     }
 }
 

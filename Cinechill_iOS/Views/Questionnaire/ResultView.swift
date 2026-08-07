@@ -167,7 +167,7 @@ private struct ResultCardView: View {
         } label: {
             Group {
                 if isAddingToWatchlist && !inWatchlist {
-                    GradientSpinner(size: 16, lineWidth: 2)
+                    CinechillSpinner(size: 18)
                 } else {
                     Label(
                         inWatchlist ? "Dans la watchlist" : "Ajouter",

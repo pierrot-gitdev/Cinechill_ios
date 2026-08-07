@@ -104,7 +104,7 @@ struct SettingsView: View {
         ) {
             if catalog.platforms.isEmpty {
                 HStack {
-                    GradientSpinner(size: 16, lineWidth: 2, colors: [.indigo, .pink.opacity(0.1)])
+                    CinechillSpinner(size: 18)
                     Text("Chargement des plateformes…")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -288,7 +288,7 @@ struct SettingsView: View {
             .overlay(alignment: .center) {
                 if isWorking {
                     Color(.secondarySystemGroupedBackground).opacity(0.85)
-                    GradientSpinner(size: 22, lineWidth: 2.5, colors: [.indigo, .pink.opacity(0.1)])
+                    CinechillSpinner(size: 24)
                 }
             }
 
@@ -336,7 +336,7 @@ struct SettingsView: View {
                 Spacer(minLength: 8)
 
                 if isSavingName {
-                    GradientSpinner(size: 14, lineWidth: 2, colors: [.indigo, .pink.opacity(0.1)])
+                    CinechillSpinner(size: 16)
                 }
 
                 if profileStore.customPhotoData != nil {

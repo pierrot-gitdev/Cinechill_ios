@@ -113,7 +113,7 @@ struct WatchlistView: View {
                     .foregroundStyle(.secondary)
 
                 if model.isEnriching {
-                    GradientSpinner(size: 12, lineWidth: 1.8, colors: [.indigo, .pink.opacity(0.1)])
+                    CinechillSpinner(size: 14)
                 }
             }
 

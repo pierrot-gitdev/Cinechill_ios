@@ -5,33 +5,23 @@
 
 import SwiftUI
 
-/// Anneau en rotation continue avec une traîne dégradée, utilisé comme indicateur de
-/// chargement partout où un `ProgressView` nu tranchait avec le reste du design (boutons en
-/// pilule dégradée, cartes…).
+/// Compatibilité — l'anneau dégradé a été remplacé par ``CinechillSpinner``, qui porte le logo.
+///
+/// Les appels du projet ont été migrés ; ce type ne reste que comme filet de sécurité au cas où
+/// un appel aurait été manqué. `lineWidth` et `colors` ne sont plus lus : le spinner a désormais
+/// ses propres couleurs de marque, c'est tout l'intérêt d'avoir un indicateur unique. Le fichier
+/// peut être supprimé du projet une fois qu'on a vérifié qu'il ne sert plus.
 struct GradientSpinner: View {
     var size: CGFloat = 20
     var lineWidth: CGFloat = 2.5
     var colors: [Color] = [.white, .white.opacity(0.05)]
 
-    @State private var rotation: Double = 0
-
     var body: some View {
-        Circle()
-            .trim(from: 0, to: 0.75)
-            .stroke(
-                AngularGradient(colors: colors, center: .center),
-                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-            )
-            .frame(width: size, height: size)
-            .rotationEffect(.degrees(rotation))
-            .onAppear {
-                withAnimation(.linear(duration: 0.8).repeatForever(autoreverses: false)) {
-                    rotation = 360
-                }
-            }
+        // Le blanc signalait un usage sur aplat coloré (bouton dégradé) : on garde ce contrat.
+        CinechillSpinner(size: size + 2, tint: colors.first == .white ? .onAccent : .brand)
     }
 }
 
 #Preview {
-    GradientSpinner(size: 32, lineWidth: 3, colors: [.indigo, .pink.opacity(0.1)])
+    GradientSpinner(size: 32)
 }

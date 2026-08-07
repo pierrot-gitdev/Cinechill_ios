@@ -184,7 +184,7 @@ struct ItemDetailView: View {
             Spacer(minLength: 8)
 
             if loading {
-                GradientSpinner(size: 13, lineWidth: 1.8, colors: [.indigo, .pink.opacity(0.1)])
+                CinechillSpinner(size: 15)
             }
 
             if let rating = detail?.voteAverage ?? item.voteAverage {
