@@ -447,6 +447,153 @@ struct CinechillMark: View {
     }
 }
 
+// MARK: - Le tracé
+
+/// Le contour du logo, en un seul chemin fermé — deux arcs et deux droites
+/// parallèles, exactement la géométrie du mark plein.
+///
+/// C'est la version de l'authentification, où l'identité passe par le dessin et
+/// non par la lumière : le même fichier sert de signature à 20 pt et de plan à
+/// 550 pt, sans que le trait n'épaississe jamais, puisque c'est l'appelant qui
+/// choisit l'épaisseur du tracé.
+///
+/// Les arcs sont échantillonnés plutôt que confiés à `addArc` : le sens de
+/// balayage d'un arc SwiftUI dépend d'une convention qui s'inverse selon le
+/// repère, et une inversion silencieuse retournerait le C. Ici la trajectoire
+/// est écrite en toutes lettres, et le chemin reste continu — donc joignable
+/// sans raccord visible.
+struct CinechillOutline: Shape {
+    /// Demi-ouverture des arcs, en degrés : `asin(52 / rayon)`.
+    private static let outerHalf: Double = 15.3846   // asin(52 / 196)
+    private static let innerHalf: Double = 26.1478   // asin(52 / 118)
+
+    func path(in rect: CGRect) -> Path {
+        let space = CinechillMarkSpace(rect)
+        let m = CinechillMarkMetrics.self
+        var path = Path()
+
+        // Le mur extérieur, de la lèvre haute de l'ouverture à la lèvre basse,
+        // par le long chemin — celui qui fait le C.
+        Self.sweep(
+            &path, space,
+            center: m.center, radius: m.outerRadius,
+            from: -Self.outerHalf, to: -(360 - Self.outerHalf),
+            starting: true
+        )
+        // La droite du bas ferme l'ouverture, puis le mur intérieur revient.
+        Self.sweep(
+            &path, space,
+            center: m.center, radius: m.innerRadius,
+            from: Self.innerHalf, to: 360 - Self.innerHalf,
+            starting: false
+        )
+        // `close` trace la droite du haut : les deux faces de l'ouverture sont
+        // ainsi parallèles par construction, jamais par réglage.
+        path.closeSubpath()
+        return path
+    }
+
+    fileprivate static func sweep(
+        _ path: inout Path,
+        _ space: CinechillMarkSpace,
+        center: CGPoint,
+        radius: CGFloat,
+        from: Double,
+        to: Double,
+        starting: Bool
+    ) {
+        // Un segment tous les deux degrés : sous 1,5 pt d'épaisseur, la corde
+        // reste très en deçà du pixel, même à 600 pt de côté.
+        let steps = max(12, Int(abs(to - from) / 2))
+        for step in 0...steps {
+            let degrees = from + (to - from) * Double(step) / Double(steps)
+            let radians = degrees * .pi / 180
+            let point = space.point(
+                center.x + radius * CGFloat(cos(radians)),
+                center.y + radius * CGFloat(sin(radians))
+            )
+            if step == 0 && starting {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+    }
+}
+
+/// L'écran courbe et deux rangées de fauteuils, sans le mur.
+///
+/// Réservé au grand format : à 20 pt ces trois arcs se referment en une tache.
+/// Les rangées sont centrées sur l'écran, comme dans le mark plein.
+struct CinechillOutlineRoom: Shape {
+    func path(in rect: CGRect) -> Path {
+        let space = CinechillMarkSpace(rect)
+        let m = CinechillMarkMetrics.self
+        var path = Path()
+
+        CinechillOutline.sweep(
+            &path, space,
+            center: m.center, radius: m.screenRadius,
+            from: m.screenStart, to: m.screenEnd, starting: true
+        )
+        for row in [m.seatRows[1], m.seatRows[3]] {
+            CinechillOutline.sweep(
+                &path, space,
+                center: m.screenFocus, radius: row.radius,
+                from: -row.halfSpan, to: row.halfSpan, starting: true
+            )
+        }
+        return path
+    }
+}
+
+/// La signature : le contour, plus le point de lumière logé dans l'ouverture.
+///
+/// C'est la règle de la famille d'icônes appliquée au logo lui-même — un seul
+/// élément plein, dans la brèche.
+struct CinechillMarkOutline: View {
+    var lineWidth: CGFloat = 1.4
+    /// Le point plein. On le coupe aux très petites tailles, où il devient une
+    /// bavure plutôt qu'un signe.
+    var showsLight: Bool = true
+
+    var body: some View {
+        GeometryReader { geo in
+            let space = CinechillMarkSpace(CGRect(origin: .zero, size: geo.size))
+            let side = space.length(36)
+
+            ZStack {
+                CinechillOutline()
+                    .stroke(style: StrokeStyle(lineWidth: lineWidth, lineJoin: .round))
+
+                if showsLight {
+                    Rectangle()
+                        .frame(width: side, height: side)
+                        .position(space.point(404, 256))
+                }
+            }
+            .rotationEffect(CinechillMarkMetrics.tilt)
+        }
+        .aspectRatio(1, contentMode: .fit)
+    }
+}
+
+/// Le plan : le contour et la salle, au même trait.
+struct CinechillPlanOutline: View {
+    var lineWidth: CGFloat = 1
+
+    var body: some View {
+        ZStack {
+            CinechillOutline()
+                .stroke(style: StrokeStyle(lineWidth: lineWidth, lineJoin: .round))
+            CinechillOutlineRoom()
+                .stroke(style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+        }
+        .rotationEffect(CinechillMarkMetrics.tilt)
+        .aspectRatio(1, contentMode: .fit)
+    }
+}
+
 #Preview("Logo") {
     ZStack {
         LinearGradient(
@@ -455,6 +602,25 @@ struct CinechillMark: View {
         )
         CinechillMark()
             .frame(width: 240, height: 240)
+    }
+    .ignoresSafeArea()
+}
+
+#Preview("Tracé") {
+    ZStack {
+        CinechillPalette.night
+        VStack(spacing: 48) {
+            CinechillPlanOutline()
+                .foregroundStyle(.white.opacity(0.45))
+                .frame(width: 260, height: 260)
+
+            HStack(alignment: .bottom, spacing: 24) {
+                CinechillMarkOutline().frame(width: 20, height: 20)
+                CinechillMarkOutline().frame(width: 44, height: 44)
+                CinechillMarkOutline().frame(width: 88, height: 88)
+            }
+            .foregroundStyle(Color(hex: 0xEDF1F5))
+        }
     }
     .ignoresSafeArea()
 }

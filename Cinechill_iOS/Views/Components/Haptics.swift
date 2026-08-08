@@ -24,4 +24,10 @@ enum Haptics {
     static func success() {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
+
+    /// Une saisie refusée. Une seule fois par soumission ratée, jamais une par
+    /// champ : trois vibrations d'affilée se lisent comme une panne.
+    static func warning() {
+        UINotificationFeedbackGenerator().notificationOccurred(.error)
+    }
 }
