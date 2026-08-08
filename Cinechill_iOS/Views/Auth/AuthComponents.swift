@@ -7,26 +7,13 @@ import SwiftUI
 
 // MARK: - Encres
 
-/// Les six valeurs de l'authentification — direction « Le Plan ».
+/// Les encres de l'authentification, qui n'ont jamais été propres à
+/// l'authentification : elles sont désormais celles de toute l'application et
+/// vivent dans `CinechillDesign`. Ce renvoi existe pour que le parcours — six
+/// écrans, 800 lignes — n'ait pas à être réécrit pour un changement de nom.
 ///
-/// Trois gris, deux états, un fond. En régime courant un écran n'en emploie que
-/// quatre : l'accent et l'écart ne servent qu'à dire quelque chose. Toutes sont
-/// dérivées de `CinechillPalette`, à plat — aucun dégradé, aucune lueur.
-enum AuthInk {
-    static let ground = CinechillPalette.night          // #0A0F16
-    static let ink = Color(hex: 0xEDF1F5)
-    static let ink2 = Color(hex: 0x8D9AA8)              // étain
-    static let ink3 = Color(hex: 0x59636E)              // ardoise
-
-    static let rule = Color(hex: 0xC6D3DF).opacity(0.13)
-    static let ruleSet = Color(hex: 0xC6D3DF).opacity(0.26)
-
-    /// Le point de lumière de la famille d'icônes. Deux occurrences par écran au
-    /// maximum, et jamais autrement que sous la forme d'un carré de 5 pt.
-    static let light = CinechillPalette.light           // #7FE3FF
-    /// L'écart. Seule teinte chaude de l'application.
-    static let warn = Color(hex: 0xE5A276)
-}
+/// Tout écran neuf emploie `Ink` directement.
+typealias AuthInk = Ink
 
 /// Les mesures de la planche. Elles ne dépendent d'aucun contenu : ce sont les
 /// mêmes sur les six écrans du parcours, et c'est cette constance — pas un
@@ -48,43 +35,18 @@ enum AuthMetrics {
     /// Distance du bloc d'actions au bas de la zone sûre.
     static let floor: CGFloat = 32
 
-    static let field: CGFloat = 32
-    static let button: CGFloat = 52
-    static let buttonSecondary: CGFloat = 48
-    static let radius: CGFloat = 3
+    // Les mesures de contrôle et les courbes sont communes à toute
+    // l'application : elles vivent dans `Metrics`, et sont reprises ici pour que
+    // le parcours continue de se lire d'un seul tenant.
+    static let field = Metrics.field
+    static let button = Metrics.button
+    static let buttonSecondary = Metrics.buttonSecondary
+    static let radius = Metrics.radius
 
     /// Une transition de valeur, pas une animation : rien ne se déplace.
-    static let shift = Animation.easeOut(duration: 0.18)
+    static let shift = Metrics.shift
     /// Le dépliage de la confirmation — seul mouvement de mise en page du parcours.
-    static let unfold = Animation.easeOut(duration: 0.2)
-}
-
-// MARK: - Typographie
-
-extension View {
-    /// Le niveau de service : libellés et actions secondaires. Interlettré parce
-    /// que des capitales serrées ne se lisent pas, gras parce qu'à 10 pt une
-    /// graisse fine disparaît.
-    func planLabel() -> some View {
-        self.font(.system(size: 10, weight: .semibold))
-            .tracking(1.8)
-            .textCase(.uppercase)
-    }
-}
-
-// MARK: - Le point
-
-/// Le seul aplat de l'interface. Il ne dit que deux choses : « ce pseudo est
-/// libre », « les deux mots de passe correspondent ».
-struct PlanLight: View {
-    var tint: Color = AuthInk.light
-
-    var body: some View {
-        Rectangle()
-            .fill(tint)
-            .frame(width: 5, height: 5)
-            .transition(.opacity)
-    }
+    static let unfold = Metrics.unfold
 }
 
 // MARK: - Le champ
@@ -246,94 +208,6 @@ struct PlanField<Value: Hashable>: View {
     }
 }
 
-// MARK: - Les actions
-
-/// L'action principale : le seul aplat clair de l'écran, et donc le seul objet
-/// sur lequel l'œil n'hésite pas.
-///
-/// Le chargement se joue dans le bouton — un filet de 2 pt parcourt son bord
-/// bas. Pas de voile, pas de roue posée ailleurs, et le libellé dit ce qui se
-/// passe plutôt que de disparaître.
-struct PlanButton: View {
-    let title: String
-    var loadingTitle: String?
-    var isLoading: Bool = false
-    var isEnabled: Bool = true
-    let action: () -> Void
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var travel: CGFloat = -1
-
-    var body: some View {
-        Button(action: action) {
-            Text(isLoading ? (loadingTitle ?? title) : title)
-                .font(.system(size: 15.5, weight: .semibold))
-                .kerning(-0.08)
-                .foregroundStyle(AuthInk.ground)
-                .frame(maxWidth: .infinity)
-                .frame(height: AuthMetrics.button)
-                .background(AuthInk.ink)
-                .overlay(alignment: .bottomLeading) { progress }
-                .clipShape(RoundedRectangle(cornerRadius: AuthMetrics.radius, style: .continuous))
-                .opacity(isEnabled && !isLoading ? 1 : 0.6)
-        }
-        .buttonStyle(PressableScaleStyle(scale: 0.985))
-        .disabled(isLoading || !isEnabled)
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(isLoading ? [.updatesFrequently] : [])
-    }
-
-    @ViewBuilder
-    private var progress: some View {
-        if isLoading && !reduceMotion {
-            GeometryReader { geo in
-                Rectangle()
-                    .fill(AuthInk.ground.opacity(0.4))
-                    .frame(width: geo.size.width * 0.45, height: 2)
-                    .offset(x: travel * geo.size.width)
-                    .onAppear {
-                        travel = -0.45
-                        withAnimation(.easeInOut(duration: 1.05).repeatForever(autoreverses: false)) {
-                            travel = 1
-                        }
-                    }
-            }
-            .frame(height: 2)
-        }
-    }
-}
-
-/// Une porte tierce, ou un retour. Contour, jamais rempli : ce sont des
-/// alternatives, pas des concurrentes de l'action principale.
-struct PlanSecondaryButton: View {
-    let title: String
-    var icon: Image?
-    var isEnabled: Bool = true
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 9) {
-                if let icon {
-                    icon.font(.system(size: 15, weight: .medium))
-                }
-                Text(title)
-                    .font(.system(size: 14.5, weight: .medium))
-            }
-            .foregroundStyle(AuthInk.ink)
-            .frame(maxWidth: .infinity)
-            .frame(height: AuthMetrics.buttonSecondary)
-            .overlay(
-                RoundedRectangle(cornerRadius: AuthMetrics.radius, style: .continuous)
-                    .stroke(AuthInk.ruleSet, lineWidth: 1)
-            )
-            .opacity(isEnabled ? 1 : 0.5)
-        }
-        .buttonStyle(PressableScaleStyle(scale: 0.985))
-        .disabled(!isEnabled)
-    }
-}
-
 // MARK: - La panne technique
 
 /// Une erreur qui ne vient d'aucun champ ne se pose sur aucun : elle s'installe
@@ -471,19 +345,6 @@ enum PlanHandle {
             seen.insert(candidate)
             return true
         }
-    }
-}
-
-// MARK: - Le filet
-
-/// Le plafond et le plancher : exactement le filet de `AppHeaderView` et de
-/// `AppTabBar`, aux mêmes valeurs. C'est lui qui fait lire l'écran comme un
-/// volume, et il n'a pas été inventé ici.
-struct PlanEdge: View {
-    var body: some View {
-        Rectangle()
-            .fill(AuthInk.rule)
-            .frame(height: 1)
     }
 }
 

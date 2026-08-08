@@ -98,9 +98,9 @@ struct AppTabBar: View {
     private var scrim: some View {
         LinearGradient(
             stops: [
-                .init(color: Color(.systemBackground).opacity(0), location: 0),
-                .init(color: Color(.systemBackground).opacity(0.92), location: 0.5),
-                .init(color: Color(.systemBackground), location: 1)
+                .init(color: Ink.ground.opacity(0), location: 0),
+                .init(color: Ink.ground.opacity(0.92), location: 0.5),
+                .init(color: Ink.ground, location: 1)
             ],
             startPoint: .top, endPoint: .bottom
         )

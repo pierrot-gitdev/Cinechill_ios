@@ -41,9 +41,11 @@ struct ProfileSearchView: View {
             }
             .padding(.bottom, 30)
         }
-        .background(Color(.systemBackground))
-        .navigationTitle("Rechercher")
-        .navigationBarTitleDisplayMode(.inline)
+        .background(Ink.ground)
+        .safeAreaInset(edge: .top) {
+            PlanHeader("Rechercher")
+        }
+        .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(item: $openedProfile) { profile in
             PublicProfileView(profile: profile)
         }
@@ -119,11 +121,10 @@ struct ProfileSearchView: View {
     }
 
     private func sectionHeader(_ title: String) -> some View {
-        Text(title.uppercased())
-            .font(.system(size: 10, weight: .heavy, design: .rounded))
-            .kerning(0.9)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 6)
+        Text(title)
+            .planLabel()
+            .foregroundStyle(Ink.ink2)
+            .padding(.horizontal, Metrics.margin)
+            .padding(.bottom, 8)
     }
 }

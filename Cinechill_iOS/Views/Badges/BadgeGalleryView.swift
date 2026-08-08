@@ -20,31 +20,35 @@ struct BadgeGalleryView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16, pinnedViews: [.sectionHeaders]) {
+            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                 Section {
-                    LazyVGrid(columns: columns, spacing: 22) {
+                    LazyVGrid(columns: columns, spacing: 24) {
                         ForEach(model.filteredBadges) { badge in
                             cell(badge)
                         }
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.top, 12)
+                    .padding(.horizontal, Metrics.margin)
+                    .padding(.top, 18)
                     .padding(.bottom, 28)
                 } header: {
                     filterBar
                 }
             }
         }
-        .background(Color(.systemBackground))
-        .navigationTitle("Mes badges · \(model.unlockedCount) / \(model.totalCount)")
-        .navigationBarTitleDisplayMode(.inline)
+        .background(Ink.ground)
+        .safeAreaInset(edge: .top) {
+            PlanHeader("Mes badges") {
+                PlanHeaderCount(value: "\(model.unlockedCount) / \(model.totalCount)")
+            }
+        }
+        .toolbar(.hidden, for: .navigationBar)
         .task { await model.refresh() }
         .sheet(item: $selected) { badge in
             BadgeDetailView(
                 badge: badge,
                 progress: model.progress(for: badge),
-                // Une fois le badge affiché, on referme la galerie pour
-                // révéler le profil directement — pas juste la fiche.
+                // Une fois le badge affiché, on referme la galerie pour révéler
+                // le profil directement — pas juste la fiche.
                 onDisplayedOnProfile: {
                     selected = nil
                     Task {
@@ -57,31 +61,25 @@ struct BadgeGalleryView: View {
         }
     }
 
+    /// Le voile de la nuit remplace `ultraThinMaterial` : la même lisibilité
+    /// sous l'en-tête épinglé, sans emprunter l'esthétique du système.
     private var filterBar: some View {
-        HStack(spacing: 6) {
-            ForEach(BadgesViewModel.Filter.allCases) { option in
-                let isOn = model.filter == option
-                Button {
-                    Haptics.selection()
-                    model.filter = option
-                } label: {
-                    Text(option.label)
-                        .font(.system(size: 11.5, weight: .bold, design: .rounded))
-                        .foregroundStyle(isOn ? Color(.systemBackground) : .secondary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            isOn ? AnyShapeStyle(Color.primary) : AnyShapeStyle(Color(.secondarySystemBackground)),
-                            in: Capsule()
-                        )
+        VStack(spacing: 0) {
+            HStack(spacing: 7) {
+                ForEach(BadgesViewModel.Filter.allCases) { option in
+                    PlanChip(title: option.label, isOn: model.filter == option) {
+                        Haptics.selection()
+                        model.filter = option
+                    }
                 }
-                .buttonStyle(PressableScaleStyle(scale: 0.92))
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
+            .padding(.horizontal, Metrics.margin)
+            .padding(.vertical, 12)
+
+            PlanEdge()
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial)
+        .background(Ink.ground)
     }
 
     private func cell(_ badge: Badge) -> some View {
@@ -90,20 +88,20 @@ struct BadgeGalleryView: View {
             Haptics.impact(.light)
             selected = badge
         } label: {
-            VStack(spacing: 7) {
+            VStack(spacing: 9) {
                 BadgeView(badge: badge, isUnlocked: state.unlocked, size: 88)
 
                 Text(badge.displayName(unlocked: state.unlocked))
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(state.unlocked ? Ink.ink : Ink.ink2)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
 
                 if !state.unlocked {
                     Text(badge.isSecret ? "Secret" : "\(state.current) / \(state.target)")
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .planLabel()
                         .monospacedDigit()
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Ink.ink3)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -113,12 +111,22 @@ struct BadgeGalleryView: View {
 }
 
 /// La fiche d'un badge : ce qu'il représente, et ce qui manque exactement.
+///
+/// **Le badge est la seule couleur de l'écran.** C'est la règle que la carte de
+/// signature du profil applique déjà, écrite dans son propre commentaire — si la
+/// page a son identité chromatique et le badge la sienne, les deux se battent.
+/// Sa fiche faisait exactement l'inverse : jauge et bouton en dégradé
+/// indigo→rose, confirmation verte posée sur l'objet lui-même.
+///
+/// La couleur de rareté, elle, est conservée : c'est un système illustratif
+/// adossé aux artworks, pas une sémantique iOS empruntée. On ne force pas
+/// l'identité là où une couleur porte une information que rien d'autre ne porte.
 struct BadgeDetailView: View {
     let badge: Badge
     let progress: BadgeProgress
-    /// Appelé après l'animation de confirmation, uniquement quand le badge
-    /// vient d'être choisi (pas quand on le retire) — c'est ce qui referme la
-    /// galerie pour révéler le profil avec le nouveau badge.
+    /// Appelé après l'animation de confirmation, uniquement quand le badge vient
+    /// d'être choisi (pas quand on le retire) — c'est ce qui referme la galerie
+    /// pour révéler le profil avec le nouveau badge.
     var onDisplayedOnProfile: (() -> Void)?
 
     @EnvironmentObject private var libraryStore: LibraryStore
@@ -128,146 +136,140 @@ struct BadgeDetailView: View {
     private var isDisplayed: Bool { libraryStore.displayedBadgeID == badge.id }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                BadgeView(badge: badge, isUnlocked: progress.unlocked, size: 168)
-                    .padding(.top, 28)
-                    .overlay(alignment: .topTrailing) { confirmationBadge }
+        ZStack {
+            Ink.ground.ignoresSafeArea()
 
-                VStack(spacing: 10) {
-                    Text(badge.displayName(unlocked: progress.unlocked))
-                        .font(.system(size: 22, weight: .heavy, design: .rounded))
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        BadgeView(badge: badge, isUnlocked: progress.unlocked, size: 138)
+                            .padding(.top, 34)
 
-                    Text(badge.rarity.label.uppercased())
-                        .font(.system(size: 10, weight: .heavy, design: .rounded))
-                        .kerning(1.2)
-                        .foregroundStyle(badge.rarity.accent)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(badge.rarity.accent.opacity(0.15), in: Capsule())
-
-                    Text(badge.displayCondition(unlocked: progress.unlocked))
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-
-                    // Le détail dit ce qui manque précisément, pas juste un
-                    // seuil : un badge dont on sait quoi faire est un badge
-                    // qu'on va chercher.
-                    if let detail = progress.detail, !progress.unlocked, !badge.isSecret {
-                        Text(detail)
-                            .font(.system(size: 12.5))
-                            .italic()
-                            .foregroundStyle(.tertiary)
+                        Text(badge.displayName(unlocked: progress.unlocked))
+                            .planTitle(26)
+                            .foregroundStyle(Ink.ink)
                             .multilineTextAlignment(.center)
+                            .padding(.top, 26)
+
+                        Text(badge.rarity.label)
+                            .planLabel()
+                            .foregroundStyle(badge.rarity.accent)
+                            .padding(.top, 9)
+
+                        Text(badge.displayCondition(unlocked: progress.unlocked))
+                            .font(.system(size: 13.5))
+                            .foregroundStyle(Ink.ink2)
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 16)
+
+                        if progress.unlocked {
+                            unlockedNote
+                        } else if !badge.isSecret {
+                            progressBlock
+                        } else if let detail = progress.detail {
+                            Text(detail)
+                                .font(.system(size: 12.5))
+                                .foregroundStyle(Ink.ink3)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 14)
+                        }
                     }
+                    .padding(.horizontal, Metrics.margin)
+                    .padding(.bottom, 24)
                 }
-                .padding(.horizontal, 28)
+                .scrollIndicators(.hidden)
 
                 if progress.unlocked {
-                    unlockedFooter
-                } else if !badge.isSecret {
-                    progressBar
-                }
-
-                Spacer(minLength: 20)
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .background(Color(.systemBackground))
-    }
-
-    private var progressBar: some View {
-        VStack(spacing: 7) {
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color(.tertiarySystemFill))
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [.indigo, .pink],
-                                startPoint: .leading, endPoint: .trailing
-                            )
-                        )
-                        .frame(width: max(6, proxy.size.width * progress.fraction))
+                    footer
                 }
             }
-            .frame(height: 6)
-
-            Text("\(progress.current) sur \(progress.target)")
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 40)
-    }
-
-    private var unlockedFooter: some View {
-        VStack(spacing: 12) {
-            if let date = progress.unlockedAt {
-                Text("Obtenu le \(date.formatted(date: .abbreviated, time: .omitted))")
-                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.tertiary)
-            }
-
-            Button(action: handleTap) {
-                HStack(spacing: 7) {
-                    if isConfirming {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .transition(.scale.combined(with: .opacity))
-                    }
-                    Text(buttonLabel)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                }
-                .foregroundStyle(isDisplayed && !isConfirming ? Color.secondary : .white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(buttonBackground)
-                }
-            }
-            .buttonStyle(PressableScaleStyle(scale: 0.97))
-            .disabled(isConfirming)
-            .padding(.horizontal, 28)
-            .animation(.spring(response: 0.35, dampingFraction: 0.7), value: isConfirming)
         }
     }
 
-    private var buttonLabel: String {
-        isConfirming ? "Ajouté à votre profil" : (isDisplayed ? "Retirer de mon profil" : "Afficher sur mon profil")
+    /// La progression dit ce qui **reste**, pas seulement où l'on en est : c'est
+    /// le chiffre manquant qui met en mouvement, et il n'était affiché nulle part.
+    private var progressBlock: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("\(progress.current)")
+                    .planTitle(26)
+                    .monospacedDigit()
+                    .foregroundStyle(Ink.ink)
+
+                Text(remainingText)
+                    .planLabel()
+                    .foregroundStyle(Ink.ink3)
+
+                Spacer(minLength: 0)
+            }
+
+            PlanProgressRule(fraction: progress.fraction)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 34)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(progress.current) sur \(progress.target)")
     }
 
-    private var buttonBackground: AnyShapeStyle {
-        if isConfirming { return AnyShapeStyle(Color.green) }
-        if isDisplayed { return AnyShapeStyle(Color(.tertiarySystemFill)) }
-        return AnyShapeStyle(
-            LinearGradient(colors: [.indigo, .pink], startPoint: .topLeading, endPoint: .bottomTrailing)
-        )
+    private var remainingText: String {
+        let missing = max(0, progress.target - progress.current)
+        guard missing > 0 else { return "sur \(progress.target)" }
+        return "sur \(progress.target) · il en reste \(missing)"
     }
 
-    /// Le petit pictogramme qui pulse sur le badge au moment de la confirmation.
     @ViewBuilder
-    private var confirmationBadge: some View {
-        if isConfirming {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 30))
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, .green)
-                .background(Circle().fill(.white))
-                .offset(x: 4, y: 32)
-                .transition(.scale(scale: 0.3).combined(with: .opacity))
+    private var unlockedNote: some View {
+        if let date = progress.unlockedAt {
+            Text("Obtenu le \(date.formatted(date: .abbreviated, time: .omitted))")
+                .planLabel()
+                .foregroundStyle(Ink.ink3)
+                .padding(.top, 26)
         }
+    }
+
+    /// Le bouton descend au plancher : position constante, comme partout
+    /// ailleurs — le pouce n'apprend qu'une seule hauteur.
+    private var footer: some View {
+        VStack(spacing: 0) {
+            PlanEdge()
+
+            Group {
+                if isDisplayed && !isConfirming {
+                    PlanSecondaryButton(title: "Retirer de mon profil", height: Metrics.control) {
+                        handleTap()
+                    }
+                } else {
+                    PlanButton(
+                        title: isConfirming ? "Affiché sur votre profil" : "Afficher sur mon profil",
+                        isEnabled: !isConfirming,
+                        height: Metrics.control
+                    ) {
+                        handleTap()
+                    }
+                    .overlay(alignment: .trailing) {
+                        if isConfirming {
+                            PlanLight(tint: Ink.ground)
+                                .padding(.trailing, 14)
+                                .transition(.opacity)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, Metrics.margin)
+            .padding(.top, 14)
+            .padding(.bottom, 20)
+        }
+        .animation(Metrics.shift, value: isConfirming)
     }
 
     private func handleTap() {
         let willDisplay = !isDisplayed
         libraryStore.setDisplayedBadge(willDisplay ? badge.id : nil)
 
-        // Retirer un badge n'a pas besoin de mise en scène : seule la
-        // sélection d'un nouveau badge mérite la confirmation et le retour
-        // au profil.
+        // Retirer un badge n'a pas besoin de mise en scène : seule la sélection
+        // d'un nouveau badge mérite la confirmation et le retour au profil.
         guard willDisplay else {
             Haptics.impact(.light)
             dismiss()
@@ -275,7 +277,7 @@ struct BadgeDetailView: View {
         }
 
         Haptics.success()
-        withAnimation { isConfirming = true }
+        withAnimation(Metrics.shift) { isConfirming = true }
 
         Task {
             try? await Task.sleep(for: .milliseconds(750))

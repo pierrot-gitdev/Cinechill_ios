@@ -25,21 +25,19 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 26) {
-                    Color.clear.frame(height: 44)
-
+                VStack(alignment: .leading, spacing: 30) {
                     signatureCard
                     hallRow
-                    quickStats
                     badgesSection
                     dnaSection
                 }
-                .padding(.horizontal, 18)
+                .padding(.horizontal, Metrics.margin)
+                .padding(.top, 22)
                 .padding(.bottom, 36)
             }
-            .background(Color(.systemBackground))
+            .background(Ink.ground)
             .navigationBarHidden(true)
-            .overlay(alignment: .top) { topBar }
+            .safeAreaInset(edge: .top) { topBar }
             .navigationDestination(for: MediaItem.self) { item in
                 ItemDetailView(item: item)
             }
@@ -78,51 +76,35 @@ struct ProfileView: View {
 
     // MARK: - Barre
 
+    /// Le plafond commun, avec ses deux actions. L'écran avait sa propre barre
+    /// translucide, quatrième plafond de l'application pour un seul volume.
     private var topBar: some View {
-        HStack {
-            Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 34, height: 34)
-                    .background(.ultraThinMaterial, in: Circle())
-            }
-            .buttonStyle(PressableScaleStyle(scale: 0.92))
-
-            Spacer()
-
-            Text("Profil")
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-
-            Spacer()
-
-            HStack(spacing: 8) {
+        PlanHeader("Profil", leading: .close) {
+            HStack(spacing: 4) {
                 // La recherche de profils n'a pas de place permanente dans la
                 // navigation : on la trouve là où l'on gère ses relations.
                 NavigationLink(value: HallRoute.search) {
                     CinechillHallIconView(.chercher)
-                        .frame(width: 15, height: 15)
-                        .foregroundStyle(.secondary)
+                        .frame(width: 18, height: 18)
+                        .foregroundStyle(Ink.ink2)
                         .frame(width: 34, height: 34)
-                        .background(.ultraThinMaterial, in: Circle())
+                        .contentShape(Rectangle())
                 }
-                .buttonStyle(PressableScaleStyle(scale: 0.92))
+                .buttonStyle(PressableScaleStyle(scale: 0.9))
                 .accessibilityLabel("Rechercher un profil")
 
                 Button { showSettings = true } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.secondary)
+                    SettingsGlyph()
+                        .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                        .foregroundStyle(Ink.ink2)
+                        .frame(width: 18, height: 18)
                         .frame(width: 34, height: 34)
-                        .background(.ultraThinMaterial, in: Circle())
+                        .contentShape(Rectangle())
                 }
-                .buttonStyle(PressableScaleStyle(scale: 0.92))
+                .buttonStyle(PressableScaleStyle(scale: 0.9))
+                .accessibilityLabel("Réglages")
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 6)
-        .padding(.bottom, 10)
-        .background(.ultraThinMaterial)
     }
 
     // MARK: - La carte
@@ -141,44 +123,49 @@ struct ProfileView: View {
         if socialStore.myProfile == nil, socialStore.hasLoadedProfileOnce {
             claimHandleBanner
         } else {
-            HStack(spacing: 0) {
-                hallCell(
-                    value: socialStore.myProfile?.followingCount ?? 0,
-                    label: "ABONNEMENTS",
-                    route: .following
-                )
-                Divider().frame(height: 30)
-                hallCell(
-                    value: socialStore.myProfile?.followerCount ?? 0,
-                    label: "ABONNÉS",
-                    route: .followers
-                )
+            // Cinq compteurs sur deux cartes séparées disaient la même chose de
+            // deux façons. Une seule rangée, entre deux filets : les chiffres du
+            // profil sont une propriété du profil, pas cinq objets posés dessus.
+            VStack(spacing: 0) {
+                PlanEdge()
+                HStack(spacing: 0) {
+                    statCell(value: socialStore.myProfile?.followingCount ?? 0, label: "Abonnements", route: .following)
+                    statCell(value: socialStore.myProfile?.followerCount ?? 0, label: "Abonnés", route: .followers)
+                    statCell(value: galleryCount, label: "Vus")
+                    statCell(value: libraryStore.watchlistItems.count, label: "À voir")
+                }
+                PlanEdge()
             }
-            .background(
-                Color(.secondarySystemBackground),
-                in: RoundedRectangle(cornerRadius: 13, style: .continuous)
-            )
         }
     }
 
-    private func hallCell(value: Int, label: String, route: HallRoute) -> some View {
-        NavigationLink(value: route) {
-            VStack(spacing: 2) {
-                Text("\(value)")
-                    .font(.system(size: 19, weight: .heavy, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                    .foregroundStyle(.primary)
-                Text(label)
-                    .font(.system(size: 8.5, weight: .bold, design: .rounded))
-                    .kerning(0.5)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 11)
-            .contentShape(Rectangle())
+    private func statCell(value: Int, label: String, route: HallRoute? = nil) -> some View {
+        let content = VStack(spacing: 5) {
+            Text("\(value)")
+                .planTitle(21)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+                .foregroundStyle(Ink.ink)
+            Text(label)
+                .planLabel()
+                .foregroundStyle(Ink.ink3)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
         }
-        .buttonStyle(PressableScaleStyle(scale: 0.97))
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .contentShape(Rectangle())
+
+        return Group {
+            if let route {
+                NavigationLink(value: route) { content }
+                    .buttonStyle(PressableScaleStyle(scale: 0.97))
+            } else {
+                content
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(value) \(label)")
     }
 
     /// Sans pseudo, on n'est ni trouvable ni suivable : l'invitation remplace
@@ -187,79 +174,54 @@ struct ProfileView: View {
         Button {
             showHandleSheet = true
         } label: {
-            HStack(spacing: 11) {
-                CinechillHallIconView(.salle)
-                    .frame(width: 17, height: 17)
-                    .foregroundStyle(.indigo)
+            HStack(alignment: .top, spacing: 11) {
+                PlanLight().padding(.top, 6)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text("Choisissez votre pseudo")
-                        .font(.system(size: 12.5, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Ink.ink)
                     Text("Pour qu'on puisse vous retrouver et vous recommander des films.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Ink.ink2)
                         .multilineTextAlignment(.leading)
                 }
 
                 Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.tertiary)
             }
-            .padding(13)
-            .background(
-                Color.indigo.opacity(0.09),
-                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(Color.indigo.opacity(0.22), lineWidth: 1)
-            )
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+            .overlay(alignment: .top) { PlanEdge() }
+            .overlay(alignment: .bottom) { PlanEdge() }
         }
-        .buttonStyle(PressableScaleStyle(scale: 0.98))
-    }
-
-    // MARK: - Chiffres
-
-    private var quickStats: some View {
-        HStack(spacing: 8) {
-            statCell(value: badgesModel.unlockedCount, label: "BADGES")
-            statCell(value: galleryCount, label: "VUS")
-            statCell(value: libraryStore.watchlistItems.count, label: "À VOIR")
-        }
-    }
-
-    private func statCell(value: Int, label: String) -> some View {
-        VStack(spacing: 2) {
-            Text("\(value)")
-                .font(.system(size: 19, weight: .heavy, design: .rounded))
-                .monospacedDigit()
-                .contentTransition(.numericText())
-            Text(label)
-                .font(.system(size: 8.5, weight: .bold, design: .rounded))
-                .kerning(0.5)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 11)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .buttonStyle(.plain)
     }
 
     // MARK: - Badges
 
     private var badgesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Mes badges")
-                    .font(.system(size: 19, weight: .heavy, design: .rounded))
+                    .planTitle(21)
+                    .foregroundStyle(Ink.ink)
                 Spacer()
                 NavigationLink(destination: BadgeGalleryView(model: badgesModel)) {
-                    Text("Tout voir →")
-                        .font(.system(size: 11.5, weight: .bold, design: .rounded))
-                        .foregroundStyle(.indigo)
+                    HStack(spacing: 7) {
+                        Text("\(badgesModel.unlockedCount)")
+                            .planLabel()
+                            .monospacedDigit()
+                            .foregroundStyle(Ink.ink3)
+                        Text("Tout voir")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Ink.ink2)
+                            .overlay(alignment: .bottom) {
+                                Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
+                            }
+                    }
+                    .contentShape(Rectangle().inset(by: -10))
                 }
+                .buttonStyle(.plain)
             }
 
             if badgesModel.showcase.isEmpty {
@@ -281,27 +243,26 @@ struct ProfileView: View {
 
     private var emptyBadges: some View {
         NavigationLink(destination: BadgeGalleryView(model: badgesModel)) {
-            HStack(spacing: 12) {
+            HStack(spacing: 14) {
                 if let first = BadgeCatalog.all.first {
                     BadgeView(badge: first, isUnlocked: false, size: 52)
                 }
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text("Quinze badges à décrocher")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Ink.ink)
                     Text("Le premier tombe dès votre premier film.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Ink.ink2)
                 }
                 Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.tertiary)
             }
-            .padding(13)
-            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+            .overlay(alignment: .top) { PlanEdge() }
+            .overlay(alignment: .bottom) { PlanEdge() }
         }
-        .buttonStyle(PressableScaleStyle(scale: 0.98))
+        .buttonStyle(.plain)
     }
 
     // MARK: - ADN
@@ -310,29 +271,30 @@ struct ProfileView: View {
     private var dnaSection: some View {
         let shares = genreShares
         if !shares.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 Text("Votre ADN cinéphile")
-                    .font(.system(size: 19, weight: .heavy, design: .rounded))
+                    .planTitle(21)
+                    .foregroundStyle(Ink.ink)
 
                 GeometryReader { proxy in
                     HStack(spacing: 1.5) {
                         ForEach(shares) { share in
-                            Capsule()
+                            Rectangle()
                                 .fill(share.color)
                                 .frame(width: max(2, proxy.size.width * share.share - 1.5))
                         }
                     }
                 }
-                .frame(height: 9)
+                .frame(height: 6)
 
-                FlowLayout(spacing: 12) {
+                FlowLayout(spacing: 14) {
                     ForEach(shares.prefix(4)) { share in
-                        HStack(spacing: 5) {
-                            Circle().fill(share.color).frame(width: 6, height: 6)
-                            Text(share.name).foregroundStyle(.secondary)
-                            Text(share.percentText).foregroundStyle(.primary)
+                        HStack(spacing: 6) {
+                            Rectangle().fill(share.color).frame(width: 5, height: 5)
+                            Text(share.name).foregroundStyle(Ink.ink2)
+                            Text(share.percentText).foregroundStyle(Ink.ink).monospacedDigit()
                         }
-                        .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                        .font(.system(size: 11))
                     }
                 }
             }
@@ -365,5 +327,32 @@ struct ProfileView: View {
             shares.append(GenreShare(id: -1, name: "Autres", share: Double(remainder) / total, colorIndex: -1))
         }
         return shares
+    }
+}
+
+/// L'icône des réglages, dans l'écriture « La Gravure » : deux glissières et
+/// leurs curseurs. Un engrenage plein aurait été le second élément plein d'une
+/// famille qui n'en admet qu'un, le point de lumière.
+private struct SettingsGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        let scale = min(rect.width, rect.height) / 24
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: rect.minX + x * scale, y: rect.minY + y * scale)
+        }
+
+        var path = Path()
+        path.move(to: p(3.5, 8.5))
+        path.addLine(to: p(20.5, 8.5))
+        path.move(to: p(3.5, 15.5))
+        path.addLine(to: p(20.5, 15.5))
+        path.addEllipse(in: CGRect(
+            x: p(9, 8.5).x - 2.6 * scale, y: p(9, 8.5).y - 2.6 * scale,
+            width: 5.2 * scale, height: 5.2 * scale
+        ))
+        path.addEllipse(in: CGRect(
+            x: p(15.5, 15.5).x - 2.6 * scale, y: p(15.5, 15.5).y - 2.6 * scale,
+            width: 5.2 * scale, height: 5.2 * scale
+        ))
+        return path
     }
 }

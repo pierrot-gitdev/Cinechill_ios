@@ -45,7 +45,7 @@ struct SwipeDeckView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(.systemBackground).ignoresSafeArea()
+                Ink.ground.ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     statusBar
@@ -98,16 +98,15 @@ struct SwipeDeckView: View {
     // MARK: - Bandeau de session
 
     private var statusBar: some View {
-        HStack {
+        HStack(spacing: 9) {
             if model.addedThisSession > 0 {
-                Label("\(model.addedThisSession) ajouté\(model.addedThisSession > 1 ? "s" : "")", systemImage: "trophy.fill")
-                    .font(.system(size: 12.5, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(Color(.secondarySystemBackground), in: Capsule())
-                    .transition(.scale.combined(with: .opacity))
+                PlanLight()
+                Text("\(model.addedThisSession) ajouté\(model.addedThisSession > 1 ? "s" : "")")
+                    .planLabel()
+                    .monospacedDigit()
+                    .foregroundStyle(Ink.ink2)
                     .contentTransition(.numericText())
+                    .transition(.opacity)
             }
 
             Spacer()
@@ -119,22 +118,24 @@ struct SwipeDeckView: View {
                         model.undo()
                     }
                 } label: {
-                    Image(systemName: "arrow.uturn.backward")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 32, height: 32)
-                        .background(Color(.secondarySystemBackground), in: Circle())
+                    Text("Annuler")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Ink.ink2)
+                        .overlay(alignment: .bottom) {
+                            Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
+                        }
+                        .contentShape(Rectangle().inset(by: -12))
                 }
-                .buttonStyle(PressableScaleStyle(scale: 0.9))
-                .transition(.scale.combined(with: .opacity))
+                .buttonStyle(.plain)
+                .transition(.opacity)
                 .accessibilityLabel("Annuler le dernier swipe")
             }
         }
-        .frame(height: 36)
-        .padding(.horizontal, 22)
+        .frame(height: 34)
+        .padding(.horizontal, Metrics.margin)
         .padding(.top, 6)
-        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: model.addedThisSession)
-        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: model.canUndo)
+        .animation(Metrics.shift, value: model.addedThisSession)
+        .animation(Metrics.shift, value: model.canUndo)
     }
 
     // MARK: - Le deck
@@ -223,8 +224,8 @@ struct SwipeDeckView: View {
     private var placeholderState: some View {
         Group {
             if let errorMessage = model.errorMessage {
-                emptyState(
-                    icon: "wifi.exclamationmark",
+                PlanEmptyState(
+                    icon: .salle,
                     title: "Impossible de charger les films",
                     message: errorMessage,
                     actionTitle: "Réessayer",
@@ -232,14 +233,14 @@ struct SwipeDeckView: View {
                 )
             } else if model.isLoading {
                 VStack(spacing: 16) {
-                    CinechillSpinner(size: 36)
+                    CinechillSpinner(size: 34)
                     Text("On prépare votre sélection…")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Ink.ink3)
                 }
             } else if model.isExhausted {
-                emptyState(
-                    icon: "checkmark.circle",
+                PlanEmptyState(
+                    icon: .hall,
                     title: "Vous avez fait le tour",
                     message: "Les films écartés reviendront plus tard. En attendant, votre galerie a de quoi faire.",
                     actionTitle: "Voir ma galerie",
@@ -249,39 +250,6 @@ struct SwipeDeckView: View {
                 )
             } else {
                 Color.clear
-            }
-        }
-    }
-
-    private func emptyState(
-        icon: String,
-        title: String,
-        message: String,
-        actionTitle: String,
-        action: @escaping () -> Void,
-        secondaryTitle: String? = nil,
-        secondaryAction: (() -> Void)? = nil
-    ) -> some View {
-        VStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 42, weight: .light))
-                .foregroundStyle(.tertiary)
-            Text(title)
-                .font(.system(size: 19, weight: .bold, design: .rounded))
-            Text(message)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-            Button(actionTitle, action: action)
-                .buttonStyle(.borderedProminent)
-                .tint(.indigo)
-                .padding(.top, 4)
-
-            if let secondaryTitle, let secondaryAction {
-                Button(secondaryTitle, action: secondaryAction)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -306,7 +274,7 @@ struct SwipeDeckView: View {
     private var milestoneOverlay: some View {
         if let milestone = model.celebratedMilestone {
             ZStack {
-                Color.black.opacity(0.18)
+                Ink.ground.opacity(0.55)
                     .ignoresSafeArea()
                 SwipeMilestoneOverlay(count: milestone)
             }

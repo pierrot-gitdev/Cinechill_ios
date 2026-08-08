@@ -68,18 +68,28 @@ struct GallerySignature: Hashable {
 /// Palette de la barre de genres — les couleurs sont attribuées par ordre de
 /// part décroissante, pour que le genre dominant porte toujours l'accent de
 /// l'app et que la barre reste lisible quelle que soit la collection.
+/// Cette palette s'ouvrait sur `.indigo` — l'accent de l'ancien système, qui
+/// rentrait ainsi dans toute l'application **par la porte des données** : barre
+/// d'ADN du profil, signature de galerie, profil public. Une couleur de données
+/// ne doit jamais réimporter une couleur de chrome.
+///
+/// Elle est désormais dérivée de l'identité : le genre dominant porte la lumière
+/// de la marque, les suivants descendent la famille étain puis empruntent aux
+/// accents de rareté des badges — le seul autre système chromatique légitime de
+/// l'app. Les valeurs restent franchement distinctes deux à deux, sans quoi la
+/// barre cesse d'être lisible.
 nonisolated enum GalleryPalette {
     private static let colors: [Color] = [
-        .indigo,
-        Color(red: 0.93, green: 0.28, blue: 0.60),
-        Color(red: 0.06, green: 0.61, blue: 0.56),
-        Color(red: 0.76, green: 0.51, blue: 0.23),
-        Color(red: 0.49, green: 0.36, blue: 0.84),
+        Color(hex: 0x7FE3FF),   // la lumière — le genre dominant
+        Color(hex: 0xBEE0F5),   // liseré
+        Color(hex: 0x8D9AA8),   // étain
+        Color(hex: 0xE0B24A),   // or des badges
+        Color(hex: 0xA98CE8),   // améthyste des badges
     ]
 
     /// L'index hors palette est celui de l'agrégat « autres ».
     static func color(at index: Int) -> Color {
-        guard index >= 0, index < colors.count else { return Color(.systemGray3) }
+        guard index >= 0, index < colors.count else { return Color(hex: 0x3A434E) }
         return colors[index]
     }
 }

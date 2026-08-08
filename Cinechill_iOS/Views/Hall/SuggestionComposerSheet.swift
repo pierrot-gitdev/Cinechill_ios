@@ -66,14 +66,11 @@ struct SuggestionComposerSheet: View {
                     content
                 }
             }
-            .background(Color(.systemBackground))
-            .navigationTitle("Recommander")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Annuler") { dismiss() }
-                }
+            .background(Ink.ground)
+            .safeAreaInset(edge: .top) {
+                PlanHeader("Recommander", leading: .close)
             }
+            .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .bottom) {
                 if !isLoading && !targets.isEmpty { sendBar }
             }
@@ -106,27 +103,23 @@ struct SuggestionComposerSheet: View {
     }
 
     private var header: some View {
-        HStack(spacing: 11) {
-            PosterTile(
-                posterPath: item.posterPath,
-                title: item.title,
-                width: 44,
-                cornerRadius: 6
-            )
+        HStack(spacing: 12) {
+            PosterTile(posterPath: item.posterPath, title: item.title, width: 44)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
-                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .planTitle(17)
+                    .foregroundStyle(Ink.ink)
                     .lineLimit(2)
                 Text("À qui l'envoyer ?")
                     .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Ink.ink2)
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 6)
-        .padding(.bottom, 14)
+        .padding(.horizontal, Metrics.margin)
+        .padding(.top, 16)
+        .padding(.bottom, 18)
     }
 
     private func row(_ target: SuggestionTarget) -> some View {
@@ -147,17 +140,15 @@ struct SuggestionComposerSheet: View {
                     size: 38
                 )
 
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(target.displayName)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Ink.ink)
                         .lineLimit(1)
 
                     Text(target.blockedReason ?? handleText(target))
                         .font(.system(size: 11.5))
-                        .foregroundStyle(
-                            target.alreadySeen ? Color.orange : Color.secondary
-                        )
+                        .foregroundStyle(target.alreadySeen ? Ink.warn : Ink.ink2)
                         .lineLimit(1)
                 }
 
@@ -165,7 +156,7 @@ struct SuggestionComposerSheet: View {
 
                 checkbox(target)
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Metrics.margin)
             .padding(.vertical, 7)
             .contentShape(Rectangle())
             .opacity(target.canReceive ? 1 : 0.45)
@@ -181,26 +172,23 @@ struct SuggestionComposerSheet: View {
         return "@\(handle)"
     }
 
+    /// La case retenue est un aplat de lumière, pas une coche. C'est le même
+    /// signe que partout ailleurs — plateforme retenue, film déjà vu, pseudo
+    /// libre : *ce qui est acquis s'allume*.
     @ViewBuilder
     private func checkbox(_ target: SuggestionTarget) -> some View {
         let isOn = selected.contains(target.id)
-        ZStack {
-            Circle()
-                .strokeBorder(
-                    isOn ? Color.clear : Color.secondary.opacity(target.canReceive ? 0.4 : 0.2),
-                    lineWidth: 1.5
-                )
-                .background(
-                    Circle().fill(isOn ? CinechillPalette.light : .clear)
-                )
-            if isOn {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 11, weight: .black))
-                    .foregroundStyle(Color(hex: 0x04121A))
-            }
-        }
-        .frame(width: 22, height: 22)
-        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isOn)
+        RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+            .strokeBorder(
+                isOn ? Color.clear : Ink.ruleSet.opacity(target.canReceive ? 1 : 0.5),
+                lineWidth: 1
+            )
+            .background(
+                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                    .fill(isOn ? Ink.light : Color.clear)
+            )
+            .frame(width: 20, height: 20)
+            .animation(Metrics.shift, value: isOn)
     }
 
     // MARK: - Envoi
@@ -208,34 +196,23 @@ struct SuggestionComposerSheet: View {
     /// Le libellé dit exactement ce qui va se passer, jamais « OK ».
     private var sendBar: some View {
         VStack(spacing: 0) {
-            Divider()
-            Button {
+            PlanEdge()
+
+            PlanButton(
+                title: sendTitle,
+                loadingTitle: "Envoi…",
+                isLoading: isSending,
+                isEnabled: !selected.isEmpty,
+                height: Metrics.control
+            ) {
                 Haptics.impact(.medium)
                 Task { await send() }
-            } label: {
-                Group {
-                    if isSending {
-                        CinechillSpinner(size: 18, tint: .onAccent)
-                    } else {
-                        Text(sendTitle)
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                    }
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 13)
-                .background(
-                    selected.isEmpty ? Color.secondary.opacity(0.28) : Color.indigo,
-                    in: RoundedRectangle(cornerRadius: 13, style: .continuous)
-                )
             }
-            .buttonStyle(PressableScaleStyle(scale: 0.98))
-            .disabled(selected.isEmpty || isSending)
-            .padding(.horizontal, 18)
-            .padding(.top, 10)
-            .padding(.bottom, 6)
+            .padding(.horizontal, Metrics.margin)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
         }
-        .background(.ultraThinMaterial)
+        .background(Ink.ground)
     }
 
     private var sendTitle: String {

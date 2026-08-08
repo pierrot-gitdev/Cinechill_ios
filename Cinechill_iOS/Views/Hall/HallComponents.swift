@@ -51,7 +51,7 @@ struct HallAvatar: View {
                 endPoint: .bottomTrailing
             )
             Text(initial)
-                .font(.system(size: size * 0.42, weight: .heavy, design: .rounded))
+                .font(.system(size: size * 0.40, weight: .semibold))
                 .foregroundStyle(Color(hex: 0x06101A))
         }
     }
@@ -90,7 +90,7 @@ struct HallAvatarStack: View {
                     url: person.avatarURL,
                     size: size
                 )
-                .overlay(Circle().strokeBorder(Color(.systemBackground), lineWidth: 1.5))
+                .overlay(Circle().strokeBorder(Ink.ground, lineWidth: 1.5))
                 .zIndex(Double(shown.count - index))
             }
         }
@@ -115,20 +115,20 @@ struct HallFollowButton: View {
                     CinechillSpinner(size: 13, tint: isFollowing ? .brand : .onAccent)
                 } else {
                     Text(isFollowing ? "Suivi" : "Suivre")
-                        .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                        .font(.system(size: 12.5, weight: isFollowing ? .regular : .semibold))
                 }
             }
-            .foregroundStyle(isFollowing ? Color.secondary : Color.white)
+            .foregroundStyle(isFollowing ? Ink.ink2 : Ink.ground)
             .frame(maxWidth: fullWidth ? .infinity : nil)
             .padding(.horizontal, fullWidth ? 0 : 14)
-            .padding(.vertical, fullWidth ? 11 : 7)
+            .padding(.vertical, fullWidth ? 13 : 7)
             .background {
                 if isFollowing {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(Color.secondary.opacity(0.35), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                        .strokeBorder(Ink.ruleSet, lineWidth: 1)
                 } else {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.indigo)
+                    RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                        .fill(Ink.ink)
                 }
             }
         }
@@ -156,14 +156,14 @@ struct HallProfileRow: View {
                 size: 38
             )
 
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(profile.displayName)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Ink.ink)
                     .lineLimit(1)
                 Text(subtitle)
                     .font(.system(size: 11.5))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Ink.ink2)
                     .lineLimit(1)
             }
 
@@ -183,8 +183,13 @@ struct HallProfileRow: View {
     }
 }
 
-/// L'état vide type du Hall : une icône de la famille, ce qui manque, la
-/// conséquence, et une sortie. Jamais un encouragement creux.
+/// L'état vide du Hall.
+///
+/// Il ne dessine plus rien : les six états vides de l'application — galerie,
+/// watchlist, deck (deux cas), hall, genre — avaient chacun leur mise en page et
+/// tous s'appuyaient sur `.borderedProminent` teinté d'indigo. `PlanEmptyState`
+/// est désormais le seul, et ce nom reste comme point d'entrée du Hall pour ne
+/// pas réécrire ses appels.
 struct HallEmptyState: View {
     let icon: CinechillHallIcon
     let title: String
@@ -193,29 +198,14 @@ struct HallEmptyState: View {
     var action: (() -> Void)?
 
     var body: some View {
-        VStack(spacing: 12) {
-            CinechillHallIconView(icon)
-                .frame(width: 42, height: 42)
-                .foregroundStyle(.tertiary)
-
-            Text(title)
-                .font(.system(size: 17, weight: .bold, design: .rounded))
-                .multilineTextAlignment(.center)
-
-            Text(message)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-            if let actionTitle, let action {
-                Button(actionTitle, action: action)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.indigo)
-                    .padding(.top, 2)
-            }
-        }
-        .padding(.horizontal, 30)
-        .frame(maxWidth: .infinity)
+        PlanEmptyState(
+            icon: icon,
+            title: title,
+            message: message,
+            actionTitle: actionTitle,
+            action: action
+        )
+        .padding(.horizontal, Metrics.margin)
     }
 }
 
@@ -231,34 +221,38 @@ struct SuggestionOutcomeBanner: View {
     private var isPartial: Bool { !outcome.alreadySeen.isEmpty }
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: isPartial
-                ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
-                .font(.system(size: 17))
-                .foregroundStyle(isPartial ? Color.orange : CinechillPalette.light)
+        HStack(alignment: .top, spacing: 12) {
+            // Le point de lumière quand tout est parti, l'écart quand une partie
+            // n'a pas pu l'être. Deux signes déjà connus, pas deux pictogrammes.
+            Group {
+                if isPartial {
+                    PlanLight(tint: Ink.warn)
+                } else {
+                    PlanLight()
+                }
+            }
+            .padding(.top, 6)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(outcome.title)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 13.5, weight: .medium))
+                    .foregroundStyle(Ink.ink)
+                    .fixedSize(horizontal: false, vertical: true)
                 if let message = outcome.message {
                     Text(message)
                         .font(.system(size: 11.5))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Ink.ink2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
             Spacer(minLength: 0)
         }
-        .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
-        )
-        .shadow(color: .black.opacity(0.22), radius: 14, y: 4)
-        .padding(.horizontal, 18)
-        .padding(.bottom, 22)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(Ink.ground)
+        .overlay(alignment: .top) { PlanEdge(tint: isPartial ? Ink.warn : Ink.ruleSet) }
+        .overlay(alignment: .bottom) { PlanEdge() }
+        .padding(.bottom, 18)
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 }
@@ -270,34 +264,61 @@ struct HallSearchField: View {
     @Binding var text: String
     var isBusy: Bool = false
 
+    @FocusState private var isFocused: Bool
+
     var body: some View {
-        HStack(spacing: 8) {
-            CinechillHallIconView(.chercher)
-                .frame(width: 15, height: 15)
-                .foregroundStyle(.secondary)
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                CinechillHallIconView(.chercher)
+                    .frame(width: 16, height: 16)
+                    .foregroundStyle(isFocused ? Ink.ink : Ink.ink2)
 
-            TextField(placeholder, text: $text)
-                .font(.system(size: 14))
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.search)
+                TextField("", text: $text, prompt: Text(placeholder).foregroundColor(Ink.ink3))
+                    .font(.system(size: 15))
+                    .foregroundStyle(Ink.ink)
+                    .tint(Ink.ink)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.search)
+                    .focused($isFocused)
 
-            if isBusy {
-                CinechillSpinner(size: 14)
-            } else if !text.isEmpty {
-                Button {
-                    text = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.tertiary)
+                if isBusy {
+                    CinechillSpinner(size: 14)
+                } else if !text.isEmpty {
+                    Button {
+                        text = ""
+                    } label: {
+                        // La croix de la famille, pas le bouton plein du système.
+                        PlanClearGlyph()
+                            .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                            .foregroundStyle(Ink.ink3)
+                            .frame(width: 14, height: 14)
+                            .contentShape(Rectangle().inset(by: -10))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Effacer la recherche")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Effacer la recherche")
             }
+            .frame(height: Metrics.field)
+
+            // L'état ne s'exprime que par la valeur du filet — comme dans
+            // `PlanField`. Pas de fond qui s'allume, pas de bordure qui apparaît.
+            Rectangle()
+                .fill(isFocused ? Ink.ink : (text.isEmpty ? Ink.rule : Ink.ruleSet))
+                .frame(height: 1)
         }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 9)
-        .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .animation(Metrics.shift, value: isFocused)
+    }
+}
+
+/// La croix d'effacement, dans l'écriture de la famille.
+private struct PlanClearGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        return path
     }
 }

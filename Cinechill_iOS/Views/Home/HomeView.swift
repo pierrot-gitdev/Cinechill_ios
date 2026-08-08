@@ -4,13 +4,21 @@ import SwiftUI
 ///
 /// Cinq rangées, chacune avec une intention distincte et un titre qui dit
 /// exactement ce qu'elle contient. Le contenu périssable — ce qui est en salle
-/// — passe en tête ; la navigation permanente descend.
+/// — passe en tête ; la navigation permanente descend. Cet ordre était juste et
+/// n'a pas bougé.
+///
+/// Ce qui a changé : les titres passent à l'échelle de titre de l'application,
+/// les pastilles vert/bleu deviennent le point de lumière, le filtre des
+/// plateformes cesse d'être un carré gris à curseurs pour devenir une ligne qui
+/// **montre ce qu'elle filtre**, et la vignette d'affiche est désormais celle
+/// que toute l'app partage.
 struct HomeView: View {
     @Bindable var homeModel: HomeViewModel
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
+    @Environment(MediaCatalog.self) private var catalog
     @EnvironmentObject private var authService: AuthService
 
     @State private var showPlatformSheet = false
@@ -19,16 +27,19 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(.systemBackground)
-                    .ignoresSafeArea()
+                Ink.ground.ignoresSafeArea()
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
+                    VStack(alignment: .leading, spacing: 30) {
                         if let err = homeModel.errorMessage {
-                            Text(err)
-                                .font(.footnote)
-                                .foregroundStyle(.red)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                            HStack(alignment: .top, spacing: 11) {
+                                PlanLight(tint: Ink.warn).padding(.top, 6)
+                                Text(err)
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(Ink.warn)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                            }
                         }
 
                         if !homeModel.hasLoadedOnce {
@@ -41,10 +52,11 @@ struct HomeView: View {
                             browseSection
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom)
-                    .padding(.top, 28)
+                    .padding(.horizontal, Metrics.margin)
+                    .padding(.top, 26)
+                    .padding(.bottom, 20)
                 }
+                .scrollIndicators(.hidden)
             }
             .safeAreaInset(edge: .top) {
                 AppHeaderView(title: "Accueil", onProfileTap: { showProfile = true })
@@ -57,11 +69,9 @@ struct HomeView: View {
                 GenrePopularListView(category: category, homeModel: homeModel)
             }
             .sheet(isPresented: $showPlatformSheet) {
-                PlatformFilterSheet(
-                    platforms: homeModel.availablePlatforms,
-                    selectedIDs: libraryStore.preferredPlatformIDs
-                )
-                .presentationDetents([.medium, .large])
+                PlatformPickerSheet()
+                    .environmentObject(libraryStore)
+                    .environment(catalog)
             }
             .fullScreenCover(isPresented: $showProfile) {
                 ProfileView(badgesModel: badgesModel)
@@ -71,6 +81,7 @@ struct HomeView: View {
                     .environmentObject(socialStore)
             }
             .task {
+                await catalog.loadIfNeeded()
                 await homeModel.loadAll(preferredPlatformIDs: libraryStore.preferredPlatformIDs)
             }
             .task(id: libraryStore.preferredPlatformIDs) {
@@ -85,13 +96,13 @@ struct HomeView: View {
 
     private var loadingState: some View {
         VStack(spacing: 14) {
-            CinechillSpinner(size: 32)
+            CinechillSpinner(size: 30)
             Text("Chargement…")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 12.5))
+                .foregroundStyle(Ink.ink3)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, 60)
     }
 
     // MARK: - Au cinéma
@@ -118,7 +129,7 @@ struct HomeView: View {
                             .buttonStyle(PressableScaleStyle(scale: 0.96))
                         }
                     }
-                    .padding(.horizontal, 2)
+                    .padding(.horizontal, 1)
                 }
                 .scrollClipDisabled()
             }
@@ -151,22 +162,45 @@ struct HomeView: View {
                 sectionTitle("Tendances de la semaine")
 
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .bottom, spacing: 2) {
+                    HStack(alignment: .top, spacing: 12) {
                         ForEach(Array(homeModel.rows.trending.prefix(10).enumerated()), id: \.element.id) { index, item in
                             NavigationLink(value: item) {
-                                HStack(alignment: .bottom, spacing: -10) {
-                                    Text("\(index + 1)")
-                                        .font(.system(size: 64, weight: .black, design: .rounded))
-                                        .foregroundStyle(Color.primary.opacity(0.16))
-                                        .monospacedDigit()
+                                VStack(alignment: .leading, spacing: 7) {
+                                    ZStack(alignment: .topTrailing) {
+                                        PosterTile(
+                                            posterPath: item.posterPath,
+                                            title: item.title,
+                                            width: 104
+                                        )
+                                        LibraryMark(
+                                            inGallery: libraryStore.isInGallery(item),
+                                            inWatchlist: libraryStore.isInWatchlist(item)
+                                        )
+                                        .padding(6)
+                                    }
 
-                                    posterCell(item, width: 88)
+                                    // Le rang est écrit au niveau de service, en
+                                    // tête du titre : le chiffre géant en filigrane
+                                    // mangeait une demi-affiche de largeur pour une
+                                    // information qui tient en deux caractères.
+                                    HStack(alignment: .top, spacing: 6) {
+                                        Text("\(index + 1)")
+                                            .planLabel()
+                                            .monospacedDigit()
+                                            .foregroundStyle(Ink.light)
+                                        Text(item.title)
+                                            .font(.system(size: 11))
+                                            .foregroundStyle(Ink.ink)
+                                            .lineLimit(2)
+                                            .multilineTextAlignment(.leading)
+                                    }
+                                    .frame(width: 104, height: PosterCell.titleHeight, alignment: .topLeading)
                                 }
                             }
                             .buttonStyle(PressableScaleStyle(scale: 0.95))
                         }
                     }
-                    .padding(.horizontal, 2)
+                    .padding(.horizontal, 1)
                 }
                 .scrollClipDisabled()
             }
@@ -177,35 +211,58 @@ struct HomeView: View {
 
     private var popularSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 9) {
-                sectionTitle(selectedPlatforms.isEmpty ? "Populaire en ce moment" : "Populaire sur")
+            sectionTitle("Populaire en ce moment")
 
-                if !selectedPlatforms.isEmpty {
-                    platformLogos(Array(selectedPlatforms.prefix(3)))
-                }
-
-                Spacer(minLength: 0)
-
-                Button {
-                    showPlatformSheet = true
-                } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 32, height: 32)
-                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-                .buttonStyle(PressableScaleStyle(scale: 0.92))
-                .accessibilityLabel("Choisir vos plateformes")
-            }
+            platformRow
 
             posterRail(homeModel.popularItems)
 
             if homeModel.popularItems.isEmpty, !homeModel.loading {
                 Text(emptyPopularMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Ink.ink3)
             }
+        }
+    }
+
+    /// Le filtre ne se cache plus derrière un carré à curseurs : la ligne montre
+    /// les plateformes retenues, et « Modifier » ouvre le sélecteur — le même
+    /// que celui des réglages, désormais unique dans l'application.
+    private var platformRow: some View {
+        HStack(spacing: 9) {
+            Text(selectedPlatforms.isEmpty ? "Toutes plateformes" : "Chez vous")
+                .planLabel()
+                .foregroundStyle(Ink.ink3)
+
+            if !selectedPlatforms.isEmpty {
+                HStack(spacing: 5) {
+                    ForEach(selectedPlatforms.prefix(4)) { platform in
+                        platformLogo(platform)
+                    }
+                    if selectedPlatforms.count > 4 {
+                        Text("+\(selectedPlatforms.count - 4)")
+                            .font(.system(size: 10))
+                            .monospacedDigit()
+                            .foregroundStyle(Ink.ink3)
+                    }
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            Button {
+                showPlatformSheet = true
+            } label: {
+                Text("Modifier")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Ink.ink2)
+                    .overlay(alignment: .bottom) {
+                        Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
+                    }
+                    .contentShape(Rectangle().inset(by: -10))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Choisir vos plateformes")
         }
     }
 
@@ -214,33 +271,25 @@ struct HomeView: View {
             .filter { libraryStore.preferredPlatformIDs.contains($0.id) }
     }
 
-    /// Les logos plutôt que les noms : ils sont reconnus plus vite qu'ils ne
-    /// sont lus, et trois marques écrites en toutes lettres mangeaient la
-    /// largeur du titre.
-    private func platformLogos(_ platforms: [StreamingPlatform]) -> some View {
-        HStack(spacing: -7) {
-            ForEach(Array(platforms.enumerated()), id: \.element.id) { index, platform in
-                Group {
-                    if let logoURL = platform.logoURL {
-                        PosterImageView(url: logoURL)
-                    } else {
-                        Text(platform.shortLabel)
-                            .font(.system(size: 9, weight: .heavy, design: .rounded))
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color(.tertiarySystemFill))
-                    }
-                }
-                .frame(width: 26, height: 26)
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(Color(.systemBackground), lineWidth: 1.5)
-                )
-                .zIndex(Double(platforms.count - index))
-                .accessibilityLabel(platform.name)
+    private func platformLogo(_ platform: StreamingPlatform) -> some View {
+        Group {
+            if let logoURL = platform.logoURL {
+                PosterImageView(url: logoURL)
+            } else {
+                Text(platform.shortLabel.prefix(2))
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(Ink.ink2)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(hex: 0x151B23))
             }
         }
+        .frame(width: 20, height: 20)
+        .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                .strokeBorder(Ink.rule, lineWidth: 1)
+        )
+        .accessibilityLabel(platform.name)
     }
 
     private var emptyPopularMessage: String {
@@ -253,22 +302,25 @@ struct HomeView: View {
 
     private var browseSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
+            HStack(alignment: .firstTextBaseline) {
                 sectionTitle("Parcourir")
                 Spacer()
                 NavigationLink(destination: HomeGenresListView(categories: homeModel.browseCategories, homeModel: homeModel)) {
-                    Image(systemName: "arrow.right")
-                        .font(.headline.weight(.bold))
-                        .frame(width: 32, height: 32)
-                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    Text("Tout voir")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Ink.ink2)
+                        .overlay(alignment: .bottom) {
+                            Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
+                        }
+                        .contentShape(Rectangle().inset(by: -10))
                 }
                 .buttonStyle(.plain)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHGrid(
-                    rows: [GridItem(.fixed(88), spacing: 10), GridItem(.fixed(88), spacing: 10)],
-                    spacing: 10
+                    rows: [GridItem(.fixed(84), spacing: Metrics.gutter), GridItem(.fixed(84), spacing: Metrics.gutter)],
+                    spacing: Metrics.gutter
                 ) {
                     ForEach(homeModel.browseCategories) { category in
                         NavigationLink(value: category) {
@@ -276,13 +328,15 @@ struct HomeView: View {
                                 title: category.title,
                                 posterURL: homeModel.browsePosterURL(for: category.id)
                             )
+                            .frame(width: 168)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(PressableScaleStyle(scale: 0.96))
                     }
                 }
-                .frame(height: 190)
-                .padding(.horizontal, 2)
+                .frame(height: 178)
+                .padding(.horizontal, 1)
             }
+            .scrollClipDisabled()
         }
     }
 
@@ -293,81 +347,46 @@ struct HomeView: View {
             HStack(alignment: .top, spacing: 12) {
                 ForEach(items) { item in
                     NavigationLink(value: item) {
-                        posterCell(item, width: 108)
+                        VStack(alignment: .leading, spacing: 7) {
+                            ZStack(alignment: .topTrailing) {
+                                PosterTile(
+                                    posterPath: item.posterPath,
+                                    title: item.title,
+                                    width: 104
+                                )
+                                LibraryMark(
+                                    inGallery: libraryStore.isInGallery(item),
+                                    inWatchlist: libraryStore.isInWatchlist(item)
+                                )
+                                .padding(6)
+                            }
+
+                            Text(item.title)
+                                .font(.system(size: 11))
+                                .foregroundStyle(Ink.ink)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                                // Deux lignes réservées quoi qu'il arrive : sans
+                                // hauteur fixe, un titre court et un titre long ne
+                                // donnent pas la même hauteur de cellule, et les
+                                // affiches se désalignent.
+                                .frame(width: 104, height: PosterCell.titleHeight, alignment: .topLeading)
+                        }
                     }
                     .buttonStyle(PressableScaleStyle(scale: 0.95))
                 }
             }
-            .padding(.horizontal, 2)
+            .padding(.horizontal, 1)
         }
         .scrollClipDisabled()
     }
 
-    /// Les pastilles galerie et watchlist sont enfin renseignées : sur un écran
-    /// de découverte, distinguer d'un coup d'œil ce qu'on a déjà vu vaut plus
-    /// que n'importe quelle rangée supplémentaire.
-    private func posterCell(_ item: MediaItem, width: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ZStack(alignment: .topTrailing) {
-                PosterTile(
-                    posterPath: item.posterPath,
-                    title: item.title,
-                    width: width,
-                    cornerRadius: 10
-                )
-
-                LibraryBadge(
-                    inGallery: libraryStore.isInGallery(item),
-                    inWatchlist: libraryStore.isInWatchlist(item)
-                )
-                .padding(6)
-            }
-
-            Text(item.title)
-                .font(.system(size: 11.5, weight: .semibold, design: .rounded))
-                .foregroundStyle(.primary)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-                // Deux lignes réservées quoi qu'il arrive : sans hauteur fixe,
-                // un titre court et un titre long ne donnent pas la même
-                // hauteur de carte, et les affiches se désalignent.
-                .frame(width: width, height: Self.titleHeight, alignment: .topLeading)
-        }
-    }
-
-    /// Hauteur réservée au titre sous une affiche — deux lignes.
-    static let titleHeight: CGFloat = 30
-
     private func sectionTitle(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 22, weight: .black, design: .rounded))
+            .planTitle(21)
+            .foregroundStyle(Ink.ink)
             .lineLimit(2)
-            .minimumScaleFactor(0.75)
-    }
-}
-
-/// Pastille d'état, commune à toutes les affiches de l'accueil.
-struct LibraryBadge: View {
-    let inGallery: Bool
-    let inWatchlist: Bool
-
-    var body: some View {
-        if inGallery {
-            badge(icon: "checkmark", color: .green, label: "Déjà vu")
-        } else if inWatchlist {
-            badge(icon: "bookmark.fill", color: .blue, label: "Dans votre watchlist")
-        }
-    }
-
-    private func badge(icon: String, color: Color, label: String) -> some View {
-        Image(systemName: icon)
-            .font(.system(size: 8, weight: .heavy))
-            .foregroundStyle(.white)
-            .frame(width: 18, height: 18)
-            .background(color, in: Circle())
-            .overlay(Circle().strokeBorder(.white.opacity(0.35), lineWidth: 1))
-            .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
-            .accessibilityLabel(label)
+            .minimumScaleFactor(0.8)
     }
 }
 
@@ -381,42 +400,40 @@ struct TheaterCardView: View {
     let inGallery: Bool
     let inWatchlist: Bool
 
-    private let width: CGFloat = 128
+    private let width: CGFloat = 124
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             ZStack(alignment: .topLeading) {
-                PosterTile(
-                    posterPath: item.posterPath,
-                    title: item.title,
-                    width: width,
-                    cornerRadius: 11
-                )
+                PosterTile(posterPath: item.posterPath, title: item.title, width: width)
 
                 if let freshness {
+                    // Le voile de la nuit plutôt qu'un matériau translucide : la
+                    // même lisibilité, dans la couleur de la marque.
                     Text(freshness)
-                        .font(.system(size: 8, weight: .heavy, design: .rounded))
-                        .kerning(0.6)
-                        .foregroundStyle(.white)
+                        .planLabel()
+                        .foregroundStyle(Ink.ink)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 4)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .environment(\.colorScheme, .dark)
-                        .padding(7)
+                        .background(
+                            Ink.ground.opacity(0.82),
+                            in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                        )
+                        .padding(6)
                 }
 
-                LibraryBadge(inGallery: inGallery, inWatchlist: inWatchlist)
-                    .padding(7)
+                LibraryMark(inGallery: inGallery, inWatchlist: inWatchlist)
+                    .padding(6)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .frame(width: width)
 
             Text(item.title)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(.primary)
+                .font(.system(size: 11))
+                .foregroundStyle(Ink.ink)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
-                .frame(width: width, height: HomeView.titleHeight, alignment: .topLeading)
+                .frame(width: width, height: PosterCell.titleHeight, alignment: .topLeading)
         }
     }
 
@@ -430,8 +447,8 @@ struct TheaterCardView: View {
         guard let date = formatter.date(from: releaseDate) else { return nil }
 
         let days = Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
-        guard days >= 0 else { return "BIENTÔT" }
-        if days <= 7 { return "CETTE SEMAINE" }
-        return "DEPUIS \(days) J"
+        guard days >= 0 else { return "Bientôt" }
+        if days <= 7 { return "Cette semaine" }
+        return "Depuis \(days) j"
     }
 }

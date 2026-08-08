@@ -19,19 +19,22 @@ enum SwipeVerdict {
         }
     }
 
-    var icon: String {
+    /// Le verdict parle désormais la langue de la fiche film et des grilles :
+    /// **plein = vu, creux = à voir, éteint = écarté**. L'écran employait un
+    /// vert, un bleu et un gris pour ces trois mêmes états, soit un troisième
+    /// vocabulaire de couleur pour la même information.
+    var tint: Color {
         switch self {
-        case .seen: "checkmark"
-        case .notSeen: "xmark"
-        case .watchlist: "bookmark.fill"
+        case .seen: Ink.light
+        case .notSeen: Ink.ink3
+        case .watchlist: Ink.light
         }
     }
 
-    var tint: Color {
+    var isFilled: Bool {
         switch self {
-        case .seen: .green
-        case .notSeen: Color(.systemGray)
-        case .watchlist: .blue
+        case .seen: true
+        case .notSeen, .watchlist: false
         }
     }
 
@@ -55,7 +58,7 @@ struct SwipeCardView: View {
     var isSynopsisOpen = false
     var onTap: () -> Void = {}
 
-    private let corner: CGFloat = 26
+    private let corner: CGFloat = Metrics.radius
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -77,9 +80,8 @@ struct SwipeCardView: View {
         .overlay(alignment: verdict?.alignment ?? .top) { verdictStamp }
         .overlay(
             RoundedRectangle(cornerRadius: corner, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
+                .strokeBorder(Ink.rule, lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.22), radius: 22, y: 12)
         .contentShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
         .onTapGesture(perform: onTap)
         .accessibilityElement(children: .combine)
@@ -91,7 +93,7 @@ struct SwipeCardView: View {
 
     private var titleGradient: some View {
         LinearGradient(
-            colors: [.clear, .black.opacity(0.35), .black.opacity(0.82)],
+            colors: [.clear, Ink.ground.opacity(0.45), Ink.ground.opacity(0.92)],
             startPoint: .top,
             endPoint: .bottom
         )
@@ -102,55 +104,59 @@ struct SwipeCardView: View {
 
     private var infoFooter: some View {
         HStack(alignment: .bottom, spacing: 12) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(card.title)
-                    .font(.system(size: 25, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .planTitle(25)
+                    .foregroundStyle(Ink.ink)
                     .lineLimit(2)
                     .minimumScaleFactor(0.75)
 
-                HStack(spacing: 8) {
-                    Text(card.displayYear)
-                    if card.voteAverage != nil {
-                        Text("·")
-                        Label(card.voteAverageText, systemImage: "star.fill")
-                            .labelStyle(.titleAndIcon)
-                            .imageScale(.small)
-                    }
-                }
-                .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.82))
+                Text(facts)
+                    .planLabel()
+                    .foregroundStyle(Ink.ink2)
             }
 
             Spacer(minLength: 0)
 
             if card.overview?.isEmpty == false {
-                Image(systemName: isSynopsisOpen ? "chevron.down" : "info")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 30, height: 30)
-                    .background(.white.opacity(0.16), in: Circle())
-                    .overlay(Circle().strokeBorder(.white.opacity(0.22), lineWidth: 1))
+                Text(isSynopsisOpen ? "Fermer" : "Résumé")
+                    .planLabel()
+                    .foregroundStyle(Ink.ink)
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                            .strokeBorder(Ink.ink.opacity(0.4), lineWidth: 1)
+                    )
             }
         }
         .padding(20)
         .opacity(isSynopsisOpen ? 0 : 1)
     }
 
+    private var facts: String {
+        var parts = [card.displayYear]
+        if card.voteAverage != nil { parts.append(card.voteAverageText + " / 10") }
+        return parts.joined(separator: " · ")
+    }
+
     private var synopsisPanel: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Text(card.title)
-                .font(.system(size: 19, weight: .bold, design: .rounded))
+                .planTitle(19)
+                .foregroundStyle(Ink.ink)
             Text(card.overview ?? "")
-                .font(.callout)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 14))
+                .foregroundStyle(Ink.ink2)
+                .lineSpacing(3)
                 .lineLimit(9)
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(22)
         .frame(height: 260)
-        .background(.ultraThinMaterial)
+        .background(Ink.ground.opacity(0.94))
+        .overlay(alignment: .top) { PlanEdge(tint: Ink.ruleSet) }
     }
 
     // MARK: - Verdict
@@ -167,21 +173,28 @@ struct SwipeCardView: View {
     @ViewBuilder
     private var verdictStamp: some View {
         if let verdict {
-            HStack(spacing: 7) {
-                Image(systemName: verdict.icon)
-                    .font(.system(size: 13, weight: .heavy))
+            HStack(spacing: 9) {
+                if verdict.isFilled {
+                    PlanLight(tint: verdict.tint)
+                } else {
+                    PlanLightOutline(tint: verdict.tint)
+                }
                 Text(verdict.label)
-                    .font(.system(size: 15, weight: .heavy, design: .rounded))
-                    .kerning(0.5)
+                    .planLabel()
             }
             .foregroundStyle(verdict.tint)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().strokeBorder(verdict.tint.opacity(0.55), lineWidth: 1.5))
-            .padding(22)
+            .background(
+                Ink.ground.opacity(0.86),
+                in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                    .strokeBorder(verdict.tint.opacity(0.6), lineWidth: 1)
+            )
+            .padding(20)
             .opacity(verdictIntensity)
-            .scaleEffect(0.85 + 0.15 * verdictIntensity)
             .allowsHitTesting(false)
         }
     }

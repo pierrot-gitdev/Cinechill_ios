@@ -42,21 +42,27 @@ struct NotificationsPanel: View {
         .padding(13)
         .frame(width: 320)
         .background(
-            .regularMaterial,
-            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            Ink.ground,
+            in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
         )
-        .shadow(color: .black.opacity(0.24), radius: 18, y: 6)
+        .overlay(
+            RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                .strokeBorder(Ink.ruleSet, lineWidth: 1)
+        )
     }
 
     private var header: some View {
         HStack {
             Text("Notifications")
-                .font(.system(size: 15, weight: .heavy, design: .rounded))
+                .planTitle(17)
+                .foregroundStyle(Ink.ink)
             Spacer()
             Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                NotificationsCloseGlyph()
+                    .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                    .foregroundStyle(Ink.ink3)
+                    .frame(width: 12, height: 12)
+                    .contentShape(Rectangle().inset(by: -10))
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Fermer")
@@ -66,17 +72,15 @@ struct NotificationsPanel: View {
     private var emptyState: some View {
         VStack(spacing: 11) {
             CinechillHallIconView(.salle)
-                .frame(width: 26, height: 26)
-                .foregroundStyle(Color(.systemGray3))
-                .padding(15)
-                .background(Color(.tertiarySystemFill), in: Circle())
+                .frame(width: 30, height: 30)
+                .foregroundStyle(Ink.ink3)
 
             Text("Aucune notification")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 13.5))
+                .foregroundStyle(Ink.ink2)
             Text("Les films qu'on vous recommande arriveront ici.")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 11.5))
+                .foregroundStyle(Ink.ink3)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -127,7 +131,7 @@ struct NotificationsPanel: View {
                 VStack(alignment: .leading, spacing: 3) {
                     (
                         Text(suggestion.fromDisplayName)
-                            .font(.system(size: 13, weight: .heavy, design: .rounded))
+                            .font(.system(size: 13, weight: .semibold))
                         + Text(" vous recommande")
                             .font(.system(size: 13))
                     )
@@ -135,7 +139,7 @@ struct NotificationsPanel: View {
 
                     Text("\(suggestion.item.title) · \(suggestion.item.displayYear)")
                         .font(.system(size: 11.5))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Ink.ink2)
                         .lineLimit(2)
                 }
 
@@ -145,7 +149,7 @@ struct NotificationsPanel: View {
                     posterPath: suggestion.item.posterPath,
                     title: suggestion.item.title,
                     width: 30,
-                    cornerRadius: 5
+                    cornerRadius: Metrics.radius
                 )
             }
 
@@ -167,19 +171,16 @@ struct NotificationsPanel: View {
     /// vérifiable une seconde et demie.
     private func settledRow(_ title: String) -> some View {
         HStack(spacing: 9) {
-            Image(systemName: "checkmark")
-                .font(.system(size: 11, weight: .black))
-                .foregroundStyle(CinechillPalette.light)
+            PlanLight()
                 .frame(width: 30, height: 30)
-                .background(CinechillPalette.light.opacity(0.14), in: Circle())
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Ajouté à votre watchlist")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(CinechillPalette.light)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Ink.light)
                 Text(title)
                     .font(.system(size: 11.5))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Ink.ink2)
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
@@ -202,7 +203,7 @@ struct NotificationsPanel: View {
 
                 (
                     Text(profile.displayName)
-                        .font(.system(size: 13, weight: .heavy, design: .rounded))
+                        .font(.system(size: 13, weight: .semibold))
                     + Text(" vous suit")
                         .font(.system(size: 13))
                 )
@@ -231,25 +232,25 @@ struct NotificationsPanel: View {
     ) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: 12.5, weight: isProminent ? .semibold : .regular))
                 // Le libellé ne se replie jamais : mieux vaut le réduire un
                 // peu que le voir passer sur deux lignes ou se faire couper.
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
-                .foregroundStyle(isProminent ? Color.white : Color.secondary)
+                .foregroundStyle(isProminent ? Ink.ground : Ink.ink2)
                 .frame(maxWidth: fullWidth ? .infinity : nil)
                 .padding(.horizontal, fullWidth ? 6 : 12)
-                .padding(.vertical, 8)
+                .padding(.vertical, 9)
                 .background {
                     if isProminent {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.indigo)
+                        RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                            .fill(Ink.ink)
                     } else {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .strokeBorder(Color.secondary.opacity(0.3), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                            .strokeBorder(Ink.ruleSet, lineWidth: 1)
                     }
                 }
-                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
         }
         .buttonStyle(PressableScaleStyle(scale: 0.94))
     }
@@ -285,5 +286,17 @@ struct NotificationsPanel: View {
         _ = withAnimation(.easeOut(duration: 0.25)) {
             settled.removeValue(forKey: suggestion.id)
         }
+    }
+}
+
+/// La croix de fermeture, dans l'écriture de la famille.
+private struct NotificationsCloseGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        return path
     }
 }

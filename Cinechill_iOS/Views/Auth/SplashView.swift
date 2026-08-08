@@ -55,7 +55,8 @@ struct SplashView: View {
                 .scaleEffect(markScale)
 
                 Text("Cinechill")
-                    .font(.system(size: 27, weight: .semibold, design: .rounded))
+                    .font(.system(size: 27, weight: .light))
+                    .kerning(-0.76)
                     .tracking(1.6)
                     .foregroundStyle(.white)
                     .opacity(titleOpacity)

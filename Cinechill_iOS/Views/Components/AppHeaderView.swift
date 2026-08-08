@@ -59,9 +59,9 @@ struct AppHeaderView: View {
         .background {
             LinearGradient(
                 stops: [
-                    .init(color: Color(.systemBackground), location: 0),
-                    .init(color: Color(.systemBackground).opacity(0.94), location: 0.7),
-                    .init(color: Color(.systemBackground).opacity(0), location: 1)
+                    .init(color: Ink.ground, location: 0),
+                    .init(color: Ink.ground.opacity(0.94), location: 0.7),
+                    .init(color: Ink.ground.opacity(0), location: 1)
                 ],
                 startPoint: .top, endPoint: .bottom
             )
@@ -135,7 +135,7 @@ struct AppHeaderView: View {
                 .frame(width: 7, height: 7)
                 .shadow(color: CinechillPalette.light.opacity(0.9), radius: 4)
                 .overlay(
-                    Circle().strokeBorder(Color(.systemBackground), lineWidth: 1.5)
+                    Circle().strokeBorder(Ink.ground, lineWidth: 1.5)
                 )
                 .offset(x: -5, y: 5)
                 .transition(.scale.combined(with: .opacity))
@@ -198,6 +198,154 @@ struct AppHeaderView: View {
     // L'app est verrouillée en sombre (voir `Cinechill_iOSApp`) : l'identité étain/cyan n'est
     // dessinée que pour ce fond, donc une seule palette suffit ici.
     private let railTint = CinechillPalette.rimMid.opacity(0.20)
+}
+
+// MARK: - Le plafond des vues poussées
+
+/// Ce que fait le bouton de gauche.
+enum PlanHeaderLeading {
+    /// Un cran en arrière dans la pile de navigation.
+    case back
+    /// Fermer une feuille ou un plein écran.
+    case close
+    /// Rien — l'écran est une racine.
+    case none
+}
+
+/// Le plafond des vues poussées, des feuilles et des pleins écrans.
+///
+/// `AppHeaderView` couvre les cinq onglets ; tout ce qui s'ouvre par-dessus
+/// passait jusqu'ici par `.navigationTitle`, c'est-à-dire par la barre native du
+/// système. L'application avait donc quatre plafonds : celui du Seuil, celui
+/// d'iOS, un bouton flottant sur la fiche film, et une barre translucide sur le
+/// profil.
+///
+/// Ici, le filet est **exactement** celui de `AppHeaderView` et de `AppTabBar`,
+/// aux mêmes valeurs. C'est cette égalité, et rien d'autre, qui fait lire
+/// l'application comme un seul volume : le mark n'est pas repris, parce qu'à ce
+/// stade on sait déjà où l'on est — la place revient à l'information utile.
+struct PlanHeader<Trailing: View>: View {
+    let title: String
+    var leading: PlanHeaderLeading = .back
+    /// Par défaut, le bouton referme l'écran courant.
+    var onLeading: (() -> Void)?
+    @ViewBuilder var trailing: Trailing
+
+    @Environment(\.dismiss) private var dismiss
+
+    init(
+        _ title: String,
+        leading: PlanHeaderLeading = .back,
+        onLeading: (() -> Void)? = nil,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
+        self.title = title
+        self.leading = leading
+        self.onLeading = onLeading
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                leadingButton
+
+                Text(title)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Ink.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+
+                Spacer(minLength: 8)
+
+                trailing
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 4)
+            .padding(.bottom, 10)
+
+            PlanRail()
+        }
+        .background {
+            PlanScrim().ignoresSafeArea(edges: .top)
+        }
+    }
+
+    @ViewBuilder
+    private var leadingButton: some View {
+        if leading != .none {
+            Button {
+                if let onLeading { onLeading() } else { dismiss() }
+            } label: {
+                PlanHeaderGlyph(leading: leading)
+                    .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                    .foregroundStyle(Ink.ink)
+                    .frame(width: 22, height: 22)
+                    // La cible déborde largement le tracé : 22 pt ne se touchent pas.
+                    .frame(width: 34, height: 34, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PressableScaleStyle(scale: 0.9))
+            .accessibilityLabel(leading == .back ? "Retour" : "Fermer")
+            // Le glyphe est collé au bord : sans ce retrait, la marge de 16
+            // s'ajouterait à la moitié vide de la cible et le titre partirait
+            // à 40 pt du bord, seul écran de l'app dans ce cas.
+            .padding(.leading, -6)
+        }
+    }
+}
+
+extension PlanHeader where Trailing == EmptyView {
+    init(
+        _ title: String,
+        leading: PlanHeaderLeading = .back,
+        onLeading: (() -> Void)? = nil
+    ) {
+        self.init(title, leading: leading, onLeading: onLeading) { EmptyView() }
+    }
+}
+
+/// Le chevron et la croix, dans l'écriture de `CinechillNavIcons` : grille de
+/// 24, zone vive de 20, trait de 1,5, extrémités rondes.
+private struct PlanHeaderGlyph: Shape {
+    let leading: PlanHeaderLeading
+
+    func path(in rect: CGRect) -> Path {
+        let scale = min(rect.width, rect.height) / 24
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: rect.minX + x * scale, y: rect.minY + y * scale)
+        }
+
+        var path = Path()
+        switch leading {
+        case .back:
+            path.move(to: p(14.6, 4.8))
+            path.addLine(to: p(8, 12))
+            path.addLine(to: p(14.6, 19.2))
+        case .close:
+            path.move(to: p(6.4, 6.4))
+            path.addLine(to: p(17.6, 17.6))
+            path.move(to: p(17.6, 6.4))
+            path.addLine(to: p(6.4, 17.6))
+        case .none:
+            break
+        }
+        return path
+    }
+}
+
+/// Le compte affiché à droite d'un plafond — nombre de résultats, de films dans
+/// une bande, de badges obtenus. C'est l'information que `.navigationTitle` ne
+/// pouvait pas porter.
+struct PlanHeaderCount: View {
+    let value: String
+
+    var body: some View {
+        Text(value)
+            .planLabel()
+            .monospacedDigit()
+            .foregroundStyle(Ink.ink3)
+    }
 }
 
 #Preview {

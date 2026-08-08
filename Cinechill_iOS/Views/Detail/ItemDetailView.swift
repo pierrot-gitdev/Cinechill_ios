@@ -2,10 +2,24 @@ import SwiftUI
 
 /// La fiche film — « La Fiche ».
 ///
-/// Point d'arrivée de tous les autres écrans. L'affiche et le backdrop portent
-/// l'écran ; le statut y parle le même vocabulaire que le deck (vu / à voir),
-/// et le bloc « Dans votre galerie » relie le film à votre collection plutôt
-/// que d'en faire une page TMDB de plus.
+/// Point d'arrivée de **tous** les parcours : accueil, deck, galerie, watchlist,
+/// notification, profil d'un ami. C'est l'écran le plus vu de l'application, et
+/// il n'a qu'un but : décider.
+///
+/// Trois décisions structurent le dessin :
+///
+/// - **La décision tient le plancher, et n'en bouge plus.** On peut dérouler le
+///   synopsis, le casting, les plateformes : « Vu » et « À voir » restent sous le
+///   pouce. C'était le seul écran de l'app dont l'action principale pouvait
+///   sortir du champ.
+/// - **Un seul accent.** L'écran comptait le vert du « vu », le bleu du « à
+///   voir », l'indigo du bloc galerie et des plateformes, le jaune de l'étoile et
+///   le cyan du bouton recommander. L'état sélectionné n'est plus une teinte mais
+///   un aplat d'encre — la paire `PlanButton` / `PlanSecondaryButton` du parcours
+///   d'authentification, reprise sans un composant de plus.
+/// - **Le plafond est celui de l'app.** En haut de page le backdrop est nu, avec
+///   les seules actions gravées ; passé le héros, le filet et le titre se posent.
+///   La fiche était le seul écran à porter un bouton rond flottant.
 struct ItemDetailView: View {
     let item: MediaItem
 
@@ -19,6 +33,11 @@ struct ItemDetailView: View {
     @State private var errorMessage: String?
     @State private var showComposer = false
     @State private var outcome: SuggestionOutcome?
+    /// Position du haut du contenu par rapport au haut de l'écran. Sert au seul
+    /// mouvement de l'écran : la matérialisation du plafond.
+    @State private var scrollOffset: CGFloat = 0
+
+    private static let heroHeight: CGFloat = 260
 
     private var displayItem: MediaItem {
         detail.map { $0.asMediaItem(mediaType: item.mediaType) } ?? item
@@ -30,44 +49,28 @@ struct ItemDetailView: View {
         return .none
     }
 
+    /// De 0 (backdrop nu) à 1 (plafond posé). La bascule se joue sur les 90
+    /// derniers points du héros : assez long pour ne pas clignoter, assez court
+    /// pour que le titre soit là quand on en a besoin.
+    private var ceilingProgress: Double {
+        let start = Self.heroHeight - 130
+        let travel: CGFloat = 90
+        return Double(min(1, max(0, (-scrollOffset - start) / travel)))
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                hero
-                factsLine
-                decisionBar
-
-                if let connection = galleryConnection {
-                    connectionCard(connection)
-                }
-
-                watchSection
-                synopsisSection
-
-                if let cast = detail?.credits?.cast, !cast.isEmpty {
-                    castSection(cast)
-                }
-
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal, 20)
-                }
-            }
-            .padding(.bottom, 32)
+        ZStack(alignment: .top) {
+            Ink.ground.ignoresSafeArea()
+            content
+            ceiling
         }
-        .background(Color(.systemBackground))
-        .ignoresSafeArea(edges: .top)
-        .navigationBarHidden(true)
-        .overlay(alignment: .topLeading) { backButton }
+        .safeAreaInset(edge: .bottom) { decisionFloor }
+        .toolbar(.hidden, for: .navigationBar)
         .overlay(alignment: .bottom) { outcomeBanner }
         .sheet(isPresented: $showComposer) {
             SuggestionComposerSheet(item: displayItem) { result in
                 guard !result.isSilent else { return }
-                withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
-                    outcome = result
-                }
+                withAnimation(.easeOut(duration: 0.25)) { outcome = result }
             }
             .environmentObject(socialStore)
         }
@@ -79,28 +82,111 @@ struct ItemDetailView: View {
         }
     }
 
-    // MARK: - Confirmation
+    // MARK: - Le contenu
 
-    @ViewBuilder
-    private var outcomeBanner: some View {
-        if let outcome {
-            SuggestionOutcomeBanner(outcome: outcome)
+    private var content: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                // Sonde de défilement : le seul mouvement de l'écran en dépend.
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: HeroOffsetKey.self,
+                        value: proxy.frame(in: .named("fiche")).minY
+                    )
+                }
+                .frame(height: 0)
+
+                hero
+                generique
+
+                if let connection = galleryConnection {
+                    remark(connection)
+                }
+
+                watchSection
+                synopsisSection
+
+                if let cast = detail?.credits?.cast, !cast.isEmpty {
+                    castSection(cast)
+                }
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Ink.warn)
+                        .padding(.horizontal, Metrics.margin)
+                        .padding(.top, 24)
+                }
+            }
+            .padding(.bottom, 32)
         }
+        .coordinateSpace(name: "fiche")
+        .onPreferenceChange(HeroOffsetKey.self) { scrollOffset = $0 }
+        .ignoresSafeArea(edges: .top)
+        .scrollIndicators(.hidden)
     }
 
-    // MARK: - Hero
+    // MARK: - Le plafond
 
-    /// Le `backdrop_path` était déjà renvoyé par le backend et n'était affiché
-    /// nulle part : il devient l'image d'ouverture, avec l'affiche posée dessus.
+    /// Nu sur le backdrop, posé une fois le héros passé. Le filet et le voile
+    /// sont ceux de `AppHeaderView`, aux mêmes valeurs — c'est cette égalité qui
+    /// fait lire la fiche comme une pièce du même volume.
+    private var ceiling: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                glyphButton(.back, label: "Retour") { dismiss() }
+
+                Text(displayItem.title)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Ink.ink)
+                    .lineLimit(1)
+                    .opacity(ceilingProgress)
+
+                Spacer(minLength: 8)
+
+                if detail?.trailerKey != nil {
+                    glyphButton(.play, label: "Voir la bande-annonce", action: openTrailer)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 4)
+            .padding(.bottom, 10)
+
+            PlanRail().opacity(ceilingProgress)
+        }
+        .background {
+            PlanScrim()
+                .opacity(ceilingProgress)
+                .ignoresSafeArea(edges: .top)
+        }
+        .animation(.easeOut(duration: 0.15), value: ceilingProgress < 0.5)
+    }
+
+    private func glyphButton(
+        _ glyph: DetailGlyph.Kind, label: String, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            DetailGlyph(kind: glyph)
+                .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                .foregroundStyle(Ink.ink)
+                .frame(width: 22, height: 22)
+                // Sur le backdrop, le tracé seul ne tiendrait pas sur une image
+                // claire : une ombre courte le détache sans poser d'objet.
+                .shadow(color: .black.opacity(1 - ceilingProgress), radius: 5)
+                .frame(width: 34, height: 34)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.9))
+        .accessibilityLabel(label)
+    }
+
+    // MARK: - Le héros
+
     private var hero: some View {
-        ZStack(alignment: .bottom) {
-            // `Color.clear` fixe la boîte, l'image est posée en `overlay` : un
-            // overlay ne participe jamais au calcul de taille du parent. Sans
-            // ça, une image en `scaledToFill` impose sa largeur à toute la vue,
-            // `.clipped()` ne rognant que le dessin, pas la mise en page.
+        ZStack(alignment: .bottomLeading) {
             Color.clear
                 .frame(maxWidth: .infinity)
-                .frame(height: 260)
+                .frame(height: Self.heroHeight)
                 .overlay { backdrop }
                 .clipped()
                 .overlay(scrim)
@@ -109,34 +195,31 @@ struct ItemDetailView: View {
                 PosterTile(
                     posterPath: detail?.posterPath ?? item.posterPath,
                     title: displayItem.title,
-                    width: 84,
-                    cornerRadius: 10
+                    width: 64
                 )
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 7) {
                     Text(displayItem.title)
-                        .font(.system(size: 24, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.white)
+                        .planTitle(24)
+                        .foregroundStyle(Ink.ink)
                         .lineLimit(3)
-                        .minimumScaleFactor(0.7)
-                        .shadow(color: .black.opacity(0.5), radius: 8, y: 2)
+                        .minimumScaleFactor(0.75)
 
                     if let tagline = detail?.tagline, !tagline.isEmpty {
                         Text(tagline)
-                            .font(.system(size: 11))
-                            .italic()
-                            .foregroundStyle(.white.opacity(0.82))
+                            .font(.system(size: 12))
+                            .foregroundStyle(Ink.ink2)
                             .lineLimit(2)
                     }
                 }
+                .padding(.bottom, 2)
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, Metrics.margin)
             .padding(.bottom, 14)
         }
-        .frame(height: 260)
-        .overlay(alignment: .center) { trailerButton }
+        .frame(height: Self.heroHeight)
     }
 
     @ViewBuilder
@@ -144,21 +227,19 @@ struct ItemDetailView: View {
         if let url = detail?.backdropURL {
             PosterImageView(url: url)
         } else {
-            LinearGradient(
-                colors: [.indigo.opacity(0.55), .pink.opacity(0.35), Color(.systemBackground)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            // Sans backdrop, la nuit plutôt qu'un dégradé inventé : c'est le
+            // fond de l'app, et l'affiche suffit à porter le héros.
+            Ink.ground
         }
     }
 
     private var scrim: some View {
         LinearGradient(
             stops: [
-                .init(color: .black.opacity(0.35), location: 0),
-                .init(color: .black.opacity(0.15), location: 0.35),
-                .init(color: .black.opacity(0.72), location: 0.8),
-                .init(color: Color(.systemBackground), location: 1),
+                .init(color: Ink.ground.opacity(0.55), location: 0),
+                .init(color: Ink.ground.opacity(0.10), location: 0.30),
+                .init(color: Ink.ground.opacity(0.80), location: 0.78),
+                .init(color: Ink.ground, location: 1)
             ],
             startPoint: .top,
             endPoint: .bottom
@@ -166,66 +247,42 @@ struct ItemDetailView: View {
         .allowsHitTesting(false)
     }
 
-    @ViewBuilder
-    private var trailerButton: some View {
-        if detail?.trailerKey != nil {
-            Button(action: openTrailer) {
-                Image(systemName: "play.fill")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 52, height: 52)
-                    .background(.ultraThinMaterial, in: Circle())
-                    .overlay(Circle().strokeBorder(.white.opacity(0.5), lineWidth: 1.5))
-                    .shadow(color: .black.opacity(0.35), radius: 12, y: 4)
-            }
-            .buttonStyle(PressableScaleStyle(scale: 0.9))
-            .offset(y: -22)
-            .accessibilityLabel("Voir la bande-annonce")
-        }
-    }
+    // MARK: - Le générique
 
-    private var backButton: some View {
-        Button { dismiss() } label: {
-            Image(systemName: "chevron.left")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 34, height: 34)
-                .background(Color.black.opacity(0.35), in: Circle())
-                .overlay(Circle().strokeBorder(.white.opacity(0.2), lineWidth: 1))
-        }
-        .buttonStyle(PressableScaleStyle(scale: 0.9))
-        .padding(.leading, 16)
-        .padding(.top, 54)
-        .accessibilityLabel("Retour")
-    }
-
-    // MARK: - Faits
-
-    private var factsLine: some View {
-        HStack(spacing: 0) {
-            Text(facts)
-                .font(.system(size: 12.5, weight: .semibold, design: .rounded))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 8)
-
-            if loading {
-                CinechillSpinner(size: 15)
+    /// Année, durée, genre, réalisateur : les faits, au niveau de service. La
+    /// note perd son étoile jaune — c'était le dernier meuble d'app générique de
+    /// l'écran — et devient un nombre, avec son dénominateur en ardoise.
+    private var generique: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if !facts.isEmpty {
+                Text(facts)
+                    .planLabel()
+                    .foregroundStyle(Ink.ink2)
+                    .lineSpacing(5)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            if let rating = detail?.voteAverage ?? item.voteAverage {
-                HStack(spacing: 4) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.yellow)
-                    Text(String(format: "%.1f", rating))
-                        .font(.system(size: 12.5, weight: .heavy, design: .rounded))
+            HStack(alignment: .firstTextBaseline, spacing: 7) {
+                if let rating = detail?.voteAverage ?? item.voteAverage, rating > 0 {
+                    Text(String(format: "%.1f", rating).replacingOccurrences(of: ".", with: ","))
+                        .planTitle(22)
                         .monospacedDigit()
+                        .foregroundStyle(Ink.ink)
+
+                    Text(voteText)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Ink.ink3)
+                }
+
+                Spacer(minLength: 0)
+
+                if loading {
+                    CinechillSpinner(size: 15)
                 }
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, Metrics.margin)
+        .padding(.top, 20)
     }
 
     private var facts: String {
@@ -240,112 +297,35 @@ struct ItemDetailView: View {
         return parts.joined(separator: " · ")
     }
 
-    // MARK: - Décision
-
-    /// Trois boutons explicites plutôt qu'un menu déroulant : toute l'app dit
-    /// déjà « vu / à voir », la fiche était le seul écran à parler autrement.
-    private var decisionBar: some View {
-        HStack(spacing: 8) {
-            decisionButton(.seen, label: "Vu", icon: "checkmark", tint: .green)
-            decisionButton(.toWatch, label: "À voir", icon: "bookmark.fill", tint: .blue)
-
-            // « Recommander » n'apparaît que si le film est vu : la règle
-            // « on ne recommande que ce qu'on a vu » n'est jamais énoncée,
-            // elle est simplement vraie à l'écran. Le cyan de l'identité, et
-            // non l'indigo des décisions — c'est une action d'un autre ordre.
-            if currentStatus == .seen {
-                Button {
-                    Haptics.impact(.light)
-                    showComposer = true
-                } label: {
-                    CinechillHallIconView(.recommander)
-                        .frame(width: 17, height: 17)
-                        .foregroundStyle(CinechillPalette.light)
-                        .frame(width: 44, height: 40)
-                        .background(
-                            CinechillPalette.light.opacity(0.15),
-                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .strokeBorder(CinechillPalette.light.opacity(0.55), lineWidth: 1.5)
-                        )
-                }
-                .buttonStyle(PressableScaleStyle(scale: 0.94))
-                .transition(.scale.combined(with: .opacity))
-                .accessibilityLabel("Recommander à un ami")
-            }
-
-            if currentStatus != .none {
-                Button {
-                    Haptics.impact(.light)
-                    if currentStatus == .seen {
-                        libraryStore.removeFromGallery(displayItem)
-                    } else {
-                        libraryStore.removeFromWatchlist(displayItem)
-                    }
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 44, height: 40)
-                        .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .buttonStyle(PressableScaleStyle(scale: 0.94))
-                .transition(.scale.combined(with: .opacity))
-                .accessibilityLabel("Retirer de mes listes")
-            }
-        }
-        .padding(.horizontal, 20)
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: currentStatus)
+    private var voteText: String {
+        guard let count = detail?.voteCount, count > 0 else { return "/ 10" }
+        return "/ 10 · \(count.formatted(.number.grouping(.automatic))) votes"
     }
 
-    private func decisionButton(
-        _ status: DetailStatus, label: String, icon: String, tint: Color
-    ) -> some View {
-        let isOn = currentStatus == status
-        return Button {
-            Haptics.impact(.medium)
-            if status == .seen {
-                // La fiche est le seul écran à connaître le réalisateur et la
-                // saga : c'est ici qu'ils entrent en galerie, pour les badges
-                // « Signature » et « L'Intégrale ».
-                libraryStore.addToGallery(
-                    displayItem,
-                    director: detail?.director,
-                    collectionID: detail?.collectionID,
-                    collectionTotal: detail?.collectionCount
-                )
-            } else {
-                libraryStore.addToWatchlist(displayItem)
-            }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 11, weight: .bold))
-                Text(label)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-            }
-            .foregroundStyle(isOn ? tint : .secondary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 11)
-            .background(
-                isOn ? tint.opacity(0.15) : Color(.tertiarySystemFill),
-                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(isOn ? tint : .clear, lineWidth: 1.5)
-            )
-        }
-        .buttonStyle(PressableScaleStyle(scale: 0.96))
-        .accessibilityAddTraits(isOn ? [.isSelected] : [])
-    }
-
-    // MARK: - Lien avec la galerie
+    // MARK: - La remarque
 
     /// Ce qui distingue la fiche d'une page TMDB : elle sait ce que vous avez
     /// déjà vu. Calculé en local, sans un appel réseau de plus.
+    ///
+    /// Ce n'était pas une carte. Une carte annonce une information du même poids
+    /// que le reste de l'écran ; ceci est une remarque — une ligne, précédée du
+    /// point de lumière, qui dit partout dans l'app la même chose : *acquis*.
+    private func remark(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 11) {
+            PlanLight().padding(.top, 6)
+
+            Text(text)
+                .font(.system(size: 13))
+                .foregroundStyle(Ink.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, Metrics.margin)
+        .padding(.top, 18)
+        .accessibilityElement(children: .combine)
+    }
+
     private var galleryConnection: String? {
         let gallery = libraryStore.galleryItems
         guard gallery.count >= 3 else { return nil }
@@ -354,19 +334,28 @@ struct ItemDetailView: View {
         // recoupement possible sans appel réseau supplémentaire est le genre,
         // affiné par la décennie quand elle est connue.
         guard let genreID = displayItem.genreIds.first else { return nil }
+        let genreName = detail?.genreNames?.first?.lowercased()
 
         if let decade = decadeOfItem {
             let sameVein = gallery.filter { entry in
                 entry.genreIds.contains(genreID) && decadeOf(entry.releaseDate) == decade
             }.count
             if sameVein >= 2 {
-                return "Vous avez déjà \(sameVein) films du même genre sur cette décennie."
+                let label = genreName.map { "\($0) des années \(decade)" } ?? "films du même genre sur cette décennie"
+                return "\(ordinal(sameVein + 1)) \(label) dans votre galerie."
             }
         }
 
         let sameGenre = gallery.filter { $0.genreIds.contains(genreID) }.count
         guard sameGenre >= 3 else { return nil }
+        if let genreName {
+            return "\(ordinal(sameGenre + 1)) \(genreName) de votre galerie."
+        }
         return "Vous avez déjà \(sameGenre) films de ce genre dans votre galerie."
+    }
+
+    private func ordinal(_ value: Int) -> String {
+        value == 1 ? "Premier" : "\(value)ᵉ"
     }
 
     private var decadeOfItem: Int? {
@@ -379,30 +368,11 @@ struct ItemDetailView: View {
         return year / 10 * 10
     }
 
-    private func connectionCard(_ text: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: "trophy.fill")
-                .font(.system(size: 13))
-                .foregroundStyle(.indigo)
-
-            Text(text)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
-        }
-        .padding(12)
-        .background(Color.indigo.opacity(0.09), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.indigo.opacity(0.22), lineWidth: 1)
-        )
-        .padding(.horizontal, 20)
-    }
-
     // MARK: - Où le voir
 
+    /// Remonté au-dessus du synopsis : c'est la seule information actionnable de
+    /// la moitié basse, et elle passait derrière un texte de quarante lignes.
+    ///
     /// Vos plateformes d'abord, les autres en retrait — mais jamais rien de
     /// caché : l'ancienne version masquait toute la section quand vous n'étiez
     /// abonné à aucune, alors que l'information existait.
@@ -413,30 +383,38 @@ struct ItemDetailView: View {
             let mine = all.filter { libraryStore.preferredPlatformIDs.contains(String($0.providerID)) }
             let others = all.filter { !libraryStore.preferredPlatformIDs.contains(String($0.providerID)) }
 
-            VStack(alignment: .leading, spacing: 10) {
-                sectionTitle("OÙ LE VOIR")
+            VStack(alignment: .leading, spacing: 0) {
+                PlanEdge().padding(.horizontal, Metrics.margin)
+
+                Text("Où le voir")
+                    .planLabel()
+                    .foregroundStyle(Ink.ink2)
+                    .padding(.horizontal, Metrics.margin)
+                    .padding(.top, 20)
+                    .padding(.bottom, 14)
 
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
+                    HStack(spacing: Metrics.gutter) {
                         ForEach(mine, id: \.providerID) { provider in
                             providerButton(provider, isMine: true)
                         }
 
                         if !mine.isEmpty, !others.isEmpty {
                             Rectangle()
-                                .fill(Color.secondary.opacity(0.25))
-                                .frame(width: 1, height: 26)
-                                .padding(.horizontal, 2)
+                                .fill(Ink.ruleSet)
+                                .frame(width: 1, height: 22)
+                                .padding(.horizontal, 3)
                         }
 
                         ForEach(others, id: \.providerID) { provider in
                             providerButton(provider, isMine: false)
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, Metrics.margin)
                 }
                 .scrollClipDisabled()
             }
+            .padding(.top, 24)
         }
     }
 
@@ -448,21 +426,23 @@ struct ItemDetailView: View {
                 if let url = provider.logoURL {
                     PosterImageView(url: url)
                 } else {
-                    Text(provider.providerName)
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(.secondary)
+                    Text(provider.providerName.prefix(3).uppercased())
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(Ink.ink2)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(.tertiarySystemFill))
+                        .background(Color(hex: 0x151B23))
                 }
             }
-            .frame(width: 46, height: 46)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .frame(width: 42, height: 42)
+            .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(isMine ? Color.indigo : Color.clear, lineWidth: 2)
+                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                    .strokeBorder(isMine ? Ink.ink : Ink.rule, lineWidth: 1)
             )
-            .opacity(isMine ? 1 : 0.42)
-            .saturation(isMine ? 1 : 0.3)
+            // Retenue : pleine saturation. Hors abonnement : en retrait. Le même
+            // couple que dans les réglages, pour le même objet.
+            .opacity(isMine ? 1 : 0.4)
+            .saturation(isMine ? 1 : 0.25)
         }
         .buttonStyle(PressableScaleStyle(scale: 0.92))
         .accessibilityLabel(provider.providerName)
@@ -474,72 +454,199 @@ struct ItemDetailView: View {
     @ViewBuilder
     private var synopsisSection: some View {
         if let text = detail?.overview ?? item.overview, !text.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                sectionTitle("SYNOPSIS")
+            VStack(alignment: .leading, spacing: 0) {
+                PlanEdge().padding(.horizontal, Metrics.margin)
+
+                Text("Synopsis")
+                    .planLabel()
+                    .foregroundStyle(Ink.ink2)
+                    .padding(.top, 20)
+                    .padding(.bottom, 12)
+
                 Text(text)
                     .font(.system(size: 14))
-                    .foregroundStyle(.secondary)
-                    .lineSpacing(2)
-                    .padding(.horizontal, 20)
+                    .foregroundStyle(Ink.ink2)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(.horizontal, Metrics.margin)
+            .padding(.top, 24)
         }
     }
 
     // MARK: - Casting
 
     private func castSection(_ cast: [TMDBDetailCastMember]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("CASTING")
+        VStack(alignment: .leading, spacing: 0) {
+            PlanEdge().padding(.horizontal, Metrics.margin)
+
+            Text("Casting")
+                .planLabel()
+                .foregroundStyle(Ink.ink2)
+                .padding(.horizontal, Metrics.margin)
+                .padding(.top, 20)
+                .padding(.bottom, 14)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 14) {
                     ForEach(cast, id: \.name) { member in
-                        VStack(spacing: 6) {
+                        VStack(spacing: 8) {
                             Group {
                                 if let url = member.profileURL {
                                     PosterImageView(url: url)
                                 } else {
-                                    personPlaceholder
+                                    Color(hex: 0x151B23)
                                 }
                             }
-                            .frame(width: 60, height: 60)
+                            .frame(width: 56, height: 56)
                             .clipShape(Circle())
-                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.07), lineWidth: 1))
+                            .overlay(Circle().strokeBorder(Ink.rule, lineWidth: 1))
 
-                            Text(member.name)
-                                .font(.system(size: 10, weight: .bold, design: .rounded))
-                                .multilineTextAlignment(.center)
-                                .lineLimit(2)
-
-                            if let character = member.character, !character.isEmpty {
-                                Text(character)
-                                    .font(.system(size: 9))
-                                    .foregroundStyle(.secondary)
+                            VStack(spacing: 2) {
+                                Text(member.name)
+                                    .font(.system(size: 10.5, weight: .medium))
+                                    .foregroundStyle(Ink.ink)
                                     .multilineTextAlignment(.center)
                                     .lineLimit(2)
+
+                                if let character = member.character, !character.isEmpty {
+                                    Text(character)
+                                        .font(.system(size: 9.5))
+                                        .foregroundStyle(Ink.ink3)
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(2)
+                                }
                             }
                         }
-                        .frame(width: 70)
+                        .frame(width: 68)
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, Metrics.margin)
             }
             .scrollClipDisabled()
         }
+        .padding(.top, 24)
     }
 
-    private var personPlaceholder: some View {
-        Circle()
-            .fill(Color(.tertiarySystemFill))
-            .overlay(Image(systemName: "person.fill").foregroundStyle(.secondary))
+    // MARK: - Le plancher de décision
+
+    /// **Le cœur de l'écran.** Deux issues, toujours atteignables.
+    ///
+    /// L'état retenu est un aplat d'encre, l'autre un contour : c'est une
+    /// hiérarchie, pas une convention de couleur à apprendre. Le point posé sur
+    /// l'aplat dit lequel — plein pour « vu », creux pour « à voir » — si bien
+    /// que l'écran reste lisible en niveaux de gris.
+    ///
+    /// Retaper le choix courant le retire. L'ancienne barre offrait un quatrième
+    /// bouton `✕` pour ça : un contrôle de plus pour une action que le bouton
+    /// déjà présent pouvait porter.
+    private var decisionFloor: some View {
+        VStack(spacing: 0) {
+            PlanEdge()
+
+            HStack(spacing: Metrics.gutter) {
+                decisionButton(.seen, label: "Vu")
+                decisionButton(.toWatch, label: "À voir")
+
+                // « Recommander » n'apparaît que si le film est vu : la règle
+                // « on ne recommande que ce qu'on a vu » n'est jamais énoncée,
+                // elle est simplement vraie à l'écran.
+                if currentStatus == .seen {
+                    Button {
+                        Haptics.impact(.light)
+                        showComposer = true
+                    } label: {
+                        CinechillHallIconView(.recommander)
+                            .frame(width: 18, height: 18)
+                            .foregroundStyle(Ink.ink)
+                            .frame(width: 48, height: Metrics.control)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                                    .strokeBorder(Ink.ruleSet, lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(PressableScaleStyle(scale: 0.94))
+                    .transition(.opacity)
+                    .accessibilityLabel("Recommander à un ami")
+                }
+            }
+            .padding(.horizontal, Metrics.margin)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+        }
+        .background(Ink.ground)
+        .animation(Metrics.shift, value: currentStatus)
     }
 
-    private func sectionTitle(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 10, weight: .heavy, design: .rounded))
-            .kerning(1)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 20)
+    private func decisionButton(_ status: DetailStatus, label: String) -> some View {
+        let isOn = currentStatus == status
+        return Button {
+            Haptics.impact(isOn ? .light : .medium)
+            toggle(status)
+        } label: {
+            HStack(spacing: 7) {
+                Text(label)
+                    .font(.system(size: 14, weight: isOn ? .semibold : .regular))
+
+                if isOn {
+                    if status == .seen {
+                        PlanLight(tint: Ink.ground)
+                    } else {
+                        PlanLightOutline(tint: Ink.ground)
+                    }
+                }
+            }
+            .foregroundStyle(isOn ? Ink.ground : Ink.ink)
+            .frame(maxWidth: .infinity)
+            .frame(height: Metrics.control)
+            .background {
+                if isOn {
+                    RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                        .fill(Ink.ink)
+                } else {
+                    RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                        .strokeBorder(Ink.ruleSet, lineWidth: 1)
+                }
+            }
+            .contentShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.96))
+        .accessibilityAddTraits(isOn ? [.isSelected] : [])
+        .accessibilityHint(isOn ? "Toucher à nouveau pour retirer de vos listes" : "")
+    }
+
+    private func toggle(_ status: DetailStatus) {
+        guard currentStatus != status else {
+            if status == .seen {
+                libraryStore.removeFromGallery(displayItem)
+            } else {
+                libraryStore.removeFromWatchlist(displayItem)
+            }
+            return
+        }
+
+        if status == .seen {
+            // La fiche est le seul écran à connaître le réalisateur et la saga :
+            // c'est ici qu'ils entrent en galerie, pour les badges « Signature »
+            // et « L'Intégrale ».
+            libraryStore.addToGallery(
+                displayItem,
+                director: detail?.director,
+                collectionID: detail?.collectionID,
+                collectionTotal: detail?.collectionCount
+            )
+        } else {
+            libraryStore.addToWatchlist(displayItem)
+        }
+    }
+
+    // MARK: - Confirmation
+
+    @ViewBuilder
+    private var outcomeBanner: some View {
+        if let outcome {
+            SuggestionOutcomeBanner(outcome: outcome)
+        }
     }
 
     // MARK: - Actions
@@ -583,4 +690,45 @@ struct ItemDetailView: View {
 
 private enum DetailStatus {
     case toWatch, seen, none
+}
+
+// MARK: - Sonde de défilement
+
+private struct HeroOffsetKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+// MARK: - Les glyphes de la fiche
+
+/// Le retour et la lecture, dans l'écriture « La Gravure » : grille de 24, trait
+/// de 1,5, extrémités rondes. La pointe de lecture est ouverte — une flèche
+/// pleine serait un second élément plein, ce que la famille n'admet pas.
+private struct DetailGlyph: Shape {
+    enum Kind { case back, play }
+
+    let kind: Kind
+
+    func path(in rect: CGRect) -> Path {
+        let scale = min(rect.width, rect.height) / 24
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: rect.minX + x * scale, y: rect.minY + y * scale)
+        }
+
+        var path = Path()
+        switch kind {
+        case .back:
+            path.move(to: p(14.6, 4.8))
+            path.addLine(to: p(8, 12))
+            path.addLine(to: p(14.6, 19.2))
+        case .play:
+            path.move(to: p(8.6, 5.6))
+            path.addLine(to: p(18.4, 12))
+            path.addLine(to: p(8.6, 18.4))
+            path.closeSubpath()
+        }
+        return path
+    }
 }

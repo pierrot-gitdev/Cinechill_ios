@@ -13,127 +13,187 @@ struct SwipeGestureHints: View {
     var opacity: Double
 
     var body: some View {
-        HStack(spacing: 12) {
-            hint(symbol: "arrow.left", label: "Pas vu", symbolLeading: true)
+        HStack(spacing: 14) {
+            hint(.left, label: "Pas vu", glyphLeading: true)
             separator
-            hint(symbol: "arrow.up", label: "À voir", symbolLeading: true)
+            hint(.up, label: "À voir", glyphLeading: true)
             separator
-            hint(symbol: "arrow.right", label: "Vu", symbolLeading: false)
+            hint(.right, label: "Vu", glyphLeading: false)
         }
-        .font(.system(size: 12, weight: .medium, design: .rounded))
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Ink.ink3)
         .opacity(opacity)
         .accessibilityHidden(true)
     }
 
     private var separator: some View {
-        Circle()
-            .fill(Color.secondary)
-            .frame(width: 2.5, height: 2.5)
-            .opacity(0.5)
+        Rectangle()
+            .fill(Ink.ruleSet)
+            .frame(width: 1, height: 9)
     }
 
-    private func hint(symbol: String, label: String, symbolLeading: Bool) -> some View {
-        HStack(spacing: 5) {
-            if symbolLeading {
-                Image(systemName: symbol).imageScale(.small)
-                Text(label)
-            } else {
-                Text(label)
-                Image(systemName: symbol).imageScale(.small)
-            }
+    private func hint(_ direction: SwipeArrow.Direction, label: String, glyphLeading: Bool) -> some View {
+        HStack(spacing: 6) {
+            if glyphLeading { arrow(direction) }
+            Text(label).planLabel()
+            if !glyphLeading { arrow(direction) }
         }
+    }
+
+    private func arrow(_ direction: SwipeArrow.Direction) -> some View {
+        SwipeArrow(direction: direction)
+            .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+            .frame(width: 11, height: 11)
     }
 }
 
 /// Les trois directions rappelées sur les bords de la carte, à l'ouverture de
 /// l'onglet.
 ///
-/// La légende du bas dit quoi faire, ces repères disent *où* : chaque action
-/// est posée du côté vers lequel il faut balayer, dans la couleur de son
-/// verdict — la même que celle du tampon qui s'allume pendant le geste, pour
-/// que l'association se fasse toute seule.
+/// La légende du bas dit quoi faire, ces repères disent *où* : chaque action est
+/// posée du côté vers lequel il faut balayer, avec le signe de son verdict — le
+/// même que celui du tampon qui s'allume pendant le geste, pour que
+/// l'association se fasse toute seule.
 struct SwipeDirectionCues: View {
     var body: some View {
         ZStack {
-            cue(for: .watchlist, arrow: "arrow.up", arrowLeading: true)
+            cue(for: .watchlist, direction: .up, glyphLeading: true)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .padding(.top, 20)
 
-            cue(for: .notSeen, arrow: "arrow.left", arrowLeading: true)
+            cue(for: .notSeen, direction: .left, glyphLeading: true)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                 .padding(.leading, 14)
 
-            cue(for: .seen, arrow: "arrow.right", arrowLeading: false)
+            cue(for: .seen, direction: .right, glyphLeading: false)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
                 .padding(.trailing, 14)
         }
         .accessibilityHidden(true)
     }
 
-    private func cue(for verdict: SwipeVerdict, arrow: String, arrowLeading: Bool) -> some View {
-        HStack(spacing: 6) {
-            if arrowLeading {
-                Image(systemName: arrow).font(.system(size: 11, weight: .bold))
-                Text(verdict.label)
-            } else {
-                Text(verdict.label)
-                Image(systemName: arrow).font(.system(size: 11, weight: .bold))
-            }
+    private func cue(
+        for verdict: SwipeVerdict, direction: SwipeArrow.Direction, glyphLeading: Bool
+    ) -> some View {
+        HStack(spacing: 7) {
+            if glyphLeading { arrow(direction) }
+            Text(verdict.label).planLabel()
+            if !glyphLeading { arrow(direction) }
         }
-        .font(.system(size: 12, weight: .heavy, design: .rounded))
-        .kerning(0.4)
         .foregroundStyle(verdict.tint)
-        .padding(.horizontal, 13)
+        .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(verdict.tint.opacity(0.45), lineWidth: 1))
-        .shadow(color: .black.opacity(0.2), radius: 10, y: 3)
+        .background(
+            Ink.ground.opacity(0.86),
+            in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                .strokeBorder(verdict.tint.opacity(0.5), lineWidth: 1)
+        )
+    }
+
+    private func arrow(_ direction: SwipeArrow.Direction) -> some View {
+        SwipeArrow(direction: direction)
+            .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+            .frame(width: 12, height: 12)
     }
 }
 
 /// La célébration d'un palier — le seul moment où la feature se met en avant.
+///
+/// Elle n'a plus de carte : un chiffre en graisse 200, une ligne, et le voile de
+/// la nuit. Le dégradé indigo→rose sur un nombre de 64 pt était l'effet le plus
+/// appuyé de l'application, et il ne disait rien que le chiffre ne disait déjà.
 struct SwipeMilestoneOverlay: View {
     let count: Int
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 0) {
             Text("\(count)")
-                .font(.system(size: 64, weight: .heavy, design: .rounded))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.indigo, .pink],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .planTitle(64)
+                .monospacedDigit()
+                .foregroundStyle(Ink.ink)
+
             Text("films ajoutés")
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                .foregroundStyle(.primary)
+                .planLabel()
+                .foregroundStyle(Ink.light)
+                .padding(.top, 10)
+
             Text("Votre galerie s'étoffe, et vos suggestions avec elle.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 13))
+                .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 16)
         }
         .padding(.horizontal, 34)
-        .padding(.vertical, 30)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        .padding(.vertical, 32)
+        .frame(maxWidth: 300)
+        .background(
+            Ink.ground.opacity(0.94),
+            in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
         )
-        .shadow(color: .black.opacity(0.18), radius: 30, y: 10)
+        .overlay(
+            RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                .strokeBorder(Ink.ruleSet, lineWidth: 1)
+        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(count) films ajoutés à votre galerie")
     }
 }
 
+/// Les trois flèches du deck, dans l'écriture « La Gravure » : grille de 24,
+/// trait de 1,5, extrémités rondes. Elles remplacent `arrow.left` / `arrow.up` /
+/// `arrow.right`, derniers symboles système d'un écran par ailleurs entièrement
+/// dessiné.
+struct SwipeArrow: Shape {
+    enum Direction { case left, up, right }
+
+    let direction: Direction
+
+    func path(in rect: CGRect) -> Path {
+        let scale = min(rect.width, rect.height) / 24
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: rect.minX + x * scale, y: rect.minY + y * scale)
+        }
+
+        var path = Path()
+        switch direction {
+        case .left:
+            path.move(to: p(20, 12))
+            path.addLine(to: p(4, 12))
+            path.move(to: p(10, 6))
+            path.addLine(to: p(4, 12))
+            path.addLine(to: p(10, 18))
+        case .right:
+            path.move(to: p(4, 12))
+            path.addLine(to: p(20, 12))
+            path.move(to: p(14, 6))
+            path.addLine(to: p(20, 12))
+            path.addLine(to: p(14, 18))
+        case .up:
+            path.move(to: p(12, 20))
+            path.addLine(to: p(12, 4))
+            path.move(to: p(6, 10))
+            path.addLine(to: p(12, 4))
+            path.addLine(to: p(18, 10))
+        }
+        return path
+    }
+}
+
 #Preview {
-    VStack(spacing: 40) {
-        SwipeDirectionCues()
-            .frame(width: 300, height: 450)
-            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 26))
-        SwipeGestureHints(opacity: 0.38)
-        SwipeMilestoneOverlay(count: 25)
+    ZStack {
+        Ink.ground.ignoresSafeArea()
+        VStack(spacing: 40) {
+            SwipeDirectionCues()
+                .frame(width: 280, height: 420)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Metrics.radius)
+                        .strokeBorder(Ink.rule, lineWidth: 1)
+                )
+            SwipeGestureHints(opacity: 0.5)
+            SwipeMilestoneOverlay(count: 25)
+        }
     }
 }

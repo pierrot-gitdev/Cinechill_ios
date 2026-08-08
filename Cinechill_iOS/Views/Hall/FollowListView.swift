@@ -82,9 +82,15 @@ struct FollowListView: View {
             }
             .padding(.bottom, 30)
         }
-        .background(Color(.systemBackground))
-        .navigationTitle(mode.title)
-        .navigationBarTitleDisplayMode(.inline)
+        .background(Ink.ground)
+        .safeAreaInset(edge: .top) {
+            PlanHeader(mode.title) {
+                if !profiles.isEmpty {
+                    PlanHeaderCount(value: "\(profiles.count)")
+                }
+            }
+        }
+        .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(item: $openedProfile) { profile in
             PublicProfileView(profile: profile)
         }

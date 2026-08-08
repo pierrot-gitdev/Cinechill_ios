@@ -25,25 +25,29 @@ struct GallerySignatureView: View {
     }
 
     private var countRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: 9) {
             Text("\(signature.total)")
-                .font(.system(size: 38, weight: .heavy, design: .rounded))
+                .planTitle(38)
                 .monospacedDigit()
+                .foregroundStyle(Ink.ink)
                 .contentTransition(.numericText())
 
             Text(signature.total > 1 ? "films vus" : "film vu")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(.secondary)
+                .planLabel()
+                .foregroundStyle(Ink.ink2)
 
             Spacer(minLength: 0)
 
+            // Ce qui vient d'entrer s'allume — le même signe que partout, plutôt
+            // qu'une pastille verte qui n'appartenait à rien.
             if signature.addedThisMonth > 0 {
-                Text("+\(signature.addedThisMonth) ce mois")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(.green)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 4)
-                    .background(Color.green.opacity(0.14), in: Capsule())
+                HStack(spacing: 7) {
+                    PlanLight()
+                    Text("+\(signature.addedThisMonth) ce mois")
+                        .planLabel()
+                        .monospacedDigit()
+                        .foregroundStyle(Ink.light)
+                }
             }
         }
         .accessibilityElement(children: .combine)
@@ -83,7 +87,7 @@ struct GallerySignatureView: View {
                     Text(share.percentText)
                         .foregroundStyle(.primary)
                 }
-                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                .font(.system(size: 11))
             }
         }
         .accessibilityHidden(true)

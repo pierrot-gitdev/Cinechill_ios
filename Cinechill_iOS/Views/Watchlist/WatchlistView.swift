@@ -26,7 +26,7 @@ struct WatchlistView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(.systemBackground).ignoresSafeArea()
+                Ink.ground.ignoresSafeArea()
 
                 if libraryStore.watchlistItems.isEmpty {
                     emptyState.padding(.horizontal, 34)
@@ -82,7 +82,7 @@ struct WatchlistView: View {
                             }
                         }
                     )
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, Metrics.margin)
                     .padding(.bottom, 6)
                     .transition(.opacity)
                     .id(pick.item.id)
@@ -104,11 +104,11 @@ struct WatchlistView: View {
     }
 
     private var budgetPicker: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 9) {
                 Text("Combien de temps ce soir ?")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(.secondary)
+                    .planLabel()
+                    .foregroundStyle(Ink.ink2)
 
                 if model.isEnriching {
                     CinechillSpinner(size: 14)
@@ -117,87 +117,58 @@ struct WatchlistView: View {
 
             HStack(spacing: 7) {
                 ForEach(TimeBudget.allCases) { budget in
-                    let isSelected = model.budget == budget
-                    Button {
+                    PlanChip(title: budget.label, isOn: model.budget == budget) {
                         Haptics.selection()
                         model.budget = budget
-                    } label: {
-                        Text(budget.label)
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(isSelected ? .white : .primary)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 7)
-                            .background {
-                                if isSelected {
-                                    Capsule().fill(
-                                        LinearGradient(
-                                            colors: [.indigo, .pink],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                } else {
-                                    Capsule().fill(Color(.secondarySystemBackground))
-                                }
-                            }
                     }
-                    .buttonStyle(PressableScaleStyle(scale: 0.93))
-                    .accessibilityAddTraits(isSelected ? [.isSelected] : [])
                 }
                 Spacer(minLength: 0)
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 14)
-        .padding(.bottom, 14)
+        .padding(.horizontal, Metrics.margin)
+        .padding(.top, 18)
+        .padding(.bottom, 16)
     }
 
     /// Sans abonnement déclaré, « Disponible chez vous » ne peut rien vouloir
     /// dire : on le remplace par l'invitation à les déclarer, plutôt que
     /// d'afficher un groupe systématiquement vide.
+    /// Une invitation n'est pas une carte : c'est une ligne, entre deux filets,
+    /// précédée du point. Le même dispositif que la remarque de la fiche film.
     private var declarePlatformsBanner: some View {
         Button {
             showProfile = true
         } label: {
-            HStack(spacing: 11) {
-                Image(systemName: "tv.badge.wifi")
-                    .font(.system(size: 15))
-                    .foregroundStyle(.indigo)
+            HStack(alignment: .top, spacing: 11) {
+                PlanLight().padding(.top, 6)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text("Déclarez vos abonnements")
-                        .font(.system(size: 12.5, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Ink.ink)
                     Text("Pour savoir ce que vous pouvez lancer tout de suite.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Ink.ink2)
+                        .multilineTextAlignment(.leading)
                 }
 
                 Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.tertiary)
             }
-            .padding(13)
-            .background(Color.indigo.opacity(0.09), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(Color.indigo.opacity(0.22), lineWidth: 1)
-            )
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+            .overlay(alignment: .top) { PlanEdge() }
+            .overlay(alignment: .bottom) { PlanEdge() }
         }
-        .buttonStyle(PressableScaleStyle(scale: 0.98))
-        .padding(.horizontal, 18)
-        .padding(.top, 6)
+        .buttonStyle(.plain)
+        .padding(.horizontal, Metrics.margin)
+        .padding(.top, 8)
     }
 
     private func groupSection(_ group: WatchlistGroup) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
                 Text(group.title)
-                    .font(.system(size: 9.5, weight: .heavy, design: .rounded))
-                    .kerning(0.9)
+                    .planLabel()
                     .foregroundStyle(headerTint(for: group.kind))
 
                 Spacer(minLength: 0)
@@ -205,22 +176,27 @@ struct WatchlistView: View {
                 if group.kind == .dormant {
                     Button {
                         Haptics.selection()
-                        withAnimation(.easeOut(duration: 0.2)) { model.isTriaging.toggle() }
+                        withAnimation(Metrics.unfold) { model.isTriaging.toggle() }
                     } label: {
                         Text(model.isTriaging ? "Terminé" : "Faire le tri")
-                            .font(.system(size: 10, weight: .bold, design: .rounded))
-                            .foregroundStyle(.indigo)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Ink.ink2)
+                            .overlay(alignment: .bottom) {
+                                Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
+                            }
+                            .contentShape(Rectangle().inset(by: -10))
                     }
+                    .buttonStyle(.plain)
                 } else {
                     Text("\(group.items.count)")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .planLabel()
                         .monospacedDigit()
-                        .foregroundStyle(headerTint(for: group.kind))
+                        .foregroundStyle(Ink.ink3)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 14)
-            .padding(.bottom, 6)
+            .padding(.horizontal, Metrics.margin)
+            .padding(.top, 18)
+            .padding(.bottom, 8)
 
             ForEach(group.items) { item in
                 row(item, isDormant: group.kind == .dormant)
@@ -228,13 +204,14 @@ struct WatchlistView: View {
         }
     }
 
-    /// Le cyan de l'identité signale ce qui vient d'un ami — seul en-tête
-    /// coloré de l'écran avec l'orange des dormants, qui lui alerte.
+    /// La lumière signale ce qui vient d'un ami, l'écart ce qui dort depuis trop
+    /// longtemps. Ce sont les deux seuls en-têtes teintés de l'écran, et ce sont
+    /// les deux seules teintes du système — l'orange d'iOS a laissé la place.
     private func headerTint(for kind: WatchlistGroup.Kind) -> Color {
         switch kind {
-        case .recommended: CinechillPalette.light
-        case .dormant: .orange
-        default: .secondary
+        case .recommended: Ink.light
+        case .dormant: Ink.warn
+        default: Ink.ink3
         }
     }
 
@@ -251,21 +228,20 @@ struct WatchlistView: View {
                         PosterTile(
                             posterPath: item.entry.posterPath,
                             title: item.entry.title,
-                            width: 30,
-                            cornerRadius: 5
+                            width: 30
                         )
                     }
 
-                    VStack(alignment: .leading, spacing: 1) {
+                    VStack(alignment: .leading, spacing: 2) {
                         Text(item.entry.title)
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.primary)
+                            .font(.system(size: 13.5))
+                            .foregroundStyle(Ink.ink)
                             .lineLimit(1)
 
                         if let provenance = item.entry.recommendedByText {
                             Text(provenance)
                                 .font(.system(size: 10.5))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Ink.ink2)
                                 .lineLimit(1)
                         }
                     }
@@ -274,9 +250,9 @@ struct WatchlistView: View {
 
                     if let runtime = item.runtimeText {
                         Text(runtime)
-                            .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                            .font(.system(size: 10.5))
                             .monospacedDigit()
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Ink.ink3)
                     }
 
                     platformBadge(for: item)
@@ -290,19 +266,20 @@ struct WatchlistView: View {
                     Haptics.impact(.light)
                     libraryStore.removeFromWatchlist(item.entry.mediaItem)
                 } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 26, height: 26)
-                        .background(Color(.tertiarySystemFill), in: Circle())
+                    WatchlistRemoveGlyph()
+                        .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                        .foregroundStyle(Ink.warn)
+                        .frame(width: 12, height: 12)
+                        .frame(width: 30, height: 30)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(PressableScaleStyle(scale: 0.9))
-                .transition(.scale.combined(with: .opacity))
+                .transition(.opacity)
                 .accessibilityLabel("Retirer \(item.entry.title) de la watchlist")
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 5)
+        .padding(.horizontal, Metrics.margin)
+        .padding(.vertical, 6)
     }
 
     @ViewBuilder
@@ -311,14 +288,16 @@ struct WatchlistView: View {
             PlatformBadge(platform: platform)
         } else if item.providerIDs.isEmpty {
             Text("—")
-                .font(.system(size: 10, weight: .bold, design: .rounded))
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 11))
+                .foregroundStyle(Ink.ink3)
                 .frame(width: 20, height: 20)
         } else {
-            Image(systemName: "square.and.arrow.down")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.tertiary)
+            // Disponible, mais pas chez vous : le point creux du vocabulaire
+            // commun, plutôt qu'un symbole de téléchargement qui ne veut rien
+            // dire ici.
+            PlanLightOutline(tint: Ink.ink3)
                 .frame(width: 20, height: 20)
+                .accessibilityLabel("Hors de vos abonnements")
         }
     }
 
@@ -330,11 +309,12 @@ struct WatchlistView: View {
                 model.budget = .any
             } label: {
                 Text("\(model.hiddenByBudget) film\(model.hiddenByBudget > 1 ? "s" : "") dépasse\(model.hiddenByBudget > 1 ? "nt" : "") \(model.budget.label) · Tout voir")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Ink.ink2)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 18)
+            .buttonStyle(.plain)
+            .padding(.horizontal, Metrics.margin)
+            .padding(.top, 22)
         }
     }
 
@@ -360,24 +340,25 @@ struct WatchlistView: View {
     // MARK: - Vide
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "bookmark.slash")
-                .font(.system(size: 42, weight: .light))
-                .foregroundStyle(.tertiary)
-            Text("Rien en attente")
-                .font(.system(size: 19, weight: .bold, design: .rounded))
-            Text("Balayez un film vers le haut depuis le deck pour le mettre de côté. On vous dira quoi en regarder, et quand.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+        PlanEmptyState(
+            icon: .salle,
+            title: "Rien en attente",
+            message: "Balayez un film vers le haut depuis le deck pour le mettre de côté. On vous dira quoi en regarder, et quand.",
+            actionTitle: "Trouver des films",
+            action: { selectedTab = 2 }
+        )
+    }
+}
 
-            Button("Trouver des films") {
-                selectedTab = 2
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.indigo)
-            .padding(.top, 4)
-        }
+/// La croix de retrait, dans l'écriture de la famille.
+private struct WatchlistRemoveGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        return path
     }
 }
 
@@ -391,14 +372,14 @@ private struct PlatformBadge: View {
                 PosterImageView(url: url)
             } else {
                 Text(platform.shortLabel)
-                    .font(.system(size: 8, weight: .heavy, design: .rounded))
+                    .font(.system(size: 8, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(.tertiarySystemFill))
             }
         }
         .frame(width: 20, height: 20)
-        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
         .accessibilityLabel("Disponible sur \(platform.name)")
     }
 }

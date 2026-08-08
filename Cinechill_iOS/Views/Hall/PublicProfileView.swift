@@ -39,13 +39,15 @@ struct PublicProfileView: View {
                     postersSection
                 }
             }
-            .padding(.horizontal, 18)
-            .padding(.top, 10)
+            .padding(.horizontal, Metrics.margin)
+            .padding(.top, 18)
             .padding(.bottom, 36)
         }
-        .background(Color(.systemBackground))
-        .navigationTitle(shown.handleDisplay)
-        .navigationBarTitleDisplayMode(.inline)
+        .background(Ink.ground)
+        .safeAreaInset(edge: .top) {
+            PlanHeader(shown.handleDisplay)
+        }
+        .toolbar(.hidden, for: .navigationBar)
         .task(id: profile.id) { await load() }
         .alert(
             "Impossible",
@@ -73,28 +75,23 @@ struct PublicProfileView: View {
 
             VStack(spacing: 2) {
                 Text(shown.displayName)
-                    .font(.system(size: 20, weight: .heavy, design: .rounded))
+                    .planTitle(22)
+                    .foregroundStyle(Ink.ink)
                     .multilineTextAlignment(.center)
 
                 Text(shown.handleDisplay)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Ink.ink2)
             }
 
             if let badge = signatureBadge {
-                HStack(spacing: 5) {
+                HStack(spacing: 7) {
                     BadgeView(badge: badge, isUnlocked: true, size: 22)
-                    Text(badge.name.uppercased())
-                        .font(.system(size: 9.5, weight: .heavy, design: .rounded))
-                        .kerning(0.6)
+                    Text(badge.name)
+                        .planLabel()
                         .foregroundStyle(badge.rarity.accent)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(
-                    badge.rarity.accent.opacity(0.16),
-                    in: Capsule()
-                )
+                .padding(.top, 4)
             }
         }
         .frame(maxWidth: .infinity)
@@ -109,33 +106,38 @@ struct PublicProfileView: View {
 
     // MARK: - Chiffres
 
+    /// Exactement la rangée de `ProfileView` : trois compteurs entre deux
+    /// filets. Un second langage visuel pour la même information n'aurait
+    /// aucune justification — c'est déjà la règle que cet écran s'était donnée.
     private var stats: some View {
-        HStack(spacing: 8) {
-            statCell(value: shown.galleryCount, label: "VUS")
-            statCell(value: shown.followerCount, label: "ABONNÉS")
-            statCell(value: shown.followingCount, label: "ABONNEMENTS")
+        VStack(spacing: 0) {
+            PlanEdge()
+            HStack(spacing: 0) {
+                statCell(value: shown.galleryCount, label: "Vus")
+                statCell(value: shown.followerCount, label: "Abonnés")
+                statCell(value: shown.followingCount, label: "Abonnements")
+            }
+            PlanEdge()
         }
     }
 
     private func statCell(value: Int, label: String) -> some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 5) {
             Text("\(value)")
-                .font(.system(size: 19, weight: .heavy, design: .rounded))
+                .planTitle(21)
+                .foregroundStyle(Ink.ink)
                 .monospacedDigit()
                 .contentTransition(.numericText())
             Text(label)
-                .font(.system(size: 8.5, weight: .bold, design: .rounded))
-                .kerning(0.5)
-                .foregroundStyle(.secondary)
+                .planLabel()
+                .foregroundStyle(Ink.ink3)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.75)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 11)
-        .background(
-            Color(.secondarySystemBackground),
-            in: RoundedRectangle(cornerRadius: 13, style: .continuous)
-        )
+        .padding(.vertical, 16)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(value) \(label)")
     }
 
     // MARK: - Actions
@@ -170,22 +172,22 @@ struct PublicProfileView: View {
                 GeometryReader { proxy in
                     HStack(spacing: 1.5) {
                         ForEach(genres) { share in
-                            Capsule()
+                            Rectangle()
                                 .fill(share.color)
                                 .frame(width: max(2, proxy.size.width * share.share - 1.5))
                         }
                     }
                 }
-                .frame(height: 9)
+                .frame(height: 6)
 
-                FlowLayout(spacing: 12) {
+                FlowLayout(spacing: 14) {
                     ForEach(genres.prefix(4)) { share in
-                        HStack(spacing: 5) {
-                            Circle().fill(share.color).frame(width: 6, height: 6)
-                            Text(share.name).foregroundStyle(.secondary)
-                            Text(share.percentText).foregroundStyle(.primary)
+                        HStack(spacing: 6) {
+                            Rectangle().fill(share.color).frame(width: 5, height: 5)
+                            Text(share.name).foregroundStyle(Ink.ink2)
+                            Text(share.percentText).foregroundStyle(Ink.ink).monospacedDigit()
                         }
-                        .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                        .font(.system(size: 11))
                     }
                 }
             }
@@ -202,9 +204,9 @@ struct PublicProfileView: View {
                     sectionTitle("Sa galerie")
                     Spacer()
                     Text("\(shown.galleryCount)")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .planLabel()
                         .monospacedDigit()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Ink.ink2)
                 }
 
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -214,7 +216,7 @@ struct PublicProfileView: View {
                                 posterPath: poster.posterPath,
                                 title: poster.title,
                                 width: 66,
-                                cornerRadius: 7
+                                cornerRadius: Metrics.radius
                             )
                         }
                     }
@@ -236,7 +238,8 @@ struct PublicProfileView: View {
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 17, weight: .heavy, design: .rounded))
+            .planTitle(21)
+            .foregroundStyle(Ink.ink)
     }
 
     // MARK: - Chargement

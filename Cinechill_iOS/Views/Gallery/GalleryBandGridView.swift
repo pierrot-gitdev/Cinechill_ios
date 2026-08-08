@@ -12,44 +12,36 @@ import SwiftUI
 struct GalleryBandGridView: View {
     let band: GalleryBand
 
-    private let columns = [GridItem(.adaptive(minimum: 92, maximum: 130), spacing: 12)]
+    /// Trois colonnes, comme « Le Rayon » : sur un écran de balayage, le nombre
+    /// de titres qu'on embrasse d'un coup d'œil *est* la fonction.
+    private let columns = Array(
+        repeating: GridItem(.flexible(), spacing: Metrics.gutter),
+        count: 3
+    )
 
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 16) {
+            LazyVGrid(columns: columns, spacing: 14) {
                 ForEach(band.entries) { entry in
                     NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            PosterTile(
-                                posterPath: entry.posterPath,
-                                title: entry.title,
-                                width: 110,
-                                cornerRadius: 9
-                            )
-                            Text(entry.title)
-                                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.primary)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.leading)
-                                .frame(width: 110, alignment: .leading)
-                        }
+                        PosterCell(
+                            posterPath: entry.posterPath,
+                            title: entry.title
+                        )
                     }
                     .buttonStyle(PressableScaleStyle(scale: 0.94))
                 }
             }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 16)
+            .padding(.horizontal, Metrics.margin)
+            .padding(.top, 16)
+            .padding(.bottom, 28)
         }
-        .background(Color(.systemBackground))
-        .navigationTitle(band.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Text("\(band.count)")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
+        .background(Ink.ground)
+        .safeAreaInset(edge: .top) {
+            PlanHeader(band.title) {
+                PlanHeaderCount(value: "\(band.count)")
             }
         }
+        .toolbar(.hidden, for: .navigationBar)
     }
 }

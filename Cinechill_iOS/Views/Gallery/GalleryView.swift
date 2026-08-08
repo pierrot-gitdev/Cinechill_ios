@@ -30,7 +30,7 @@ struct GalleryView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(.systemBackground).ignoresSafeArea()
+                Ink.ground.ignoresSafeArea()
 
                 if libraryStore.galleryItems.isEmpty {
                     emptyState.padding(.horizontal, 34)
@@ -107,35 +107,26 @@ struct GalleryView: View {
         .animation(.easeInOut(duration: 0.28), value: model.axis)
     }
 
+    /// Le voile de la nuit remplace `ultraThinMaterial` : c'était le seul
+    /// matériau translucide d'un écran par ailleurs entièrement bâti sur des
+    /// filets.
     private var axisPicker: some View {
-        HStack(spacing: 6) {
-            ForEach(GalleryAxis.allCases) { axis in
-                let isSelected = model.axis == axis
-                Button {
-                    Haptics.selection()
-                    model.axis = axis
-                } label: {
-                    Text(axis.label)
-                        .font(.system(size: 11.5, weight: .bold, design: .rounded))
-                        .foregroundStyle(isSelected ? Color(.systemBackground) : .secondary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background {
-                            if isSelected {
-                                Capsule().fill(Color.primary)
-                            } else {
-                                Capsule().fill(Color(.secondarySystemBackground))
-                            }
-                        }
+        VStack(spacing: 0) {
+            HStack(spacing: 7) {
+                ForEach(GalleryAxis.allCases) { axis in
+                    PlanChip(title: axis.label, isOn: model.axis == axis) {
+                        Haptics.selection()
+                        model.axis = axis
+                    }
                 }
-                .buttonStyle(PressableScaleStyle(scale: 0.92))
-                .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
+            .padding(.horizontal, Metrics.margin)
+            .padding(.vertical, 12)
+
+            PlanEdge()
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial)
+        .background(Ink.ground)
     }
 
     private func bandView(_ band: GalleryBand) -> some View {
@@ -143,32 +134,29 @@ struct GalleryView: View {
 
         return VStack(alignment: .leading, spacing: 8) {
             NavigationLink(destination: GalleryBandGridView(band: band)) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 9) {
                     Text(band.title)
-                        .font(.system(size: 15, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.primary)
+                        .planTitle(16)
+                        .foregroundStyle(Ink.ink)
                         .monospacedDigit()
 
                     if let subtitle = band.subtitle {
                         Text(subtitle)
-                            .font(.system(size: 10, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.secondary)
+                            .planLabel()
+                            .foregroundStyle(Ink.ink3)
                     }
 
                     Spacer(minLength: 0)
 
                     Text("\(band.count)")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .planLabel()
                         .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Ink.ink3)
                 }
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, 20)
+            .padding(.horizontal, Metrics.margin)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 8) {
@@ -177,8 +165,7 @@ struct GalleryView: View {
                             PosterTile(
                                 posterPath: entry.posterPath,
                                 title: entry.title,
-                                width: posterWidth,
-                                cornerRadius: max(4, posterWidth * 0.09)
+                                width: posterWidth
                             )
                         }
                         .buttonStyle(PressableScaleStyle(scale: 0.93))
@@ -201,7 +188,7 @@ struct GalleryView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, Metrics.margin)
             }
             .scrollClipDisabled()
         }
@@ -210,23 +197,12 @@ struct GalleryView: View {
     // MARK: - Vide
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "square.stack.3d.up.slash")
-                .font(.system(size: 42, weight: .light))
-                .foregroundStyle(.tertiary)
-            Text("Votre collection est vide")
-                .font(.system(size: 19, weight: .bold, design: .rounded))
-            Text("Chaque film que vous marquez comme vu vient s'y ranger, et dessine peu à peu votre profil de cinéphile.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-            Button("Commencer à swiper") {
-                selectedTab = 2
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.indigo)
-            .padding(.top, 4)
-        }
+        PlanEmptyState(
+            icon: .hall,
+            title: "Votre collection est vide",
+            message: "Chaque film que vous marquez comme vu vient s'y ranger, et dessine peu à peu votre profil de cinéphile.",
+            actionTitle: "Commencer à swiper",
+            action: { selectedTab = 2 }
+        )
     }
 }

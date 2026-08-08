@@ -21,7 +21,7 @@ struct AchievementCelebrationOverlay: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.55)
+            Ink.ground.opacity(0.86)
                 .ignoresSafeArea()
                 .onTapGesture(perform: onDismiss)
 
@@ -49,34 +49,38 @@ struct AchievementCelebrationOverlay: View {
     // MARK: - Badge débloqué
 
     private func badgeCard(_ badge: Badge) -> some View {
-        VStack(spacing: 18) {
-            eyebrow("NOUVEAU BADGE", color: badge.rarity.accent)
+        VStack(spacing: 0) {
+            eyebrow("Nouveau badge", color: badge.rarity.accent)
 
-            BadgeView(badge: badge, isUnlocked: true, size: 140)
-                .padding(.vertical, 4)
+            BadgeView(badge: badge, isUnlocked: true, size: 138)
+                .padding(.top, 22)
 
-            VStack(spacing: 6) {
-                Text(badge.name)
-                    .font(.system(size: 22, weight: .heavy, design: .rounded))
-                    .multilineTextAlignment(.center)
+            Text(badge.name)
+                .planTitle(24)
+                .foregroundStyle(Ink.ink)
+                .multilineTextAlignment(.center)
+                .padding(.top, 24)
 
-                rarityPill(badge.rarity)
+            Text(badge.rarity.label)
+                .planLabel()
+                .foregroundStyle(badge.rarity.accent)
+                .padding(.top, 9)
 
-                Text(badge.condition)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 12)
-                    .padding(.top, 2)
-            }
+            Text(badge.condition)
+                .font(.system(size: 13))
+                .foregroundStyle(Ink.ink2)
+                .multilineTextAlignment(.center)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 14)
 
-            VStack(spacing: 10) {
-                primaryButton("Équiper ce badge", action: onEquip)
-                Button("Plus tard", action: onDismiss)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.top, 6)
+            PlanButton(title: "Équiper ce badge", height: Metrics.control, action: onEquip)
+                .padding(.top, 28)
+
+            Button("Plus tard", action: onDismiss)
+                .font(.system(size: 13))
+                .foregroundStyle(Ink.ink2)
+                .padding(.top, 16)
         }
         .padding(cardPadding)
         .frame(maxWidth: 340)
@@ -87,38 +91,33 @@ struct AchievementCelebrationOverlay: View {
 
     // MARK: - Palier franchi
 
+    /// Le palier n'emprunte plus `seal.fill` au système : c'est le mark lui-même,
+    /// à la teinte du palier. Célébrer un palier de cinéphilie avec un sceau
+    /// générique, c'était le seul endroit de l'app où l'on avait un objet
+    /// illustratif propre et où l'on n'a pas su s'en servir.
     private func tierCard(_ tier: CinephileTier) -> some View {
-        VStack(spacing: 18) {
-            eyebrow("NOUVEAU PALIER", color: tier.accent)
+        VStack(spacing: 0) {
+            eyebrow("Nouveau palier", color: tier.accent)
 
-            ZStack {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [tier.accent.opacity(0.4), .clear],
-                            center: .center, startRadius: 4, endRadius: 80
-                        )
-                    )
-                    .frame(width: 150, height: 150)
-                Image(systemName: "seal.fill")
-                    .font(.system(size: 62))
-                    .foregroundStyle(tier.accent)
-                    .shadow(color: tier.accent.opacity(0.55), radius: 18)
-            }
-            .padding(.vertical, 4)
+            CinechillPlanOutline(lineWidth: 1.4)
+                .foregroundStyle(tier.accent)
+                .frame(width: 116, height: 116)
+                .padding(.top, 26)
 
-            VStack(spacing: 6) {
-                Text("Palier \(tier.label.capitalized)")
-                    .font(.system(size: 22, weight: .heavy, design: .rounded))
-                Text("Votre carte de profil change de couleur avec vous.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 12)
-            }
+            Text("Palier \(tier.label.capitalized)")
+                .planTitle(24)
+                .foregroundStyle(Ink.ink)
+                .padding(.top, 26)
 
-            primaryButton("Continuer", action: onDismiss)
-                .padding(.top, 6)
+            Text("Votre profil change de couleur avec vous.")
+                .font(.system(size: 13))
+                .foregroundStyle(Ink.ink2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 12)
+
+            PlanButton(title: "Continuer", height: Metrics.control, action: onDismiss)
+                .padding(.top, 28)
         }
         .padding(cardPadding)
         .frame(maxWidth: 340)
@@ -130,55 +129,32 @@ struct AchievementCelebrationOverlay: View {
     // MARK: - Pièces communes
 
     private var cardPadding: EdgeInsets {
-        EdgeInsets(top: 30, leading: 28, bottom: 24, trailing: 28)
+        EdgeInsets(top: 30, leading: 26, bottom: 22, trailing: 26)
     }
 
     private func eyebrow(_ text: String, color: Color) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .heavy, design: .rounded))
-            .kerning(1.4)
+            .planLabel()
             .foregroundStyle(color)
     }
 
-    private func rarityPill(_ rarity: BadgeRarity) -> some View {
-        Text(rarity.label.uppercased())
-            .font(.system(size: 10, weight: .heavy, design: .rounded))
-            .kerning(1.2)
-            .foregroundStyle(rarity.accent)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(rarity.accent.opacity(0.15), in: Capsule())
-    }
-
-    private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(
-                    LinearGradient(colors: [.indigo, .pink], startPoint: .topLeading, endPoint: .bottomTrailing),
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                )
-        }
-        .buttonStyle(PressableScaleStyle(scale: 0.97))
-    }
-
+    /// Le seul conteneur que la direction admette encore : une célébration est
+    /// bien un bloc posé *sur* l'interface, qu'on ferme d'un tap. Le filet est à
+    /// la teinte de ce qu'on vient d'obtenir — l'unique endroit où une couleur de
+    /// données borde une surface, parce que c'est précisément son sujet.
     private func cardBackground(accent: Color) -> some View {
-        RoundedRectangle(cornerRadius: 26, style: .continuous)
-            .fill(Color(.secondarySystemBackground))
+        RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+            .fill(Ink.ground)
             .overlay(
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .strokeBorder(accent.opacity(0.4), lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                    .strokeBorder(accent.opacity(0.45), lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.35), radius: 30, y: 12)
     }
 }
 
 #Preview {
     ZStack {
-        Color(.systemBackground).ignoresSafeArea()
+        Ink.ground.ignoresSafeArea()
         AchievementCelebrationOverlay(
             celebration: .badge(BadgeCatalog.all[2]),
             onEquip: {},

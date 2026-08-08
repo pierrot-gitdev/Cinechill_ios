@@ -1,27 +1,27 @@
 import SwiftUI
-import PhotosUI
 
-/// La carte de signature du profil — badge sélectionné, nom, palier.
+/// La signature du profil — badge sélectionné, nom, pseudo, palier.
 ///
-/// Un seul composant pour les deux endroits où l'identité du profil doit
-/// apparaître : le profil lui-même (lecture seule) et les réglages, où
-/// l'avatar et le nom deviennent éditables sur place plutôt que de dupliquer
-/// la mise en page dans une seconde carte.
+/// Elle est volontairement quasi monochrome : si la surface a sa propre identité
+/// chromatique et le badge la sienne, les deux se battent. En la laissant sobre,
+/// changer de badge change réellement l'allure du profil — ce qui est tout
+/// l'intérêt de pouvoir en choisir un.
+///
+/// Elle n'a plus de cadre. La carte pleine à rayon 22, son halo radial et sa
+/// bordure teintée disaient exactement ce que le badge disait déjà, et le
+/// couvraient à moitié. Ce qui reste : le puits du badge, le nom, et la mesure
+/// du palier réduite à un filet d'un point.
+///
+/// Le mode éditable a disparu avec elle : les réglages ont désormais leur propre
+/// bloc d'identité, et cette carte n'existait en double que pour lui.
 struct ProfileSignatureCard: View {
-    var isEditable = false
-    var nameField: Binding<String> = .constant("")
-    var photoItem: Binding<PhotosPickerItem?> = .constant(nil)
-    var onNameFocusChange: ((Bool) -> Void)? = nil
-
     @EnvironmentObject private var profileStore: UserProfileStore
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
-    @FocusState private var isNameFocused: Bool
 
-    /// Taille du puits où loge le badge — réduite pour resserrer la carte, le
-    /// badge étant désormais zoomé pour l'occuper en entier.
-    private static let wellSize: CGFloat = 80
+    /// Taille du puits où loge le badge.
+    private static let wellSize: CGFloat = 84
     /// Le PNG exporté garde une marge transparente autour de la monture, pour
     /// laisser respirer son ombre portée. Ce zoom rogne cette marge en cercle
     /// pour que ce soit le badge lui-même qui remplisse le puits, pas sa marge.
@@ -38,102 +38,73 @@ struct ProfileSignatureCard: View {
     }
 
     var body: some View {
-        HStack(spacing: 15) {
-            badgeWell
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 16) {
+                badgeWell
 
-            VStack(alignment: .leading, spacing: 3) {
-                nameLabel
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(profileStore.displayName)
+                        .planTitle(22)
+                        .foregroundStyle(Ink.ink)
+                        .lineLimit(1)
 
-                Text(displayedBadge?.name.uppercased() ?? "AUCUN BADGE CHOISI")
-                    .font(.system(size: 10.5, weight: .bold, design: .rounded))
-                    .kerning(0.6)
-                    .foregroundStyle(tier.accent)
-                    .lineLimit(1)
+                    // La seule preuve visible, sur tout l'écran, qu'un pseudo a
+                    // été choisi : sans elle, « Choisir un pseudo » réussit sans
+                    // que rien ne change à l'écran hormis deux compteurs à 0.
+                    if let handle = socialStore.myProfile?.handleDisplay {
+                        Text(handle)
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(Ink.ink2)
+                            .lineLimit(1)
+                    }
 
-                Text("PALIER \(tier.label) · \(galleryCount) FILMS")
-                    .font(.system(size: 9, weight: .semibold, design: .rounded))
-                    .kerning(0.8)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 4)
-
-                GeometryReader { proxy in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.primary.opacity(0.1))
-                        Capsule()
-                            .fill(tier.accent)
-                            .frame(width: max(4, proxy.size.width * tier.progress(count: galleryCount)))
+                    if let badge = displayedBadge {
+                        Text(badge.name)
+                            .planLabel()
+                            .foregroundStyle(badge.rarity.accent)
+                            .lineLimit(1)
+                            .padding(.top, 6)
                     }
                 }
-                .frame(height: 4)
-                .padding(.top, 2)
+
+                Spacer(minLength: 0)
+            }
+
+            // La mesure du palier : un libellé, un filet, et ce qui reste à
+            // parcourir. Le même dispositif que la progression d'un badge.
+            HStack(spacing: 12) {
+                Text("Palier \(tier.label.lowercased())")
+                    .planLabel()
+                    .foregroundStyle(Ink.ink3)
+                    .fixedSize()
+
+                PlanProgressRule(fraction: tier.progress(count: galleryCount))
 
                 if let remaining = tier.remainingText(count: galleryCount) {
                     Text(remaining)
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.tertiary)
+                        .planLabel()
+                        .monospacedDigit()
+                        .foregroundStyle(Ink.ink3)
+                        .fixedSize()
                 }
             }
-
-            Spacer(minLength: 0)
+            .padding(.top, 20)
         }
-        .padding(16)
-        .background {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(
-                            RadialGradient(
-                                colors: [tier.accent.opacity(0.16), .clear],
-                                center: UnitPoint(x: 0.12, y: 0),
-                                startRadius: 4, endRadius: 220
-                            )
-                        )
-                )
-        }
-        .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(tier.accent.opacity(0.35), lineWidth: 1)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "\(profileStore.displayName), palier \(tier.label), \(galleryCount) films"
         )
-        .overlay(alignment: .topTrailing) { avatarBubble.padding(12) }
-    }
-
-    @ViewBuilder
-    private var nameLabel: some View {
-        if isEditable {
-            TextField("Nom d'affichage", text: nameField)
-                .font(.system(size: 21, weight: .heavy, design: .rounded))
-                .focused($isNameFocused)
-                .onChange(of: isNameFocused) { _, now in onNameFocusChange?(now) }
-        } else {
-            Text(profileStore.displayName)
-                .font(.system(size: 21, weight: .heavy, design: .rounded))
-                .lineLimit(1)
-        }
-
-        // La seule preuve visible, sur tout l'écran, qu'un pseudo a été
-        // choisi : sans elle, « Choisir un pseudo » réussit sans que rien
-        // ne change à l'écran hormis deux compteurs à 0.
-        if let handle = socialStore.myProfile?.handleDisplay {
-            Text(handle)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
     }
 
     // MARK: - Le puits du badge
 
+    /// Un creux, pas un objet : le badge y est posé, et rien autour de lui n'a
+    /// de matière propre.
     private var badgeWell: some View {
         ZStack {
             Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [.white.opacity(0.07), .black.opacity(0.45)],
-                        center: .center, startRadius: 4, endRadius: 42
-                    )
-                )
+                .fill(Color(hex: 0x101720))
+                .overlay(Circle().strokeBorder(Ink.rule, lineWidth: 1))
 
             if let badge = displayedBadge {
                 Image(badge.imageName)
@@ -144,59 +115,12 @@ struct ProfileSignatureCard: View {
                         height: Self.wellSize * Self.badgeZoom
                     )
             } else {
-                Image(systemName: "rosette")
-                    .font(.system(size: 24, weight: .light))
-                    .foregroundStyle(.tertiary)
+                CinechillHallIconView(.salle)
+                    .frame(width: 26, height: 26)
+                    .foregroundStyle(Ink.ink3)
             }
         }
         .frame(width: Self.wellSize, height: Self.wellSize)
         .clipShape(Circle())
-    }
-
-    // MARK: - Avatar
-
-    @ViewBuilder
-    private var avatarBubble: some View {
-        if isEditable {
-            PhotosPicker(selection: photoItem, matching: .images) {
-                avatarContent
-            }
-            .buttonStyle(PressableScaleStyle(scale: 0.9))
-        } else {
-            avatarContent
-        }
-    }
-
-    private var avatarContent: some View {
-        ZStack(alignment: .bottomTrailing) {
-            Group {
-                if let data = profileStore.avatarData, let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage).resizable().scaledToFill()
-                } else if let url = profileStore.avatarURL {
-                    PosterImageView(url: url)
-                } else {
-                    Image(systemName: "person.circle.fill")
-                        .resizable()
-                        .foregroundStyle(Color(.systemGray3))
-                }
-            }
-            .frame(width: 30, height: 30)
-            .clipShape(Circle())
-            .overlay(Circle().strokeBorder(Color.primary.opacity(0.14), lineWidth: 1.5))
-
-            if isEditable {
-                Image(systemName: "camera.fill")
-                    .font(.system(size: 7, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(3.5)
-                    .background(
-                        Circle().fill(
-                            LinearGradient(colors: [.indigo, .pink], startPoint: .top, endPoint: .bottom)
-                        )
-                    )
-                    .overlay(Circle().strokeBorder(Color(.secondarySystemBackground), lineWidth: 1.5))
-                    .offset(x: 3, y: 3)
-            }
-        }
     }
 }
