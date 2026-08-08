@@ -13,6 +13,9 @@ struct ResultView: View {
     var onExplain: (() -> Void)?
     /// Signale qu'on est parti voir ce film — le geste qui ouvre la boucle.
     var onLaunch: ((Int) -> Void)?
+    /// « Aucun des trois ne me tente » : la sortie honnête au moment où la
+    /// confiance se joue — et le signal d'erreur dont la boucle a besoin.
+    var onReject: (() -> Void)?
 
     var body: some View {
         ScrollView {
@@ -27,9 +30,21 @@ struct ResultView: View {
 
                 PlanEdge()
 
+                if let onReject {
+                    Button(action: onReject) {
+                        Text("Aucun ne me tente, proposez-m'en d'autres")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Ink.ink2)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                    }
+                    .buttonStyle(.plain)
+                    PlanEdge()
+                }
+
                 if let onExplain {
                     Button(action: onExplain) {
-                        Text("Pourquoi ces trois ?")
+                        Text("Pourquoi ces films ?")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(Ink.ink2)
                             .frame(maxWidth: .infinity)
@@ -40,7 +55,7 @@ struct ResultView: View {
                 }
 
                 Button(action: onRestart) {
-                    Text("Refaire une séance")
+                    Text("Recommencer une recherche")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Ink.ink3)
                         .frame(maxWidth: .infinity)
@@ -55,7 +70,7 @@ struct ResultView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Votre séance")
+            Text("Vos résultats")
                 .planLabel()
                 .foregroundStyle(Ink.ink3)
 
@@ -63,7 +78,7 @@ struct ResultView: View {
                 .planTitle(26)
                 .foregroundStyle(Ink.ink)
 
-            Text("Du meilleur accord au troisième — dans l'ordre où ils vous correspondent.")
+            Text("Classés du plus proche au moins proche de ce que vous cherchez ce soir.")
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -168,7 +183,7 @@ private struct ResultRowView: View {
             }
 
             if result.watchWebURL != nil {
-                iconButton(systemImage: "arrow.up.forward", label: "Ouvrir la plateforme", action: openStreamingApp)
+                iconButton(systemImage: "arrow.up.forward", label: "Regarder ce film", action: openStreamingApp)
             }
         }
     }
@@ -180,7 +195,7 @@ private struct ResultRowView: View {
         if inWatchlist {
             HStack(spacing: 7) {
                 PlanLightOutline()
-                Text("Dans la watchlist")
+                Text("Dans votre liste")
                     .font(.system(size: 12.5, weight: .medium))
                     .foregroundStyle(Ink.ink2)
             }
@@ -199,7 +214,7 @@ private struct ResultRowView: View {
                         .stroke(Ink.ruleSet, lineWidth: 1)
                 )
         } else {
-            PlanSecondaryButton(title: "À voir", height: Metrics.control) {
+            PlanSecondaryButton(title: "Ajouter à ma liste", height: Metrics.control) {
                 isAddingToWatchlist = true
                 libraryStore.addToWatchlist(result.item)
             }

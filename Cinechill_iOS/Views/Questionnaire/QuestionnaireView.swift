@@ -49,29 +49,30 @@ struct QuestionnaireView: View {
             introView
         case .frame:
             frameFlow
-        case .mood:
-            moodFlow
+        case .filmChoice:
+            filmChoiceFlow
         case .poolLoading:
-            SessionLoadingView(message: "On rassemble ce qui vous ressemble.")
+            SessionLoadingView(message: "On cherche des films qui vous correspondent…")
         case .asking:
             adaptiveFlow
         case .enriching:
-            SessionLoadingView(message: "On regarde les meilleurs candidats de plus près.")
+            SessionLoadingView(message: "On regarde les meilleurs de plus près…")
         case .finalizing:
-            SessionLoadingView(message: "On arrête la sélection.")
+            SessionLoadingView(message: "On choisit vos trois films…")
         case .results:
             ResultView(
                 results: viewModel.results,
                 onRestart: { viewModel.restart() },
                 onExplain: { showTasteSheet = true },
-                onLaunch: { viewModel.recordLaunch(tmdbID: $0) }
+                onLaunch: { viewModel.recordLaunch(tmdbID: $0) },
+                onReject: { viewModel.rejectTrio() }
             )
         case .error(let message):
             errorView(message)
         }
     }
 
-    // MARK: - Le seuil
+    // MARK: - L'accueil
 
     private var introView: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -84,22 +85,51 @@ struct QuestionnaireView: View {
             Text(viewModel.openingTitle)
                 .planTitle(28)
                 .foregroundStyle(Ink.ink)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 24)
 
-            Text(viewModel.openingNote)
+            Text(viewModel.openingLead)
                 .font(.system(size: 13.5))
                 .foregroundStyle(Ink.ink2)
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 12)
 
+            // Ce que la personne obtient, dit avant de commencer plutôt que
+            // promis en abstrait. Les trois lignes sont numérotées parce qu'elles
+            // décrivent un ordre réel, pas pour décorer.
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(viewModel.openingSteps.enumerated()), id: \.offset) { index, step in
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Text("\(index + 1)")
+                            .planLabel()
+                            .foregroundStyle(Ink.ink3)
+                            .monospacedDigit()
+                        Text(step)
+                            .font(.system(size: 13))
+                            .foregroundStyle(Ink.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .padding(.top, 22)
+
+            Text(viewModel.openingDuration)
+                .font(.system(size: 12.5))
+                .foregroundStyle(Ink.ink3)
+                .padding(.top, 18)
+
+            // N'apparaît qu'une fois le profil chargé, et ne remplace rien : le
+            // reste de l'écran est lisible dès la première image.
             if let provenance = viewModel.openingProvenance {
                 Button { showTasteSheet = true } label: {
-                    HStack(spacing: 8) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
                         PlanLight()
                         Text(provenance)
                             .font(.system(size: 12))
                             .foregroundStyle(Ink.ink2)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
                         Image(systemName: "chevron.right")
                             .font(.system(size: 9, weight: .semibold))
                             .foregroundStyle(Ink.ink3)
@@ -108,7 +138,8 @@ struct QuestionnaireView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.top, 16)
-                .accessibilityHint("Ouvrir votre fiche")
+                .transition(.opacity)
+                .accessibilityHint("Voir ce que Cinechill a retenu de vos goûts")
             }
 
             Spacer()
@@ -126,7 +157,7 @@ struct QuestionnaireView: View {
             if !viewModel.selectedPlatformNames.isEmpty {
                 PlanEdge()
                 HStack(alignment: .firstTextBaseline) {
-                    Text("Chez vous")
+                    Text("Vos plateformes")
                         .planLabel()
                         .foregroundStyle(Ink.ink3)
                     Spacer(minLength: 16)
@@ -140,7 +171,7 @@ struct QuestionnaireView: View {
                     .padding(.bottom, 24)
             }
 
-            PlanButton(title: "Commencer la séance") {
+            PlanButton(title: "Commencer") {
                 viewModel.start(
                     preferredPlatformIDs: libraryStore.preferredPlatformIDs,
                     bannedGenreIDs: libraryStore.bannedGenreIDs
@@ -149,23 +180,31 @@ struct QuestionnaireView: View {
         }
         .padding(.horizontal, Metrics.margin)
         .padding(.bottom, Metrics.margin)
+        .animation(Metrics.shift, value: viewModel.openingProvenance)
         .task {
             await viewModel.loadPlatformsIfNeeded()
             await viewModel.loadTasteProfile()
         }
     }
 
-    // MARK: - Le cadre
+    // MARK: - Votre soirée
 
     private var frameFlow: some View {
         VStack(spacing: 0) {
-            sessionHeader(step: "1 / 2", onBack: { viewModel.restart() }, isFirst: true)
+            sessionHeader(step: "Étape 1 sur 2", onBack: { viewModel.restart() }, isFirst: true)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
-                    Text("Le cadre")
-                        .planTitle()
-                        .foregroundStyle(Ink.ink)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Votre soirée")
+                            .planTitle()
+                            .foregroundStyle(Ink.ink)
+
+                        Text("Trois réglages pour éliminer d'emblée ce qui ne convient pas.")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Ink.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
 
                     SessionFrameView(
                         audience: $viewModel.answers.audience,
@@ -191,31 +230,38 @@ struct QuestionnaireView: View {
         }
     }
 
-    // MARK: - Le cadran
+    // MARK: - Quel film ce soir
 
-    private var moodFlow: some View {
+    /// L'écran du film cherché : genre et ambiance, deux listes d'options.
+    private var filmChoiceFlow: some View {
         VStack(spacing: 0) {
-            sessionHeader(step: "2 / 2", onBack: { viewModel.goBackToFrame() }, isFirst: false)
+            sessionHeader(step: "Étape 2 sur 2", onBack: { viewModel.goBackToFrame() }, isFirst: false)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    Text(viewModel.moodNow == nil ? "Où en êtes-vous ?" : "Et à la fin du film ?")
-                        .planTitle()
-                        .foregroundStyle(Ink.ink)
-                        .animation(Metrics.shift, value: viewModel.moodNow == nil)
+                VStack(alignment: .leading, spacing: 26) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Quel film ce soir ?")
+                            .planTitle()
+                            .foregroundStyle(Ink.ink)
+                            .fixedSize(horizontal: false, vertical: true)
 
-                    Text(viewModel.moodNow == nil
-                         ? "Posez un repère — personne ne vous demandera d'y mettre un mot."
-                         : "Posez le second. Le trajet entre les deux, c'est votre soirée.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Ink.ink2)
-                        .fixedSize(horizontal: false, vertical: true)
+                        Text("C'est ce qui nous permet de resserrer la recherche. Les questions suivantes affineront.")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Ink.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
 
-                    MoodPadView(now: $viewModel.moodNow, goal: $viewModel.moodGoal)
-                        .padding(.top, 4)
+                    FilmChoiceView(
+                        availableGenres: viewModel.availableGenres,
+                        selectedGenres: viewModel.answers.genres,
+                        mood: $viewModel.answers.mood,
+                        maxGenres: viewModel.maxGenres,
+                        isGenreSelectable: { viewModel.isGenreSelectable($0) },
+                        onToggleGenre: { viewModel.toggleGenre($0) }
+                    )
 
-                    if let strategy = viewModel.moodStrategy {
-                        readingLine(strategy.reading)
+                    if let reading = viewModel.ambianceReading {
+                        readingLine(reading)
                     }
                 }
                 .padding(.horizontal, Metrics.margin)
@@ -223,24 +269,25 @@ struct QuestionnaireView: View {
                 .padding(.bottom, 32)
             }
 
+            // Le bouton inactif dit ce qui manque plutôt que de rester muet.
             PlanButton(
-                title: "C'est parti",
-                isEnabled: viewModel.canConfirmMood,
+                title: viewModel.canConfirmFilmChoice ? "Trouver mes films" : "Choisissez une ambiance",
+                isEnabled: viewModel.canConfirmFilmChoice,
                 height: Metrics.control
             ) {
-                viewModel.confirmMood()
+                viewModel.confirmFilmChoice()
             }
             .padding(.horizontal, Metrics.margin)
             .padding(.bottom, Metrics.margin)
         }
     }
 
-    // MARK: - Le cœur adaptatif
+    // MARK: - Les questions
 
     private var adaptiveFlow: some View {
         VStack(spacing: 0) {
             sessionHeader(
-                step: "Question \(viewModel.questionsAskedCount + 1)",
+                step: "Question \(viewModel.questionNumber)",
                 onBack: { viewModel.goBackAdaptive() },
                 isFirst: false
             )
@@ -295,7 +342,7 @@ struct QuestionnaireView: View {
             Button {
                 viewModel.finishNow()
             } label: {
-                Text("Voir mes films maintenant")
+                Text("Passer les questions et voir mes films")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Ink.ink2)
                     .overlay(alignment: .bottom) {
@@ -315,7 +362,7 @@ struct QuestionnaireView: View {
     private func adaptiveQuestionCard(for dimension: AdaptiveDimension) -> some View {
         let step = dimension.questionStep
         switch dimension {
-        case .mood:
+        case .posterDuel:
             EmptyView() // Toujours présentée en comparaison directe — voir `pairwiseOptions`.
         case .elimination:
             EmptyView() // Toujours présentée en grille d'élimination — voir `eliminationOptions`.
@@ -399,7 +446,7 @@ struct QuestionnaireView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(isFirst ? "Quitter la séance" : "Revenir en arrière")
+                .accessibilityLabel(isFirst ? "Quitter la recherche" : "Revenir à l'écran précédent")
 
                 Spacer()
 
@@ -415,9 +462,9 @@ struct QuestionnaireView: View {
         }
     }
 
-    /// La lecture : ce que le système vient de comprendre, en une ligne. Le filet à
-    /// gauche la détache du contenu sans en faire un encart — c'est une voix, pas un
-    /// panneau.
+    /// Ce que la réponse change pour la sélection, en une ligne. Le filet à
+    /// gauche la détache du contenu sans en faire un encart — c'est une voix, pas
+    /// un panneau.
     private func readingLine(_ text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Rectangle()
@@ -431,7 +478,7 @@ struct QuestionnaireView: View {
         .fixedSize(horizontal: false, vertical: true)
         .transition(.opacity)
         .animation(Metrics.shift, value: text)
-        .accessibilityLabel("Ce que CinéMatch a compris : \(text)")
+        .accessibilityLabel("Ce que ça change : \(text)")
     }
 
     // MARK: - Erreur
@@ -439,11 +486,11 @@ struct QuestionnaireView: View {
     private func errorView(_ message: String) -> some View {
         PlanEmptyState(
             icon: .salle,
-            title: "La séance s'est interrompue",
+            title: "La recherche s'est interrompue",
             message: message,
             actionTitle: "Réessayer",
             action: { viewModel.retrySubmit() },
-            secondaryTitle: "Repartir de zéro",
+            secondaryTitle: "Recommencer du début",
             secondaryAction: { viewModel.restart() }
         )
         .frame(maxHeight: .infinity)

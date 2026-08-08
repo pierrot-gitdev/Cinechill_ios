@@ -36,6 +36,10 @@ nonisolated extension QuestionOption {
 nonisolated enum ContentFormat: String, QuestionOption {
     case animated, liveAction
 
+    /// L'opposition n'est pas logique — un dessin animé est un film — mais c'est
+    /// celle que tout le monde emploie, et elle se comprend sans y penser. Les
+    /// formulations exactes essayées ici (« un film avec de vrais acteurs »)
+    /// demandaient plus d'attention qu'elles n'en faisaient gagner.
     var label: String {
         switch self {
         case .animated: "Dessin animé"
@@ -90,10 +94,10 @@ nonisolated enum Audience: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .alone: "Seul(e)"
+        case .alone: "Seul·e"
         case .couple: "En couple"
         case .friends: "Entre amis"
-        case .family: "En famille (enfants)"
+        case .family: "En famille, avec des enfants"
         }
     }
 }
@@ -105,12 +109,12 @@ nonisolated enum Mood: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .lightFun: "Léger & drôle"
-        case .intense: "Intense & haletant"
-        case .emotional: "Émotion & larmes"
-        case .scary: "Frissons & peur"
-        case .escapist: "Évasion & spectaculaire"
-        case .thoughtful: "Réflexion & mystère"
+        case .lightFun: "Léger et drôle"
+        case .intense: "Tendu, avec de l'action"
+        case .emotional: "Émouvant"
+        case .scary: "Qui fait peur"
+        case .escapist: "Spectaculaire, qui fait voyager"
+        case .thoughtful: "Qui fait réfléchir"
         }
     }
 }
@@ -136,7 +140,7 @@ nonisolated enum Mindset: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .noThinking: "Ne penser à rien"
+        case .noThinking: "Me vider la tête"
         case .beSurprised: "Être surpris·e"
         case .seeMyself: "Me reconnaître dans l'histoire"
         case .learnSomething: "Apprendre quelque chose"
@@ -166,9 +170,9 @@ nonisolated enum PopularityPreference: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .mainstream: "Grand public populaire"
-        case .wellRatedKnown: "Bien noté et connu"
-        case .hiddenGem: "Pépite à découvrir"
+        case .mainstream: "Un grand succès"
+        case .wellRatedKnown: "Un film reconnu"
+        case .hiddenGem: "Un film peu connu"
         case .any: "Peu importe"
         }
     }
@@ -181,9 +185,9 @@ nonisolated enum CastPreference: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .familiarFaces: "Visages connus"
+        case .familiarFaces: "Des acteurs que je connais"
         case .any: "Peu importe"
-        case .discovery: "Découverte"
+        case .discovery: "Des visages nouveaux"
         }
     }
 }
@@ -225,8 +229,8 @@ nonisolated enum HorrorFlavor: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .suspense: "Tension qui monte"
-        case .visceral: "Sensations fortes"
+        case .suspense: "La tension qui monte lentement"
+        case .visceral: "Les sensations fortes"
         }
     }
 }
@@ -236,8 +240,8 @@ nonisolated enum ComedyFlavor: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .family: "Familiale et bienveillante"
-        case .edgy: "Plus corrosive"
+        case .family: "Gentille, bon enfant"
+        case .edgy: "Grinçante, qui ne s'interdit rien"
         }
     }
 }
@@ -247,8 +251,8 @@ nonisolated enum DramaFlavor: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .social: "Grande fresque"
-        case .intimate: "Histoire intime"
+        case .social: "Une grande histoire, sur fond d'époque ou de société"
+        case .intimate: "L'histoire de quelques personnes"
         }
     }
 }
@@ -260,8 +264,8 @@ nonisolated enum CognitiveMode: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .understand: "Comprendre"
-        case .feel: "Ressentir"
+        case .understand: "Un film qui me fait réfléchir"
+        case .feel: "Un film qui me fait ressentir"
         }
     }
 }
@@ -270,8 +274,9 @@ nonisolated enum CognitiveMode: String, QuestionOption {
 //
 // Deux options, il faut trancher. Le refus du « peu importe » est délibéré : un
 // dilemme produit un indice net là où une question ouverte produit du milieu.
-// Ces deux-là visent l'ancrage et l'échelle — les deux axes que le cadran laisse
-// volontairement ouverts, parce qu'ils relèvent du goût durable et non de la soirée.
+// Ces deux-là visent le réalisme et l'ampleur — les deux axes que l'écran
+// d'humeur laisse volontairement ouverts, parce qu'ils relèvent du goût durable
+// et non de la soirée.
 
 nonisolated enum StoryOrigin: String, QuestionOption {
     case trueStory, onlyInCinema
@@ -279,7 +284,7 @@ nonisolated enum StoryOrigin: String, QuestionOption {
     var label: String {
         switch self {
         case .trueStory: "Une histoire vraie"
-        case .onlyInCinema: "Une histoire qui ne pourrait exister qu'au cinéma"
+        case .onlyInCinema: "Une histoire complètement inventée"
         }
     }
 }
@@ -318,10 +323,10 @@ nonisolated enum LastingTrace: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .weight: "Un poids dans la poitrine"
+        case .weight: "Un poids, longtemps après"
         case .smile: "Le sourire pendant deux jours"
         case .questions: "Des questions sans réponse"
-        case .wantMore: "L'envie d'y retourner tout de suite"
+        case .wantMore: "L'envie d'en voir plus tout de suite"
         }
     }
 }

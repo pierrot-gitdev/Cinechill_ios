@@ -28,35 +28,25 @@ nonisolated enum AnswerObservations {
     /// tout le reste, et rien ne doit pouvoir la récrire.
     static let constraint = 1.5
 
-    // MARK: - Le cadran
+    // MARK: - L'ambiance
 
-    /// Le trajet d'humeur, converti en indices.
+    /// L'ambiance demandée, convertie en indices.
     ///
-    /// Les précisions sont très inégales, et c'est le point important : deux appuis
-    /// produisent deux nombres, dont on ne peut pas honnêtement déduire huit axes
-    /// avec la même assurance. Le trajet **détermine** ce qui relève de la soirée —
-    /// la charge qu'on accepte, la chaleur qu'on cherche, le rythme qu'on vise. Il ne
-    /// fait qu'**effleurer** ce qui relève du goût durable : l'ancrage, l'échelle, le
-    /// rapport à l'inconnu.
-    ///
-    /// Cette dissymétrie n'est pas cosmétique. Des précisions uniformément fortes
-    /// saturaient la croyance dès le cadran : le trait n'avait plus de place pour
-    /// s'exprimer, et une galerie bien fournie ne raccourcissait pas la séance d'une
-    /// seule question. C'est en laissant l'humeur se taire là où elle ne sait pas que
-    /// la connaissance accumulée sert enfin à quelque chose.
-    static func fromMood(_ profile: DesiredProfile) -> [AxisObservation] {
-        [
-            // Ce que le trajet détermine vraiment.
-            AxisObservation(.charge, profile.charge, precision: 1.2),
-            AxisObservation(.ton, profile.ton, precision: 1.0),
-            AxisObservation(.rythme, profile.rythme, precision: 1.0),
-            // Ce qu'il ne fait qu'indiquer — le goût y a son mot à dire.
-            AxisObservation(.familiarite, profile.familiarite, precision: 0.5),
-            AxisObservation(.densite, profile.densite, precision: 0.5),
-            AxisObservation(.ancrage, profile.ancrage, precision: 0.3),
-            AxisObservation(.echelle, profile.echelle, precision: 0.25),
-            // La durée est déjà annoncée au cadre, et une contrainte prime une envie.
-            AxisObservation(.investissement, profile.investissement, precision: 0.3),
+    /// C'est la réponse la plus structurante du parcours, donc la plus forte —
+    /// mais seulement là où elle sait quelque chose. Elle ne dit rien de la
+    /// découverte, de la complexité ni de la durée : une comédie peut être
+    /// limpide ou retorse, connue ou confidentielle. Rester muet sur ces axes
+    /// laisse la place à ce qu'on sait déjà de la personne, et aux questions
+    /// suivantes — c'est ce qui fait qu'une bibliothèque fournie raccourcit
+    /// réellement le parcours au lieu d'être écrasée dès la première réponse.
+    static func fromAmbiance(_ mood: Mood) -> [AxisObservation] {
+        let anchor = mood.axisAnchor
+        return [
+            AxisObservation(.charge, anchor.charge, precision: 1.2),
+            AxisObservation(.ton, anchor.ton, precision: 1.0),
+            AxisObservation(.rythme, anchor.rythme, precision: 1.0),
+            AxisObservation(.ancrage, anchor.ancrage, precision: 0.5),
+            AxisObservation(.echelle, anchor.echelle, precision: 0.5),
         ]
     }
 
@@ -209,7 +199,7 @@ nonisolated enum AnswerObservations {
                 ("high", [.init(.familiarite, 0.7, precision: slider)]),
             ]
 
-        case .mood, .elimination:
+        case .posterDuel, .elimination:
             // Portées par des affiches, pas par des puces : ce qu'elles déposent
             // dépend des films montrés — voir `fromDuel` et `fromElimination`.
             []
@@ -241,7 +231,7 @@ nonisolated enum AnswerObservations {
         case .attachment: answers.attachment?.rawValue
         case .creditsMoment: answers.creditsMoment?.rawValue
         case .lastingTrace: answers.lastingTrace?.rawValue
-        case .mood, .elimination, .surpriseIntensity: nil
+        case .posterDuel, .elimination, .surpriseIntensity: nil
         }
     }
 
@@ -256,6 +246,22 @@ nonisolated enum AnswerObservations {
             let gap = winner.axes[axis] - loser.axes[axis]
             guard abs(gap) > 0.25 else { return nil }
             return AxisObservation(axis, winner.axes[axis], precision: min(1, abs(gap)) * revealed)
+        }
+    }
+
+    /// Ce qu'apprend un trio refusé en bloc (« Aucun des trois ne me tente »).
+    ///
+    /// Le refus est le signal d'erreur du système — celui qui manquait. Il n'a
+    /// pas de rival contre qui mesurer un écart : on prend la position moyenne
+    /// du trio, et on s'en éloigne sur les axes où il se situait franchement.
+    /// La cible est atténuée (−0,4×), jamais une simple inversion : un trio
+    /// neutre sur un axe ne doit produire aucun signal.
+    static func fromRejectedTrio(_ rows: [CandidateRow]) -> [AxisObservation] {
+        guard !rows.isEmpty else { return [] }
+        return Axis.allCases.compactMap { axis in
+            let mean = rows.reduce(0) { $0 + $1.axes[axis] } / Double(rows.count)
+            guard abs(mean) > 0.25 else { return nil }
+            return AxisObservation(axis, -0.4 * mean, precision: revealed)
         }
     }
 

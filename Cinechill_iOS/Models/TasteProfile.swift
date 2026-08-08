@@ -26,8 +26,8 @@ nonisolated enum FilmVerdict: String, CaseIterable, Sendable {
 
     var label: String {
         switch self {
-        case .stayed: "Il est resté avec moi"
-        case .passed: "Il a passé le temps"
+        case .stayed: "Je l'ai adoré"
+        case .passed: "C'était bien, sans plus"
         case .unfinished: "Je ne l'ai pas fini"
         }
     }

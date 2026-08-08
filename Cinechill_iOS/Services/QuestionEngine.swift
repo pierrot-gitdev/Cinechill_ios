@@ -19,14 +19,14 @@ import Foundation
 /// donc le scoring par croyance les ignorerait. Les poser en le sachant aurait été
 /// malhonnête ; les rétablir demandera soit un axe de plus, soit un filtre de vivier.
 nonisolated enum AdaptiveDimension: CaseIterable, Hashable {
-    case mood, mindset, dealbreaker, popularity, cast
+    case posterDuel, mindset, dealbreaker, popularity, cast
     case horrorFlavor, comedyFlavor, dramaFlavor, cognitiveMode
     case storyOrigin, attachment, creditsMoment, lastingTrace
     case elimination, surpriseIntensity
 
     var questionStep: QuestionStep {
         switch self {
-        case .mood: .mood
+        case .posterDuel: .posterDuel
         case .mindset: .mindset
         case .dealbreaker: .dealbreaker
         case .popularity: .popularity
@@ -64,7 +64,7 @@ nonisolated enum AdaptiveDimension: CaseIterable, Hashable {
     /// La famille d'interaction, pour éviter d'enchaîner trois fois le même format.
     var format: QuestionFormat {
         switch self {
-        case .mood, .elimination: .posters
+        case .posterDuel, .elimination: .posters
         case .surpriseIntensity: .slider
         default: .chips
         }
@@ -336,7 +336,7 @@ nonisolated enum QuestionEngine {
         for dimension: AdaptiveDimension, pool: [CandidateRow], belief: BeliefState
     ) -> [[AxisObservation]] {
         switch dimension {
-        case .mood:
+        case .posterDuel:
             guard let (a, b) = pickDuel(from: pool, belief: belief) else { return [] }
             return [
                 AnswerObservations.fromDuel(winner: a, loser: b),

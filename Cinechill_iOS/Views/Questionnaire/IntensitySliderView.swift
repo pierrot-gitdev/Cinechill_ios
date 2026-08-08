@@ -9,8 +9,8 @@ import SwiftUI
 /// puces obligent à trancher. Alimente `QuestionnaireAnswers.surpriseIntensity`.
 struct IntensitySliderView: View {
     @Binding var value: Double
-    var lowLabel = "Valeurs sûres"
-    var highLabel = "Inattendu total"
+    var lowLabel = "Des films sûrs"
+    var highLabel = "Des films inattendus"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {

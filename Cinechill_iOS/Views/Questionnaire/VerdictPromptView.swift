@@ -24,7 +24,7 @@ struct VerdictPromptView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
                 PlanLightOutline()
-                Text("La dernière fois")
+                Text("Votre dernier film")
                     .planLabel()
                     .foregroundStyle(Ink.ink3)
             }
@@ -34,6 +34,12 @@ struct VerdictPromptView: View {
                 .foregroundStyle(Ink.ink)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 12)
+
+            Text("Votre réponse nous aide à mieux choisir la prochaine fois.")
+                .font(.system(size: 12.5))
+                .foregroundStyle(Ink.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 6)
 
             VStack(spacing: 7) {
                 ForEach(FilmVerdict.allCases, id: \.self) { verdict in
@@ -73,9 +79,9 @@ struct VerdictPromptView: View {
 
     private var question: String {
         guard let title = pending.title, !title.isEmpty else {
-            return "Le film de la dernière fois, il a donné quoi ?"
+            return "Vous avez aimé le film que nous vous avions proposé ?"
         }
-        return "\(title), ça a donné quoi ?"
+        return "Vous avez aimé \(title) ?"
     }
 }
 

@@ -14,6 +14,18 @@ enum RecommendationClientError: LocalizedError {
     case httpStatus(code: Int, message: String?)
     case decoding(message: String)
 
+    /// Les erreurs que le serveur identifie par un code, dites en français.
+    private static func knownServerMessage(in body: String?) -> String? {
+        guard let body else { return nil }
+        if body.contains("no_candidates_in_requested_genres") {
+            return "Aucun film de ce genre ne correspond au reste de vos critères. Essayez un autre genre, ou plus de temps devant vous."
+        }
+        if body.contains("no_candidates") {
+            return "Aucun film ne correspond à ces critères pour le moment."
+        }
+        return nil
+    }
+
     var errorDescription: String? {
         switch self {
         case .missingBaseURL:
@@ -25,6 +37,13 @@ enum RecommendationClientError: LocalizedError {
         case .transport(let message):
             return "Erreur réseau CinéMatch : \(message)"
         case .httpStatus(let code, let message):
+            // Les cas que le serveur sait nommer sont traduits ici. Le reste
+            // garde le corps brut : il ne s'adresse plus à l'utilisateur mais à
+            // qui lira le rapport de bug, et le tronquer nous priverait du seul
+            // indice disponible.
+            if let known = Self.knownServerMessage(in: message) {
+                return known
+            }
             if let message, !message.isEmpty {
                 return "CinéMatch (HTTP \(code)) : \(message)"
             }
@@ -60,6 +79,9 @@ protocol RecommendationFetching: Sendable {
     func recordLaunch(tmdbID: Int) async throws
     /// Ce qu'il a laissé, à la question posée au retour.
     func recordVerdict(tmdbID: Int, verdict: FilmVerdict) async throws
+    /// « Aucun des trois ne me tente » — l'échec du trio devient un signal
+    /// au lieu de s'évaporer avec la séance.
+    func recordRejection(tmdbIDs: [Int]) async throws
 }
 
 nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable {
@@ -103,6 +125,12 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
     func recordVerdict(tmdbID: Int, verdict: FilmVerdict) async throws {
         _ = try await post(to: APIEndpoints.sessionOutcome(), body: [
             "kind": "verdict", "tmdbId": tmdbID, "verdict": verdict.rawValue,
+        ])
+    }
+
+    func recordRejection(tmdbIDs: [Int]) async throws {
+        _ = try await post(to: APIEndpoints.sessionOutcome(), body: [
+            "kind": "rejection", "tmdbIds": tmdbIDs,
         ])
     }
 
@@ -193,6 +221,15 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
             "surpriseIntensity": answers.surpriseIntensity,
             "preferredGenreIds": Array(answers.preferredGenreIDs),
             "avoidedGenreIds": Array(answers.avoidedGenreIDs),
+            // Les réponses de goût durable. Elles ne pèsent pas dans le score
+            // du soir — la croyance les porte déjà — mais le serveur les range
+            // dans l'historique pour que le trait s'en souvienne d'une séance
+            // à l'autre. Sans ces lignes, elles s'évaporaient à la finalisation.
+            "cognitiveMode": answers.cognitiveMode?.rawValue as Any,
+            "storyOrigin": answers.storyOrigin?.rawValue as Any,
+            "attachment": answers.attachment?.rawValue as Any,
+            "creditsMoment": answers.creditsMoment?.rawValue as Any,
+            "lastingTrace": answers.lastingTrace?.rawValue as Any,
         ]
     }
 }

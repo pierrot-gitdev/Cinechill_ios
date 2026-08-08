@@ -19,14 +19,17 @@ struct PairwiseComparisonView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Plutôt ce soir…")
+                Text(QuestionStep.posterDuel.title)
                     .planTitle()
                     .foregroundStyle(Ink.ink)
-
-                Text("Les deux comptent — il n'y a pas de mauvaise réponse.")
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(Ink.ink3)
                     .fixedSize(horizontal: false, vertical: true)
+
+                if let subtitle = QuestionStep.posterDuel.subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Ink.ink3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             HStack(alignment: .top, spacing: Metrics.gutter) {
@@ -53,7 +56,7 @@ struct PairwiseComparisonView: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.97))
         .accessibilityLabel(candidate.title ?? "Film sans titre")
-        .accessibilityHint("Choisir ce film")
+        .accessibilityHint("Choisir ce film — c'est celui-ci qui vous tente le plus")
     }
 }
 

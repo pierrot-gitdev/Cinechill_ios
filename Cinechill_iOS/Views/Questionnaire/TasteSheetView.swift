@@ -5,13 +5,17 @@
 
 import SwiftUI
 
-/// La Fiche : ce que Cinechill croit savoir de vous, en toutes lettres.
+/// Vos goûts : ce que l'application a compris de vous, en toutes lettres.
 ///
 /// Un système qui apprend de quelqu'un sans jamais montrer ce qu'il en a conclu
 /// devient une boîte noire — et une boîte noire qui se trompe est insupportable.
-/// La Fiche est le contrat inverse : chaque axe est affiché en français, avec sa
-/// marge de doute et sa provenance, et se corrige d'un geste. Une correction pèse
-/// plus lourd que toute inférence.
+/// Cet écran est le contrat inverse : chaque critère est affiché en français,
+/// avec ce qu'on ignore encore, et se corrige d'un geste. Une correction pèse
+/// plus lourd que tout ce qu'on a pu déduire.
+///
+/// Le titre disait « Votre fiche », ce qui ne désignait rien de reconnaissable —
+/// personne n'a de « fiche » chez soi. On nomme maintenant le contenu, pas le
+/// contenant.
 ///
 /// Ce qu'elle ne fait pas : aucun score de complétion, aucun « profil à 73 % »,
 /// aucun badge de cinéphile accompli. La connaissance se manifeste par la brièveté
@@ -58,7 +62,7 @@ struct TasteSheetView: View {
     private var closeBar: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Votre fiche")
+                Text("Vos goûts")
                     .planLabel()
                     .foregroundStyle(Ink.ink2)
                 Spacer()
@@ -83,31 +87,36 @@ struct TasteSheetView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Ce que Cinechill croit savoir")
+            Text("Ce qu'on a compris de vos goûts")
                 .planTitle(24)
                 .foregroundStyle(Ink.ink)
+                .fixedSize(horizontal: false, vertical: true)
 
             Text(provenanceLine)
                 .font(.system(size: 12.5))
                 .foregroundStyle(Ink.ink2)
+                .lineSpacing(1)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.top, 24)
         .padding(.bottom, 22)
     }
 
+    /// D'où viennent ces conclusions, et ce qu'on peut en faire. Deux questions
+    /// qu'un écran de profil doit répondre avant toute autre chose.
     private var provenanceLine: String {
         guard !profile.isEmpty else {
-            return "Rien encore. Chaque film marqué comme vu, chaque séance, viendra préciser ces huit traits."
+            return "On ne sait encore rien de vous. À chaque film que vous marquez comme vu et à chaque recherche, cette page se remplit — et il y a de moins en moins de questions à vous poser."
         }
         var parts: [String] = []
         if profile.galleryCount > 0 {
-            parts.append("\(profile.galleryCount) film\(profile.galleryCount > 1 ? "s" : "") vu\(profile.galleryCount > 1 ? "s" : "")")
+            parts.append("\(profile.galleryCount) film\(profile.galleryCount > 1 ? "s" : "") que vous avez vu\(profile.galleryCount > 1 ? "s" : "")")
         }
         if profile.watchlistCount > 0 {
-            parts.append("\(profile.watchlistCount) en attente")
+            parts.append("\(profile.watchlistCount) film\(profile.watchlistCount > 1 ? "s" : "") de votre liste à voir")
         }
-        return "D'après " + parts.joined(separator: ", ") + ". Faites glisser un repère pour corriger."
+        let sources = parts.joined(separator: " et ")
+        return "Ces conclusions viennent de \(sources), et de vos réponses. Si l'une d'elles est fausse, déplacez le curseur : c'est vous qui aurez raison."
     }
 
     private var footer: some View {
@@ -127,12 +136,12 @@ struct TasteSheetView: View {
     private func openLine(_ axes: [Axis]) -> String {
         let names = axes.map { $0.label.lowercased() }
         if names.count == Axis.allCases.count {
-            return "Tout reste à cerner — quelques séances y suffiront."
+            return "Tout reste à découvrir. Quelques recherches suffiront."
         }
         let list = names.count <= 3
             ? names.formatted(.list(type: .and))
             : "\(names.prefix(3).formatted(.list(type: .and))) et d'autres"
-        return "Encore incertain : \(list). Quelques séances les préciseront."
+        return "On ne sait pas encore grand-chose sur : \(list). Ça viendra."
     }
 
     // MARK: - Une ligne d'axe
@@ -155,7 +164,7 @@ struct TasteSheetView: View {
                 if savingAxis == axis {
                     CinechillSpinner(size: 12)
                 } else if corrected {
-                    Text("corrigé")
+                    Text("modifié par vous")
                         .planLabel()
                         .foregroundStyle(Ink.light)
                 }
@@ -199,60 +208,61 @@ struct TasteSheetView: View {
 
     private static func poles(for axis: Axis) -> (String, String) {
         switch axis {
-        case .charge: ("léger", "éprouvant")
-        case .rythme: ("posé", "haletant")
-        case .familiarite: ("terrain connu", "inconnu")
-        case .densite: ("limpide", "exigeant")
-        case .ancrage: ("le réel", "l'imaginaire")
-        case .ton: ("distancié", "chaleureux")
-        case .echelle: ("intime", "épique")
-        case .investissement: ("court", "long")
+        case .charge: ("léger", "bouleversant")
+        case .rythme: ("calme", "nerveux")
+        case .familiarite: ("films connus", "films rares")
+        case .densite: ("facile à suivre", "exigeant")
+        case .ancrage: ("réaliste", "imaginaire")
+        case .ton: ("sombre", "chaleureux")
+        case .echelle: ("histoires intimes", "grand spectacle")
+        case .investissement: ("films courts", "films longs")
         }
     }
 
-    /// La position dite en français d'humain. « Vous encaissez volontiers du lourd »
-    /// plutôt que « CH = +0,6 » : la Fiche est un contrat de confiance, pas un dump.
+    /// La position dite comme on la dirait à quelqu'un, jamais en chiffres. Une
+    /// phrase entière plutôt qu'un adjectif : « Plutôt limpide » ne dit pas au
+    /// lecteur si c'est une observation sur lui ou une consigne donnée à l'app.
     private static func phrase(for axis: Axis, value: Double, known: Bool) -> String {
-        guard known else { return "On ne sait pas encore." }
+        guard known else { return "Pas encore assez d'éléments pour le dire." }
         let strong = abs(value) > 0.45
         switch axis {
         case .charge:
             return value > 0
-                ? (strong ? "Vous encaissez volontiers du lourd." : "Un peu de gravité ne vous gêne pas.")
-                : (strong ? "Vous préférez qu'on vous épargne." : "Plutôt léger, sans y tenir.")
+                ? (strong ? "Vous aimez les films qui remuent." : "Un peu d'émotion forte ne vous gêne pas.")
+                : (strong ? "Vous préférez les films qui restent légers." : "Plutôt des films légers.")
         case .rythme:
             return value > 0
-                ? (strong ? "Il vous faut que ça avance." : "Vous aimez qu'on ne traîne pas trop.")
-                : (strong ? "Vous laissez volontiers un film prendre son temps." : "Plutôt posé.")
+                ? (strong ? "Il vous faut des films où ça avance vite." : "Vous aimez que ça ne traîne pas.")
+                : (strong ? "Vous aimez les films qui prennent leur temps." : "Plutôt des films calmes.")
         case .familiarite:
             return value > 0
-                ? (strong ? "Vous cherchez ce que personne ne vous a vendu." : "Curieux, sans chercher l'obscur.")
-                : (strong ? "Les valeurs sûres vous vont très bien." : "Plutôt en terrain connu.")
+                ? (strong ? "Vous aimez découvrir des films dont personne ne parle." : "Vous êtes curieux·se, sans chercher l'obscur.")
+                : (strong ? "Vous préférez les films dont vous avez déjà entendu parler." : "Plutôt des films connus.")
         case .densite:
             return value > 0
-                ? (strong ? "Vous aimez avoir à chercher." : "Un peu d'exigence vous va.")
-                : (strong ? "Vous voulez que ça se laisse suivre." : "Plutôt limpide.")
+                ? (strong ? "Vous aimez les films qui demandent de l'attention." : "Un film un peu exigeant ne vous fait pas peur.")
+                : (strong ? "Vous voulez des films qui se laissent suivre facilement." : "Plutôt des films faciles à suivre.")
         case .ancrage:
             return value > 0
-                ? (strong ? "Vous aimez qu'on vous emmène ailleurs." : "Un peu d'imaginaire vous va.")
-                : (strong ? "Vous préférez ce qui pourrait exister." : "Plutôt ancré dans le réel.")
+                ? (strong ? "Vous aimez qu'un film vous emmène dans un autre monde." : "Un peu d'imaginaire vous va bien.")
+                : (strong ? "Vous préférez les histoires qui pourraient être vraies." : "Plutôt des histoires réalistes.")
         case .ton:
             return value > 0
-                ? (strong ? "Vous aimez qu'un film soit chaleureux." : "Plutôt bienveillant.")
-                : (strong ? "Vous supportez très bien la froideur." : "Plutôt distancié.")
+                ? (strong ? "Vous aimez les films qui font du bien." : "Plutôt des films bienveillants.")
+                : (strong ? "Les films sombres ne vous dérangent pas." : "Plutôt des films sans complaisance.")
         case .echelle:
             return value > 0
                 ? (strong ? "Le grand spectacle vous parle." : "Vous aimez qu'il y ait de l'ampleur.")
-                : (strong ? "Ce sont les histoires intimes qui vous touchent." : "Plutôt à hauteur d'humain.")
+                : (strong ? "Ce sont les histoires de quelques personnes qui vous touchent." : "Plutôt des histoires à taille humaine.")
         case .investissement:
             return value > 0
-                ? (strong ? "Vous vous engagez volontiers sur la durée." : "Un film long ne vous fait pas peur.")
-                : (strong ? "Vous préférez que ça tienne en une heure et demie." : "Plutôt court.")
+                ? (strong ? "Un film de plus de deux heures ne vous fait pas peur." : "Vous acceptez volontiers les films longs.")
+                : (strong ? "Vous préférez que ça tienne en une heure et demie." : "Plutôt des films courts.")
         }
     }
 }
 
-#Preview("La fiche") {
+#Preview("Vos goûts") {
     TasteSheetView(
         profile: TasteProfile(
             mu: [.charge: 0.62, .rythme: -0.38, .familiarite: 0.55, .densite: 0.61,

@@ -26,17 +26,20 @@ nonisolated enum Axis: String, CaseIterable, Hashable, Sendable, Codable {
     /// Peu ↔ beaucoup.
     case investissement = "in"
 
-    /// Le nom qu'on montre — la Fiche parlera français, pas en codes d'axes.
+    /// Le nom qu'on montre. Ce sont les mots que quelqu'un emploierait en parlant
+    /// d'un film à un ami — « Charge », « Densité », « Ancrage » ou
+    /// « Investissement » décrivaient bien les axes mais ne se comprenaient qu'une
+    /// fois le système expliqué, ce qui est l'inverse du contrat de cet écran.
     var label: String {
         switch self {
-        case .charge: "Charge"
+        case .charge: "Émotions"
         case .rythme: "Rythme"
-        case .familiarite: "Familiarité"
-        case .densite: "Densité"
-        case .ancrage: "Ancrage"
+        case .familiarite: "Découverte"
+        case .densite: "Complexité"
+        case .ancrage: "Réalisme"
         case .ton: "Ton"
-        case .echelle: "Échelle"
-        case .investissement: "Investissement"
+        case .echelle: "Ampleur"
+        case .investissement: "Durée"
         }
     }
 }

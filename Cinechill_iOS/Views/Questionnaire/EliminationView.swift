@@ -68,7 +68,7 @@ struct EliminationView: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.97))
         .accessibilityLabel(candidate.title ?? "Film sans titre")
-        .accessibilityHint("Écarter ce film")
+        .accessibilityHint("Écarter ce film — c'est celui-ci qui vous tente le moins")
     }
 }
 

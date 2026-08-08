@@ -5,45 +5,57 @@
 
 import Foundation
 
-/// Les questions du cœur adaptatif — celles que `QuestionEngine` choisit une par une.
+/// Les questions adaptatives — celles que `QuestionEngine` choisit une par une.
 ///
-/// Le socle n'y figure plus : avec qui, combien de temps et sous quelle forme tiennent
-/// désormais sur un seul écran (`SessionFrameView`), les plateformes viennent des réglages,
-/// et les genres se déduisent du cadran (`MoodTransfer`) au lieu d'être demandés.
+/// Le socle n'y figure pas : avec qui, combien de temps et sous quelle forme tiennent
+/// sur un écran (`SessionFrameView`), le genre et l'ambiance sur le suivant
+/// (`FilmChoiceView`), et les plateformes viennent des réglages.
 enum QuestionStep: Int, CaseIterable, Hashable {
-    case mood, mindset, dealbreaker, popularity, cast
+    case posterDuel, mindset, dealbreaker, popularity, cast
     case horrorFlavor, comedyFlavor, dramaFlavor, cognitiveMode
     case storyOrigin, attachment, creditsMoment, lastingTrace
     case elimination, surpriseIntensity
 
     var title: String {
         switch self {
-        case .mood: "Quelle ambiance ce soir ?"
-        case .mindset: "Là, tout de suite, vous avez plutôt envie de…"
-        case .dealbreaker: "Qu'est-ce qui vous ferait le plus décrocher d'un film ?"
-        case .popularity: "Blockbuster ou pépite méconnue ?"
-        case .cast: "Un casting que vous reconnaissez, ou l'envie de découvrir de nouvelles têtes ?"
-        case .horrorFlavor: "Dans l'horreur, vous cherchez plutôt…"
-        case .comedyFlavor: "Le genre de comédie que vous aimez ?"
-        case .dramaFlavor: "Le drame qui vous touche le plus ?"
-        case .cognitiveMode: "Face à l'inconnu, vous préférez…"
-        case .storyOrigin: "S'il fallait choisir…"
-        case .attachment: "Ce qui vous retient dans un film :"
-        case .creditsMoment: "Le générique monte. Dans le meilleur des cas…"
-        case .lastingTrace: "Le dernier film qui vous a vraiment marqué·e vous a laissé…"
-        case .elimination: "Une chose est sûre : pas envie de ça ce soir"
-        case .surpriseIntensity: "À quel point voulez-vous être surpris·e ?"
+        case .posterDuel: "Lequel vous tente le plus ce soir ?"
+        case .mindset: "Ce soir, vous avez surtout envie de…"
+        case .dealbreaker: "Qu'est-ce qui vous ferait arrêter un film en cours de route ?"
+        case .popularity: "Vous préférez un film connu ou une découverte ?"
+        case .cast: "Et côté acteurs ?"
+        case .horrorFlavor: "Dans un film qui fait peur, vous préférez…"
+        case .comedyFlavor: "Quel genre de comédie vous fait rire ?"
+        case .dramaFlavor: "Quelle histoire vous touche le plus ?"
+        case .cognitiveMode: "Un bon film, pour vous, c'est plutôt…"
+        case .storyOrigin: "S'il fallait choisir entre ces deux films…"
+        case .attachment: "Qu'est-ce qui vous accroche le plus dans un film ?"
+        case .creditsMoment: "Le film se termine. Dans le meilleur des cas, vous…"
+        case .lastingTrace: "Pensez au dernier film qui vous a marqué·e. Il vous a laissé…"
+        case .elimination: "Lequel ne vous tente pas du tout ce soir ?"
+        case .surpriseIntensity: "Vous voulez être surpris·e jusqu'à quel point ?"
         }
     }
 
+    /// Le sous-titre dit **pourquoi** on pose la question. C'était la lacune
+    /// principale du questionnaire : sans lui, chaque question ressemblait à un
+    /// test de personnalité dont on ne voyait pas le rapport avec un film.
     var subtitle: String? {
         switch self {
-        case .cognitiveMode: "Pas de bonne réponse — ça nous aide à cerner votre approche"
-        case .storyOrigin: "Il faut trancher, même si les deux vous vont"
-        case .lastingTrace: "On se connaît mieux au passé qu'au futur"
-        case .elimination: "Écartez celui qui vous tente le moins"
-        case .surpriseIntensity: "Des valeurs sûres jusqu'à l'inattendu total"
-        default: nil
+        case .posterDuel: "Votre choix nous en dit plus que n'importe quelle question."
+        case .mindset: "Pour viser le bon type de film, pas seulement le bon genre."
+        case .dealbreaker: "On évitera les films qui risquent de vous faire ça."
+        case .popularity: "Pour savoir jusqu'où aller chercher."
+        case .cast: nil
+        case .horrorFlavor: "Il y a plusieurs façons de faire peur."
+        case .comedyFlavor: nil
+        case .dramaFlavor: nil
+        case .cognitiveMode: "Pas de bonne réponse : les deux existent, on veut juste savoir laquelle vous ressemble."
+        case .storyOrigin: "Il faut trancher, même si les deux vous vont."
+        case .attachment: nil
+        case .creditsMoment: "Ce que vous espérez ressentir après nous aide à choisir avant."
+        case .lastingTrace: "On se connaît mieux au passé qu'au futur."
+        case .elimination: "Écarter un film nous apprend autant qu'en choisir un."
+        case .surpriseIntensity: nil
         }
     }
 }
@@ -55,8 +67,8 @@ final class QuestionnaireViewModel {
         case intro
         /// Le cadre : avec qui, combien de temps, sous quelle forme. Un écran.
         case frame
-        /// Le cadran : deux appuis, le trajet d'humeur de la soirée.
-        case mood
+        /// Le film cherché : genre et ambiance. Deux listes d'options.
+        case filmChoice
         case poolLoading
         /// Le cœur adaptatif. Une seule phase — la découpe tier 1 / tier 2 a disparu
         /// avec le critère qui la rendait nécessaire (voir `AdaptiveDimension`).
@@ -70,10 +82,6 @@ final class QuestionnaireViewModel {
     private let recommendationClient: any RecommendationFetching
     private let metadataClient: any HomeMetadataFetching
 
-    /// Ce que le cadre et le cadran ont appris, compté comme deux réponses, pour que
-    /// le compteur affiché reflète l'effort déjà fourni.
-    private let fixedAnswersCount = 2
-
     private(set) var phase: Phase = .intro
     private(set) var availablePlatforms: [StreamingPlatform] = []
     private(set) var results: [RecommendationResult] = []
@@ -81,11 +89,6 @@ final class QuestionnaireViewModel {
     private(set) var pairwiseOptions: (CandidateRow, CandidateRow)?
     private(set) var eliminationOptions: [CandidateRow]?
     var answers = QuestionnaireAnswers()
-
-    /// Les deux repères du cadran. Tant que `moodGoal` est nil, le trajet n'est pas
-    /// posé et la séance ne peut pas démarrer.
-    var moodNow: MoodPoint?
-    var moodGoal: MoodPoint?
 
     /// La lecture : une ligne, affichée après une réponse qui apprend quelque chose
     /// de nommable. `nil` le reste du temps — mieux vaut se taire que commenter
@@ -113,6 +116,23 @@ final class QuestionnaireViewModel {
     private var recentFormats: [QuestionFormat] = []
     private var lastFailedAction: (() async -> Void)?
 
+    /// Les films explicitement écartés. Ils quittent le vivier pour de bon :
+    /// reproposer dans la question suivante un film qu'on vient de refuser est la
+    /// contradiction la plus visible que le parcours puisse produire.
+    private var excludedIDs: Set<Int> = []
+
+    /// Les films déjà montrés en affiche. On ne les remontre pas dans une autre
+    /// question par affiches — revoir la même affiche donne l'impression que la
+    /// réponse précédente n'a pas été prise en compte, même quand elle l'a été.
+    private var shownPosterIDs: Set<Int> = []
+
+    /// Le vivier dans lequel on pioche les affiches à montrer. Distinct du vivier
+    /// de classement : un film déjà montré reste un candidat parfaitement valable
+    /// pour le trio final, il n'a simplement plus rien à nous apprendre.
+    private var posterPool: [CandidateRow] {
+        pool.filter { !shownPosterIDs.contains($0.id) }
+    }
+
     /// Un instantané complet de l'état, capturé juste avant que chaque question adaptative ne soit
     /// répondue — revenir en arrière restaure l'instantané tel quel plutôt que d'essayer d'annuler
     /// chaque mutation individuellement (croyance, vivier, dimensions déjà posées…).
@@ -128,6 +148,8 @@ final class QuestionnaireViewModel {
         let askedDimensions: Set<AdaptiveDimension>
         let recentFormats: [QuestionFormat]
         let reading: String?
+        let excludedIDs: Set<Int>
+        let shownPosterIDs: Set<Int>
     }
     private var adaptiveHistory: [AdaptiveSnapshot] = []
 
@@ -138,7 +160,11 @@ final class QuestionnaireViewModel {
 
     // MARK: - Progression affichée
 
-    var questionsAskedCount: Int { fixedAnswersCount + askedDimensions.count }
+    /// Le numéro affiché en haut d'une question. On ne compte que les questions
+    /// réellement posées : afficher « Question 3 » sur la première question
+    /// visible — parce que le cadre et l'humeur comptaient dans le total —
+    /// donnait l'impression d'avoir raté deux écrans.
+    var questionNumber: Int { askedDimensions.count + 1 }
 
     /// Les abonnements retenus, tels qu'on les rappelle au seuil. Vide tant que la
     /// liste des fournisseurs n'est pas revenue — la ligne disparaît alors au lieu
@@ -149,29 +175,40 @@ final class QuestionnaireViewModel {
             .map(\.name)
     }
 
-    // MARK: - Le seuil
+    // MARK: - L'accueil
 
-    /// Ce que le seuil annonce. Le nombre de gestes n'est pas décoratif : il est
-    /// tenu, parce qu'il est déduit du même trait qui raccourcira la séance.
-    var openingTitle: String {
-        taste.establishedAxisCount >= 5 ? "Bonsoir." : "Trois films, ce soir."
+    /// Ce que l'accueil annonce — et il ne change jamais.
+    ///
+    /// Le titre et l'accroche dépendaient auparavant du profil de goût, chargé
+    /// en réseau : le texte se remplaçait tout seul une seconde après l'arrivée
+    /// sur l'écran, sous les yeux de quelqu'un en train de le lire. Ce qu'on sait
+    /// déjà de la personne ne change plus la promesse, seulement la ligne
+    /// personnelle en bas, qui s'ajoute au lieu de remplacer.
+    let openingTitle = "Trouvez le film de ce soir"
+
+    var openingLead: String {
+        "Répondez à quelques questions rapides : votre humeur, le temps que vous avez, ce dont vous avez envie."
     }
 
-    var openingNote: String {
-        switch taste.establishedAxisCount {
-        case 5...: "Deux gestes suffisent — on connaît le reste."
-        case 2...4: "On se connaît un peu. Quelques questions, pas plus."
-        default: "Deux réglages, deux appuis, quelques questions. Comptez deux minutes."
-        }
-    }
+    /// Ce que la personne obtient à la fin, dit avant de commencer. Trois lignes
+    /// concrètes valent mieux qu'une promesse abstraite.
+    let openingSteps: [String] = [
+        "Vous répondez à quelques questions courtes",
+        "On cherche parmi les films de vos plateformes",
+        "Vous repartez avec trois films à regarder ce soir",
+    ]
 
-    /// La ligne de provenance, seulement quand elle a quelque chose à dire.
+    let openingDuration = "Environ deux minutes."
+
+    /// La ligne personnelle, qui n'apparaît qu'une fois le profil chargé et
+    /// n'efface rien. Elle dit à quoi servent les films déjà marqués comme vus.
     var openingProvenance: String? {
         guard taste.galleryCount > 0 else { return nil }
-        let films = "\(taste.galleryCount) film\(taste.galleryCount > 1 ? "s" : "")"
-        let axes = taste.establishedAxisCount
-        guard axes > 0 else { return "\(films) dans votre galerie" }
-        return "\(films) vus · \(axes) trait\(axes > 1 ? "s" : "") cerné\(axes > 1 ? "s" : "")"
+        let films = "\(taste.galleryCount) film\(taste.galleryCount > 1 ? "s" : "") vu\(taste.galleryCount > 1 ? "s" : "")"
+        guard taste.establishedAxisCount > 0 else {
+            return "\(films) — ils nous aident déjà à vous proposer mieux"
+        }
+        return "\(films) — on commence à connaître vos goûts, il y aura moins de questions"
     }
 
     // MARK: - Le cadre
@@ -186,8 +223,8 @@ final class QuestionnaireViewModel {
     ///     vivent vraiment.
     ///   - bannedGenreIDs: genres exclus dans les réglages. Attention, le backend
     ///     n'en fait qu'un malus de score, pas un filtre dur : c'est
-    ///     `QuestionnaireAnswers.apply(_:)` qui garantit qu'un genre banni ne sera
-    ///     jamais demandé à TMDB.
+    ///     `availableGenres` qui garantit qu'un genre banni ne sera jamais demandé
+    ///     à TMDB, en ne le proposant pas.
     func start(preferredPlatformIDs: Set<String>, bannedGenreIDs: Set<Int> = []) {
         answers = QuestionnaireAnswers()
         answers.platformIDs = preferredPlatformIDs
@@ -203,8 +240,8 @@ final class QuestionnaireViewModel {
         currentDimension = nil
         pairwiseOptions = nil
         eliminationOptions = nil
-        moodNow = nil
-        moodGoal = nil
+        excludedIDs = []
+        shownPosterIDs = []
         reading = nil
         results = []
         phase = .frame
@@ -253,6 +290,33 @@ final class QuestionnaireViewModel {
         taste.pendingVerdict = nil
     }
 
+    /// « Aucun des trois ne me tente » — le geste qui manquait à la boucle.
+    ///
+    /// Trois effets : le refus est écrit dans l'historique (le trait s'en
+    /// souviendra), la croyance s'éloigne de la position moyenne du trio, et un
+    /// second trio est composé dans ce qui reste du vivier — délibérément
+    /// ailleurs, puisque la croyance vient de bouger. Sans ce geste, le cas
+    /// d'échec le plus fréquent ne laissait aucune trace.
+    func rejectTrio() {
+        guard phase == .results, !results.isEmpty else { return }
+        let rejectedIDs = Set(results.map(\.item.tmdbId))
+        Task {
+            try? await recommendationClient.recordRejection(tmdbIDs: Array(rejectedIDs))
+        }
+
+        let rejectedRows = pool.filter { rejectedIDs.contains($0.id) }
+        belief.observe(AnswerObservations.fromRejectedTrio(rejectedRows))
+
+        pool.removeAll { rejectedIDs.contains($0.id) }
+        enrichedPool.removeAll { rejectedIDs.contains($0.id) }
+        guard !enrichedPool.isEmpty else {
+            phase = .error("On n'a plus d'autres films à vous proposer avec ces critères. Recommencez une recherche pour élargir.")
+            return
+        }
+        results = []
+        Task { await finish() }
+    }
+
     /// Passé une certaine heure, on part sur court — et on le dit. La note n'existe
     /// que parce que la présélection est réelle : annoncer une attention qu'on
     /// n'aurait pas serait pire que se taire.
@@ -265,8 +329,8 @@ final class QuestionnaireViewModel {
             return
         }
         answers.runtime = .short
-        let formatted = String(format: "%dh%02d", hour, minute)
-        lateHourNote = "Il est \(formatted) — on part sur quelque chose de court."
+        let formatted = String(format: "%d h %02d", hour, minute)
+        lateHourNote = "Il est \(formatted) : on a présélectionné un format court pour que vous puissiez le finir ce soir."
     }
 
     func loadPlatformsIfNeeded() async {
@@ -277,33 +341,68 @@ final class QuestionnaireViewModel {
 
     func goNextFrame() {
         guard canAdvanceFrame else { return }
-        phase = .mood
+        // Revenir en arrière pour changer de public peut rendre un genre déjà
+        // coché indisponible. On le retire plutôt que de partir chercher un
+        // genre qu'on ne propose plus.
+        let allowed = Set(availableGenres)
+        answers.genres.formIntersection(allowed)
+        phase = .filmChoice
     }
 
-    // MARK: - Le cadran
+    // MARK: - Le film cherché
 
-    var canConfirmMood: Bool { moodNow != nil && moodGoal != nil }
-
-    /// La lecture du trajet, dès que les deux repères sont posés — affichée sous le
-    /// cadran avant même de valider, pour que le geste ait une réponse immédiate.
-    var moodStrategy: MoodStrategy? {
-        guard let moodNow, let moodGoal else { return nil }
-        return MoodStrategy.from(MoodTrajectory(now: moodNow, goal: moodGoal))
+    /// Les genres proposés.
+    ///
+    /// Trois retraits. Les genres bannis dans les réglages, d'abord : les proposer
+    /// reviendrait à demander de reconfirmer un refus déjà exprimé, et le backend
+    /// n'en fait qu'un malus de score — c'est donc ici, et nulle part ailleurs,
+    /// qu'un genre banni cesse d'être demandé à TMDB. L'animation ensuite, déjà
+    /// tranchée à l'écran précédent : la proposer une seconde fois créerait deux
+    /// réponses qui peuvent se contredire. L'horreur enfin, quand on regarde avec
+    /// des enfants : le serveur l'exclut de toute façon dans ce cas, et la
+    /// proposer quand même mènerait à une recherche sans résultat que personne ne
+    /// saurait s'expliquer.
+    var availableGenres: [Genre] {
+        Genre.allCases.filter { genre in
+            guard genre != .animation else { return false }
+            guard genre != .horror || answers.audience != .family else { return false }
+            return genre.tmdbIDs.isDisjoint(with: answers.avoidedGenreIDs)
+        }
     }
 
-    /// Ouvre la croyance avec ce que le cadre et le cadran ont appris, puis lance la
-    /// séance. C'est ici, et seulement ici, que le trajet d'humeur entre dans le
-    /// modèle : ensuite ce sont les questions et les affiches qui le corrigent.
-    func confirmMood() {
-        guard let moodNow, let moodGoal else { return }
-        let trajectory = MoodTrajectory(now: moodNow, goal: moodGoal)
-        let profile = MoodTransfer.profile(for: trajectory)
+    var maxGenres: Int { QuestionnaireAnswers.maxGenres }
 
-        // `answers` reste alimenté : ses genres cadrent la requête de vivier, qui part
-        // avant que la moindre croyance n'existe côté serveur.
-        answers.apply(profile)
+    /// Au-delà de deux genres, le OU de TMDB élargit le vivier au lieu de le
+    /// cadrer — c'est l'inverse de l'effet recherché. La limite est donc tenue
+    /// ici plutôt qu'expliquée à l'utilisateur.
+    func toggleGenre(_ genre: Genre) {
+        if answers.genres.contains(genre) {
+            answers.genres.remove(genre)
+        } else if answers.genres.count < QuestionnaireAnswers.maxGenres {
+            answers.genres.insert(genre)
+        }
+    }
 
-        // On repart de ce qu'on savait déjà, élargi — puis le cadre et le cadran
+    func isGenreSelectable(_ genre: Genre) -> Bool {
+        answers.genres.contains(genre) || answers.genres.count < QuestionnaireAnswers.maxGenres
+    }
+
+    /// Seule l'ambiance est obligatoire. Le genre reste facultatif : quelqu'un
+    /// d'ouvert à tout ne doit pas être forcé de restreindre sa recherche pour
+    /// pouvoir avancer.
+    var canConfirmFilmChoice: Bool { answers.mood != nil }
+
+    /// La lecture, dès que l'ambiance est choisie et avant même de valider — pour
+    /// que le choix ait une réponse immédiate.
+    var ambianceReading: String? { answers.mood?.reading }
+
+    /// Ouvre la croyance avec ce que les deux écrans ont appris, puis lance la
+    /// recherche. C'est ici, et seulement ici, que l'ambiance entre dans le
+    /// modèle : ensuite ce sont les questions et les affiches qui la corrigent.
+    func confirmFilmChoice() {
+        guard let mood = answers.mood else { return }
+
+        // On repart de ce qu'on savait déjà, élargi — puis le cadre et l'ambiance
         // viennent par-dessus. C'est ici, et nulle part ailleurs, que les « régimes »
         // se décident : plus le trait est établi, plus les σ sont bas dès le départ,
         // plus vite la valeur de décision s'effondre, moins il y a de questions.
@@ -311,9 +410,9 @@ final class QuestionnaireViewModel {
         belief = BeliefState(prior: taste)
         belief.observe(AnswerObservations.fromBudget(answers.runtime))
         belief.observe(AnswerObservations.fromAudience(answers.audience))
-        belief.observe(AnswerObservations.fromMood(profile))
+        belief.observe(AnswerObservations.fromAmbiance(mood))
 
-        reading = MoodStrategy.from(trajectory).reading
+        reading = mood.reading
         Task { await beginSession() }
     }
 
@@ -359,7 +458,11 @@ final class QuestionnaireViewModel {
 
     func recordPairwiseChoice(winner: CandidateRow, loser: CandidateRow) {
         pushAdaptiveSnapshot()
-        record(.mood, observations: AnswerObservations.fromDuel(winner: winner, loser: loser))
+        record(.posterDuel, observations: AnswerObservations.fromDuel(winner: winner, loser: loser))
+        // Les deux affiches ont été vues : elles n'apprendront plus rien. Le
+        // perdant reste dans le vivier — lui préférer un autre film n'est pas
+        // le refuser, et il peut très bien finir dans le trio.
+        shownPosterIDs.formUnion([winner.id, loser.id])
         pairwiseOptions = nil
         reading = Self.reading(winner: winner, loser: loser)
         advance()
@@ -367,10 +470,21 @@ final class QuestionnaireViewModel {
 
     func recordElimination(loser: CandidateRow) {
         pushAdaptiveSnapshot()
-        let others = (eliminationOptions ?? []).filter { $0.id != loser.id }
+        let shown = eliminationOptions ?? []
+        let others = shown.filter { $0.id != loser.id }
         record(.elimination, observations: AnswerObservations.fromElimination(loser: loser, others: others))
+
+        // Le film écarté sort du vivier, définitivement. Le laisser dedans le
+        // rendait reproposable dans la question suivante, et jusque dans le trio
+        // final — on demandait à quelqu'un d'écarter un film pour le lui remontrer
+        // aussitôt.
+        excludedIDs.insert(loser.id)
+        pool.removeAll { $0.id == loser.id }
+        enrichedPool.removeAll { $0.id == loser.id }
+        shownPosterIDs.formUnion(shown.map(\.id))
+
         eliminationOptions = nil
-        reading = "Écarté. On s'éloigne de ce côté-là."
+        reading = "Noté : on s'éloignera de ce genre de film."
         advance()
     }
 
@@ -387,7 +501,7 @@ final class QuestionnaireViewModel {
 
     func goBackAdaptive() {
         guard let snapshot = adaptiveHistory.popLast() else {
-            phase = .mood
+            phase = .filmChoice
             reading = nil
             return
         }
@@ -402,6 +516,8 @@ final class QuestionnaireViewModel {
         askedDimensions = snapshot.askedDimensions
         recentFormats = snapshot.recentFormats
         reading = snapshot.reading
+        excludedIDs = snapshot.excludedIDs
+        shownPosterIDs = snapshot.shownPosterIDs
         phase = .asking
     }
 
@@ -417,7 +533,9 @@ final class QuestionnaireViewModel {
             hasEnriched: hasEnriched,
             askedDimensions: askedDimensions,
             recentFormats: recentFormats,
-            reading: reading
+            reading: reading,
+            excludedIDs: excludedIDs,
+            shownPosterIDs: shownPosterIDs
         ))
     }
 
@@ -439,8 +557,8 @@ final class QuestionnaireViewModel {
         currentDimension = nil
         pairwiseOptions = nil
         eliminationOptions = nil
-        moodNow = nil
-        moodGoal = nil
+        excludedIDs = []
+        shownPosterIDs = []
         reading = nil
     }
 
@@ -475,8 +593,8 @@ final class QuestionnaireViewModel {
             belief: belief,
             asked: askedDimensions,
             recentFormats: recentFormats,
-            posterOptionsProvider: { [pool, belief] dimension in
-                QuestionEngine.posterOutcomes(for: dimension, pool: pool, belief: belief)
+            posterOptionsProvider: { [posterPool, belief] dimension in
+                QuestionEngine.posterOutcomes(for: dimension, pool: posterPool, belief: belief)
             }
         )
 
@@ -506,18 +624,18 @@ final class QuestionnaireViewModel {
 
     private func present(_ dimension: AdaptiveDimension) {
         switch dimension {
-        case .mood:
-            guard let options = QuestionEngine.pickDuel(from: pool, belief: belief) else {
-                // Vivier trop homogène pour opposer deux affiches — on classe la
-                // question plutôt que de boucler dessus.
-                askedDimensions.insert(.mood)
+        case .posterDuel:
+            guard let options = QuestionEngine.pickDuel(from: posterPool, belief: belief) else {
+                // Plus assez de films jamais montrés pour opposer deux affiches —
+                // on classe la question plutôt que de boucler dessus.
+                askedDimensions.insert(.posterDuel)
                 advance()
                 return
             }
             pairwiseOptions = options
             eliminationOptions = nil
         case .elimination:
-            guard let options = QuestionEngine.pickElimination(from: pool, belief: belief) else {
+            guard let options = QuestionEngine.pickElimination(from: posterPool, belief: belief) else {
                 askedDimensions.insert(.elimination)
                 advance()
                 return
@@ -553,17 +671,24 @@ final class QuestionnaireViewModel {
     private func finish() async {
         phase = .finalizing
         do {
-            let finalCandidates: [EnrichedCandidateRow]
+            var finalCandidates: [EnrichedCandidateRow]
             if enrichedPool.isEmpty {
                 let toEnrich = QuestionEngine.candidatesForEnrichment(pool: pool, belief: belief)
                 finalCandidates = try await recommendationClient.enrichCandidates(toEnrich)
             } else {
                 finalCandidates = enrichedPool
             }
+            // La garantie, tenue au dernier moment plutôt que supposée : un film
+            // écarté ne peut pas atteindre le trio, quel que soit le chemin par
+            // lequel il serait revenu dans le vivier.
+            finalCandidates.removeAll { excludedIDs.contains($0.id) }
             guard !finalCandidates.isEmpty else {
                 phase = .error("Aucun film ne correspond à ces critères pour le moment.")
                 return
             }
+            // Conservé pour que le refus du trio puisse recomposer une sélection
+            // sans repayer l'enrichissement — le vivier de la séance reste chaud.
+            enrichedPool = finalCandidates
             results = try await recommendationClient.finalizeRecommendations(
                 answers: answers, belief: belief, candidates: finalCandidates
             )
@@ -582,41 +707,46 @@ final class QuestionnaireViewModel {
 
     // MARK: - Les lectures
 
-    /// Ce que le système vient de comprendre, dit en une ligne. Rien n'est produit
-    /// pour les dimensions dont la réponse ne se résume pas honnêtement — une
-    /// lecture creuse coûte plus cher que pas de lecture du tout.
+    /// Ce que la réponse change concrètement pour la sélection, en une ligne.
+    ///
+    /// Elle dit toujours une conséquence (« on écartera… », « on ira chercher… »)
+    /// et jamais un constat sur la personne : c'est ce qui rend le questionnaire
+    /// lisible comme une recherche en cours plutôt que comme un test de
+    /// personnalité. Rien n'est produit quand la réponse ne se résume pas
+    /// honnêtement — une ligne creuse coûte plus cher que pas de ligne du tout.
     private static func reading(for dimension: AdaptiveDimension, answers: QuestionnaireAnswers) -> String? {
         switch dimension {
         case .dealbreaker:
             switch answers.dealbreaker {
-            case .slowPace: "Noté : rien qui traîne."
-            case .heavyMood: "Noté : on garde ça respirable."
-            case .tooLong: "Noté : on surveille la durée."
-            case .predictablePlot: "Noté : il faudra que ça surprenne."
+            case .slowPace: "On écartera les films qui traînent en longueur."
+            case .heavyMood: "On écartera les films trop lourds."
+            case .tooLong: "On surveillera la durée."
+            case .predictablePlot: "On cherchera une histoire qui surprend."
             case nil: nil
             }
         case .popularity:
             switch answers.popularity {
-            case .hiddenGem: "On va chercher plus loin que les têtes d'affiche."
-            case .mainstream: "On reste sur des valeurs sûres."
+            case .hiddenGem: "On ira chercher au-delà des films les plus vus."
+            case .mainstream: "On restera sur des films largement appréciés."
             default: nil
             }
         case .cognitiveMode:
             answers.cognitiveMode == .understand
-                ? "Vous voulez comprendre — on privilégie ce qui se déchiffre."
-                : "Vous voulez ressentir avant de comprendre."
+                ? "On privilégiera les films qui donnent à réfléchir."
+                : "On privilégiera les films qui font d'abord ressentir."
         default:
             nil
         }
     }
 
-    /// Comparaison honnête : on ne commente que si l'écart de notoriété entre les deux
-    /// affiches est net, sinon le duel a tranché autre chose qu'on ne sait pas nommer.
+    /// Après un duel d'affiches. On ne commente que si l'écart de notoriété entre
+    /// les deux films est net — sinon le choix a tranché autre chose, qu'on ne
+    /// saurait pas nommer sans inventer.
     private static func reading(winner: CandidateRow, loser: CandidateRow) -> String? {
         let gap = winner.axes[.familiarite] - loser.axes[.familiarite]
         guard abs(gap) > 0.4 else { return nil }
         return gap < 0
-            ? "Le terrain connu vous va, ce soir."
-            : "Vous préférez ce qu'on vous a moins vendu."
+            ? "Vous allez vers les films connus : on en tient compte."
+            : "Vous allez vers les films moins connus : on en tient compte."
     }
 }
