@@ -46,6 +46,10 @@ struct SettingsView: View {
     /// Le compte reste replié : rien d'irréversible n'est à un tap de distance
     /// dans le flux de lecture.
     @State private var isAccountOpen = false
+    @State private var introReplayArmed = false
+    /// Le même drapeau que celui du deck : le remettre à zéro suffit à réarmer la
+    /// démonstration des gestes (voir `SwipeIntroSequence`).
+    @AppStorage("swipe.introPlayed") private var swipeIntroPlayed = false
     @FocusState private var focus: Field?
 
     private var email: String? { Auth.auth().currentUser?.email }
@@ -77,10 +81,17 @@ struct SettingsView: View {
 
                         declaration(
                             "Ma génération",
-                            note: "À 25 et à 55 ans, on n'a pas vu les mêmes classiques.",
-                            isLast: true
+                            note: "À 25 et à 55 ans, on n'a pas vu les mêmes classiques."
                         ) {
                             generation
+                        }
+
+                        declaration(
+                            "Les gestes de Découvrir",
+                            note: "Les trois directions remontrées en quelques secondes, sur votre prochaine carte.",
+                            isLast: true
+                        ) {
+                            gestureDemo
                         }
 
                         account
@@ -321,6 +332,36 @@ struct SettingsView: View {
                     libraryStore.setBirthDecade(isOn ? nil : generation.decade)
                 }
                 .accessibilityLabel("Né dans les années \(generation.label)")
+            }
+        }
+    }
+
+    // MARK: - La démonstration des gestes
+
+    /// La seule porte de sortie d'une démonstration qui ne se joue qu'une fois.
+    ///
+    /// Elle n'ouvre pas un écran : elle réarme le drapeau, et la séquence se
+    /// rejoue là où elle a un sens — sur le deck, à la prochaine entrée dans
+    /// l'onglet. Le libellé passe donc à l'acquittement plutôt que de renvoyer
+    /// vers un ailleurs.
+    @ViewBuilder
+    private var gestureDemo: some View {
+        if introReplayArmed {
+            HStack(alignment: .top, spacing: 11) {
+                PlanLight().padding(.top, 5)
+                Text("La démonstration se rejouera à votre prochain passage sur Découvrir.")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Ink.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
+            .frame(minHeight: Metrics.control)
+            .transition(.opacity)
+        } else {
+            PlanSecondaryButton(title: "Revoir la démonstration", height: Metrics.control) {
+                Haptics.selection()
+                swipeIntroPlayed = false
+                withAnimation(Metrics.shift) { introReplayArmed = true }
             }
         }
     }

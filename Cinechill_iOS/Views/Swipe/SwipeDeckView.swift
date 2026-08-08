@@ -19,28 +19,20 @@ struct SwipeDeckView: View {
     /// Distance à parcourir pour valider un verdict.
     private static let sideThreshold: CGFloat = 105
     private static let upThreshold: CGFloat = 130
-    /// Nombre de swipes après lequel la légende des gestes disparaît pour de bon.
-    private static let hintsFadeAfter = 5
     private static let deckHorizontalInset: CGFloat = 26
     private static let deckVerticalInset: CGFloat = 12
     /// Débord vers le bas des deux cartes empilées sous celle du dessus.
     private static let backingCardsOverhang: CGFloat = 24
 
     @State private var drag: CGSize = .zero
-    /// Décalage joué une seule fois, au tout premier lancement, pour montrer
-    /// le geste sans jamais l'écrire noir sur blanc.
-    @State private var nudge: CGSize = .zero
     @State private var departing: [DepartingCard] = []
     @State private var isSynopsisOpen = false
     @State private var showProfile = false
-    @State private var showLaunchCues = false
-    /// Identifie l'affichage courant des repères, pour qu'un aller-retour
-    /// rapide entre onglets ne fasse pas disparaître le nouvel affichage à
-    /// l'échéance du précédent.
-    @State private var launchCuesToken = 0
+    /// La démonstration des gestes tient la carte du dessus le temps de sa
+    /// séquence — voir `SwipeIntroSequence`.
+    @State private var isIntroPlaying = false
 
-    @AppStorage("swipe.completedSwipes") private var completedSwipes = 0
-    @AppStorage("swipe.tutorialPlayed") private var tutorialPlayed = false
+    @AppStorage("swipe.introPlayed") private var introPlayed = false
 
     var body: some View {
         NavigationStack {
@@ -69,25 +61,41 @@ struct SwipeDeckView: View {
         .task {
             model.syncLibrary(libraryIDs)
             await model.start()
-            await presentLaunchCues()
-            await playTutorialNudge()
+            await startIntro()
         }
         .onChange(of: libraryIDs) { _, ids in
             model.syncLibrary(ids)
         }
+        // Une démonstration jouée écran éteint serait une démonstration perdue :
+        // elle se remet en attente avec l'application, et repart avec elle.
         .onChange(of: scenePhase) { _, phase in
-            guard phase != .active else { return }
+            guard phase != .active else {
+                Task { await startIntro() }
+                return
+            }
+            suspendIntro()
             Task { await model.flushPending() }
         }
         // L'onglet reste monté quand on le quitte (voir `MainTabView`), donc
         // `onDisappear` ne suffit pas : c'est le changement d'onglet qui dit
         // qu'il faut envoyer la décision restée en main — et, au retour, qu'il
-        // faut rappeler les gestes.
+        // faut reprendre la démonstration si elle n'a pas été vue.
         .onChange(of: selectedTab) { _, tab in
             if tab == 2 {
-                Task { await presentLaunchCues() }
+                Task { await startIntro() }
             } else {
+                suspendIntro()
                 Task { await model.flushPending() }
+            }
+        }
+        // Les réglages s'ouvrent depuis l'en-tête de cet écran, et c'est de là
+        // qu'on réarme la démonstration : elle doit donc pouvoir repartir dès la
+        // fermeture, sans avoir à quitter l'onglet.
+        .onChange(of: showProfile) { _, isOpen in
+            if isOpen {
+                suspendIntro()
+            } else {
+                Task { await startIntro() }
             }
         }
         .onDisappear {
@@ -158,11 +166,17 @@ struct SwipeDeckView: View {
                     }
                 }
 
-                if showLaunchCues {
-                    SwipeDirectionCues()
-                        .frame(width: card.width, height: card.height)
-                        .transition(.opacity)
-                        .allowsHitTesting(false)
+                // La démonstration emprunte la carte du dessus et la joue
+                // au-dessus de la pile restée en place : à la dernière image, il
+                // n'y a donc rien à raccorder — le fondu suffit.
+                if isIntroPlaying, let topCard = model.topCard {
+                    SwipeIntroSequence(card: topCard, cardSize: card, onFinished: endIntro)
+                        // Rien à fondre à l'entrée : la carte de la démonstration
+                        // est celle qui vient d'être retirée de la pile, au même
+                        // endroit et à la même taille. Un fondu d'entrée ferait
+                        // clignoter le deck ; c'est à la sortie qu'il sert, pour
+                        // éteindre les repères.
+                        .transition(.asymmetric(insertion: .identity, removal: .opacity))
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
@@ -193,7 +207,9 @@ struct SwipeDeckView: View {
                     .allowsHitTesting(false)
             }
 
-            if let card = model.topCard {
+            // Pendant la démonstration, la carte du dessus est jouée par
+            // `SwipeIntroSequence` : la dessiner deux fois la dédoublerait.
+            if let card = model.topCard, !isIntroPlaying {
                 SwipeCardView(
                     card: card,
                     verdict: currentVerdict?.verdict,
@@ -202,8 +218,8 @@ struct SwipeDeckView: View {
                     onTap: toggleSynopsis
                 )
                 .frame(width: size.width, height: size.height)
-                .offset(x: effectiveDrag.width, y: effectiveDrag.height)
-                .rotationEffect(.degrees(Double(effectiveDrag.width) / 24), anchor: .bottom)
+                .offset(x: drag.width, y: drag.height)
+                .rotationEffect(.degrees(Double(drag.width) / 24), anchor: .bottom)
                 .gesture(dragGesture)
                 .id(card.id)
                 .transition(.identity)
@@ -256,18 +272,29 @@ struct SwipeDeckView: View {
 
     // MARK: - Pied
 
+    /// Le pied ne porte plus de légende — la démonstration a remplacé la notice.
+    /// Il garde sa hauteur, et n'accueille que la sortie de secours de cette
+    /// démonstration : rien ne se déplace quand elle se termine.
     private var footer: some View {
-        SwipeGestureHints(opacity: hintsOpacity)
-            .frame(height: 26)
-            .padding(.bottom, 8)
-            .animation(.easeOut(duration: 0.4), value: hintsOpacity)
-    }
-
-    private var hintsOpacity: Double {
-        guard model.topCard != nil else { return 0 }
-        // La légende s'efface d'elle-même : passé quelques swipes, le geste est
-        // acquis et un rappel permanent ferait du bruit.
-        return completedSwipes >= Self.hintsFadeAfter ? 0 : 0.4
+        ZStack {
+            if isIntroPlaying {
+                Button {
+                    Haptics.impact(.light, intensity: 0.6)
+                    endIntro()
+                } label: {
+                    Text("Passer")
+                        .planLabel()
+                        .foregroundStyle(Ink.ink3)
+                        .padding(.horizontal, 16)
+                        .contentShape(Rectangle().inset(by: -10))
+                }
+                .buttonStyle(.plain)
+                .transition(.opacity)
+            }
+        }
+        .frame(height: 26)
+        .padding(.bottom, 8)
+        .animation(.easeOut(duration: 0.3), value: isIntroPlaying)
     }
 
     @ViewBuilder
@@ -292,17 +319,13 @@ struct SwipeDeckView: View {
 
     // MARK: - Geste
 
-    private var effectiveDrag: CGSize {
-        CGSize(width: drag.width + nudge.width, height: drag.height + nudge.height)
-    }
-
     /// Avancement du geste en cours vers son seuil, entre 0 et 1.
     private var dragProgress: CGFloat {
         currentVerdict.map { CGFloat($0.intensity) } ?? 0
     }
 
     private var currentVerdict: (verdict: SwipeVerdict, intensity: Double)? {
-        let translation = effectiveDrag
+        let translation = drag
         let upward = -translation.height
 
         if upward > abs(translation.width), upward > 18 {
@@ -321,8 +344,6 @@ struct SwipeDeckView: View {
                 if isSynopsisOpen {
                     withAnimation(.easeOut(duration: 0.15)) { isSynopsisOpen = false }
                 }
-                dismissLaunchCues()
-                if nudge != .zero { nudge = .zero }
                 drag = value.translation
             }
             .onEnded { value in
@@ -362,9 +383,7 @@ struct SwipeDeckView: View {
             DepartingCard(card: card, direction: direction, start: translation)
         )
         drag = .zero
-        nudge = .zero
         isSynopsisOpen = false
-        completedSwipes += 1
         model.swipe(direction)
     }
 
@@ -376,49 +395,32 @@ struct SwipeDeckView: View {
         }
     }
 
-    /// Rappelle les trois directions à chaque ouverture de l'onglet, puis
-    /// s'efface. Le geste s'oublie entre deux sessions ; le réafficher coûte
-    /// deux secondes et évite d'avoir à le redécouvrir par tâtonnement.
-    private func presentLaunchCues() async {
-        guard model.topCard != nil else { return }
+    // MARK: - La démonstration
 
-        launchCuesToken += 1
-        let token = launchCuesToken
-        withAnimation(.easeOut(duration: 0.4)) { showLaunchCues = true }
-
-        try? await Task.sleep(for: .milliseconds(2600))
-        guard token == launchCuesToken else { return }
-        withAnimation(.easeIn(duration: 0.45)) { showLaunchCues = false }
+    /// Lance la démonstration, une fois la première carte en main.
+    ///
+    /// Le délai laisse à l'affiche le temps d'arriver : une séquence qui commence
+    /// sur un cadre vide ne démontre rien.
+    private func startIntro() async {
+        guard !introPlayed, !isIntroPlaying else { return }
+        try? await Task.sleep(for: .milliseconds(360))
+        guard !introPlayed, !isIntroPlaying, selectedTab == 2, model.topCard != nil else { return }
+        withAnimation(.easeOut(duration: 0.3)) { isIntroPlaying = true }
     }
 
-    private func dismissLaunchCues() {
-        guard showLaunchCues else { return }
-        launchCuesToken += 1
-        withAnimation(.easeOut(duration: 0.2)) { showLaunchCues = false }
+    /// Quitter l'onglet en cours de séquence ne la consomme pas : elle n'a pas
+    /// été vue, elle reprendra au retour.
+    private func suspendIntro() {
+        guard isIntroPlaying else { return }
+        isIntroPlaying = false
     }
 
-    /// Au tout premier lancement, la carte esquisse elle-même les trois gestes
-    /// — l'explication la plus discrète possible, et la seule qui montre le
-    /// mouvement plutôt que de le décrire.
-    private func playTutorialNudge() async {
-        guard !tutorialPlayed, model.topCard != nil else { return }
-        try? await Task.sleep(for: .milliseconds(450))
-        guard model.topCard != nil, drag == .zero else { return }
-
-        let steps: [CGSize] = [
-            CGSize(width: 52, height: 0), .zero,
-            CGSize(width: -52, height: 0), .zero,
-            CGSize(width: 0, height: -60), .zero,
-        ]
-
-        for step in steps {
-            withAnimation(.easeInOut(duration: 0.42)) { nudge = step }
-            try? await Task.sleep(for: .milliseconds(step == .zero ? 240 : 600))
-            if drag != .zero { break }
-        }
-
-        nudge = .zero
-        tutorialPlayed = true
+    /// La séquence est allée au bout, ou l'utilisateur l'a coupée : dans les deux
+    /// cas le geste est acquis, et le deck prend la main.
+    private func endIntro() {
+        guard isIntroPlaying else { return }
+        introPlayed = true
+        withAnimation(.easeOut(duration: 0.34)) { isIntroPlaying = false }
     }
 
     private var libraryIDs: Set<Int> {
