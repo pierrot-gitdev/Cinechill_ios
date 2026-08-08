@@ -20,21 +20,54 @@ import UIKit
 /// Le champ que l'utilisateur doit corriger. `form` désigne les pannes qui ne
 /// viennent d'aucune saisie — réseau, quota, compte désactivé : elles se posent
 /// au-dessus des actions, pas sous un champ.
-enum AuthField: Equatable {
+///
+/// `nonisolated` : sans ça, hériterait de l'isolation MainActor par défaut du
+/// projet (`SWIFT_DEFAULT_ACTOR_ISOLATION`), et sa conformance `Equatable`
+/// deviendrait inutilisable dans le moindre contexte `nonisolated` du module —
+/// voir la même note dans `QuestionnaireAnswer.swift`.
+///
+/// L'`==` est écrit à la main plutôt que synthétisé : sur ce toolchain, la
+/// synthèse ne propage pas toujours `nonisolated` au witness généré quand
+/// l'isolation par défaut du projet est `MainActor`, ce qui laisse échapper
+/// la même erreur malgré le `nonisolated` posé sur le type.
+nonisolated enum AuthField: Equatable {
     case name
     case handle
     case email
     case password
     case confirmation
     case form
+
+    nonisolated static func == (lhs: AuthField, rhs: AuthField) -> Bool {
+        switch (lhs, rhs) {
+        case (.name, .name), (.handle, .handle), (.email, .email),
+             (.password, .password), (.confirmation, .confirmation),
+             (.form, .form):
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 /// Le geste de réparation proposé dans la phrase d'erreur. Une erreur qui dit
 /// ce qui ne va pas sans dire quoi faire oblige l'utilisateur à deviner.
-enum AuthRepair: Equatable {
+///
+/// Voir la note sur `AuthField` — même raison pour l'`==` manuel.
+nonisolated enum AuthRepair: Equatable {
     case resetPassword
     case signIn
     case signUp
+
+    nonisolated static func == (lhs: AuthRepair, rhs: AuthRepair) -> Bool {
+        switch (lhs, rhs) {
+        case (.resetPassword, .resetPassword), (.signIn, .signIn),
+             (.signUp, .signUp):
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 /// Une panne d'authentification, telle que l'écran doit la montrer.
@@ -43,7 +76,7 @@ enum AuthRepair: Equatable {
 /// quels, c'est faire lire à l'utilisateur un code d'erreur en prose. On les
 /// traduit ici une fois pour toutes, et surtout on les **rattache à un champ** :
 /// c'est ce rattachement, pas la formulation, qui rend une erreur réparable.
-struct AuthFailure: LocalizedError, Equatable {
+nonisolated struct AuthFailure: LocalizedError, Equatable {
     let field: AuthField
     let message: String
     var repair: AuthRepair?
@@ -52,6 +85,14 @@ struct AuthFailure: LocalizedError, Equatable {
 
     static func form(_ message: String) -> AuthFailure {
         AuthFailure(field: .form, message: message)
+    }
+
+    // Manuel pour la même raison que `AuthField`/`AuthRepair` : la synthèse
+    // ne propage pas toujours `nonisolated` au witness généré.
+    nonisolated static func == (lhs: AuthFailure, rhs: AuthFailure) -> Bool {
+        lhs.field == rhs.field
+            && lhs.message == rhs.message
+            && lhs.repair == rhs.repair
     }
 }
 
@@ -102,9 +143,6 @@ final class AuthService: ObservableObject {
 #endif
     }
 
-    func clearError() {
-        errorMessage = nil
-    }
 
     // MARK: - Connexion et création
 

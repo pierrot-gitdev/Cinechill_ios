@@ -352,35 +352,9 @@ private extension LibraryStore {
             }
     }
 
-    func galleryData(from entry: GalleryEntry) -> [String: Any] {
-        [
-            "id": entry.id,
-            "tmdbId": entry.tmdbId,
-            "mediaType": entry.mediaType.rawValue,
-            "title": entry.title,
-            "posterPath": entry.posterPath as Any,
-            "overview": entry.overview as Any,
-            "voteAverage": entry.voteAverage as Any,
-            "genreIds": entry.genreIds,
-            "releaseDate": entry.releaseDate as Any,
-            "addedAt": Timestamp(date: entry.addedAt)
-        ]
-    }
-
-    func watchlistData(from entry: WatchlistEntry) -> [String: Any] {
-        [
-            "id": entry.id,
-            "tmdbId": entry.tmdbId,
-            "mediaType": entry.mediaType.rawValue,
-            "title": entry.title,
-            "posterPath": entry.posterPath as Any,
-            "overview": entry.overview as Any,
-            "voteAverage": entry.voteAverage as Any,
-            "genreIds": entry.genreIds,
-            "releaseDate": entry.releaseDate as Any,
-            "addedAt": Timestamp(date: entry.addedAt)
-        ]
-    }
+    // Les encodeurs Swift → Firestore ont disparu avec l'écriture directe : tout
+    // passe désormais par la fonction `setMediaStatus`, qui compose le document
+    // côté serveur. Seuls les décodeurs restent, pour les écoutes temps réel.
 
     func galleryEntry(from data: [String: Any]) -> GalleryEntry? {
         guard

@@ -27,10 +27,6 @@ nonisolated struct MediaItem: Identifiable, Hashable, Sendable {
         return URL(string: "https://image.tmdb.org/t/p/w500\(path)")
     }
 
-    var voteAverageText: String {
-        guard let v = voteAverage else { return "N/A" }
-        return String(format: "%.1f", v)
-    }
 }
 
 extension MediaItem {
