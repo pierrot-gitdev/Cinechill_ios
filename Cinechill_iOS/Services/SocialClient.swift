@@ -83,6 +83,11 @@ enum SocialError: LocalizedError, Equatable {
 /// qu'un type concret : les vues d'aperçu et les tests n'ont pas à parler
 /// au réseau pour se dessiner.
 protocol SocialServicing: Sendable {
+    /// Dit si `handle` est libre, sans le réserver. N'exige pas d'être
+    /// connecté : à l'inscription, ce contrôle a lieu avant que le compte
+    /// n'existe. `claimHandle` reste seul à trancher pour de bon — un pseudo
+    /// dit libre ici peut être pris entretemps par un autre compte.
+    func handleAvailability(_ handle: String) async throws -> Bool
     func claimHandle(_ handle: String) async throws
     func follow(uid: String) async throws
     func unfollow(uid: String) async throws
@@ -95,6 +100,14 @@ protocol SocialServicing: Sendable {
 }
 
 nonisolated struct SocialClient: SocialServicing, Sendable {
+    func handleAvailability(_ handle: String) async throws -> Bool {
+        guard let url = APIEndpoints.handleAvailable(handle: handle) else {
+            throw SocialError.missingBaseURL
+        }
+        let data = try await get(from: url)
+        return try JSONDecoder().decode(AvailabilityResponse.self, from: data).available
+    }
+
     func claimHandle(_ handle: String) async throws {
         _ = try await post(to: APIEndpoints.claimHandle(), body: ["handle": handle])
     }
@@ -140,6 +153,8 @@ nonisolated struct SocialClient: SocialServicing, Sendable {
 
     // MARK: - Transport
 
+    /// Authentifiée : tout le Hall, à l'exception du contrôle de
+    /// disponibilité, exige un compte déjà créé.
     @discardableResult
     private func post(to url: URL?, body: [String: Any]) async throws -> Data {
         guard BackendConfiguration.baseURL != nil else { throw SocialError.missingBaseURL }
@@ -153,7 +168,20 @@ nonisolated struct SocialClient: SocialServicing, Sendable {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        return try await send(request)
+    }
 
+    /// Sans jeton : seul `handleAvailability` l'utilise, précisément parce
+    /// qu'il doit répondre avant qu'un compte n'existe.
+    private func get(from url: URL) async throws -> Data {
+        guard BackendConfiguration.baseURL != nil else { throw SocialError.missingBaseURL }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        return try await send(request)
+    }
+
+    private func send(_ request: URLRequest) async throws -> Data {
         let data: Data
         let response: URLResponse
         do {
@@ -182,6 +210,7 @@ nonisolated struct SocialClient: SocialServicing, Sendable {
 // MARK: - DTO
 
 private nonisolated struct ErrorResponse: Decodable { let error: String }
+private nonisolated struct AvailabilityResponse: Decodable { let available: Bool }
 private nonisolated struct RespondResponse: Decodable { let alreadySeen: Bool? }
 private nonisolated struct TargetsResponse: Decodable { let targets: [TargetDTO] }
 

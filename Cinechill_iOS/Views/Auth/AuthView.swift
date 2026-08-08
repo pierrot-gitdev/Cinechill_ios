@@ -60,9 +60,21 @@ struct AuthView: View {
 
     /// Tant que l'utilisateur n'a pas touché le champ, le pseudo suit le nom.
     @State private var handleTouched = false
-    /// Renseigné par le serveur au moment de la revendication : faute d'endpoint
-    /// de disponibilité, c'est le seul instant où l'on sait.
-    @State private var handleTaken = false
+    @State private var handleAvailability: HandleAvailability = .unknown
+
+    /// Ce que dit le contrôle de disponibilité, à tout instant.
+    ///
+    /// `.unknown` couvre aussi bien « rien saisi » que « le serveur n'a pas pu
+    /// répondre » : dans les deux cas on ne montre rien, plutôt que d'inventer
+    /// un état d'erreur pour un contrôle qui n'est qu'indicatif. `claimHandle`,
+    /// à la soumission, reste seul à trancher pour de bon — un pseudo dit
+    /// libre ici peut être pris entretemps par un autre compte.
+    private enum HandleAvailability: Equatable {
+        case unknown
+        case checking
+        case free
+        case taken
+    }
 
     @State private var failure: AuthFailure?
     @State private var isWorking = false
@@ -528,7 +540,10 @@ struct AuthView: View {
             get: { handle },
             set: { typed in
                 handleTouched = true
-                handleTaken = false
+                // Réinitialisé tout de suite, pour que le point de lumière
+                // s'éteigne à la première frappe plutôt que d'attendre la fin
+                // du débounce : rien ne s'affiche tant que rien n'est vérifié.
+                handleAvailability = .unknown
                 // La normalisation se fait sous les doigts, jamais en reproche :
                 // une majuscule ou un accent est une faute de conception si on
                 // la signale, pas une faute de l'utilisateur.
@@ -544,18 +559,39 @@ struct AuthView: View {
                 placeholder: "pierre.robert",
                 prefix: "@",
                 contentType: .username,
-                accessory: PlanHandle.isValid(handle) && !handleTaken ? .light : .none,
-                error: handleTaken ? "Ce pseudo est déjà pris." : message(for: .handle),
-                note: handleTaken ? nil : PlanHandle.rule,
+                accessory: handleAvailability == .free ? .light : .none,
+                error: handleAvailability == .taken
+                    ? "Ce pseudo est déjà pris." : message(for: .handle),
+                note: handleAvailability == .taken ? nil : PlanHandle.rule,
                 isDisabled: isWorking,
                 onSubmit: { focus = .email }
             )
 
-            if handleTaken {
+            if handleAvailability == .taken {
                 alternatives
             }
         }
-        .animation(AuthMetrics.shift, value: handleTaken)
+        .animation(AuthMetrics.shift, value: handleAvailability)
+        // Vérifie 450 ms après la dernière frappe. `.task(id:)` annule
+        // d'elle-même la précédente dès que `handle` change : pas de
+        // minuterie à gérer à la main.
+        .task(id: handle) {
+            guard PlanHandle.isValid(handle) else { return }
+            handleAvailability = .checking
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            guard !Task.isCancelled else { return }
+            do {
+                let free = try await socialStore.handleAvailability(handle)
+                guard !Task.isCancelled else { return }
+                handleAvailability = free ? .free : .taken
+            } catch {
+                // Panne réseau sur un contrôle indicatif : on se tait plutôt
+                // que d'inventer un état d'erreur. `claimHandle` tranchera à
+                // la soumission, avec ou sans ce contrôle.
+                guard !Task.isCancelled else { return }
+                handleAvailability = .unknown
+            }
+        }
     }
 
     /// Trois replis, touchables. On ne met jamais quelqu'un devant un mur sans
@@ -566,7 +602,7 @@ struct AuthView: View {
             ForEach(PlanHandle.alternatives(for: handle), id: \.self) { candidate in
                 Button {
                     handle = candidate
-                    handleTaken = false
+                    handleAvailability = .unknown
                     Haptics.selection()
                 } label: {
                     Text("@\(candidate)")
@@ -610,7 +646,7 @@ struct AuthView: View {
         Haptics.selection()
         focus = nil
         failure = nil
-        handleTaken = false
+        handleAvailability = .unknown
 
         // Le mot de passe ne survit jamais à un changement d'étape : le garder
         // d'un écran à l'autre n'apporte rien et le laisse traîner en mémoire.
@@ -627,7 +663,7 @@ struct AuthView: View {
         let proposed = PlanHandle.normalize(fullName)
         guard proposed != handle else { return }
         handle = proposed
-        handleTaken = false
+        handleAvailability = .unknown
     }
 
     private func adoptResetCode() {
@@ -712,6 +748,15 @@ struct AuthView: View {
         guard PlanHandle.isValid(handle) else {
             throw AuthFailure(field: .handle, message: PlanHandle.rule)
         }
+        // Le contrôle en direct dit déjà « pris » : pas besoin d'aller créer le
+        // compte pour l'apprendre une seconde fois. S'il est resté `.unknown`
+        // (aucune vérification, ou panne réseau), `claimHandle` tranchera après
+        // la création — c'est toujours lui qui a le dernier mot. Le champ
+        // affiche déjà « Ce pseudo est déjà pris. » depuis `handleAvailability` ;
+        // cette panne ne sert qu'à ramener le focus dessus.
+        guard handleAvailability != .taken else {
+            throw AuthFailure(field: .handle, message: "Ce pseudo est déjà pris.")
+        }
         guard confirmation == password else {
             // Le seul geste utile : vider la confirmation et y revenir. On
             // ignore laquelle des deux saisies est la bonne.
@@ -732,11 +777,12 @@ struct AuthView: View {
         do {
             try await socialStore.claimHandle(handle, displayName: fullName)
         } catch {
-            // Pseudo pris entre la saisie et la création. `ProfileView` propose
-            // déjà `ClaimHandleSheet` quand aucun profil public n'existe : c'est
-            // le même rattrapage que pour une connexion Google, qui ne fournit
+            // Pseudo pris entre le contrôle en direct et la création — la
+            // fenêtre est étroite mais réelle. `ProfileView` propose déjà
+            // `ClaimHandleSheet` quand aucun profil public n'existe : c'est le
+            // même rattrapage que pour une connexion Google, qui ne fournit
             // pas de pseudo non plus.
-            handleTaken = true
+            handleAvailability = .taken
         }
         Haptics.success()
     }

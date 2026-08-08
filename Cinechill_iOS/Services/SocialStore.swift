@@ -79,6 +79,12 @@ final class SocialStore: ObservableObject {
 
     // MARK: - Écriture
 
+    /// Voir `SocialServicing.handleAvailability` — pas d'authentification
+    /// requise, contrairement à tout le reste de ce store.
+    func handleAvailability(_ handle: String) async throws -> Bool {
+        try await client.handleAvailability(handle)
+    }
+
     func claimHandle(_ handle: String) async throws {
         try await client.claimHandle(handle)
     }

@@ -92,6 +92,16 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "claimhandle", queryItems: [])
     }
 
+    /// Contrôle de disponibilité, sans réservation — appelé pendant la saisie,
+    /// avant que le compte n'existe et donc avant qu'un jeton Firebase ne
+    /// soit disponible. `claimHandle` reste seule à trancher pour de bon.
+    static func handleAvailable(handle: String) -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "handleavailable", queryItems: [
+            URLQueryItem(name: "handle", value: handle),
+        ])
+    }
+
     static func followUser() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "followuser", queryItems: [])
