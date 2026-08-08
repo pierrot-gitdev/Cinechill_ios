@@ -9,6 +9,7 @@ struct HomeView: View {
     @Bindable var homeModel: HomeViewModel
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
+    @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @EnvironmentObject private var authService: AuthService
 
@@ -67,6 +68,7 @@ struct HomeView: View {
                     .environmentObject(profileStore)
                     .environmentObject(libraryStore)
                     .environmentObject(authService)
+                    .environmentObject(socialStore)
             }
             .task {
                 await homeModel.loadAll(preferredPlatformIDs: libraryStore.preferredPlatformIDs)

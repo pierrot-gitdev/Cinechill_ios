@@ -12,6 +12,7 @@ struct SwipeDeckView: View {
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
+    @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(\.scenePhase) private var scenePhase
 
@@ -62,6 +63,7 @@ struct SwipeDeckView: View {
                     .environmentObject(profileStore)
                     .environmentObject(libraryStore)
                     .environmentObject(authService)
+                    .environmentObject(socialStore)
             }
         }
         .task {

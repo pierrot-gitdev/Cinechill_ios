@@ -38,7 +38,12 @@ struct GalleryBand: Identifiable, Hashable {
 }
 
 /// Une part de la barre de genres. `id` vaut `-1` pour l'agrégat « autres ».
-struct GenreShare: Identifiable, Hashable {
+///
+/// `nonisolated` parce que le profil public la reçoit du réseau, hors
+/// MainActor (voir le réglage `SWIFT_DEFAULT_ACTOR_ISOLATION` du projet) :
+/// la galerie et le Hall dessinent la même barre, ils partagent donc le même
+/// type plutôt que d'en entretenir deux.
+nonisolated struct GenreShare: Identifiable, Hashable, Sendable {
     let id: Int
     let name: String
     let share: Double
@@ -63,7 +68,7 @@ struct GallerySignature: Hashable {
 /// Palette de la barre de genres — les couleurs sont attribuées par ordre de
 /// part décroissante, pour que le genre dominant porte toujours l'accent de
 /// l'app et que la barre reste lisible quelle que soit la collection.
-enum GalleryPalette {
+nonisolated enum GalleryPalette {
     private static let colors: [Color] = [
         .indigo,
         Color(red: 0.93, green: 0.28, blue: 0.60),

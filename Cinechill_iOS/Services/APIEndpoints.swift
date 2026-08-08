@@ -85,6 +85,43 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "deleteaccount", queryItems: [])
     }
 
+    // MARK: - Le Hall
+
+    static func claimHandle() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "claimhandle", queryItems: [])
+    }
+
+    static func followUser() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "followuser", queryItems: [])
+    }
+
+    static func unfollowUser() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "unfollowuser", queryItems: [])
+    }
+
+    static func sendSuggestion() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "sendsuggestion", queryItems: [])
+    }
+
+    static func respondToSuggestion() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "respondtosuggestion", queryItems: [])
+    }
+
+    static func suggestionTargets() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getsuggestiontargets", queryItems: [])
+    }
+
+    static func publicProfile() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getpublicprofile", queryItems: [])
+    }
+
     private static func buildURL(baseURL: URL, functionName: String, queryItems: [URLQueryItem]) -> URL? {
         guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
             return nil

@@ -10,12 +10,15 @@ struct ItemDetailView: View {
     let item: MediaItem
 
     @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var socialStore: SocialStore
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
 
     @State private var detail: TMDBDetailResponse?
     @State private var loading = true
     @State private var errorMessage: String?
+    @State private var showComposer = false
+    @State private var outcome: SuggestionOutcome?
 
     private var displayItem: MediaItem {
         detail.map { $0.asMediaItem(mediaType: item.mediaType) } ?? item
@@ -58,7 +61,31 @@ struct ItemDetailView: View {
         .ignoresSafeArea(edges: .top)
         .navigationBarHidden(true)
         .overlay(alignment: .topLeading) { backButton }
+        .overlay(alignment: .bottom) { outcomeBanner }
+        .sheet(isPresented: $showComposer) {
+            SuggestionComposerSheet(item: displayItem) { result in
+                guard !result.isSilent else { return }
+                withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
+                    outcome = result
+                }
+            }
+            .environmentObject(socialStore)
+        }
         .task { await loadDetail() }
+        .task(id: outcome) {
+            guard outcome != nil else { return }
+            try? await Task.sleep(for: .seconds(3))
+            withAnimation(.easeOut(duration: 0.25)) { outcome = nil }
+        }
+    }
+
+    // MARK: - Confirmation
+
+    @ViewBuilder
+    private var outcomeBanner: some View {
+        if let outcome {
+            SuggestionOutcomeBanner(outcome: outcome)
+        }
     }
 
     // MARK: - Hero
@@ -221,6 +248,33 @@ struct ItemDetailView: View {
         HStack(spacing: 8) {
             decisionButton(.seen, label: "Vu", icon: "checkmark", tint: .green)
             decisionButton(.toWatch, label: "À voir", icon: "bookmark.fill", tint: .blue)
+
+            // « Recommander » n'apparaît que si le film est vu : la règle
+            // « on ne recommande que ce qu'on a vu » n'est jamais énoncée,
+            // elle est simplement vraie à l'écran. Le cyan de l'identité, et
+            // non l'indigo des décisions — c'est une action d'un autre ordre.
+            if currentStatus == .seen {
+                Button {
+                    Haptics.impact(.light)
+                    showComposer = true
+                } label: {
+                    CinechillHallIconView(.recommander)
+                        .frame(width: 17, height: 17)
+                        .foregroundStyle(CinechillPalette.light)
+                        .frame(width: 44, height: 40)
+                        .background(
+                            CinechillPalette.light.opacity(0.15),
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(CinechillPalette.light.opacity(0.55), lineWidth: 1.5)
+                        )
+                }
+                .buttonStyle(PressableScaleStyle(scale: 0.94))
+                .transition(.scale.combined(with: .opacity))
+                .accessibilityLabel("Recommander à un ami")
+            }
 
             if currentStatus != .none {
                 Button {

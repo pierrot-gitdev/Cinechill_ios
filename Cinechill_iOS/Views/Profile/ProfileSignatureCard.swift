@@ -15,6 +15,7 @@ struct ProfileSignatureCard: View {
 
     @EnvironmentObject private var profileStore: UserProfileStore
     @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @FocusState private var isNameFocused: Bool
 
@@ -108,6 +109,16 @@ struct ProfileSignatureCard: View {
         } else {
             Text(profileStore.displayName)
                 .font(.system(size: 21, weight: .heavy, design: .rounded))
+                .lineLimit(1)
+        }
+
+        // La seule preuve visible, sur tout l'écran, qu'un pseudo a été
+        // choisi : sans elle, « Choisir un pseudo » réussit sans que rien
+        // ne change à l'écran hormis deux compteurs à 0.
+        if let handle = socialStore.myProfile?.handleDisplay {
+            Text(handle)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
     }

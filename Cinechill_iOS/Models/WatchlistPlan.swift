@@ -61,11 +61,17 @@ struct WatchlistItem: Identifiable, Hashable {
     }
 }
 
-/// Les trois groupes de la file. L'ordre n'est pas chronologique mais
-/// actionnable : ce qu'on peut lancer maintenant d'abord, ce qui pourrit
-/// en dernier.
+/// Les groupes de la file. L'ordre n'est pas chronologique mais actionnable :
+/// ce qui vient d'un ami d'abord, ce qu'on peut lancer maintenant ensuite, ce
+/// qui pourrit en dernier.
+///
+/// `recommended` est un **statut temporaire, pas une catégorie** : la
+/// provenance et la disponibilité sont deux axes différents, et les mélanger
+/// durablement casserait le groupement. Un film recommandé quitte ce groupe
+/// dès qu'il est vu — la provenance, elle, reste attachée à l'entrée.
 struct WatchlistGroup: Identifiable, Hashable {
     enum Kind: String {
+        case recommended
         case available
         case elsewhere
         case dormant
@@ -78,6 +84,7 @@ struct WatchlistGroup: Identifiable, Hashable {
 
     var title: String {
         switch kind {
+        case .recommended: "RECOMMANDÉS PAR VOS AMIS"
         case .available: "DISPONIBLE CHEZ VOUS"
         case .elsewhere: "AILLEURS"
         case .dormant: "EN SOMMEIL · PLUS DE 3 MOIS"

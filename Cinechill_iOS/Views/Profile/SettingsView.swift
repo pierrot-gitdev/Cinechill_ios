@@ -12,6 +12,7 @@ struct SettingsView: View {
     @EnvironmentObject private var profileStore: UserProfileStore
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var socialStore: SocialStore
     @Environment(MediaCatalog.self) private var catalog
     @Environment(\.dismiss) private var dismiss
 
@@ -22,6 +23,7 @@ struct SettingsView: View {
     @State private var showRemovePhotoAlert = false
     @State private var showResetSkipsAlert = false
     @State private var showDeleteAccountAlert = false
+    @State private var showSignOutAlert = false
     @State private var pendingSkips: Int?
     @State private var isWorking = false
     @State private var actionMessage: String?
@@ -90,6 +92,17 @@ struct SettingsView: View {
             Button("Annuler", role: .cancel) {}
         } message: {
             Text("Votre galerie, votre watchlist et votre profil seront effacés. Cette action est irréversible.")
+        }
+        // La déconnexion ne détruit rien, mais elle renvoie à l'écran de
+        // connexion : le message rassure sur ce point plutôt que d'alarmer.
+        .alert("Se déconnecter", isPresented: $showSignOutAlert) {
+            Button("Se déconnecter", role: .destructive) {
+                try? authService.signOut()
+                dismiss()
+            }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("Vous retrouverez votre galerie et votre watchlist à la prochaine connexion.")
         }
     }
 
@@ -360,8 +373,7 @@ struct SettingsView: View {
 
     private var signOutButton: some View {
         Button(role: .destructive) {
-            try? authService.signOut()
-            dismiss()
+            showSignOutAlert = true
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "rectangle.portrait.and.arrow.right")
@@ -424,6 +436,11 @@ struct SettingsView: View {
         defer { isSavingName = false }
         do {
             try await profileStore.updateDisplayName(trimmed)
+            // Le profil public a sa propre copie du nom, pour que la
+            // recherche par prénom/nom fonctionne sans lire le compte
+            // Firebase de chacun. Sans ce second appel, elle resterait
+            // figée sur le nom du jour où le pseudo a été choisi.
+            await socialStore.syncDisplayName(trimmed)
         } catch {
             nameError = error.localizedDescription
         }

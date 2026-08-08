@@ -22,6 +22,7 @@ struct AppHeaderView: View {
     var onProfileTap: () -> Void
 
     @EnvironmentObject private var profileStore: UserProfileStore
+    @EnvironmentObject private var socialStore: SocialStore
     @State private var showNotifications = false
 
     var body: some View {
@@ -103,6 +104,7 @@ struct AppHeaderView: View {
     private var notificationButton: some View {
         Button {
             withAnimation(.easeOut(duration: 0.18)) { showNotifications.toggle() }
+            if showNotifications { socialStore.acknowledgeFollowers() }
         } label: {
             Image("notification")
                 .renderingMode(.template)
@@ -111,10 +113,33 @@ struct AppHeaderView: View {
                 .frame(width: 19, height: 19)
                 .foregroundStyle(showNotifications ? Color.primary : Color.secondary)
                 .frame(width: 34, height: 34)
+                .overlay(alignment: .topTrailing) { unreadDot }
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Notifications")
+        .accessibilityLabel(
+            socialStore.unreadCount > 0
+                ? "Notifications, \(socialStore.unreadCount) en attente"
+                : "Notifications"
+        )
+    }
+
+    /// L'indicateur de non-lu est le **point de lumière** de la famille
+    /// d'icônes, dans le cyan de l'identité — pas une pastille rouge, qui
+    /// serait le premier élément de l'app à ne rien devoir à sa marque.
+    @ViewBuilder
+    private var unreadDot: some View {
+        if socialStore.unreadCount > 0, !showNotifications {
+            Circle()
+                .fill(CinechillPalette.light)
+                .frame(width: 7, height: 7)
+                .shadow(color: CinechillPalette.light.opacity(0.9), radius: 4)
+                .overlay(
+                    Circle().strokeBorder(Color(.systemBackground), lineWidth: 1.5)
+                )
+                .offset(x: -5, y: 5)
+                .transition(.scale.combined(with: .opacity))
+        }
     }
 
     // MARK: - Profil
@@ -157,40 +182,15 @@ struct AppHeaderView: View {
     // MARK: - Panneau de notifications
 
     private var notificationDropdown: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Notifications")
-                    .font(.headline)
-                Spacer()
-                Button {
-                    withAnimation(.easeOut(duration: 0.18)) { showNotifications = false }
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
+        NotificationsPanel(
+            onClose: {
+                withAnimation(.easeOut(duration: 0.18)) { showNotifications = false }
+            },
+            onAccepted: { _ in
+                // La confirmation vit dans le panneau lui-même, sur la ligne
+                // qu'on vient de trancher : un second bandeau ferait doublon.
             }
-
-            VStack(spacing: 12) {
-                Image("notification")
-                    .renderingMode(.template)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 26, height: 26)
-                    .foregroundStyle(Color(.systemGray3))
-                    .padding(16)
-                    .background(Color(.tertiarySystemFill), in: Circle())
-                Text("Aucune notification")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 20)
-        }
-        .padding()
-        .frame(width: 280)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: .black.opacity(0.12), radius: 16, y: 4)
+        )
     }
 
     // MARK: - Palette
@@ -213,4 +213,5 @@ struct AppHeaderView: View {
         .ignoresSafeArea()
     )
     .environmentObject(UserProfileStore())
+    .environmentObject(SocialStore())
 }

@@ -442,8 +442,32 @@ private extension LibraryStore {
             voteAverage: data["voteAverage"] as? Double,
             genreIds: data["genreIds"] as? [Int] ?? [],
             releaseDate: data["releaseDate"] as? String,
-            addedAt: addedAt
+            addedAt: addedAt,
+            recommendedBy: recommenders(from: data["recommendedBy"])
         )
+    }
+
+    /// La provenance, écrite par `respondToSuggestion`. Absente sur toute
+    /// entrée ajoutée par soi-même — c'est ce qui distingue la section
+    /// « Recommandés par vos amis » du reste de la watchlist.
+    func recommenders(from raw: Any?) -> [Recommender] {
+        guard let rows = raw as? [[String: Any]] else { return [] }
+        return rows.compactMap { row in
+            guard let uid = row["uid"] as? String else { return nil }
+            let at: Date
+            if let stamp = row["at"] as? Timestamp {
+                at = stamp.dateValue()
+            } else {
+                at = .distantPast
+            }
+            return Recommender(
+                uid: uid,
+                displayName: (row["displayName"] as? String) ?? "Quelqu'un",
+                avatarURL: (row["avatarURL"] as? String).flatMap(URL.init(string:)),
+                at: at
+            )
+        }
+        .sorted { $0.at > $1.at }
     }
 }
 

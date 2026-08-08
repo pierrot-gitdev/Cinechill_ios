@@ -19,10 +19,13 @@ struct GalleryView: View {
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
+    @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(MediaCatalog.self) private var catalog
 
     @State private var showProfile = false
+    @State private var composerItem: MediaItem?
+    @State private var outcome: SuggestionOutcome?
 
     var body: some View {
         NavigationStack {
@@ -44,11 +47,27 @@ struct GalleryView: View {
                     .environmentObject(profileStore)
                     .environmentObject(libraryStore)
                     .environmentObject(authService)
+                    .environmentObject(socialStore)
             }
+            .overlay(alignment: .bottom) { outcomeBanner }
+        }
+        .sheet(item: $composerItem) { item in
+            SuggestionComposerSheet(item: item) { result in
+                guard !result.isSilent else { return }
+                withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
+                    outcome = result
+                }
+            }
+            .environmentObject(socialStore)
         }
         .task {
             await catalog.loadIfNeeded()
             syncModel()
+        }
+        .task(id: outcome) {
+            guard outcome != nil else { return }
+            try? await Task.sleep(for: .seconds(3))
+            withAnimation(.easeOut(duration: 0.25)) { outcome = nil }
         }
         .onChange(of: libraryStore.galleryItems) { _, _ in syncModel() }
         .onChange(of: catalog.genreNames) { _, _ in syncModel() }
@@ -56,6 +75,13 @@ struct GalleryView: View {
 
     private func syncModel() {
         model.update(entries: libraryStore.galleryItems, genreNames: catalog.genreNames)
+    }
+
+    @ViewBuilder
+    private var outcomeBanner: some View {
+        if let outcome {
+            SuggestionOutcomeBanner(outcome: outcome)
+        }
     }
 
     // MARK: - Contenu
@@ -156,6 +182,23 @@ struct GalleryView: View {
                             )
                         }
                         .buttonStyle(PressableScaleStyle(scale: 0.93))
+                        // Le raccourci de recommandation. Coût visuel au
+                        // repos : zéro — c'est ce qui permet de le proposer
+                        // sans encombrer « La Frise ».
+                        .contextMenu {
+                            Button {
+                                composerItem = entry.mediaItem
+                            } label: {
+                                Label("Recommander", systemImage: "paperplane")
+                            }
+
+                            Button(role: .destructive) {
+                                Haptics.impact(.light)
+                                libraryStore.removeFromGallery(entry.mediaItem)
+                            } label: {
+                                Label("Retirer de ma galerie", systemImage: "xmark")
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 20)

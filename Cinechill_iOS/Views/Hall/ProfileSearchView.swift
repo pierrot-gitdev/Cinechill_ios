@@ -1,0 +1,129 @@
+//
+//  ProfileSearchView.swift
+//  Cinechill_iOS
+//
+
+import SwiftUI
+
+/// La recherche de profils — première étape du Hall.
+///
+/// Chercher quelqu'un n'est pas une activité quotidienne : on le fait une
+/// poignée de fois, par à-coups. Elle n'occupe donc pas de place permanente
+/// dans la navigation et vit là où l'on gère déjà ses relations.
+struct ProfileSearchView: View {
+    @EnvironmentObject private var socialStore: SocialStore
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var model = ProfileSearchViewModel()
+    @State private var openedProfile: PublicProfile?
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                // Le champ dit lui-même ce qu'il accepte : pseudo, prénom ou
+                // nom — la recherche interroge les deux, pas seulement l'un.
+                HallSearchField(
+                    placeholder: "Pseudo, prénom ou nom",
+                    text: $model.query,
+                    isBusy: model.isSearching
+                )
+                .padding(.horizontal, 18)
+                .padding(.top, 8)
+                .padding(.bottom, 14)
+
+                if model.isQueryTooShort {
+                    suggestionsSection
+                } else if model.showsNoResults {
+                    noResults
+                } else {
+                    resultsSection
+                }
+            }
+            .padding(.bottom, 30)
+        }
+        .background(Color(.systemBackground))
+        .navigationTitle("Rechercher")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(item: $openedProfile) { profile in
+            PublicProfileView(profile: profile)
+        }
+        .onChange(of: model.query) { _, _ in
+            model.search(store: socialStore)
+        }
+        .task {
+            await model.loadSuggestions(store: socialStore)
+        }
+    }
+
+    // MARK: - Résultats
+
+    private var resultsSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader(
+                model.results.count == 1
+                    ? "1 profil"
+                    : "\(model.results.count) profils"
+            )
+            rows(model.results)
+        }
+    }
+
+    /// Un écran de recherche vide n'a pas à renvoyer l'utilisateur à sa propre
+    /// absence d'idée : on propose des profils actifs.
+    @ViewBuilder
+    private var suggestionsSection: some View {
+        if model.suggestions.isEmpty {
+            HallEmptyState(
+                icon: .hall,
+                title: "Personne à proposer pour l'instant",
+                message: "Tapez un pseudo pour retrouver quelqu'un que vous connaissez."
+            )
+            .padding(.top, 40)
+        } else {
+            VStack(alignment: .leading, spacing: 0) {
+                sectionHeader("Suggestions")
+                rows(model.suggestions)
+            }
+        }
+    }
+
+    private var noResults: some View {
+        HallEmptyState(
+            icon: .chercher,
+            title: "Aucun profil pour « \(model.settledQuery) »",
+            message: "Vérifiez l'orthographe, ou invitez cette personne à rejoindre Cinéchill."
+        )
+        .padding(.top, 40)
+    }
+
+    private func rows(_ profiles: [PublicProfile]) -> some View {
+        ForEach(profiles) { profile in
+            Button {
+                openedProfile = profile
+            } label: {
+                HallProfileRow(
+                    profile: profile,
+                    isFollowing: socialStore.isFollowing(profile.id),
+                    isBusy: model.pendingFollows.contains(profile.id),
+                    onToggleFollow: {
+                        Haptics.impact(.light)
+                        Task { await model.toggleFollow(profile, store: socialStore) }
+                    }
+                )
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 18)
+
+            Divider().padding(.leading, 66)
+        }
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.system(size: 10, weight: .heavy, design: .rounded))
+            .kerning(0.9)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 6)
+    }
+}

@@ -150,14 +150,21 @@ final class WatchlistViewModel {
         let withinBudget = items.filter(fitsBudget)
         hiddenByBudget = items.count - withinBudget.count
 
+        // Ce qui vient d'un ami sort du groupement par disponibilité tant que
+        // le film n'a pas été vu : la provenance prime sur la plateforme, et
+        // mélanger les deux axes rendrait les deux illisibles.
+        let recommended = withinBudget.filter { $0.entry.isRecommended }
+        let rest = withinBudget.filter { !$0.entry.isRecommended }
+
         let cutoff = Date().addingTimeInterval(-Double(Self.dormantAfterDays) * 86400)
-        let dormant = withinBudget.filter { $0.entry.addedAt < cutoff }
-        let recent = withinBudget.filter { $0.entry.addedAt >= cutoff }
+        let dormant = rest.filter { $0.entry.addedAt < cutoff }
+        let recent = rest.filter { $0.entry.addedAt >= cutoff }
 
         let available = recent.filter { $0.isAvailable(on: preferredProviderIDs) }
         let elsewhere = recent.filter { !$0.isAvailable(on: preferredProviderIDs) }
 
         groups = [
+            WatchlistGroup(kind: .recommended, items: recommended.sorted(by: newestRecommendationFirst)),
             WatchlistGroup(kind: .available, items: available.sorted(by: newestFirst)),
             WatchlistGroup(kind: .elsewhere, items: elsewhere.sorted(by: newestFirst)),
             // Les plus anciens d'abord : ce sont eux qu'il faut trancher.
@@ -176,6 +183,15 @@ final class WatchlistViewModel {
 
     private func newestFirst(_ lhs: WatchlistItem, _ rhs: WatchlistItem) -> Bool {
         lhs.entry.addedAt > rhs.entry.addedAt
+    }
+
+    /// Dans le groupe des recommandations, c'est la date de l'envoi qui
+    /// compte, pas celle de l'ajout : les deux diffèrent quand le film était
+    /// déjà dans la liste avant d'être recommandé.
+    private func newestRecommendationFirst(_ lhs: WatchlistItem, _ rhs: WatchlistItem) -> Bool {
+        let left = lhs.entry.recommendedBy.first?.at ?? lhs.entry.addedAt
+        let right = rhs.entry.recommendedBy.first?.at ?? rhs.entry.addedAt
+        return left > right
     }
 
     // MARK: - Proposition du soir
@@ -205,10 +221,24 @@ final class WatchlistViewModel {
         value += (item.entry.voteAverage ?? 6.5) * 4
         if item.isAvailable(on: preferredProviderIDs) { value += 15 }
         if item.runtimeMinutes != nil { value += 5 }
+        // Une recommandation d'ami pèse davantage qu'une disponibilité : c'est
+        // le seul signal de la liste qui vienne d'un humain.
+        if item.entry.isRecommended { value += 25 }
         return value
     }
 
     private func reason(for item: WatchlistItem, among pool: [WatchlistItem]) -> String {
+        // La provenance passe avant tout le reste : « quelqu'un que vous
+        // suivez vous l'a conseillé » est l'argument le plus fort dont
+        // dispose cet écran, et celui qu'aucun calcul ne peut produire.
+        if let recommender = item.entry.recommendedBy.first {
+            let others = item.entry.recommendedBy.count - 1
+            if others > 0 {
+                return "Recommandé par \(recommender.displayName) et \(others) autre\(others > 1 ? "s" : "")."
+            }
+            return "Recommandé par \(recommender.displayName)."
+        }
+
         let months = Int(monthsWaiting(item))
         if months >= 3 {
             return "Dans votre liste depuis \(months) mois."

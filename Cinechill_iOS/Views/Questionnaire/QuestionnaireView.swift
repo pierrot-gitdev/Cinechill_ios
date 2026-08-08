@@ -10,6 +10,7 @@ struct QuestionnaireView: View {
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
+    @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @State private var showProfile = false
 
@@ -32,6 +33,7 @@ struct QuestionnaireView: View {
                     .environmentObject(profileStore)
                     .environmentObject(libraryStore)
                     .environmentObject(authService)
+                    .environmentObject(socialStore)
             }
         }
     }

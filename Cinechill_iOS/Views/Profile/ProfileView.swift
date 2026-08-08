@@ -12,10 +12,13 @@ struct ProfileView: View {
     @EnvironmentObject private var profileStore: UserProfileStore
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var authService: AuthService
+    @EnvironmentObject private var socialStore: SocialStore
     @Environment(MediaCatalog.self) private var catalog
     @Environment(\.dismiss) private var dismiss
 
     @State private var showSettings = false
+    @State private var showSearch = false
+    @State private var showHandleSheet = false
 
     private var galleryCount: Int { libraryStore.galleryItems.count }
 
@@ -26,6 +29,7 @@ struct ProfileView: View {
                     Color.clear.frame(height: 44)
 
                     signatureCard
+                    hallRow
                     quickStats
                     badgesSection
                     dnaSection
@@ -39,17 +43,36 @@ struct ProfileView: View {
             .navigationDestination(for: MediaItem.self) { item in
                 ItemDetailView(item: item)
             }
+            .navigationDestination(for: HallRoute.self) { route in
+                switch route {
+                case .following:
+                    FollowListView(mode: .following)
+                case .followers:
+                    FollowListView(mode: .followers)
+                case .search:
+                    ProfileSearchView()
+                }
+            }
         }
         .sheet(isPresented: $showSettings, onDismiss: { profileStore.refresh() }) {
             SettingsView()
                 .environmentObject(profileStore)
                 .environmentObject(authService)
                 .environmentObject(libraryStore)
+                .environmentObject(socialStore)
+        }
+        .sheet(isPresented: $showHandleSheet) {
+            ClaimHandleSheet()
+                .environmentObject(socialStore)
         }
         .task {
             profileStore.refresh()
             await catalog.loadIfNeeded()
             await badgesModel.refresh()
+            // Rattrape les profils publics créés avant que le nom affiché ne
+            // soit synchronisé avec les réglages — sans ça, un profil déjà
+            // existant resterait cherchable par pseudo seulement.
+            await socialStore.syncDisplayName(profileStore.displayName)
         }
     }
 
@@ -73,14 +96,28 @@ struct ProfileView: View {
 
             Spacer()
 
-            Button { showSettings = true } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 34, height: 34)
-                    .background(.ultraThinMaterial, in: Circle())
+            HStack(spacing: 8) {
+                // La recherche de profils n'a pas de place permanente dans la
+                // navigation : on la trouve là où l'on gère ses relations.
+                NavigationLink(value: HallRoute.search) {
+                    CinechillHallIconView(.chercher)
+                        .frame(width: 15, height: 15)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 34, height: 34)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
+                .buttonStyle(PressableScaleStyle(scale: 0.92))
+                .accessibilityLabel("Rechercher un profil")
+
+                Button { showSettings = true } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 34, height: 34)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
+                .buttonStyle(PressableScaleStyle(scale: 0.92))
             }
-            .buttonStyle(PressableScaleStyle(scale: 0.92))
         }
         .padding(.horizontal, 18)
         .padding(.top, 6)
@@ -92,6 +129,96 @@ struct ProfileView: View {
 
     private var signatureCard: some View {
         ProfileSignatureCard()
+    }
+
+    // MARK: - Le Hall
+
+    /// Les deux compteurs du Hall, posés juste sous la carte de signature.
+    /// Une seule ligne neuve sur tout l'écran : abonnés et abonnements sont
+    /// une propriété du profil, pas une destination de la navigation.
+    @ViewBuilder
+    private var hallRow: some View {
+        if socialStore.myProfile == nil, socialStore.hasLoadedProfileOnce {
+            claimHandleBanner
+        } else {
+            HStack(spacing: 0) {
+                hallCell(
+                    value: socialStore.myProfile?.followingCount ?? 0,
+                    label: "ABONNEMENTS",
+                    route: .following
+                )
+                Divider().frame(height: 30)
+                hallCell(
+                    value: socialStore.myProfile?.followerCount ?? 0,
+                    label: "ABONNÉS",
+                    route: .followers
+                )
+            }
+            .background(
+                Color(.secondarySystemBackground),
+                in: RoundedRectangle(cornerRadius: 13, style: .continuous)
+            )
+        }
+    }
+
+    private func hallCell(value: Int, label: String, route: HallRoute) -> some View {
+        NavigationLink(value: route) {
+            VStack(spacing: 2) {
+                Text("\(value)")
+                    .font(.system(size: 19, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .foregroundStyle(.primary)
+                Text(label)
+                    .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                    .kerning(0.5)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.97))
+    }
+
+    /// Sans pseudo, on n'est ni trouvable ni suivable : l'invitation remplace
+    /// donc les compteurs plutôt que de les afficher vides.
+    private var claimHandleBanner: some View {
+        Button {
+            showHandleSheet = true
+        } label: {
+            HStack(spacing: 11) {
+                CinechillHallIconView(.salle)
+                    .frame(width: 17, height: 17)
+                    .foregroundStyle(.indigo)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Choisissez votre pseudo")
+                        .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
+                    Text("Pour qu'on puisse vous retrouver et vous recommander des films.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(13)
+            .background(
+                Color.indigo.opacity(0.09),
+                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Color.indigo.opacity(0.22), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.98))
     }
 
     // MARK: - Chiffres

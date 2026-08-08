@@ -17,6 +17,7 @@ struct WatchlistView: View {
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
+    @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(MediaCatalog.self) private var catalog
 
@@ -42,6 +43,7 @@ struct WatchlistView: View {
                     .environmentObject(profileStore)
                     .environmentObject(libraryStore)
                     .environmentObject(authService)
+                    .environmentObject(socialStore)
             }
         }
         .task {
@@ -196,7 +198,7 @@ struct WatchlistView: View {
                 Text(group.title)
                     .font(.system(size: 9.5, weight: .heavy, design: .rounded))
                     .kerning(0.9)
-                    .foregroundStyle(group.kind == .dormant ? .orange : .secondary)
+                    .foregroundStyle(headerTint(for: group.kind))
 
                 Spacer(minLength: 0)
 
@@ -213,7 +215,7 @@ struct WatchlistView: View {
                     Text("\(group.items.count)")
                         .font(.system(size: 10, weight: .bold, design: .rounded))
                         .monospacedDigit()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(headerTint(for: group.kind))
                 }
             }
             .padding(.horizontal, 20)
@@ -226,21 +228,47 @@ struct WatchlistView: View {
         }
     }
 
+    /// Le cyan de l'identité signale ce qui vient d'un ami — seul en-tête
+    /// coloré de l'écran avec l'orange des dormants, qui lui alerte.
+    private func headerTint(for kind: WatchlistGroup.Kind) -> Color {
+        switch kind {
+        case .recommended: CinechillPalette.light
+        case .dormant: .orange
+        default: .secondary
+        }
+    }
+
     private func row(_ item: WatchlistItem, isDormant: Bool) -> some View {
         HStack(spacing: 11) {
             NavigationLink(destination: ItemDetailView(item: item.entry.mediaItem)) {
                 HStack(spacing: 11) {
-                    PosterTile(
-                        posterPath: item.entry.posterPath,
-                        title: item.entry.title,
-                        width: 30,
-                        cornerRadius: 5
-                    )
+                    // Sur une ligne de 30 pt, un visage se lit plus vite
+                    // qu'une vignette d'affiche : l'avatar prend sa place
+                    // quand le film vient de quelqu'un.
+                    if item.entry.isRecommended {
+                        HallAvatarStack(recommenders: item.entry.recommendedBy, size: 30)
+                    } else {
+                        PosterTile(
+                            posterPath: item.entry.posterPath,
+                            title: item.entry.title,
+                            width: 30,
+                            cornerRadius: 5
+                        )
+                    }
 
-                    Text(item.entry.title)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(item.entry.title)
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+
+                        if let provenance = item.entry.recommendedByText {
+                            Text(provenance)
+                                .font(.system(size: 10.5))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
 
                     Spacer(minLength: 4)
 
