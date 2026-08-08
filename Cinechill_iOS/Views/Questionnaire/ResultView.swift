@@ -8,94 +8,118 @@ import SwiftUI
 struct ResultView: View {
     let results: [RecommendationResult]
     let onRestart: () -> Void
-
-    @EnvironmentObject private var libraryStore: LibraryStore
-    @State private var appeared = false
+    /// Ouvre la Fiche. C'est la réponse au « pourquoi ces trois ? » : plutôt que
+    /// d'expliquer une formule, on montre ce qu'on croit savoir de la personne.
+    var onExplain: (() -> Void)?
+    /// Signale qu'on est parti voir ce film — le geste qui ouvre la boucle.
+    var onLaunch: ((Int) -> Void)?
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 0) {
                 header
+
                 ForEach(Array(results.enumerated()), id: \.element.id) { index, result in
-                    ResultCardView(rank: index + 1, result: result)
-                        .opacity(appeared ? 1 : 0)
-                        .offset(y: appeared ? 0 : 24)
-                        .animation(
-                            .spring(response: 0.5, dampingFraction: 0.8).delay(Double(index) * 0.12),
-                            value: appeared
-                        )
+                    PlanEdge()
+                    ResultRowView(rank: index + 1, result: result, onLaunch: onLaunch)
+                        .padding(.vertical, 20)
                 }
-                restartButton
+
+                PlanEdge()
+
+                if let onExplain {
+                    Button(action: onExplain) {
+                        Text("Pourquoi ces trois ?")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Ink.ink2)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                    }
+                    .buttonStyle(.plain)
+                    PlanEdge()
+                }
+
+                Button(action: onRestart) {
+                    Text("Refaire une séance")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Ink.ink3)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                }
+                .buttonStyle(.plain)
             }
-            .padding()
+            .padding(.horizontal, Metrics.margin)
+            .padding(.bottom, Metrics.margin)
         }
-        .onAppear { appeared = true }
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: "popcorn.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(
-                        LinearGradient(colors: [.indigo, .pink], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    )
-                Text("CINÉMATCH")
-                    .font(.caption.weight(.bold))
-                    .tracking(1.4)
-                    .foregroundStyle(.secondary)
-            }
-            Text("Votre trio du soir")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-            Text("Classé selon vos réponses, du meilleur match au troisième.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.bottom, 4)
-    }
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Votre séance")
+                .planLabel()
+                .foregroundStyle(Ink.ink3)
 
-    private var restartButton: some View {
-        Button {
-            appeared = false
-            onRestart()
-        } label: {
-            Label("Refaire le quiz", systemImage: "arrow.counterclockwise")
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+            Text("Trois films pour ce soir")
+                .planTitle(26)
+                .foregroundStyle(Ink.ink)
+
+            Text("Du meilleur accord au troisième — dans l'ordre où ils vous correspondent.")
+                .font(.system(size: 13))
+                .foregroundStyle(Ink.ink2)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .buttonStyle(.bordered)
-        .tint(.indigo)
-        .padding(.top, 4)
+        .padding(.top, 28)
+        .padding(.bottom, 26)
     }
 }
 
-private struct ResultCardView: View {
+/// Une proposition : son rang, l'affiche, et surtout **pourquoi** — les motifs
+/// renvoyés par le backend étaient jusqu'ici calculés puis jetés à l'affichage.
+private struct ResultRowView: View {
     let rank: Int
     let result: RecommendationResult
+    var onLaunch: ((Int) -> Void)?
 
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(\.openURL) private var openURL
     @State private var isAddingToWatchlist = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
             NavigationLink(destination: ItemDetailView(item: result.item)) {
-                VStack(alignment: .leading, spacing: 10) {
-                    rankBadge
-                    HStack(alignment: .top, spacing: 14) {
-                        poster
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(result.item.title)
-                                .font(.headline)
-                                .foregroundStyle(.primary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Text("\(result.item.mediaType.singularLabel) · \(result.item.displayYear)")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
+                HStack(alignment: .top, spacing: 14) {
+                    poster
+
+                    VStack(alignment: .leading, spacing: 7) {
+                        HStack(spacing: 7) {
+                            Text("N°\(rank)")
+                                .planLabel()
+                                .foregroundStyle(Ink.ink3)
+                                .monospacedDigit()
+                            if rank == 1 {
+                                PlanLight()
+                            }
                         }
-                        Spacer(minLength: 0)
+
+                        Text(result.item.title)
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(Ink.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text("\(result.item.mediaType.singularLabel) · \(result.item.displayYear)")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Ink.ink3)
+
+                        if !result.reasons.isEmpty {
+                            Text(result.reasons.prefix(3).joined(separator: " · "))
+                                .font(.system(size: 12))
+                                .foregroundStyle(Ink.ink2)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.top, 2)
+                        }
                     }
+
+                    Spacer(minLength: 0)
                 }
                 .contentShape(Rectangle())
             }
@@ -103,8 +127,6 @@ private struct ResultCardView: View {
 
             actions
         }
-        .padding(14)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .onChange(of: libraryStore.isInWatchlist(result.item)) { _, inWatchlist in
             if inWatchlist { isAddingToWatchlist = false }
         }
@@ -115,19 +137,6 @@ private struct ResultCardView: View {
         }
     }
 
-    private var rankBadge: some View {
-        Text("CinéMatch n°\(rank)")
-            .font(.caption.weight(.bold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(
-                Capsule().fill(
-                    LinearGradient(colors: [.indigo, .pink], startPoint: .leading, endPoint: .trailing)
-                )
-            )
-    }
-
     private var poster: some View {
         AsyncImage(url: result.item.posterURL) { phase in
             switch phase {
@@ -135,64 +144,81 @@ private struct ResultCardView: View {
                 image.resizable().scaledToFill()
             default:
                 ZStack {
-                    Rectangle().fill(Color(.tertiarySystemBackground))
-                    Image(systemName: "film")
-                        .foregroundStyle(.secondary)
+                    Rectangle().fill(Ink.ground)
+                    CinechillHallIconView(.salle)
+                        .frame(width: 18, height: 18)
+                        .foregroundStyle(Ink.ink3)
                 }
             }
         }
-        .frame(width: 72, height: 104)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .frame(width: 68, height: 100)
+        .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                .strokeBorder(Ink.rule, lineWidth: 1)
+        }
     }
 
     private var actions: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Metrics.gutter) {
             watchlistButton
 
             if result.trailerURL != nil {
-                iconButton(systemImage: "play.rectangle.fill", action: openTrailer)
+                iconButton(systemImage: "play.fill", label: "Bande-annonce", action: openTrailer)
             }
 
             if result.watchWebURL != nil {
-                iconButton(systemImage: "arrow.up.forward.app.fill", action: openStreamingApp)
+                iconButton(systemImage: "arrow.up.forward", label: "Ouvrir la plateforme", action: openStreamingApp)
             }
         }
     }
 
+    @ViewBuilder
     private var watchlistButton: some View {
         let inWatchlist = libraryStore.isInWatchlist(result.item)
-        return Button {
-            isAddingToWatchlist = true
-            libraryStore.addToWatchlist(result.item)
-        } label: {
-            Group {
-                if isAddingToWatchlist && !inWatchlist {
-                    CinechillSpinner(size: 18)
-                } else {
-                    Label(
-                        inWatchlist ? "Dans la watchlist" : "Ajouter",
-                        systemImage: inWatchlist ? "checkmark" : "bookmark"
-                    )
-                    .font(.caption.weight(.semibold))
-                }
+
+        if inWatchlist {
+            HStack(spacing: 7) {
+                PlanLightOutline()
+                Text("Dans la watchlist")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(Ink.ink2)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            .frame(height: Metrics.control)
+            .overlay(
+                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                    .stroke(Ink.rule, lineWidth: 1)
+            )
+        } else if isAddingToWatchlist {
+            CinechillSpinner(size: 18)
+                .frame(maxWidth: .infinity)
+                .frame(height: Metrics.control)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                        .stroke(Ink.ruleSet, lineWidth: 1)
+                )
+        } else {
+            PlanSecondaryButton(title: "À voir", height: Metrics.control) {
+                isAddingToWatchlist = true
+                libraryStore.addToWatchlist(result.item)
+            }
         }
-        .buttonStyle(.borderedProminent)
-        .tint(.indigo)
-        .disabled(inWatchlist || isAddingToWatchlist)
     }
 
-    private func iconButton(systemImage: String, action: @escaping () -> Void) -> some View {
+    private func iconButton(systemImage: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.subheadline.weight(.semibold))
-                .frame(width: 20, height: 20)
-                .padding(8)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Ink.ink)
+                .frame(width: Metrics.control, height: Metrics.control)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                        .stroke(Ink.ruleSet, lineWidth: 1)
+                )
         }
-        .buttonStyle(.bordered)
-        .tint(.indigo)
+        .buttonStyle(PressableScaleStyle(scale: 0.96))
+        .accessibilityLabel(label)
     }
 
     // MARK: - Actions
@@ -208,7 +234,12 @@ private struct ResultCardView: View {
 
     /// Ouvre l'app native de la plateforme si elle est installée (ex. Netflix via `nflx://`),
     /// sinon retombe sur le site web du service.
+    ///
+    /// C'est le geste le plus proche d'un « je vais le voir » qu'on puisse observer :
+    /// on le note ici, et c'est lui qui déclenchera la question du lendemain. Partir
+    /// vers la bande-annonce ne compte pas — on hésite encore.
     private func openStreamingApp() {
+        onLaunch?(result.item.tmdbId)
         for candidate in result.watchAppURLCandidates where UIApplication.shared.canOpenURL(candidate) {
             UIApplication.shared.open(candidate)
             return
@@ -220,27 +251,30 @@ private struct ResultCardView: View {
 
 #Preview {
     NavigationStack {
-        ResultView(
-            results: [
-                RecommendationResult(
-                    item: MediaItem(
-                        tmdbId: 1,
-                        mediaType: .movie,
-                        title: "Interstellar",
-                        posterPath: nil,
-                        overview: nil,
-                        voteAverage: 8.3,
-                        genreIds: [],
-                        releaseDate: "2014-01-01"
-                    ),
-                    matchScore: 92,
-                    reasons: ["SF / Fantastique", "2h+", "Disponible sur Netflix"],
-                    trailerKey: "zSWdZVtXT7E",
-                    providerIDs: [8]
-                )
-            ],
-            onRestart: {}
-        )
+        ZStack {
+            Ink.ground.ignoresSafeArea()
+            ResultView(
+                results: [
+                    RecommendationResult(
+                        item: MediaItem(
+                            tmdbId: 1,
+                            mediaType: .movie,
+                            title: "Interstellar",
+                            posterPath: nil,
+                            overview: nil,
+                            voteAverage: 8.3,
+                            genreIds: [],
+                            releaseDate: "2014-01-01"
+                        ),
+                        matchScore: 92,
+                        reasons: ["SF / Fantastique", "2h+", "Disponible sur Netflix"],
+                        trailerKey: "zSWdZVtXT7E",
+                        providerIDs: [8]
+                    )
+                ],
+                onRestart: {}
+            )
+        }
     }
     .environmentObject(LibraryStore())
 }

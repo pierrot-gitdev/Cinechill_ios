@@ -5,8 +5,9 @@
 
 import SwiftUI
 
-/// Rendu générique d'une question CinéMatch : titre et une grille de chips.
-/// Réutilisé pour les 11 questions du quiz — seuls le contenu et le mode de sélection changent.
+/// Une question à puces : un titre, éventuellement une note de service, une grille
+/// de `PlanChip`. Plus de carte de verre — dans « Le Plan » un bloc se pose à plat,
+/// et c'est la grille qui le tient, pas un fond.
 struct QuestionCardView: View {
     let step: QuestionStep
     let options: [ChipOption]
@@ -14,84 +15,41 @@ struct QuestionCardView: View {
     let onToggle: (String) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            header
-            FlowLayout(spacing: 10) {
-                ForEach(options) { option in
-                    chip(for: option)
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(step.title)
+                    .planTitle()
+                    .foregroundStyle(Ink.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let subtitle = step.subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Ink.ink3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
-        }
-        .padding(22)
-        .background {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.08), radius: 20, y: 10)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [.white.opacity(0.5), .white.opacity(0.05)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        }
-    }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(step.title)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .fixedSize(horizontal: false, vertical: true)
-            if let subtitle = step.subtitle {
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    /// Même padding et même police, sélectionné ou non : seule la couleur change, pour que la
-    /// taille du chip — et donc l'agencement de la grille — ne bouge jamais à la sélection.
-    private func chip(for option: ChipOption) -> some View {
-        let selected = selectedIDs.contains(option.id)
-        return Button {
-            onToggle(option.id)
-        } label: {
-            Text(option.label)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(selected ? .white : .primary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background {
-                    if selected {
-                        Capsule().fill(
-                            LinearGradient(colors: [.indigo, .pink], startPoint: .topLeading, endPoint: .bottomTrailing)
-                        )
-                        .shadow(color: .indigo.opacity(0.35), radius: 10, y: 4)
-                    } else {
-                        Capsule().fill(Color(.secondarySystemBackground))
+            FlowLayout(spacing: 7) {
+                ForEach(options) { option in
+                    PlanChip(title: option.label, isOn: selectedIDs.contains(option.id)) {
+                        onToggle(option.id)
                     }
                 }
-                .overlay(
-                    Capsule().stroke(selected ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)
-                )
+            }
         }
-        .buttonStyle(PressableScaleStyle())
-        .sensoryFeedback(.selection, trigger: selected)
-        .animation(.spring(response: 0.3, dampingFraction: 0.65), value: selected)
     }
 }
 
-#Preview {
-    QuestionCardView(
-        step: .mood,
-        options: Mood.chipOptions,
-        selectedIDs: [Mood.lightFun.rawValue],
-        onToggle: { _ in }
-    )
-    .padding()
+#Preview("Question") {
+    ZStack {
+        Ink.ground.ignoresSafeArea()
+        QuestionCardView(
+            step: .mindset,
+            options: Mindset.chipOptions,
+            selectedIDs: [Mindset.beSurprised.rawValue],
+            onToggle: { _ in }
+        )
+        .padding(Metrics.margin)
+    }
 }

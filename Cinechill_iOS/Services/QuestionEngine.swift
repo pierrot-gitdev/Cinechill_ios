@@ -5,407 +5,352 @@
 
 import Foundation
 
-/// Les dimensions "adaptatives" du quiz — tout ce qui n'est pas le socle (T1-T4). Le moteur
-/// choisit laquelle interroger ensuite en estimant, à chaque étape, laquelle séparerait le plus
-/// le pool de candidats *actuel* — voir la spec "moteur de préférence actif".
+/// Les questions que le moteur peut poser, une fois le cadre et le cadran passés.
 ///
-/// Tier 1 : calculable sur `CandidateRow` (champs des endpoints de liste TMDB, déjà en main
-/// après `getCandidatePool`). Tier 2 : nécessite `EnrichedCandidateRow` (détail TMDB, un appel
-/// par film — voir `enrichCandidates`), donc seulement disponible après la bascule de phase.
+/// Il n'y a plus de « tier 1 » et de « tier 2 » : la contrainte que cette découpe
+/// exprimait à la main — ne pas interroger la durée avant de la connaître — se
+/// produit maintenant toute seule. Tant qu'aucun film n'a de durée mesurée, leur
+/// position sur cet axe est identique, aucune réponse ne déplacerait le classement,
+/// la valeur de décision est nulle, et la question n'est pas choisie. Après
+/// enrichissement, les durées arrivent, les films se dispersent, et la même question
+/// redevient l'une des plus rentables. Au film près, pas à la phase près.
+///
+/// `origin` et `era` ont disparu : elles ne se projettent sur aucun des huit axes,
+/// donc le scoring par croyance les ignorerait. Les poser en le sachant aurait été
+/// malhonnête ; les rétablir demandera soit un axe de plus, soit un filtre de vivier.
 nonisolated enum AdaptiveDimension: CaseIterable, Hashable {
-    case mood, popularity, era, origin, mindset, dealbreaker
-    case cast, runtime
-    case horrorFlavor, comedyFlavor, dramaFlavor, cognitiveMode, elimination, surpriseIntensity
-
-    var tier: Int {
-        switch self {
-        case .cast, .runtime: 2
-        default: 1
-        }
-    }
+    case mood, mindset, dealbreaker, popularity, cast
+    case horrorFlavor, comedyFlavor, dramaFlavor, cognitiveMode
+    case storyOrigin, attachment, creditsMoment, lastingTrace
+    case elimination, surpriseIntensity
 
     var questionStep: QuestionStep {
         switch self {
         case .mood: .mood
-        case .popularity: .popularity
-        case .era: .era
-        case .origin: .origin
         case .mindset: .mindset
         case .dealbreaker: .dealbreaker
+        case .popularity: .popularity
         case .cast: .cast
-        case .runtime: .runtime
         case .horrorFlavor: .horrorFlavor
         case .comedyFlavor: .comedyFlavor
         case .dramaFlavor: .dramaFlavor
         case .cognitiveMode: .cognitiveMode
+        case .storyOrigin: .storyOrigin
+        case .attachment: .attachment
+        case .creditsMoment: .creditsMoment
+        case .lastingTrace: .lastingTrace
         case .elimination: .elimination
         case .surpriseIntensity: .surpriseIntensity
         }
     }
 
-    /// Les nuances par genre n'ont de sens que si le genre correspondant a été choisi au socle —
-    /// sinon la question tomberait à plat (ex. "quel genre d'horreur" sans avoir choisi Horreur).
-    func isEligible(given answers: QuestionnaireAnswers) -> Bool {
+    /// Les nuances par genre n'ont de sens que si le genre pèse encore dans le vivier
+    /// *courant* — et non parce qu'il aurait été coché au départ. C'est plus dynamique,
+    /// et ça survit au resserrement du vivier.
+    func isEligible(pool: [CandidateRow]) -> Bool {
         switch self {
-        case .horrorFlavor: answers.genres.contains(.horror)
-        case .comedyFlavor: answers.genres.contains(.comedy)
-        case .dramaFlavor: answers.genres.contains(.drama)
+        case .horrorFlavor: Self.genreShare(27, in: pool) > 0.15
+        case .comedyFlavor: Self.genreShare(35, in: pool) > 0.15
+        case .dramaFlavor: Self.genreShare(18, in: pool) > 0.15
         default: true
         }
     }
+
+    private static func genreShare(_ genreID: Int, in pool: [CandidateRow]) -> Double {
+        guard !pool.isEmpty else { return 0 }
+        return Double(pool.filter { $0.genreIds.contains(genreID) }.count) / Double(pool.count)
+    }
+
+    /// La famille d'interaction, pour éviter d'enchaîner trois fois le même format.
+    var format: QuestionFormat {
+        switch self {
+        case .mood, .elimination: .posters
+        case .surpriseIntensity: .slider
+        default: .chips
+        }
+    }
 }
 
-/// Moteur de sélection par gain d'information. Tourne entièrement côté client — aucun aller-retour
-/// réseau par question, seulement sur les données déjà rapatriées (`CandidateRow`/`EnrichedCandidateRow`).
+nonisolated enum QuestionFormat: Hashable {
+    case chips, slider, posters
+}
+
+/// Le moteur de sélection par valeur de décision.
 ///
-/// Le "gain" estimé ici est une heuristique volontairement simple (répartition des candidats
-/// actuels entre les réponses possibles d'une question) — pas une réplique de la formule de score
-/// pondéré du backend, qui reste la seule source de vérité pour le score final. Le but n'est pas
-/// de calculer un score exact localement, mais de savoir *laquelle* des questions restantes vaut
-/// la peine d'être posée maintenant.
+/// Il tourne entièrement côté client, entre deux appels réseau, sur des données déjà
+/// rapatriées. Sa règle tient en une phrase : **on ne cherche pas la question qui
+/// divise le catalogue, on cherche celle qui change la réponse.** Une question dont
+/// toutes les réponses mènent au même trio vaut zéro et ne sera jamais posée, même si
+/// elle sépare magnifiquement le vivier.
 nonisolated enum QuestionEngine {
-    static let confidenceThreshold = 0.15
-    static let minimumQuestionsBeforeAutoStop = 6
-    static let focusPoolSize = 60
+    /// En deçà, plus aucune question ne vaut la peine d'être posée.
+    ///
+    /// Calibré sur l'échelle de `divergence` : deux films d'archétypes différents sont
+    /// distants d'environ 0,4, donc échanger la troisième place contre un tout autre
+    /// genre de film vaut ~0,08, et un simple remaniement entre films voisins ~0,04.
+    /// Le seuil passe entre les deux — on continue tant qu'une réponse pourrait
+    /// changer la *nature* d'une des trois propositions, pas seulement leur ordre.
+    static let decisionThreshold = 0.06
+    /// Le plancher de questions, selon ce qu'on sait déjà de la personne.
+    ///
+    /// C'est la seule partie du parcours qui **n'émerge pas** du critère de décision :
+    /// c'est une décision de produit, assumée comme telle. Deux raisons la justifient.
+    /// D'abord la crédibilité — trois films sortis après une seule question ne se
+    /// croient pas, même s'ils sont justes. Ensuite l'investissement : chez quelqu'un
+    /// dont on ne sait rien, une question qui ne change pas le trio de ce soir nourrit
+    /// quand même le trait, et raccourcira toutes les séances suivantes. Elle n'est
+    /// donc pas perdue, elle est placée.
+    ///
+    /// Chez un habitué, cet argument tombe — on sait déjà — et le plancher s'efface.
+    static func minimumQuestions(establishedAxes: Int) -> Int {
+        switch establishedAxes {
+        case 6...: 2
+        case 3...5: 4
+        default: 6
+        }
+    }
+    /// Au-delà, la fatigue coûte plus cher que la précision ne rapporte.
+    static let maximumQuestions = 10
+    /// Le sous-ensemble sur lequel on simule. Un film classé 200ᵉ ne remonte pas dans
+    /// le trio sur une seule observation : simuler au-delà coûterait sans rien changer.
+    static let simulationDepth = 50
     static let enrichmentBatchSize = 35
 
-    // MARK: - Choix de la prochaine question
+    // MARK: - Le classement
 
-    static func nextTier1Dimension(
-        pool: [CandidateRow], answers: QuestionnaireAnswers, asked: Set<AdaptiveDimension>
-    ) -> AdaptiveDimension? {
-        let eligible = AdaptiveDimension.allCases.filter {
-            $0.tier == 1 && !asked.contains($0) && $0.isEligible(given: answers)
+    /// Le score d'un film : une proximité tolérante au doute. Si l'on ignore où se
+    /// situe la personne (σ grand) *ou* où se situe le film (s grand), le terme
+    /// s'aplatit et l'axe cesse de départager. Le modèle ne bluffe jamais.
+    ///
+    /// Reproduit `beliefScore` côté serveur — les deux doivent rester d'accord, sans
+    /// quoi le classement local et le résultat final divergeraient.
+    static func score(_ axes: AxisValues, sigma: AxisValues, belief: BeliefState) -> Double {
+        var weighted = 0.0
+        var total = 0.0
+        for axis in Axis.allCases {
+            let w = belief.weight(axis)
+            guard w > 0 else { continue }
+            let beliefSigma = belief.sigma(axis)
+            let filmSigma = sigma.sigma(axis)
+            let spread = beliefSigma * beliefSigma + filmSigma * filmSigma
+            guard spread > 0 else { continue }
+            let delta = belief.mean(axis) - axes[axis]
+            weighted += w * exp(-(delta * delta) / (2 * spread))
+            total += w
         }
-        guard !eligible.isEmpty else { return nil }
-        let focus = topCandidates(pool, answers: answers, limit: focusPoolSize)
-        return eligible.max { tier1Gain(for: $0, in: focus) < tier1Gain(for: $1, in: focus) }
+        guard total > 0 else { return 0.5 }
+        return weighted / total
     }
 
-    static func nextTier2Dimension(
-        pool: [EnrichedCandidateRow], asked: Set<AdaptiveDimension>
-    ) -> AdaptiveDimension? {
-        let eligible = AdaptiveDimension.allCases.filter { $0.tier == 2 && !asked.contains($0) }
-        guard !eligible.isEmpty else { return nil }
-        return eligible.max { tier2Gain(for: $0, in: pool) < tier2Gain(for: $1, in: pool) }
+    static func score(_ row: CandidateRow, belief: BeliefState) -> Double {
+        score(row.axes, sigma: row.axisSigma, belief: belief)
     }
 
-    // MARK: - Condition d'arrêt par confiance
-
-    /// Écart normalisé entre le score du rang 3 et celui du rang 4 du classement local actuel —
-    /// voir la spec, section "condition d'arrêt par confiance". `nil` si le pool a moins de 4
-    /// candidats (pas assez pour que la notion de "top 3 séparé du reste" ait un sens).
-    static func confidenceGap(pool: [CandidateRow], answers: QuestionnaireAnswers) -> Double? {
-        let ranked = pool
-            .map { localProvisionalScore($0, answers: answers) }
-            .sorted(by: >)
-        guard ranked.count >= 4, ranked[2] > 0 else { return nil }
-        return (ranked[2] - ranked[3]) / ranked[2]
-    }
-
-    static func confidenceGap(pool: [EnrichedCandidateRow], answers: QuestionnaireAnswers) -> Double? {
-        let ranked = pool
-            .map { localProvisionalScore($0.base, enriched: $0, answers: answers) }
-            .sorted(by: >)
-        guard ranked.count >= 4, ranked[2] > 0 else { return nil }
-        return (ranked[2] - ranked[3]) / ranked[2]
-    }
-
-    static func isConfident(gap: Double?, questionsAsked: Int) -> Bool {
-        guard let gap, questionsAsked >= minimumQuestionsBeforeAutoStop else { return false }
-        return gap >= confidenceThreshold
-    }
-
-    // MARK: - Sous-ensemble à enrichir (bascule de phase)
-
-    /// Les meilleurs candidats du pool grossier, à envoyer à `enrichCandidates` — voir
-    /// `enrichmentBatchSize`, calé sur le plafond `ENRICH_BATCH_MAX` du backend.
-    static func candidatesForEnrichment(
-        pool: [CandidateRow], answers: QuestionnaireAnswers
-    ) -> [CandidateRow] {
-        topCandidates(pool, answers: answers, limit: enrichmentBatchSize)
-    }
-
-    static func topCandidates(
-        _ pool: [CandidateRow], answers: QuestionnaireAnswers, limit: Int
-    ) -> [CandidateRow] {
+    static func ranked(_ pool: [CandidateRow], belief: BeliefState) -> [CandidateRow] {
         pool
-            .sorted { localProvisionalScore($0, answers: answers) > localProvisionalScore($1, answers: answers) }
-            .prefix(limit)
-            .map { $0 }
+            .map { (row: $0, value: score($0, belief: belief)) }
+            .sorted { $0.value > $1.value }
+            .map(\.row)
     }
 
-    // MARK: - Décrocheur — filtre local une fois répondu
+    static func topCandidates(_ pool: [CandidateRow], belief: BeliefState, limit: Int) -> [CandidateRow] {
+        Array(ranked(pool, belief: belief).prefix(limit))
+    }
 
-    /// `heavyMood`/`slowPace` filtraient la requête TMDB elle-même dans l'ancienne architecture ;
-    /// le décrocheur est maintenant une question adaptative posée *après* avoir déjà le pool en
-    /// main, donc appliqué ici comme un filtre local sur les champs déjà connus (`genre_ids`,
-    /// `vote_count`). `tooLong`/`predictablePlot` ont besoin de champs indisponibles avant
-    /// enrichissement (durée, franchise) — `tooLong` est approché via `runtimeProximity` en tier 2,
-    /// `predictablePlot` reste filtré côté serveur à la finalisation, comme avant.
-    /// Ne s'applique jamais si ça ferait passer le pool sous le plancher — mieux vaut un décrocheur
-    /// ignoré qu'un pool vide.
-    static func applyDealbreakerFilter(to pool: [CandidateRow], dealbreaker: Dealbreaker) -> [CandidateRow] {
-        let filtered: [CandidateRow]
-        switch dealbreaker {
-        case .heavyMood:
-            filtered = pool.filter { !$0.genreIds.contains(GenreMirror.war) && !$0.genreIds.contains(GenreMirror.history) }
-        case .slowPace:
-            filtered = pool.filter { ($0.voteCount ?? 0) >= 300 }
-        case .tooLong, .predictablePlot:
-            return pool
+    static func candidatesForEnrichment(pool: [CandidateRow], belief: BeliefState) -> [CandidateRow] {
+        topCandidates(pool, belief: belief, limit: enrichmentBatchSize)
+    }
+
+    // MARK: - La valeur de décision
+
+    /// De combien le trio bougerait, en moyenne, si l'on posait cette question.
+    ///
+    /// Les réponses sont supposées équiprobables. C'est une approximation assumée :
+    /// on pourrait estimer leur vraisemblance depuis la croyance courante, mais une
+    /// erreur de prédiction ne coûterait qu'une question un peu moins pertinente —
+    /// jamais une recommandation absurde — et la complexité n'en vaut pas la peine
+    /// tant que rien ne calibre ce modèle.
+    static func decisionValue(
+        for dimension: AdaptiveDimension,
+        pool: [CandidateRow],
+        belief: BeliefState,
+        posterOptions: [[AxisObservation]] = []
+    ) -> Double {
+        let focus = topCandidates(pool, belief: belief, limit: simulationDepth)
+        guard focus.count >= 4 else { return 0 }
+
+        let outcomes = dimension.format == .posters
+            ? posterOptions
+            : AnswerObservations.table(for: dimension).map(\.observations)
+        guard !outcomes.isEmpty else { return 0 }
+
+        let before = topRows(focus, belief: belief)
+        let total = outcomes.reduce(0.0) { sum, observations in
+            let after = topRows(focus, belief: belief.observing(observations))
+            return sum + divergence(before, after)
         }
-        return filtered.count >= 20 ? filtered : pool
+        return total / Double(outcomes.count)
     }
 
-    // MARK: - Nuances par genre / question projective — traduites en boost de genre
-
-    /// Les nuances par genre et la question projective n'ont pas de champ dédié côté scoring —
-    /// elles se traduisent en un boost/malus sur `preferredGenreIDs`/`avoidedGenreIDs`, exactement
-    /// comme la comparaison directe (voir `recordPairwiseChoice`), plutôt que d'ajouter un chemin
-    /// de score séparé pour chacune.
-    static func applyFlavorChoice(dimension: AdaptiveDimension, answers: inout QuestionnaireAnswers) {
-        switch dimension {
-        case .horrorFlavor:
-            if answers.horrorFlavor == .suspense { answers.preferredGenreIDs.insert(GenreMirror.thriller) }
-        case .comedyFlavor:
-            if answers.comedyFlavor == .family {
-                answers.preferredGenreIDs.insert(GenreMirror.family)
-            } else if answers.comedyFlavor == .edgy {
-                answers.avoidedGenreIDs.insert(GenreMirror.family)
-            }
-        case .dramaFlavor:
-            if answers.dramaFlavor == .intimate { answers.preferredGenreIDs.insert(GenreMirror.romance) }
-        case .cognitiveMode:
-            if answers.cognitiveMode == .understand {
-                answers.preferredGenreIDs.formUnion(GenreMirror.understand)
-            } else if answers.cognitiveMode == .feel {
-                answers.preferredGenreIDs.formUnion(GenreMirror.feel)
-            }
-        default:
-            break
+    /// La question la plus décisive parmi celles qui restent, ou `nil` s'il n'en reste
+    /// aucune. Rend l'argmax **même sous le seuil** : décider s'il vaut la peine de la
+    /// poser revient à `shouldStop`, qui seul connaît le plancher de questions. Les
+    /// mélanger ferait taire le moteur dès la première question quand toutes les
+    /// valeurs sont basses, alors qu'on veut justement en poser quelques-unes.
+    ///
+    /// Un correctif tempère l'argmax : la variété, qui pénalise un troisième format
+    /// identique d'affilée.
+    static func nextDimension(
+        pool: [CandidateRow],
+        belief: BeliefState,
+        asked: Set<AdaptiveDimension>,
+        recentFormats: [QuestionFormat],
+        posterOptionsProvider: (AdaptiveDimension) -> [[AxisObservation]]
+    ) -> (dimension: AdaptiveDimension, value: Double)? {
+        let eligible = AdaptiveDimension.allCases.filter {
+            !asked.contains($0) && $0.isEligible(pool: pool)
         }
+        guard !eligible.isEmpty else { return nil }
+
+        var best: (AdaptiveDimension, Double)?
+        for dimension in eligible {
+            let raw = decisionValue(
+                for: dimension,
+                pool: pool,
+                belief: belief,
+                posterOptions: posterOptionsProvider(dimension)
+            )
+            let adjusted = raw * varietyFactor(for: dimension, recentFormats: recentFormats)
+            if adjusted > (best?.1 ?? -1) {
+                best = (dimension, adjusted)
+            }
+        }
+        guard let best else { return nil }
+        return (best.0, best.1)
     }
 
-    // MARK: - Comparaison directe (mood)
-
-    /// Choisit deux candidats du pool aussi différents que possible en ambiance, pour
-    /// `PairwiseComparisonView` — comparer deux films quasi identiques n'apporterait aucun signal.
-    /// `nil` si le pool restreint n'offre pas deux buckets d'ambiance distincts.
-    static func pickPairwiseOptions(
-        from pool: [CandidateRow], answers: QuestionnaireAnswers
-    ) -> (CandidateRow, CandidateRow)? {
-        let focus = topCandidates(pool, answers: answers, limit: focusPoolSize)
-        let byBucket = Dictionary(grouping: focus, by: { moodBucket(for: $0.genreIds) })
-        let buckets = byBucket.keys.compactMap { $0 }
-        guard buckets.count >= 2 else { return nil }
-        let sortedBuckets = buckets.sorted { (byBucket[$0]?.count ?? 0) > (byBucket[$1]?.count ?? 0) }
-        guard let first = byBucket[sortedBuckets[0]]?.first,
-              let second = byBucket[sortedBuckets[1]]?.first else { return nil }
-        return (first, second)
+    static func shouldStop(
+        bestValue: Double?, questionsAsked: Int, establishedAxes: Int
+    ) -> Bool {
+        if questionsAsked >= maximumQuestions { return true }
+        guard questionsAsked >= minimumQuestions(establishedAxes: establishedAxes) else { return false }
+        guard let bestValue else { return true }
+        return bestValue < decisionThreshold
     }
 
-    // MARK: - Élimination
+    /// Deux questions du même format d'affilée passent ; la troisième lasse.
+    private static func varietyFactor(
+        for dimension: AdaptiveDimension, recentFormats: [QuestionFormat]
+    ) -> Double {
+        let sameInARow = recentFormats.suffix(2).filter { $0 == dimension.format }.count
+        return sameInARow >= 2 ? 0.6 : 1
+    }
 
-    /// Quatre candidats aussi variés que possible pour `EliminationView` — un signal de rejet plus
-    /// large qu'un simple duel (voir `recordPairwiseChoice`), puisqu'il écarte un film parmi quatre
-    /// plutôt que deux. `nil` si le pool restreint est trop petit pour en proposer quatre.
-    static func pickEliminationOptions(
-        from pool: [CandidateRow], answers: QuestionnaireAnswers
-    ) -> [CandidateRow]? {
-        let focus = topCandidates(pool, answers: answers, limit: focusPoolSize)
+    private static func topRows(_ pool: [CandidateRow], belief: BeliefState) -> [CandidateRow] {
+        Array(ranked(pool, belief: belief).prefix(3))
+    }
+
+    /// De combien le trio changerait *réellement*, rang par rang.
+    ///
+    /// On mesure la distance dans l'espace des axes entre le film qui occupait un rang
+    /// et celui qui l'occuperait — et non la simple identité des films. La différence
+    /// est décisive : remplacer une comédie chaude par une autre comédie chaude ne
+    /// change rien pour la personne qui regarde, alors qu'un décompte d'identifiants
+    /// y verrait un bouleversement et continuerait de poser des questions bien après
+    /// que la décision est prise.
+    ///
+    /// Pondéré par le rang : perdre la tête d'affiche compte plus que la troisième place.
+    private static func divergence(_ before: [CandidateRow], _ after: [CandidateRow]) -> Double {
+        guard !before.isEmpty else { return 0 }
+        let weights = [0.5, 0.3, 0.2]
+        var total = 0.0
+        for rank in 0..<min(3, before.count) {
+            guard rank < after.count else {
+                total += weights[rank]
+                continue
+            }
+            total += weights[rank] * axisDistance(before[rank], after[rank])
+        }
+        return total
+    }
+
+    /// Distance moyenne entre deux films sur les axes, normalisée sur 0…1.
+    private static func axisDistance(_ lhs: CandidateRow, _ rhs: CandidateRow) -> Double {
+        guard lhs.id != rhs.id else { return 0 }
+        let sum = Axis.allCases.reduce(0.0) { acc, axis in
+            acc + abs(lhs.axes[axis] - rhs.axes[axis])
+        }
+        // L'amplitude d'un axe vaut 2 (de −1 à +1) : on ramène la moyenne sur 0…1.
+        return min(1, sum / (Double(Axis.allCases.count) * 2))
+    }
+
+    // MARK: - Les affiches
+
+    /// L'axe qu'il serait le plus utile de trancher : celui sur lequel on doute encore,
+    /// et sur lequel le vivier est effectivement partagé. Douter d'un axe où tous les
+    /// films se valent n'apporterait rien.
+    static func mostUncertainAxis(pool: [CandidateRow], belief: BeliefState) -> Axis? {
+        let focus = topCandidates(pool, belief: belief, limit: simulationDepth)
         guard focus.count >= 4 else { return nil }
-        let byBucket = Dictionary(grouping: focus, by: { moodBucket(for: $0.genreIds) })
-        let diverse = byBucket.values.compactMap(\.first)
-        return Array((diverse.count >= 4 ? diverse : focus).prefix(4))
+        return Axis.allCases.max { lhs, rhs in
+            uncertaintyGain(lhs, focus, belief) < uncertaintyGain(rhs, focus, belief)
+        }
     }
 
-    // MARK: - Gain d'information (tier 1 — CandidateRow)
+    private static func uncertaintyGain(
+        _ axis: Axis, _ focus: [CandidateRow], _ belief: BeliefState
+    ) -> Double {
+        let values = focus.map { $0.axes[axis] }
+        guard let min = values.min(), let max = values.max() else { return 0 }
+        return belief.sigma(axis) * (max - min)
+    }
 
-    private static func tier1Gain(for dimension: AdaptiveDimension, in pool: [CandidateRow]) -> Double {
-        guard !pool.isEmpty else { return 0 }
+    /// Les deux films les plus opposés sur l'axe le plus incertain — comparer deux
+    /// films qui se ressemblent n'apprendrait rien.
+    static func pickDuel(
+        from pool: [CandidateRow], belief: BeliefState
+    ) -> (CandidateRow, CandidateRow)? {
+        guard let axis = mostUncertainAxis(pool: pool, belief: belief) else { return nil }
+        let focus = topCandidates(pool, belief: belief, limit: simulationDepth)
+        let sorted = focus.sorted { $0.axes[axis] < $1.axes[axis] }
+        guard let low = sorted.first, let high = sorted.last, low.id != high.id else { return nil }
+        guard high.axes[axis] - low.axes[axis] > 0.3 else { return nil }
+        return (high, low)
+    }
+
+    /// Quatre films aussi dispersés que possible sur l'axe le plus incertain.
+    static func pickElimination(
+        from pool: [CandidateRow], belief: BeliefState
+    ) -> [CandidateRow]? {
+        guard let axis = mostUncertainAxis(pool: pool, belief: belief) else { return nil }
+        let focus = topCandidates(pool, belief: belief, limit: simulationDepth)
+        guard focus.count >= 4 else { return nil }
+        let sorted = focus.sorted { $0.axes[axis] < $1.axes[axis] }
+        let step = Double(sorted.count - 1) / 3
+        let picked = (0..<4).map { sorted[Int((Double($0) * step).rounded())] }
+        return Set(picked.map(\.id)).count == 4 ? picked : Array(focus.prefix(4))
+    }
+
+    /// Les issues possibles d'une question par affiches, pour la simulation.
+    static func posterOutcomes(
+        for dimension: AdaptiveDimension, pool: [CandidateRow], belief: BeliefState
+    ) -> [[AxisObservation]] {
         switch dimension {
         case .mood:
-            return bucketSpread(pool.map { moodBucket(for: $0.genreIds) })
-        case .popularity:
-            return bucketSpread(pool.map { tertileBucket($0.popularity ?? 0, in: pool.map { $0.popularity ?? 0 }) })
-        case .era:
-            return bucketSpread(pool.map { $0.releaseYear.map { $0 / 10 } })
-        case .origin:
-            let frCount = pool.filter { $0.originCountry.contains("FR") }.count
-            let frFraction = Double(frCount) / Double(pool.count)
-            return 2 * min(frFraction, 1 - frFraction)
-        case .mindset:
-            return bucketSpread(pool.map { mindsetBucket(genreIds: $0.genreIds, popularity: $0.popularity) })
-        case .dealbreaker:
-            let heavyMoodExcluded = pool.filter { $0.genreIds.contains(GenreMirror.war) || $0.genreIds.contains(GenreMirror.history) }.count
-            let slowPaceExcluded = pool.filter { ($0.voteCount ?? 0) < 300 }.count
-            let bestFraction = [heavyMoodExcluded, slowPaceExcluded].map { Double($0) / Double(pool.count) }.max() ?? 0
-            return 1 - abs(bestFraction - 0.5) * 2
-        case .horrorFlavor:
-            return genreSplitGain(pool, genreId: GenreMirror.thriller)
-        case .comedyFlavor:
-            return genreSplitGain(pool, genreId: GenreMirror.family)
-        case .dramaFlavor:
-            return genreSplitGain(pool, genreId: GenreMirror.romance)
-        case .cognitiveMode:
-            let understandCount = pool.filter { !GenreMirror.understand.isDisjoint(with: $0.genreIds) }.count
-            let feelCount = pool.filter { !GenreMirror.feel.isDisjoint(with: $0.genreIds) }.count
-            let total = understandCount + feelCount
-            guard total > 0 else { return 0 }
-            let coverage = Double(total) / Double(pool.count)
-            return 2 * min(Double(understandCount), Double(feelCount)) / Double(total) * coverage
+            guard let (a, b) = pickDuel(from: pool, belief: belief) else { return [] }
+            return [
+                AnswerObservations.fromDuel(winner: a, loser: b),
+                AnswerObservations.fromDuel(winner: b, loser: a),
+            ]
         case .elimination:
-            return bucketSpread(pool.map { moodBucket(for: $0.genreIds) })
-        case .surpriseIntensity:
-            // Pas de champ discriminant côté pool grossier (voir la spec) — gain fixe modéré pour
-            // rester compétitif face aux autres dimensions sans jamais les éclipser.
-            return 0.35
-        case .cast, .runtime:
-            return 0
-        }
-    }
-
-    /// Fraction du pool qui porte `genreId`, transformée en un score de 0 (quasi tout le monde ou
-    /// personne) à 1 (coupure parfaite en deux) — même logique que `.origin` ci-dessus.
-    private static func genreSplitGain(_ pool: [CandidateRow], genreId: Int) -> Double {
-        let withCount = pool.filter { $0.genreIds.contains(genreId) }.count
-        let fraction = Double(withCount) / Double(pool.count)
-        return 2 * min(fraction, 1 - fraction)
-    }
-
-    // MARK: - Gain d'information (tier 2 — EnrichedCandidateRow)
-
-    private static func tier2Gain(for dimension: AdaptiveDimension, in pool: [EnrichedCandidateRow]) -> Double {
-        guard !pool.isEmpty else { return 0 }
-        switch dimension {
-        case .cast:
-            let averages = pool.map { row -> Double in
-                guard !row.castPopularities.isEmpty else { return 0 }
-                return row.castPopularities.reduce(0, +) / Double(row.castPopularities.count)
+            guard let options = pickElimination(from: pool, belief: belief) else { return [] }
+            return options.map { loser in
+                AnswerObservations.fromElimination(
+                    loser: loser, others: options.filter { $0.id != loser.id }
+                )
             }
-            return bucketSpread(averages.map { tertileBucket($0, in: averages) })
-        case .runtime:
-            return bucketSpread(pool.map { $0.runtimeMinutes.map { $0 / 20 } })
         default:
-            return 0
+            return []
         }
     }
-
-    // MARK: - Score local provisoire (classement/confiance uniquement — jamais le score final)
-
-    private static func localProvisionalScore(_ row: CandidateRow, answers: QuestionnaireAnswers) -> Double {
-        var score = 0.0
-        if let mood = answers.mood {
-            score += 0.30 * (GenreMirror.mood[mood]?.isDisjoint(with: row.genreIds) == false ? 1 : 0.3)
-        } else {
-            score += 0.15
-        }
-        if !answers.preferredGenreIDs.isEmpty, !answers.preferredGenreIDs.isDisjoint(with: Set(row.genreIds)) {
-            score += 0.1
-        }
-        if !answers.avoidedGenreIDs.isEmpty, !answers.avoidedGenreIDs.isDisjoint(with: Set(row.genreIds)) {
-            score -= 0.1
-        }
-        score += 0.15 * ((row.voteAverage ?? 5) / 10)
-        if answers.origin != .any, !row.originCountry.isEmpty {
-            let isFrench = row.originCountry.contains("FR")
-            score += 0.10 * (answers.origin == .french ? (isFrench ? 1 : 0.15) : (isFrench ? 0.15 : 1))
-        }
-        if answers.era != .any, let year = row.releaseYear {
-            score += 0.10 * eraProximity(year: year, era: answers.era)
-        }
-        return max(0, score)
-    }
-
-    private static func localProvisionalScore(
-        _ base: CandidateRow, enriched: EnrichedCandidateRow, answers: QuestionnaireAnswers
-    ) -> Double {
-        var score = localProvisionalScore(base, answers: answers)
-        if answers.runtime != .any, let minutes = enriched.runtimeMinutes {
-            score += 0.10 * runtimeProximity(minutes: minutes, preference: answers.runtime)
-        }
-        return score
-    }
-
-    private static func eraProximity(year: Int, era: EraPreference) -> Double {
-        let age = Calendar.current.component(.year, from: .now) - year
-        switch era {
-        case .thisYear: return age <= 0 ? 1 : max(0, 1 - Double(age) / 4)
-        case .lastFiveYears: return age <= 5 ? 1 : max(0, 1 - Double(age - 5) / 6)
-        case .cultClassic: return min(1, Double(age) / 40)
-        case .any: return 0.5
-        }
-    }
-
-    private static func runtimeProximity(minutes: Int, preference: RuntimePreference) -> Double {
-        switch preference {
-        case .short: return minutes <= 95 ? 1 : max(0, 1 - Double(minutes - 95) / 25)
-        case .medium: return (90...125).contains(minutes) ? 1 : 0.4
-        case .long: return minutes >= 120 ? 1 : max(0, 1 - Double(120 - minutes) / 25)
-        case .any: return 0.5
-        }
-    }
-
-    // MARK: - Buckets et dispersion
-
-    private static func moodBucket(for genreIds: [Int]) -> Mood? {
-        Mood.allCases.first { mood in
-            guard let genres = GenreMirror.mood[mood] else { return false }
-            return !genres.isDisjoint(with: genreIds)
-        }
-    }
-
-    private static func mindsetBucket(genreIds: [Int], popularity: Double?) -> String {
-        if genreIds.contains(GenreMirror.documentary) || genreIds.contains(GenreMirror.history) { return "learn" }
-        if genreIds.contains(GenreMirror.drama) { return "recognize" }
-        if (popularity ?? 0) > 40 { return "noThinking" }
-        return "surprise"
-    }
-
-    private static func tertileBucket(_ value: Double, in all: [Double]) -> Int {
-        let sorted = all.sorted()
-        guard !sorted.isEmpty else { return 0 }
-        let rank = sorted.firstIndex(where: { $0 >= value }) ?? sorted.count - 1
-        let fraction = Double(rank) / Double(max(1, sorted.count - 1))
-        return fraction < 0.33 ? 0 : (fraction < 0.66 ? 1 : 2)
-    }
-
-    /// 1 = les candidats sont répartis également entre les buckets (question très discriminante),
-    /// 0 = tous dans le même bucket (question qui ne trancherait plus rien).
-    private static func bucketSpread<T: Hashable>(_ buckets: [T]) -> Double {
-        guard !buckets.isEmpty else { return 0 }
-        let counts = Dictionary(grouping: buckets, by: { $0 }).mapValues(\.count)
-        let maxFraction = Double(counts.values.max() ?? 0) / Double(buckets.count)
-        return 1 - maxFraction
-    }
-}
-
-/// Tables de correspondance genre TMDB dupliquées à dessein depuis le backend (`GENRE_*`,
-/// `MOOD_GENRES`) — pour l'estimation locale du gain d'information uniquement. Si le mapping
-/// backend change, garder ces valeurs synchronisées.
-private nonisolated enum GenreMirror {
-    static let mood: [Mood: Set<Int>] = [
-        .lightFun: [35],
-        .intense: [28, 53],
-        .emotional: [18, 10749],
-        .scary: [27, 53],
-        .escapist: [12, 14, 878, 28],
-        .thoughtful: [9648, 878, 18],
-    ]
-    static let documentary = 99
-    static let history = 36
-    static let drama = 18
-    static let war = 10752
-    static let thriller = 53
-    static let family = 10751
-    static let romance = 10749
-    static let mystery = 9648
-    static let horror = 27
-
-    /// Nuances par genre (voir `applyFlavorChoice`) — "comprendre" penche vers mystère/documentaire,
-    /// "ressentir" vers horreur/romance. Proxy heuristique par genre, pas une vraie mesure du mode
-    /// cognitif — même principe honnête que le reste de `GenreMirror`.
-    static let understand: Set<Int> = [mystery, documentary]
-    static let feel: Set<Int> = [horror, romance]
 }

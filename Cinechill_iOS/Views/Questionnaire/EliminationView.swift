@@ -5,115 +5,87 @@
 
 import SwiftUI
 
-/// Élimination parmi quatre films réels du pool courant — un signal de rejet plus large qu'un
-/// duel (voir `PairwiseComparisonView`) : on écarte le film le moins tentant plutôt que de désigner
-/// un favori parmi deux.
+/// L'élimination : quatre affiches, on écarte celle qui tente le moins.
+///
+/// Signal plus large qu'un duel — écarter un film parmi quatre en dit plus long
+/// qu'en préférer un parmi deux, et le rejet est un jugement que les gens portent
+/// plus sûrement que l'adhésion.
 struct EliminationView: View {
     let options: [CandidateRow]
     let onEliminate: (_ loser: CandidateRow) -> Void
 
-    private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+    private let columns = [
+        GridItem(.flexible(), spacing: Metrics.gutter),
+        GridItem(.flexible(), spacing: Metrics.gutter),
+    ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            header
-            LazyVGrid(columns: columns, spacing: 12) {
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(QuestionStep.elimination.title)
+                    .planTitle()
+                    .foregroundStyle(Ink.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let subtitle = QuestionStep.elimination.subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Ink.ink3)
+                }
+            }
+
+            LazyVGrid(columns: columns, spacing: 16) {
                 ForEach(options) { candidate in
-                    posterCard(candidate)
+                    posterChoice(candidate)
                 }
             }
         }
-        .padding(22)
-        .background {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.08), radius: 20, y: 10)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [.white.opacity(0.5), .white.opacity(0.05)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(QuestionStep.elimination.title)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .fixedSize(horizontal: false, vertical: true)
-            if let subtitle = QuestionStep.elimination.subtitle {
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private func posterCard(_ candidate: CandidateRow) -> some View {
+    private func posterChoice(_ candidate: CandidateRow) -> some View {
         Button {
             onEliminate(candidate)
         } label: {
-            VStack(spacing: 8) {
-                ZStack(alignment: .topTrailing) {
-                    if let url = candidate.posterURL {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image.resizable().scaledToFill()
-                            default:
-                                posterPlaceholder
-                            }
-                        }
-                    } else {
-                        posterPlaceholder
+            VStack(spacing: 10) {
+                CandidatePosterView(candidate: candidate)
+                    .overlay(alignment: .topTrailing) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(Ink.ink)
+                            .frame(width: 18, height: 18)
+                            .background(Ink.ground.opacity(0.85))
+                            .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
+                            .padding(6)
                     }
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(.white, .black.opacity(0.5))
-                        .padding(6)
-                }
-                .aspectRatio(2 / 3, contentMode: .fill)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(Color.gray.opacity(0.2), lineWidth: 1)
-                )
 
                 Text(candidate.title ?? "Sans titre")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Ink.ink)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .top)
             }
         }
-        .buttonStyle(PressableScaleStyle(scale: 0.95))
-    }
-
-    private var posterPlaceholder: some View {
-        ZStack {
-            Rectangle().fill(Color(.secondarySystemBackground))
-            Image(systemName: "film")
-                .font(.title)
-                .foregroundStyle(.secondary)
-        }
+        .buttonStyle(PressableScaleStyle(scale: 0.97))
+        .accessibilityLabel(candidate.title ?? "Film sans titre")
+        .accessibilityHint("Écarter ce film")
     }
 }
 
-#Preview {
-    EliminationView(
-        options: [
-            CandidateRow(id: 1, title: "Dune", overview: nil, posterPath: nil, voteAverage: 8, voteCount: 1000, popularity: 90, genreIds: [878], releaseDate: "2021-01-01", originCountry: ["US"]),
-            CandidateRow(id: 2, title: "La La Land", overview: nil, posterPath: nil, voteAverage: 8, voteCount: 1000, popularity: 80, genreIds: [10749], releaseDate: "2016-01-01", originCountry: ["US"]),
-            CandidateRow(id: 3, title: "Get Out", overview: nil, posterPath: nil, voteAverage: 7.5, voteCount: 900, popularity: 70, genreIds: [27, 53], releaseDate: "2017-01-01", originCountry: ["US"]),
-            CandidateRow(id: 4, title: "Amélie", overview: nil, posterPath: nil, voteAverage: 8, voteCount: 800, popularity: 60, genreIds: [35], releaseDate: "2001-01-01", originCountry: ["FR"]),
-        ],
-        onEliminate: { _ in }
-    )
-    .padding()
+#Preview("Élimination") {
+    ZStack {
+        Ink.ground.ignoresSafeArea()
+        ScrollView {
+            EliminationView(
+                options: [
+                    CandidateRow(id: 1, title: "Dune", overview: nil, posterPath: nil, voteAverage: 8, voteCount: 1000, popularity: 90, genreIds: [878], releaseDate: "2021-01-01", originCountry: ["US"]),
+                    CandidateRow(id: 2, title: "La La Land", overview: nil, posterPath: nil, voteAverage: 8, voteCount: 1000, popularity: 80, genreIds: [10749], releaseDate: "2016-01-01", originCountry: ["US"]),
+                    CandidateRow(id: 3, title: "Get Out", overview: nil, posterPath: nil, voteAverage: 7.5, voteCount: 900, popularity: 70, genreIds: [27, 53], releaseDate: "2017-01-01", originCountry: ["US"]),
+                    CandidateRow(id: 4, title: "Amélie", overview: nil, posterPath: nil, voteAverage: 8, voteCount: 800, popularity: 60, genreIds: [35], releaseDate: "2001-01-01", originCountry: ["FR"]),
+                ],
+                onEliminate: { _ in }
+            )
+            .padding(Metrics.margin)
+        }
+    }
 }

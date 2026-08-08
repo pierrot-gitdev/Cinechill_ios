@@ -62,6 +62,25 @@ nonisolated enum Genre: String, QuestionOption {
         case .documentary: "Documentaire"
         }
     }
+
+    /// Les identifiants TMDB derrière chaque slug, dupliqués à dessein depuis
+    /// `GENRE_TMDB_IDS` côté backend — qui reste la source de vérité pour la
+    /// requête. Le client n'en a besoin que pour une chose : vérifier qu'un genre
+    /// qu'il s'apprête à déduire du cadran n'est pas un genre banni dans les
+    /// réglages. Si la table backend change, garder celle-ci synchronisée.
+    var tmdbIDs: Set<Int> {
+        switch self {
+        case .action: [28]
+        case .comedy: [35]
+        case .drama: [18]
+        case .thriller: [53]
+        case .scifiFantasy: [878, 14]
+        case .horror: [27]
+        case .romance: [10749]
+        case .animation: [16]
+        case .documentary: [99]
+        }
+    }
 }
 
 // MARK: - Q4 · Avec qui (filtre)
@@ -247,6 +266,66 @@ nonisolated enum CognitiveMode: String, QuestionOption {
     }
 }
 
+// MARK: - Les arbitrages forcés
+//
+// Deux options, il faut trancher. Le refus du « peu importe » est délibéré : un
+// dilemme produit un indice net là où une question ouverte produit du milieu.
+// Ces deux-là visent l'ancrage et l'échelle — les deux axes que le cadran laisse
+// volontairement ouverts, parce qu'ils relèvent du goût durable et non de la soirée.
+
+nonisolated enum StoryOrigin: String, QuestionOption {
+    case trueStory, onlyInCinema
+
+    var label: String {
+        switch self {
+        case .trueStory: "Une histoire vraie"
+        case .onlyInCinema: "Une histoire qui ne pourrait exister qu'au cinéma"
+        }
+    }
+}
+
+nonisolated enum AttachmentMode: String, QuestionOption {
+    case character, world
+
+    var label: String {
+        switch self {
+        case .character: "Un personnage auquel s'attacher"
+        case .world: "Un monde où se perdre"
+        }
+    }
+}
+
+// MARK: - La projection et la trace
+//
+// On fait imaginer l'après-film plutôt que le film, et on interroge la mémoire
+// plutôt que l'intention : les gens se connaissent mieux au passé qu'au futur.
+
+nonisolated enum CreditsMoment: String, QuestionOption {
+    case silence, discuss, contentment, keepGoing
+
+    var label: String {
+        switch self {
+        case .silence: "Personne ne parle pendant une minute"
+        case .discuss: "Vous voulez en parler tout de suite"
+        case .contentment: "Vous êtes bien, c'est tout"
+        case .keepGoing: "Vous enchaînez sur la suite"
+        }
+    }
+}
+
+nonisolated enum LastingTrace: String, QuestionOption {
+    case weight, smile, questions, wantMore
+
+    var label: String {
+        switch self {
+        case .weight: "Un poids dans la poitrine"
+        case .smile: "Le sourire pendant deux jours"
+        case .questions: "Des questions sans réponse"
+        case .wantMore: "L'envie d'y retourner tout de suite"
+        }
+    }
+}
+
 /// Réponses collectées au fil du quiz CinéMatch. Sérialisé tel quel vers `getRecommendations` —
 /// tout le mapping vers les paramètres TMDB (with_genres, mots-clés, seuils…) est fait côté backend.
 nonisolated struct QuestionnaireAnswers: Equatable, Sendable {
@@ -268,6 +347,10 @@ nonisolated struct QuestionnaireAnswers: Equatable, Sendable {
     var comedyFlavor: ComedyFlavor?
     var dramaFlavor: DramaFlavor?
     var cognitiveMode: CognitiveMode?
+    var storyOrigin: StoryOrigin?
+    var attachment: AttachmentMode?
+    var creditsMoment: CreditsMoment?
+    var lastingTrace: LastingTrace?
 
     /// 0 = valeurs sûres, 1 = surprise totale. Curseur continu plutôt qu'un choix à puces — voir
     /// `IntensitySliderView` — pour capturer une intensité plutôt qu'une catégorie.

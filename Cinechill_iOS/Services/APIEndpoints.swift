@@ -55,6 +55,21 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "finalizerecommendations", queryItems: [])
     }
 
+    static func tasteProfile() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "gettasteprofile", queryItems: [])
+    }
+
+    static func tasteCorrection() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "settastecorrection", queryItems: [])
+    }
+
+    static func sessionOutcome() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "recordsessionoutcome", queryItems: [])
+    }
+
     static func swipeFeed() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "getswipefeed", queryItems: [])

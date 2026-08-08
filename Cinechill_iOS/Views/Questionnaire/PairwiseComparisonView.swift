@@ -5,110 +5,111 @@
 
 import SwiftUI
 
-/// Comparaison directe entre deux films réels du pool courant — le format d'interaction phare du
-/// moteur de préférence actif (voir la spec). Choisis délibérément les plus différents l'un de
-/// l'autre par `QuestionnaireViewModel` : comparer deux films quasi identiques n'apporterait aucun
-/// signal. Le gagnant fait remonter les films qui lui ressemblent, le perdant les fait redescendre.
+/// Le duel : deux affiches du vivier courant, on en choisit une.
+///
+/// C'est la seule question du parcours qui observe un comportement au lieu
+/// d'écouter une déclaration — et c'est pour ça qu'elle ne saute jamais. La paire
+/// n'est pas décorative : `QuestionEngine` la choisit aussi contrastée que possible,
+/// comparer deux films semblables n'apprendrait rien.
 struct PairwiseComparisonView: View {
     let optionA: CandidateRow
     let optionB: CandidateRow
     let onPick: (_ winner: CandidateRow, _ loser: CandidateRow) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            header
-            HStack(spacing: 14) {
-                posterCard(optionA)
-                posterCard(optionB)
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Plutôt ce soir…")
+                    .planTitle()
+                    .foregroundStyle(Ink.ink)
+
+                Text("Les deux comptent — il n'y a pas de mauvaise réponse.")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Ink.ink3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(alignment: .top, spacing: Metrics.gutter) {
+                posterChoice(optionA, opponent: optionB)
+                posterChoice(optionB, opponent: optionA)
             }
         }
-        .padding(22)
-        .background {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.08), radius: 20, y: 10)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [.white.opacity(0.5), .white.opacity(0.05)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Plutôt ce soir…")
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-            Text("Choisissez celui qui vous tente le plus — les deux comptent, il n'y a pas de mauvaise réponse.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private func posterCard(_ candidate: CandidateRow) -> some View {
+    private func posterChoice(_ candidate: CandidateRow, opponent: CandidateRow) -> some View {
         Button {
-            let loser = candidate.id == optionA.id ? optionB : optionA
-            onPick(candidate, loser)
+            onPick(candidate, opponent)
         } label: {
-            VStack(spacing: 8) {
-                ZStack {
-                    if let url = candidate.posterURL {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image.resizable().scaledToFill()
-                            default:
-                                posterPlaceholder
-                            }
-                        }
-                    } else {
-                        posterPlaceholder
-                    }
-                }
-                .aspectRatio(2 / 3, contentMode: .fill)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(Color.gray.opacity(0.2), lineWidth: 1)
-                )
+            VStack(spacing: 10) {
+                CandidatePosterView(candidate: candidate)
 
                 Text(candidate.title ?? "Sans titre")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Ink.ink)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .top)
             }
         }
-        .buttonStyle(PressableScaleStyle(scale: 0.95))
+        .buttonStyle(PressableScaleStyle(scale: 0.97))
+        .accessibilityLabel(candidate.title ?? "Film sans titre")
+        .accessibilityHint("Choisir ce film")
+    }
+}
+
+/// L'affiche d'un candidat, au format de l'application : un seul rayon, un filet,
+/// et une réserve lisible quand TMDB n'a pas d'image.
+struct CandidatePosterView: View {
+    let candidate: CandidateRow
+
+    var body: some View {
+        Group {
+            if let url = candidate.posterURL {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable().scaledToFill()
+                    default:
+                        placeholder
+                    }
+                }
+            } else {
+                placeholder
+            }
+        }
+        .aspectRatio(2 / 3, contentMode: .fill)
+        .frame(maxWidth: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                .strokeBorder(Ink.rule, lineWidth: 1)
+        }
     }
 
-    private var posterPlaceholder: some View {
+    private var placeholder: some View {
         ZStack {
-            Rectangle().fill(Color(.secondarySystemBackground))
-            Image(systemName: "film")
-                .font(.title)
-                .foregroundStyle(.secondary)
+            Rectangle().fill(Ink.ground)
+            CinechillHallIconView(.salle)
+                .frame(width: 22, height: 22)
+                .foregroundStyle(Ink.ink3)
         }
     }
 }
 
-#Preview {
-    PairwiseComparisonView(
-        optionA: CandidateRow(
-            id: 1, title: "Dune", overview: nil, posterPath: nil, voteAverage: 8,
-            voteCount: 1000, popularity: 90, genreIds: [878], releaseDate: "2021-01-01", originCountry: ["US"]
-        ),
-        optionB: CandidateRow(
-            id: 2, title: "La La Land", overview: nil, posterPath: nil, voteAverage: 8,
-            voteCount: 1000, popularity: 80, genreIds: [10749], releaseDate: "2016-01-01", originCountry: ["US"]
-        ),
-        onPick: { _, _ in }
-    )
-    .padding()
+#Preview("Duel") {
+    ZStack {
+        Ink.ground.ignoresSafeArea()
+        PairwiseComparisonView(
+            optionA: CandidateRow(
+                id: 1, title: "Dune", overview: nil, posterPath: nil, voteAverage: 8,
+                voteCount: 1000, popularity: 90, genreIds: [878], releaseDate: "2021-01-01", originCountry: ["US"]
+            ),
+            optionB: CandidateRow(
+                id: 2, title: "Portrait de la jeune fille en feu", overview: nil, posterPath: nil, voteAverage: 8,
+                voteCount: 1000, popularity: 40, genreIds: [18], releaseDate: "2019-01-01", originCountry: ["FR"]
+            ),
+            onPick: { _, _ in }
+        )
+        .padding(Metrics.margin)
+    }
 }

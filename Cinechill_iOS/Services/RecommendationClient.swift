@@ -48,8 +48,18 @@ protocol RecommendationFetching: Sendable {
     func fetchCandidatePool(trunk: QuestionnaireAnswers) async throws -> CandidatePoolResponse
     func enrichCandidates(_ candidates: [CandidateRow]) async throws -> [EnrichedCandidateRow]
     func finalizeRecommendations(
-        answers: QuestionnaireAnswers, candidates: [EnrichedCandidateRow]
+        answers: QuestionnaireAnswers, belief: BeliefState, candidates: [EnrichedCandidateRow]
     ) async throws -> [RecommendationResult]
+    /// Le trait, tel que la bibliothèque le raconte. Ne lève jamais pour une
+    /// bibliothèque vide : elle renvoie simplement un profil plat.
+    func fetchTasteProfile() async throws -> TasteProfile
+    /// Une correction posée sur la Fiche. `value` à `nil` la retire et rend l'axe
+    /// à l'inférence.
+    func setTasteCorrection(axis: Axis, value: Double?) async throws
+    /// Le film qu'on est allé lancer parmi les trois proposés.
+    func recordLaunch(tmdbID: Int) async throws
+    /// Ce qu'il a laissé, à la question posée au retour.
+    func recordVerdict(tmdbID: Int, verdict: FilmVerdict) async throws
 }
 
 nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable {
@@ -57,7 +67,7 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
         let data = try await post(to: APIEndpoints.candidatePool(), body: Self.requestBody(for: trunk))
         let decoded = try decode(CandidatePoolResponseDTO.self, from: data)
         return CandidatePoolResponse(
-            candidates: decoded.candidates.map(\.candidateRow),
+            candidates: decoded.candidates,
             notice: decoded.notice
         )
     }
@@ -71,11 +81,40 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
         return decoded.candidates
     }
 
+    func fetchTasteProfile() async throws -> TasteProfile {
+        let data = try await post(to: APIEndpoints.tasteProfile(), body: [:])
+        let decoded = try decode(TasteProfileDTO.self, from: data)
+        return decoded.profile
+    }
+
+    func setTasteCorrection(axis: Axis, value: Double?) async throws {
+        _ = try await post(to: APIEndpoints.tasteCorrection(), body: [
+            "axis": axis.rawValue,
+            "value": value as Any,
+        ])
+    }
+
+    func recordLaunch(tmdbID: Int) async throws {
+        _ = try await post(to: APIEndpoints.sessionOutcome(), body: [
+            "kind": "launch", "tmdbId": tmdbID,
+        ])
+    }
+
+    func recordVerdict(tmdbID: Int, verdict: FilmVerdict) async throws {
+        _ = try await post(to: APIEndpoints.sessionOutcome(), body: [
+            "kind": "verdict", "tmdbId": tmdbID, "verdict": verdict.rawValue,
+        ])
+    }
+
+    /// Le partage du calcul : le client envoie ce qu'il croit savoir de la personne,
+    /// le serveur reste seul à savoir où se situent les films. Une source de vérité par
+    /// moitié, et aucune table d'axes à garder synchronisée entre les deux.
     func finalizeRecommendations(
-        answers: QuestionnaireAnswers, candidates: [EnrichedCandidateRow]
+        answers: QuestionnaireAnswers, belief: BeliefState, candidates: [EnrichedCandidateRow]
     ) async throws -> [RecommendationResult] {
         let data = try await post(to: APIEndpoints.finalizeRecommendations(), body: [
             "answers": Self.requestBody(for: answers),
+            "belief": belief.jsonPayload,
             "candidates": candidates.map(\.jsonPayload),
         ])
         let decoded = try decode(FinalizeResponseDTO.self, from: data)
@@ -160,8 +199,12 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
 
 // MARK: - DTOs
 
+/// `CandidateRow` se décode lui-même, champ manquant par champ manquant — il n'y a
+/// donc plus de DTO intermédiaire à tenir à jour. C'est ce qui garantit que les axes
+/// calculés par le serveur traversent la couche réseau au lieu d'être perdus par une
+/// structure qui les ignore.
 private struct CandidatePoolResponseDTO: Decodable, Sendable {
-    let candidates: [CandidateRowDTO]
+    let candidates: [CandidateRow]
     let notice: String?
 }
 
@@ -169,43 +212,46 @@ private struct EnrichCandidatesResponseDTO: Decodable, Sendable {
     let candidates: [EnrichedCandidateRow]
 }
 
-private struct CandidateRowDTO: Decodable, Sendable {
-    let id: Int
-    let title: String?
-    let overview: String?
-    let posterPath: String?
-    let voteAverage: Double?
-    let voteCount: Int?
-    let popularity: Double?
-    let genreIds: [Int]?
-    let releaseDate: String?
-    let originCountry: [String]?
+private struct TasteProfileDTO: Decodable, Sendable {
+    let mu: [String: Double]
+    let tau: [String: Double]
+    let galleryCount: Int
+    let watchlistCount: Int
+    let correctedAxes: [String]
+    let verdictCount: Int?
+    let pendingVerdict: PendingVerdictDTO?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, overview
-        case posterPath = "poster_path"
-        case voteAverage = "vote_average"
-        case voteCount = "vote_count"
-        case popularity
-        case genreIds = "genre_ids"
-        case releaseDate = "release_date"
-        case originCountry = "origin_country"
+        case mu, tau
+        case galleryCount = "gallery_count"
+        case watchlistCount = "watchlist_count"
+        case correctedAxes = "corrected_axes"
+        case verdictCount = "verdict_count"
+        case pendingVerdict = "pending_verdict"
     }
 
-    var candidateRow: CandidateRow {
-        CandidateRow(
-            id: id,
-            title: title,
-            overview: overview,
-            posterPath: posterPath,
-            voteAverage: voteAverage,
-            voteCount: voteCount,
-            popularity: popularity,
-            genreIds: genreIds ?? [],
-            releaseDate: releaseDate,
-            originCountry: originCountry ?? []
+    var profile: TasteProfile {
+        TasteProfile(
+            mu: Dictionary(uniqueKeysWithValues: mu.compactMap { key, value in
+                Axis(rawValue: key).map { ($0, value) }
+            }),
+            tau: Dictionary(uniqueKeysWithValues: tau.compactMap { key, value in
+                Axis(rawValue: key).map { ($0, value) }
+            }),
+            galleryCount: galleryCount,
+            watchlistCount: watchlistCount,
+            correctedAxes: Set(correctedAxes.compactMap(Axis.init(rawValue:))),
+            verdictCount: verdictCount ?? 0,
+            pendingVerdict: pendingVerdict.map {
+                PendingVerdict(tmdbID: $0.tmdbId, title: $0.title)
+            }
         )
     }
+}
+
+private struct PendingVerdictDTO: Decodable, Sendable {
+    let tmdbId: Int
+    let title: String?
 }
 
 private struct FinalizeResponseDTO: Decodable, Sendable {

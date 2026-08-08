@@ -5,8 +5,8 @@
 
 import SwiftUI
 
-/// Curseur d'intensité (0…1) — capture une nuance continue plutôt qu'un choix discret, pour les
-/// questions où "à quel point" a plus de sens que "lequel" (voir `QuestionnaireAnswers.surpriseIntensity`).
+/// Un curseur d'intensité (0…1) — le seul format qui capte un « un peu » là où les
+/// puces obligent à trancher. Alimente `QuestionnaireAnswers.surpriseIntensity`.
 struct IntensitySliderView: View {
     @Binding var value: Double
     var lowLabel = "Valeurs sûres"
@@ -14,52 +14,41 @@ struct IntensitySliderView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            header
-            VStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(QuestionStep.surpriseIntensity.title)
+                    .planTitle()
+                    .foregroundStyle(Ink.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let subtitle = QuestionStep.surpriseIntensity.subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Ink.ink3)
+                }
+            }
+
+            VStack(spacing: 12) {
                 Slider(value: $value, in: 0...1)
-                    .tint(.indigo)
+                    .tint(Ink.ink)
+
                 HStack {
                     Text(lowLabel)
-                    Spacer()
+                    Spacer(minLength: 12)
                     Text(highLabel)
                 }
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .planLabel()
+                .foregroundStyle(Ink.ink3)
             }
         }
-        .padding(22)
-        .background {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.08), radius: 20, y: 10)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [.white.opacity(0.5), .white.opacity(0.05)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(QuestionStep.surpriseIntensity.title)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .fixedSize(horizontal: false, vertical: true)
-            if let subtitle = QuestionStep.surpriseIntensity.subtitle {
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(QuestionStep.surpriseIntensity.title)
     }
 }
 
-#Preview {
-    IntensitySliderView(value: .constant(0.5))
-        .padding()
+#Preview("Curseur") {
+    ZStack {
+        Ink.ground.ignoresSafeArea()
+        IntensitySliderView(value: .constant(0.5))
+            .padding(Metrics.margin)
+    }
 }
