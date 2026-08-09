@@ -16,7 +16,7 @@ import SwiftUI
 /// `.system` n'est pas une troisième langue : c'est l'absence de choix, qui
 /// laisse iOS trancher. On la garde en tête de liste parce que c'est le
 /// comportement attendu tant qu'on n'a rien demandé.
-enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
+nonisolated enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     case system
     case french
     case english
@@ -98,7 +98,7 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-extension Bundle {
+nonisolated extension Bundle {
     /// Le paquet de la langue choisie. Tous les appels de localisation de
     /// l'application passent par lui : `Bundle.main` suivrait le réglage
     /// système, que le sélecteur des réglages a précisément vocation à
@@ -133,7 +133,7 @@ final class LanguageStore {
     }
 }
 
-extension URLRequest {
+nonisolated extension URLRequest {
     /// Une requête vers le backend Cinechill.
     ///
     /// Elle annonce toujours la langue choisie : c'est elle qui décide des
