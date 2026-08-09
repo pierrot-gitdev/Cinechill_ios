@@ -14,7 +14,9 @@ struct SwipeDeckView: View {
     @EnvironmentObject private var profileStore: UserProfileStore
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
+    @Environment(MediaCatalog.self) private var catalog
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Distance à parcourir pour valider un verdict.
     private static let sideThreshold: CGFloat = 105
@@ -23,9 +25,28 @@ struct SwipeDeckView: View {
     private static let deckVerticalInset: CGFloat = 12
     /// Débord vers le bas des deux cartes empilées sous celle du dessus.
     private static let backingCardsOverhang: CGFloat = 24
+    /// La proportion de la carte. Plus haute que l'affiche seule : la plaque de
+    /// légende occupe le bas, et c'est ce qui rend à l'affiche une hauteur
+    /// proche de la sienne au lieu de la rogner de moitié.
+    private static let cardRatio: CGFloat = 1.62
+    /// L'écart de position et d'échelle d'un cran de pile à l'autre.
+    private static let deckStep: CGFloat = 12
+    private static let deckScaleStep: CGFloat = 0.05
 
     @State private var drag: CGSize = .zero
+    /// Le doigt s'est posé sur la moitié haute de la carte — c'est ce qui
+    /// détermine autour de quel bord elle pivote.
+    @State private var grabbedHigh = true
+    /// Le seuil est franchi : lever le doigt tranche.
+    @State private var isArmed = false
     @State private var departing: [DepartingCard] = []
+    /// Le sillage de la dernière carte partie.
+    @State private var wake: WakeMark?
+    /// Le retour d'une carte annulée : elle rentre par le bord d'où elle est
+    /// sortie, elle ne réapparaît pas au centre.
+    @State private var returnOffset: CGSize = .zero
+    @State private var returnAngle: Double = 0
+    @State private var lastCommitted: SwipeDirection?
     @State private var isSynopsisOpen = false
     @State private var showProfile = false
     /// La démonstration des gestes tient la carte du dessus le temps de sa
@@ -60,6 +81,9 @@ struct SwipeDeckView: View {
         }
         .task {
             model.syncLibrary(libraryIDs)
+            // Le répertoire des genres ne conditionne pas le deck : la légende
+            // s'écrira sans son genre plutôt que de retarder la première carte.
+            Task { await catalog.loadIfNeeded() }
             await model.start()
             await startIntro()
         }
@@ -108,12 +132,7 @@ struct SwipeDeckView: View {
     private var statusBar: some View {
         HStack(spacing: 9) {
             if model.addedThisSession > 0 {
-                PlanLight()
-                Text(String(localized: "\(model.addedThisSession) ajoutés", bundle: .app))
-                    .planLabel()
-                    .monospacedDigit()
-                    .foregroundStyle(Ink.ink2)
-                    .contentTransition(.numericText())
+                SessionTally(count: model.addedThisSession)
                     .transition(.opacity)
             }
 
@@ -121,10 +140,7 @@ struct SwipeDeckView: View {
 
             if model.canUndo {
                 Button {
-                    Haptics.impact(.light)
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.75)) {
-                        model.undo()
-                    }
+                    undo()
                 } label: {
                     Text("Annuler", bundle: .app)
                         .font(.system(size: 12))
@@ -160,8 +176,17 @@ struct SwipeDeckView: View {
                     cardStack(size: card)
                 }
 
+                // Le sillage est sous la carte qui s'en va : elle le traverse en
+                // sortant, et il reste une demi-seconde après elle.
+                if let mark = wake {
+                    SwipeWake(direction: mark.direction) {
+                        if wake?.id == mark.id { wake = nil }
+                    }
+                    .id(mark.id)
+                }
+
                 ForEach(departing) { item in
-                    DepartingCardView(item: item, size: card) {
+                    DepartingCardView(item: item, size: card, genre: genre(for: item.card)) {
                         departing.removeAll { $0.id == item.id }
                     }
                 }
@@ -170,13 +195,18 @@ struct SwipeDeckView: View {
                 // au-dessus de la pile restée en place : à la dernière image, il
                 // n'y a donc rien à raccorder — le fondu suffit.
                 if isIntroPlaying, let topCard = model.topCard {
-                    SwipeIntroSequence(card: topCard, cardSize: card, onFinished: endIntro)
-                        // Rien à fondre à l'entrée : la carte de la démonstration
-                        // est celle qui vient d'être retirée de la pile, au même
-                        // endroit et à la même taille. Un fondu d'entrée ferait
-                        // clignoter le deck ; c'est à la sortie qu'il sert, pour
-                        // éteindre les repères.
-                        .transition(.asymmetric(insertion: .identity, removal: .opacity))
+                    SwipeIntroSequence(
+                        card: topCard,
+                        genre: genre(for: topCard),
+                        cardSize: card,
+                        onFinished: endIntro
+                    )
+                    // Rien à fondre à l'entrée : la carte de la démonstration
+                    // est celle qui vient d'être retirée de la pile, au même
+                    // endroit et à la même taille. Un fondu d'entrée ferait
+                    // clignoter le deck ; c'est à la sortie qu'il sert, pour
+                    // éteindre les repères.
+                    .transition(.asymmetric(insertion: .identity, removal: .opacity))
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
@@ -192,49 +222,79 @@ struct SwipeDeckView: View {
         let usableWidth = available.width - Self.deckHorizontalInset * 2
         // Les cartes du dessous débordent vers le bas, il leur faut leur place.
         let usableHeight = available.height - Self.deckVerticalInset * 2 - Self.backingCardsOverhang
-        let width = max(0, min(usableWidth, usableHeight * 2 / 3))
-        return CGSize(width: width, height: width * 3 / 2)
+        let width = max(0, min(usableWidth, usableHeight / Self.cardRatio))
+        return CGSize(width: width, height: width * Self.cardRatio)
     }
 
     private func cardStack(size: CGSize) -> some View {
         ZStack {
             ForEach(Array(model.backingCards.enumerated()).reversed(), id: \.element.id) { index, card in
-                SwipeCardView(card: card)
+                let step = depth(at: index)
+
+                SwipeCardView(card: card, genre: genre(for: card))
                     .frame(width: size.width, height: size.height)
-                    .scaleEffect(backingScale(at: index))
-                    .offset(y: CGFloat(index + 1) * 12)
-                    .opacity(index == 0 ? 1 : 0.7)
+                    .scaleEffect(1 - Self.deckScaleStep * step)
+                    .offset(y: Self.deckStep * step)
+                    .opacity(Self.deckOpacity(atDepth: step))
                     .allowsHitTesting(false)
+                    .transition(.opacity)
             }
 
             // Pendant la démonstration, la carte du dessus est jouée par
             // `SwipeIntroSequence` : la dessiner deux fois la dédoublerait.
             if let card = model.topCard, !isIntroPlaying {
+                let pivot = SwipeMotion.pivot(for: drag, grabbedHigh: grabbedHigh)
+
                 SwipeCardView(
                     card: card,
+                    genre: genre(for: card),
                     verdict: currentVerdict?.verdict,
                     verdictIntensity: currentVerdict?.intensity ?? 0,
+                    isArmed: isArmed,
                     isSynopsisOpen: isSynopsisOpen,
+                    parallax: reduceMotion ? .zero : SwipeMotion.parallax(for: drag),
                     onTap: toggleSynopsis
                 )
                 .frame(width: size.width, height: size.height)
-                .offset(x: drag.width, y: drag.height)
-                .rotationEffect(.degrees(Double(drag.width) / 24), anchor: .bottom)
-                .gesture(dragGesture)
+                .offset(x: drag.width + returnOffset.width, y: drag.height + returnOffset.height)
+                .rotationEffect(.degrees(pivot.angle + returnAngle), anchor: pivot.anchor)
+                .gesture(dragGesture(cardHeight: size.height))
                 .id(card.id)
                 .transition(.identity)
             }
         }
-        .animation(.spring(response: 0.32, dampingFraction: 0.78), value: model.topCard?.id)
-        .animation(.easeOut(duration: 0.2), value: isSynopsisOpen)
+        // Le seul mouvement que le deck a encore à jouer de lui-même : un flick
+        // court valide sans que la pile ait eu le temps d'arriver, et c'est ce
+        // ressort qui rattrape le cran manquant. Un glissement mené jusqu'au
+        // seuil, lui, ne déclenche rien ici — la pile y est déjà.
+        //
+        // Le dépliage du synopsis, lui, est animé **dans** la carte et non ici :
+        // refermer le synopsis se fait à la première image d'un glissement, et
+        // un ressort posé à cette hauteur ferait traîner la carte derrière le
+        // doigt pendant toute sa détente.
+        .animation(SwipeMotion.advance, value: model.topCard?.id)
     }
 
-    private func backingScale(at index: Int) -> CGFloat {
-        let base = 1 - 0.05 * CGFloat(index + 1)
-        guard index == 0 else { return base }
-        // La carte suivante se rapproche à mesure que celle du dessus s'en va :
-        // le deck a l'air de respirer plutôt que de sauter d'un cran.
-        return base + 0.05 * dragProgress
+    /// La profondeur d'une carte du dessous, en crans, **avancement du geste
+    /// déduit**.
+    ///
+    /// C'est la pièce maîtresse de la fluidité du deck : chaque carte occupe la
+    /// place de celle qui la précède à mesure que la carte du dessus s'en va. Au
+    /// moment du lâcher, il n'y a donc plus un cran à franchir — la carte
+    /// suivante est déjà exactement là où la carte du dessus va la remplacer, à
+    /// la même échelle et à la même opacité, et le raccord est invisible.
+    /// L'écran sautait d'un cran après coup, en 0,32 s, une fois la décision
+    /// prise.
+    private func depth(at index: Int) -> CGFloat {
+        max(0, CGFloat(index + 1) - dragProgress)
+    }
+
+    /// La première carte du dessous est pleinement opaque — elle est le prochain
+    /// film, pas un décor. Celles d'après s'éteignent, sans jamais disparaître :
+    /// c'est ce qui donne au deck une épaisseur lisible.
+    private static func deckOpacity(atDepth depth: CGFloat) -> Double {
+        guard depth > 1 else { return 1 }
+        return max(0.55, 1 - 0.3 * Double(depth - 1))
     }
 
     private var placeholderState: some View {
@@ -338,26 +398,57 @@ struct SwipeDeckView: View {
         )
     }
 
-    private var dragGesture: some Gesture {
+    private func dragGesture(cardHeight: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 8)
             .onChanged { value in
-                if isSynopsisOpen {
-                    withAnimation(.easeOut(duration: 0.15)) { isSynopsisOpen = false }
+                // La carte est seule propriétaire de la courbe de son dépliage :
+                // ici on n'a qu'à refermer, et sous condition — une écriture
+                // d'état par image de geste invaliderait la vue pour rien.
+                if isSynopsisOpen { isSynopsisOpen = false }
+                // Relevé une seule fois par geste : le point d'appui d'une carte
+                // ne change pas en cours de route.
+                if drag == .zero {
+                    grabbedHigh = value.startLocation.y < cardHeight / 2
                 }
-                drag = value.translation
+
+                drag = CGSize(
+                    width: SwipeMotion.resisted(value.translation.width, threshold: Self.sideThreshold),
+                    height: SwipeMotion.resisted(value.translation.height, threshold: Self.upThreshold)
+                )
+                updateArming()
             }
             .onEnded { value in
                 if let direction = resolvedDirection(
                     translation: value.translation,
                     predicted: value.predictedEndTranslation
                 ) {
-                    commit(direction, from: value.translation)
+                    commit(
+                        direction,
+                        velocity: CGSize(
+                            width: value.predictedEndTranslation.width - value.translation.width,
+                            height: value.predictedEndTranslation.height - value.translation.height
+                        )
+                    )
                 } else {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                        drag = .zero
-                    }
+                    isArmed = false
+                    withAnimation(SwipeMotion.recenter) { drag = .zero }
                 }
             }
+    }
+
+    /// Le seuil se sent avant de se voir : un cran tactile au franchissement, un
+    /// autre, plus léger, quand on revient en arrière. Le tampon s'enclenche au
+    /// même instant — c'est ce qui rend la limite négociable au doigt, sans
+    /// jamais l'écrire.
+    private func updateArming() {
+        let armed = (dragProgress >= 1)
+        guard armed != isArmed else { return }
+        isArmed = armed
+        if armed {
+            Haptics.impact(.light, intensity: 0.85)
+        } else {
+            Haptics.selection()
+        }
     }
 
     /// Un flick court mais rapide doit valider comme un long glissement : d'où
@@ -375,24 +466,85 @@ struct SwipeDeckView: View {
         return nil
     }
 
-    private func commit(_ direction: SwipeDirection, from translation: CGSize) {
+    private func commit(_ direction: SwipeDirection, velocity: CGSize) {
         guard let card = model.topCard else { return }
 
         Haptics.impact(.medium)
+        let pivot = SwipeMotion.pivot(for: drag, grabbedHigh: grabbedHigh)
         departing.append(
-            DepartingCard(card: card, direction: direction, start: translation)
+            DepartingCard(
+                card: card,
+                direction: direction,
+                // La carte reprend son vol exactement où le doigt l'a laissée —
+                // position comprimée par la résistance comprise, sinon elle
+                // sauterait en avant à l'instant du lâcher.
+                start: drag,
+                velocity: velocity,
+                angle: pivot.angle,
+                anchor: pivot.anchor,
+                reduceMotion: reduceMotion
+            )
         )
+        wake = WakeMark(direction: direction)
+        lastCommitted = direction
         drag = .zero
+        isArmed = false
         isSynopsisOpen = false
         model.swipe(direction)
+    }
+
+    /// Le retour arrière. La carte rentre par le bord d'où elle est sortie : sans
+    /// ça, annuler fait apparaître un film au centre de l'écran, et rien ne dit
+    /// que c'est celui qu'on vient d'écarter.
+    private func undo() {
+        Haptics.impact(.light)
+        wake = nil
+
+        guard let direction = lastCommitted, !reduceMotion else {
+            withAnimation(SwipeMotion.advance) { model.undo() }
+            return
+        }
+
+        returnOffset = Self.returnOrigin(for: direction)
+        returnAngle = Self.returnAngle(for: direction)
+        model.undo()
+
+        Task { @MainActor in
+            // Une frame de battement, sinon SwiftUI regroupe l'insertion de la
+            // carte et la remise à zéro dans la même passe : la carte serait
+            // rendue directement en place, et ne reviendrait de nulle part.
+            try? await Task.sleep(for: .milliseconds(16))
+            withAnimation(SwipeMotion.advance) {
+                returnOffset = .zero
+                returnAngle = 0
+            }
+        }
+    }
+
+    private static func returnOrigin(for direction: SwipeDirection) -> CGSize {
+        switch direction {
+        case .right: CGSize(width: 520, height: 40)
+        case .left: CGSize(width: -520, height: 40)
+        case .up: CGSize(width: 0, height: -640)
+        }
+    }
+
+    private static func returnAngle(for direction: SwipeDirection) -> Double {
+        switch direction {
+        case .right: 7
+        case .left: -7
+        case .up: 0
+        }
     }
 
     private func toggleSynopsis() {
         guard model.topCard?.overview?.isEmpty == false else { return }
         Haptics.impact(.light, intensity: 0.6)
-        withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) {
-            isSynopsisOpen.toggle()
-        }
+        isSynopsisOpen.toggle()
+    }
+
+    private func genre(for card: SwipeCard) -> String? {
+        card.genreIds.lazy.compactMap { catalog.name(forGenre: $0) }.first
     }
 
     // MARK: - La démonstration
@@ -429,6 +581,49 @@ struct SwipeDeckView: View {
     }
 }
 
+// MARK: - Le compteur de séance
+
+/// Le compteur d'ajouts de la séance. Le point bat une fois à chaque film
+/// rangé : c'est le seul endroit de l'écran où un chiffre change tout seul, et
+/// un battement de 300 ms suffit à ce qu'on le remarque sans quitter la carte
+/// des yeux.
+private struct SessionTally: View {
+    let count: Int
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var beat: CGFloat = 1
+
+    var body: some View {
+        HStack(spacing: 9) {
+            PlanLight()
+                .scaleEffect(beat)
+
+            Text(String(localized: "\(count) ajoutés", bundle: .app))
+                .planLabel()
+                .monospacedDigit()
+                .foregroundStyle(Ink.ink2)
+                .contentTransition(.numericText())
+        }
+        .task(id: count) {
+            guard !reduceMotion else { return }
+            beat = 1.9
+            // Deux passes de rendu, sinon la mise à l'échelle et son retour se
+            // regroupent et rien ne bat.
+            try? await Task.sleep(for: .milliseconds(16))
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.5)) { beat = 1 }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - Le sillage en attente
+
+private struct WakeMark: Identifiable {
+    let id = UUID()
+    let direction: SwipeDirection
+}
+
 // MARK: - Carte en cours de sortie
 
 /// Une carte déjà tranchée, qui finit son vol pendant que le deck a déjà
@@ -439,57 +634,95 @@ private struct DepartingCard: Identifiable {
     let card: SwipeCard
     let direction: SwipeDirection
     let start: CGSize
+    /// La course restante projetée au moment du lâcher. C'est elle qui donne au
+    /// vol sa direction : une carte lancée en diagonale part en diagonale.
+    let velocity: CGSize
+    let angle: Double
+    let anchor: UnitPoint
+    let reduceMotion: Bool
 }
 
 private struct DepartingCardView: View {
     let item: DepartingCard
     let size: CGSize
+    let genre: String?
     let onFinished: () -> Void
 
     @State private var offset: CGSize
+    @State private var angle: Double
     @State private var opacity: Double = 1
 
-    init(item: DepartingCard, size: CGSize, onFinished: @escaping () -> Void) {
+    init(item: DepartingCard, size: CGSize, genre: String?, onFinished: @escaping () -> Void) {
         self.item = item
         self.size = size
+        self.genre = genre
         self.onFinished = onFinished
         _offset = State(initialValue: item.start)
+        _angle = State(initialValue: item.angle)
     }
 
     var body: some View {
         SwipeCardView(
             card: item.card,
-            verdict: verdict,
-            verdictIntensity: 1
+            genre: genre,
+            verdict: item.direction.verdict,
+            verdictIntensity: 1,
+            isArmed: true
         )
         .frame(width: size.width, height: size.height)
         .offset(offset)
-        .rotationEffect(.degrees(Double(offset.width) / 24), anchor: .bottom)
+        .rotationEffect(.degrees(angle), anchor: item.anchor)
         .opacity(opacity)
         .allowsHitTesting(false)
+        .accessibilityHidden(true)
         .task {
-            withAnimation(.easeOut(duration: 0.34)) {
-                offset = exitOffset
-                opacity = 0
+            guard !item.reduceMotion else {
+                withAnimation(.easeOut(duration: 0.2)) { opacity = 0 }
+                try? await Task.sleep(for: .milliseconds(220))
+                onFinished()
+                return
             }
-            try? await Task.sleep(for: .milliseconds(360))
+
+            withAnimation(SwipeMotion.flight) {
+                offset = exitOffset
+                // La carte continue de tourner en s'en allant : c'est ce qui la
+                // fait lire comme lancée, et non comme tirée par un rail.
+                angle = item.angle + spin
+            }
+            // La carte quitte le cadre avant de s'effacer. L'écran la faisait
+            // fondre sur toute sa course, ce qui la faisait disparaître au milieu
+            // de l'écran plutôt que sortir par un bord.
+            withAnimation(.easeIn(duration: 0.14).delay(0.16)) { opacity = 0 }
+
+            try? await Task.sleep(for: .milliseconds(340))
             onFinished()
         }
     }
 
-    private var verdict: SwipeVerdict {
+    private var spin: Double {
         switch item.direction {
-        case .right: .seen
-        case .left: .notSeen
-        case .up: .watchlist
+        case .right: 5
+        case .left: -5
+        case .up: item.start.width > 0 ? 3 : -3
         }
     }
 
+    /// Le point de sortie, dans le sens du geste. La course perpendiculaire est
+    /// reprise du lancer, bornée : un flick très oblique ne doit pas envoyer la
+    /// carte à l'autre bout de la diagonale.
     private var exitOffset: CGSize {
+        let travel: CGFloat = 680
         switch item.direction {
-        case .right: CGSize(width: 620, height: item.start.height + 40)
-        case .left: CGSize(width: -620, height: item.start.height + 40)
-        case .up: CGSize(width: item.start.width, height: -900)
+        case .right:
+            return CGSize(width: travel, height: item.start.height + drift(item.velocity.height))
+        case .left:
+            return CGSize(width: -travel, height: item.start.height + drift(item.velocity.height))
+        case .up:
+            return CGSize(width: item.start.width + drift(item.velocity.width), height: -(size.height + 420))
         }
+    }
+
+    private func drift(_ velocity: CGFloat) -> CGFloat {
+        min(220, max(-220, velocity * 0.5))
     }
 }

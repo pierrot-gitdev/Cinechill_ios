@@ -31,6 +31,9 @@ struct SwipeIntroSequence: View {
     /// La carte du dessus du deck, reprise telle quelle : la démonstration ne
     /// porte pas sur un film factice.
     let card: SwipeCard
+    /// Son genre principal, résolu par le deck — la carte de la démonstration est
+    /// la carte du deck, jusque dans sa légende.
+    let genre: String?
     /// La taille calculée par le deck, pour que le raccord de sortie tombe juste.
     let cardSize: CGSize
     let onFinished: () -> Void
@@ -76,28 +79,37 @@ struct SwipeIntroSequence: View {
     // MARK: - La carte
 
     private var demoCard: some View {
-        SwipeCardView(card: card, verdict: current?.verdict, verdictIntensity: intensity)
-            .frame(width: cardSize.width, height: cardSize.height)
-            .scaleEffect(scale)
-            .offset(offset)
-            // La même rotation que sous le doigt, au même diviseur : c'est ce qui
-            // fait que le geste démontré et le geste réel ont le même poids.
-            .rotationEffect(.degrees(Double(offset.width) / 24), anchor: .bottom)
-            .opacity(opacity)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
+        // Le même pivot que sous le doigt, main posée en haut : c'est ce qui fait
+        // que le geste démontré et le geste réel ont le même poids.
+        let pivot = SwipeMotion.pivot(for: offset, grabbedHigh: true)
+
+        return SwipeCardView(
+            card: card,
+            genre: genre,
+            verdict: current?.verdict,
+            verdictIntensity: intensity,
+            isArmed: intensity >= 1,
+            parallax: SwipeMotion.parallax(for: offset)
+        )
+        .frame(width: cardSize.width, height: cardSize.height)
+        .scaleEffect(scale)
+        .offset(offset)
+        .rotationEffect(.degrees(pivot.angle), anchor: pivot.anchor)
+        .opacity(opacity)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     // MARK: - Les destinations
 
     private var markers: some View {
         ZStack {
-            // Les deux coins hauts appartiennent au tampon du verdict, qui voyage
-            // avec la carte : le repère de la watchlist descend sous cette bande
-            // plutôt que de croiser un tampon en route.
+            // Toute la bande haute de la carte appartient au tampon du verdict,
+            // qui voyage avec elle : le repère de la watchlist descend sous cette
+            // bande plutôt que de croiser un tampon en route.
             marker(.up)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .padding(.top, cardSize.height * 0.19)
+                .padding(.top, cardSize.height * 0.30)
 
             marker(.left)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -116,13 +128,13 @@ struct SwipeIntroSequence: View {
         let isLit = current == move || taught.contains(move)
 
         return HStack(spacing: 8) {
-            if move.arrowLeading { arrow(move.arrow) }
+            if move.arrowLeading { SwipeArrowGlyph(direction: move.direction.arrow) }
             Text(move.destination).planLabel()
-            if !move.arrowLeading { arrow(move.arrow) }
+            if !move.arrowLeading { SwipeArrowGlyph(direction: move.direction.arrow) }
         }
         // Le refus est le seul repère qui reste en ardoise même allumé : ce qui
         // n'est pas vu ne se range nulle part, et la valeur le dit avant le mot.
-        .foregroundStyle(isLit ? move.litTint : Ink.ink3)
+        .foregroundStyle(isLit ? move.direction.destinationTint : Ink.ink3)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
@@ -134,12 +146,6 @@ struct SwipeIntroSequence: View {
                 .strokeBorder(isLit ? Ink.ruleSet : Ink.rule, lineWidth: 1)
         )
         .opacity(isLit ? 1 : 0.45)
-    }
-
-    private func arrow(_ direction: SwipeArrow.Direction) -> some View {
-        SwipeArrow(direction: direction)
-            .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
-            .frame(width: 12, height: 12)
     }
 
     // MARK: - La séquence
@@ -196,10 +202,12 @@ struct SwipeIntroSequence: View {
         // Une vibration au départ de la glisse, elle, n'aurait aucune cause —
         // aucun doigt n'est posé sur l'écran.
         Haptics.impact(.medium)
-        withAnimation(.easeOut(duration: 0.3)) {
+        // Le même vol que celui d'une vraie carte tranchée, et le même retard à
+        // l'extinction : la carte sort par un bord au lieu de fondre en route.
+        withAnimation(SwipeMotion.flight) {
             offset = move.exit(in: cardSize)
-            opacity = 0
         }
+        withAnimation(.easeIn(duration: 0.14).delay(0.16)) { opacity = 0 }
         // `insert` renvoie un couple, dont une fermeture à expression unique
         // ferait la valeur de retour de `withAnimation` : on l'écarte.
         withAnimation(.easeOut(duration: 0.26)) {
@@ -235,26 +243,15 @@ struct SwipeIntroSequence: View {
 /// Les trois gestes, dans l'ordre où on les enseigne : le plus fréquent d'abord,
 /// et la watchlist en dernier — c'est celui dont on se souvient le mieux, parce
 /// qu'il est le seul à sortir par le haut.
+///
+/// Le geste enseigné n'est pas une notion propre à la démonstration : c'est une
+/// `SwipeDirection`, avec son verdict, sa destination et sa flèche. `Move`
+/// n'ajoute que la géométrie de la séquence — où la carte s'arrête, et par où
+/// elle sort.
 private enum Move: CaseIterable {
     case right, left, up
 
-    var verdict: SwipeVerdict {
-        switch self {
-        case .right: .seen
-        case .left: .notSeen
-        case .up: .watchlist
-        }
-    }
-
-    var destination: String {
-        switch self {
-        case .right: String(localized: "Galerie", bundle: .app)
-        case .left: String(localized: "Jamais vu", bundle: .app)
-        case .up: String(localized: "Watchlist", bundle: .app)
-        }
-    }
-
-    var arrow: SwipeArrow.Direction {
+    var direction: SwipeDirection {
         switch self {
         case .right: .right
         case .left: .left
@@ -262,19 +259,15 @@ private enum Move: CaseIterable {
         }
     }
 
+    var verdict: SwipeVerdict { direction.verdict }
+    var destination: String { direction.destination }
+
     /// La flèche est toujours du côté du bord vers lequel on balaie : elle sort
     /// du mot, elle ne le précède pas par convention de lecture.
     var arrowLeading: Bool {
         switch self {
         case .right: false
         case .left, .up: true
-        }
-    }
-
-    var litTint: Color {
-        switch self {
-        case .right, .up: Ink.ink
-        case .left: Ink.ink3
         }
     }
 
@@ -299,64 +292,13 @@ private enum Move: CaseIterable {
     }
 }
 
-// MARK: - La flèche
-
-/// Les trois flèches du deck, dans l'écriture « La Gravure » : grille de 24,
-/// trait de 1,5, extrémités rondes. Elles remplacent `arrow.left` / `arrow.up` /
-/// `arrow.right`, derniers symboles système d'un écran par ailleurs entièrement
-/// dessiné.
-struct SwipeArrow: Shape {
-    enum Direction { case left, up, right }
-
-    let direction: Direction
-
-    func path(in rect: CGRect) -> Path {
-        let scale = min(rect.width, rect.height) / 24
-        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-            CGPoint(x: rect.minX + x * scale, y: rect.minY + y * scale)
-        }
-
-        var path = Path()
-        switch direction {
-        case .left:
-            path.move(to: p(20, 12))
-            path.addLine(to: p(4, 12))
-            path.move(to: p(10, 6))
-            path.addLine(to: p(4, 12))
-            path.addLine(to: p(10, 18))
-        case .right:
-            path.move(to: p(4, 12))
-            path.addLine(to: p(20, 12))
-            path.move(to: p(14, 6))
-            path.addLine(to: p(20, 12))
-            path.addLine(to: p(14, 18))
-        case .up:
-            path.move(to: p(12, 20))
-            path.addLine(to: p(12, 4))
-            path.move(to: p(6, 10))
-            path.addLine(to: p(12, 4))
-            path.addLine(to: p(18, 10))
-        }
-        return path
-    }
-}
-
 #Preview("La démonstration") {
     ZStack {
         Ink.ground.ignoresSafeArea()
         SwipeIntroSequence(
-            card: SwipeCard(
-                tmdbId: 157336,
-                title: "Interstellar",
-                posterPath: nil,
-                overview: "Dans un futur proche, la Terre se meurt.",
-                voteAverage: 8.4,
-                voteCount: 34000,
-                genreIds: [12, 18, 878],
-                releaseDate: "2014-11-05",
-                source: "pillars"
-            ),
-            cardSize: CGSize(width: 300, height: 450),
+            card: .preview,
+            genre: "Science-fiction",
+            cardSize: CGSize(width: 300, height: 486),
             onFinished: {}
         )
     }

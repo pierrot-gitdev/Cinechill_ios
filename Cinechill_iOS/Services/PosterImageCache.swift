@@ -106,12 +106,17 @@ struct PosterImageView: View {
         }
     }
 
+    /// Le cadre vide, en attendant l'affiche. Un aplat de nuit et l'icône de la
+    /// famille : `secondarySystemBackground` et `film` étaient deux des derniers
+    /// emprunts au système dans une application par ailleurs entièrement
+    /// dessinée — et sur une carte de « Découvrir », qui se lit en plein écran,
+    /// le rectangle gris clair du système sautait aux yeux.
     private var placeholder: some View {
         ZStack {
-            Rectangle().fill(Color(.secondarySystemBackground))
-            Image(systemName: "film")
-                .font(.system(size: 34, weight: .light))
-                .foregroundStyle(.tertiary)
+            Rectangle().fill(Ink.ground)
+            CinechillHallIconView(.salle)
+                .frame(width: 30, height: 30)
+                .foregroundStyle(Ink.ink3.opacity(0.7))
         }
     }
 }
