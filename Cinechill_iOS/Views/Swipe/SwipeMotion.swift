@@ -31,8 +31,9 @@ enum SwipeMotion {
     /// Le dépliage de la plaque sur le synopsis. Le seul mouvement de mise en
     /// page de la carte, et il ne rebondit pas.
     static let unfold = Animation.spring(response: 0.34, dampingFraction: 0.88)
-    /// Le sillage, une fois la carte partie.
-    static let wake = Animation.easeOut(duration: 0.2)
+    /// Un repère qui s'allume ou s'éteint — les destinations de la
+    /// démonstration. Une valeur qui change, pas un objet qui se déplace.
+    static let reveal = Animation.easeOut(duration: 0.22)
 
     // MARK: Physique du geste
 
@@ -87,9 +88,9 @@ extension SwipeDirection {
         }
     }
 
-    /// Là où le film se range. Le même mot dans la démonstration, dans le
-    /// sillage d'un swipe et dans l'onglet d'arrivée : c'est cette égalité qui
-    /// fait qu'on n'a le geste à apprendre qu'une fois.
+    /// Là où le film se range, en un mot — celui de la démonstration et celui de
+    /// l'onglet d'arrivée. C'est cette égalité qui fait qu'on n'a le geste à
+    /// apprendre qu'une fois.
     var destination: String {
         switch self {
         case .right: String(localized: "Galerie", bundle: .app)
@@ -107,129 +108,27 @@ extension SwipeDirection {
         }
     }
 
+    /// Ce que le toast annonce, au possessif : c'est la galerie *de
+    /// l'utilisateur* que le film vient de rejoindre.
+    ///
+    /// `nil` pour le refus, et c'est le fond de l'affaire : un film écarté n'est
+    /// rangé nulle part, il n'y a donc rien à accuser réception. Confirmer les
+    /// trois gestes ferait du toast un commentaire du geste plutôt que de son
+    /// résultat.
+    var confirmation: String? {
+        switch self {
+        case .right: String(localized: "Ajouté à votre galerie", bundle: .app)
+        case .up: String(localized: "Ajouté à votre watchlist", bundle: .app)
+        case .left: nil
+        }
+    }
+
     var arrow: SwipeArrow.Direction {
         switch self {
         case .right: .right
         case .left: .left
         case .up: .up
         }
-    }
-}
-
-// MARK: - Le sillage
-
-/// Ce qui reste d'un geste une demi-seconde après qu'il a été fait.
-///
-/// La carte est partie ; au bord par lequel elle est sortie, un filet se tire
-/// vers l'extérieur et la destination se lit une fois avant de s'éteindre. C'est
-/// la seule chose qui ferme le geste : sans elle, un swipe se termine sur un
-/// vide, et rien ne dit où le film vient d'aller.
-///
-/// Deux règles la tiennent discrète : **rien ne s'ajoute au vocabulaire** — le
-/// filet et le libellé de service sont ceux de tout l'écran — et **elle ne
-/// dure pas** ; à la seconde carte elle est déjà oubliée, ce qui est exactement
-/// ce qu'on demande à un accusé de réception.
-struct SwipeWake: View {
-    let direction: SwipeDirection
-    /// Le sillage connaît sa propre durée : c'est lui qui dit au deck quand le
-    /// retirer, comme la carte en vol le fait déjà.
-    var onFinished: () -> Void = {}
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    @State private var draw: CGFloat = 0
-    @State private var travel: CGFloat = 0
-    @State private var opacity: Double = 1
-
-    /// Longueur du filet, et distance dont le repère s'éloigne en s'éteignant.
-    private static let ruleLength: CGFloat = 26
-    private static let departure: CGFloat = 14
-
-    var body: some View {
-        mark
-            .foregroundStyle(direction.destinationTint)
-            .opacity(opacity)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-            .task { await play() }
-    }
-
-    @ViewBuilder
-    private var mark: some View {
-        switch direction {
-        case .right:
-            lateral(alignment: .trailing, sign: 1)
-        case .left:
-            lateral(alignment: .leading, sign: -1)
-        case .up:
-            vertical
-        }
-    }
-
-    /// Les deux sorties latérales : le libellé au bord, le filet qui prolonge le
-    /// geste vers l'extérieur du cadre.
-    private func lateral(alignment: Alignment, sign: CGFloat) -> some View {
-        HStack(spacing: 9) {
-            if sign < 0 { rule(horizontal: true, anchor: .trailing) }
-            Text(direction.destination)
-                .planLabel()
-                .fixedSize()
-            if sign > 0 { rule(horizontal: true, anchor: .leading) }
-        }
-        .padding(.horizontal, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
-        .offset(x: sign * travel)
-    }
-
-    /// La watchlist sort par le haut : le filet monte, le libellé le suit.
-    private var vertical: some View {
-        VStack(spacing: 9) {
-            rule(horizontal: false, anchor: .bottom)
-            Text(direction.destination)
-                .planLabel()
-                .fixedSize()
-        }
-        // De quoi s'éloigner sans monter dans le bandeau de séance : les deux
-        // sorties latérales, elles, peuvent franchir le bord — c'est ce qu'on
-        // leur demande.
-        .padding(.top, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .offset(y: -travel)
-    }
-
-    private func rule(horizontal: Bool, anchor: UnitPoint) -> some View {
-        Rectangle()
-            .fill(direction.destinationTint)
-            .frame(
-                width: horizontal ? Self.ruleLength : 1,
-                height: horizontal ? 1 : Self.ruleLength
-            )
-            .scaleEffect(
-                x: horizontal ? draw : 1,
-                y: horizontal ? 1 : draw,
-                anchor: anchor
-            )
-    }
-
-    private func play() async {
-        guard !reduceMotion else {
-            draw = 1
-            withAnimation(.easeIn(duration: 0.32)) { opacity = 0 }
-            try? await Task.sleep(for: .milliseconds(360))
-            guard !Task.isCancelled else { return }
-            onFinished()
-            return
-        }
-
-        withAnimation(SwipeMotion.wake) {
-            draw = 1
-            travel = Self.departure
-        }
-        withAnimation(.easeIn(duration: 0.26).delay(0.16)) { opacity = 0 }
-
-        try? await Task.sleep(for: .milliseconds(460))
-        guard !Task.isCancelled else { return }
-        onFinished()
     }
 }
 
@@ -294,16 +193,44 @@ struct SwipeArrowGlyph: View {
     }
 }
 
-#Preview("Le sillage") {
-    ZStack {
-        Ink.ground.ignoresSafeArea()
-        VStack(spacing: 34) {
-            ForEach([SwipeDirection.right, .left, .up], id: \.destination) { direction in
-                SwipeWake(direction: direction)
-                    .frame(height: 88)
-                    .overlay(alignment: .bottom) { PlanEdge() }
-            }
+// MARK: - L'aide
+
+/// Le point d'interrogation qui rouvre la planche des gestes, dans la même
+/// écriture que les flèches : grille de 24, trait de 1,5, extrémités rondes.
+///
+/// L'anse est tracée et le point est plein — c'est ainsi qu'un « ? » se dessine.
+/// `questionmark` du système n'aurait ni la même graisse ni les mêmes extrémités
+/// que les trois flèches qu'il côtoie sur cet écran, et ça se voit à 17 pt.
+struct SwipeHelpGlyph: View {
+    var side: CGFloat = 17
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            SwipeHelpHook()
+                .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                .frame(width: side, height: side)
+
+            Circle()
+                .frame(width: side / 24 * 2.1, height: side / 24 * 2.1)
+                .offset(x: side / 24 * 10.95, y: side / 24 * 17.2)
         }
-        .padding(Metrics.margin)
+        .frame(width: side, height: side)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct SwipeHelpHook: Shape {
+    func path(in rect: CGRect) -> Path {
+        let scale = min(rect.width, rect.height) / 24
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: rect.minX + x * scale, y: rect.minY + y * scale)
+        }
+
+        var path = Path()
+        path.move(to: p(7.8, 9))
+        path.addQuadCurve(to: p(16.2, 9), control: p(12, 3.4))
+        path.addQuadCurve(to: p(12, 14.4), control: p(16.2, 12.4))
+        path.addLine(to: p(12, 15.8))
+        return path
     }
 }

@@ -372,6 +372,16 @@
         }
       }
     },
+    "%@. %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. %2$@"
+          }
+        }
+      }
+    },
     "%lld ajoutés" : {
       "localizations" : {
         "en" : {
@@ -1416,6 +1426,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AILLEURS"
+          }
+        }
+      }
+    },
+    "Ajouté à votre galerie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added to your gallery"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouté à votre galerie"
           }
         }
       }
@@ -2988,6 +3014,22 @@
         }
       }
     },
+    "Compris" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compris"
+          }
+        }
+      }
+    },
     "Configuration Google Sign-In invalide." : {
       "localizations" : {
         "en" : {
@@ -3454,22 +3496,6 @@
         }
       }
     },
-    "Démonstration des gestes. Balayez vers la droite pour ranger le film dans votre galerie, vers la gauche si vous ne l'avez jamais vu, vers le haut pour l'ajouter à votre watchlist." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gesture demonstration. Swipe right to file the film in your gallery, left if you've never seen it, up to add it to your watchlist."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Démonstration des gestes. Balayez vers la droite pour ranger le film dans votre galerie, vers la gauche si vous ne l'avez jamais vu, vers le haut pour l'ajouter à votre watchlist."
-          }
-        }
-      }
-    },
     "Déplié" : {
       "localizations" : {
         "en" : {
@@ -3930,6 +3956,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Entrer"
+          }
+        }
+      }
+    },
+    "Envie de le voir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Want to watch it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envie de le voir"
           }
         }
       }
@@ -4958,6 +5000,22 @@
         }
       }
     },
+    "Il reviendra plus tard" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It will come back later"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il reviendra plus tard"
+          }
+        }
+      }
+    },
     "Il vous faut des films où ça avance vite." : {
       "localizations" : {
         "en" : {
@@ -5402,22 +5460,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La Cinémathèque"
-          }
-        }
-      }
-    },
-    "La démonstration se rejouera à votre prochain passage sur Découvrir." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The demonstration will play again next time you open Discover."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La démonstration se rejouera à votre prochain passage sur Découvrir."
           }
         }
       }
@@ -5950,22 +5992,6 @@
         }
       }
     },
-    "Les gestes de Découvrir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The Discover gestures"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les gestes de Découvrir"
-          }
-        }
-      }
-    },
     "Les sensations fortes" : {
       "localizations" : {
         "en" : {
@@ -5982,18 +6008,18 @@
         }
       }
     },
-    "Les trois directions remontrées en quelques secondes, sur votre prochaine carte." : {
+    "Les trois gestes" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The three directions shown again in a few seconds, on your next card."
+            "value" : "The three gestures"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les trois directions remontrées en quelques secondes, sur votre prochaine carte."
+            "value" : "Les trois gestes"
           }
         }
       }
@@ -7210,22 +7236,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PAS VU"
-          }
-        }
-      }
-    },
-    "Passer" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Skip"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Passer"
           }
         }
       }
@@ -8566,18 +8576,18 @@
         }
       }
     },
-    "Revoir la démonstration" : {
+    "Revoir les gestes" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Watch the demonstration again"
+            "value" : "See the gestures again"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Revoir la démonstration"
+            "value" : "Revoir les gestes"
           }
         }
       }
@@ -9538,22 +9548,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Toucher à nouveau pour retirer de vos listes"
-          }
-        }
-      }
-    },
-    "Touchez pour commencer" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap to start"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touchez pour commencer"
           }
         }
       }
@@ -10946,6 +10940,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vous êtes curieux·se, sans chercher l'obscur."
+          }
+        }
+      }
+    },
+    "Vous l'avez vu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have seen it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous l'avez vu"
           }
         }
       }

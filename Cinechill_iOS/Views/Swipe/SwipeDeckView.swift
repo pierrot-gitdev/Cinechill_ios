@@ -40,8 +40,10 @@ struct SwipeDeckView: View {
     /// Le seuil est franchi : lever le doigt tranche.
     @State private var isArmed = false
     @State private var departing: [DepartingCard] = []
-    /// Le sillage de la dernière carte partie.
-    @State private var wake: WakeMark?
+    /// L'accusé de réception du dernier classement. Un seul à la fois : le
+    /// suivant remplace le précédent plutôt que de s'empiler, sinon swiper vite
+    /// remplirait le bas de l'écran d'une file de plaques.
+    @State private var toast: ToastMark?
     /// Le retour d'une carte annulée : elle rentre par le bord d'où elle est
     /// sortie, elle ne réapparaît pas au centre.
     @State private var returnOffset: CGSize = .zero
@@ -49,11 +51,13 @@ struct SwipeDeckView: View {
     @State private var lastCommitted: SwipeDirection?
     @State private var isSynopsisOpen = false
     @State private var showProfile = false
-    /// La démonstration des gestes tient la carte du dessus le temps de sa
-    /// séquence — voir `SwipeIntroSequence`.
-    @State private var isIntroPlaying = false
+    /// L'aide aux gestes — voir `SwipeGuideOverlay`.
+    @State private var showGuide = false
 
-    @AppStorage("swipe.introPlayed") private var introPlayed = false
+    /// L'aide s'ouvre d'elle-même à la première venue, et une seule fois : elle
+    /// reste à un tap dans le plafond pour tout le reste de la vie de
+    /// l'application.
+    @AppStorage("swipe.guideSeen") private var guideSeen = false
 
     var body: some View {
         NavigationStack {
@@ -63,7 +67,6 @@ struct SwipeDeckView: View {
                 VStack(spacing: 0) {
                     statusBar
                     deckArea
-                    footer
                 }
             }
             .safeAreaInset(edge: .top) {
@@ -71,6 +74,7 @@ struct SwipeDeckView: View {
             }
             .navigationBarHidden(true)
             .overlay { milestoneOverlay }
+            .overlay { guideOverlay }
             .fullScreenCover(isPresented: $showProfile) {
                 ProfileView(badgesModel: badgesModel)
                     .environmentObject(profileStore)
@@ -84,43 +88,27 @@ struct SwipeDeckView: View {
             // Le répertoire des genres ne conditionne pas le deck : la légende
             // s'écrira sans son genre plutôt que de retarder la première carte.
             Task { await catalog.loadIfNeeded() }
+            // En parallèle du chargement, jamais devant : la planche doit
+            // s'ouvrir pendant que le deck se remplit derrière elle, et non
+            // retarder de 280 ms la première carte.
+            Task { await openGuideOnFirstVisit() }
             await model.start()
-            await startIntro()
         }
         .onChange(of: libraryIDs) { _, ids in
             model.syncLibrary(ids)
         }
-        // Une démonstration jouée écran éteint serait une démonstration perdue :
-        // elle se remet en attente avec l'application, et repart avec elle.
         .onChange(of: scenePhase) { _, phase in
-            guard phase != .active else {
-                Task { await startIntro() }
-                return
-            }
-            suspendIntro()
+            guard phase != .active else { return }
             Task { await model.flushPending() }
         }
         // L'onglet reste monté quand on le quitte (voir `MainTabView`), donc
         // `onDisappear` ne suffit pas : c'est le changement d'onglet qui dit
-        // qu'il faut envoyer la décision restée en main — et, au retour, qu'il
-        // faut reprendre la démonstration si elle n'a pas été vue.
+        // qu'il faut envoyer la décision restée en main. L'aide, elle, appartient
+        // à cet écran et n'a pas à attendre derrière un autre.
         .onChange(of: selectedTab) { _, tab in
-            if tab == 2 {
-                Task { await startIntro() }
-            } else {
-                suspendIntro()
-                Task { await model.flushPending() }
-            }
-        }
-        // Les réglages s'ouvrent depuis l'en-tête de cet écran, et c'est de là
-        // qu'on réarme la démonstration : elle doit donc pouvoir repartir dès la
-        // fermeture, sans avoir à quitter l'onglet.
-        .onChange(of: showProfile) { _, isOpen in
-            if isOpen {
-                suspendIntro()
-            } else {
-                Task { await startIntro() }
-            }
+            guard tab != 2 else { return }
+            closeGuide()
+            Task { await model.flushPending() }
         }
         .onDisappear {
             Task { await model.flushPending() }
@@ -130,7 +118,7 @@ struct SwipeDeckView: View {
     // MARK: - Bandeau de session
 
     private var statusBar: some View {
-        HStack(spacing: 9) {
+        HStack(spacing: 14) {
             if model.addedThisSession > 0 {
                 SessionTally(count: model.addedThisSession)
                     .transition(.opacity)
@@ -154,12 +142,43 @@ struct SwipeDeckView: View {
                 .transition(.opacity)
                 .accessibilityLabel(String(localized: "Annuler le dernier swipe", bundle: .app))
             }
+
+            helpButton
         }
         .frame(height: 34)
         .padding(.horizontal, Metrics.margin)
         .padding(.top, 6)
         .animation(Metrics.shift, value: model.addedThisSession)
         .animation(Metrics.shift, value: model.canUndo)
+    }
+
+    /// Le « ? », en haut à droite de la vue.
+    ///
+    /// Il est le seul élément permanent du bandeau — le compteur et l'annulation
+    /// vont et viennent, lui reste, et c'est ce qui en fait un repère plutôt qu'un
+    /// bouton qu'on cherche. Posé le dernier de la rangée, il ne bouge donc
+    /// jamais : « Annuler » apparaît à sa gauche.
+    ///
+    /// Les trois directions ne sont pas devinables et l'écran n'a aucune autre
+    /// place où les écrire — une légende permanente sous le deck a déjà été
+    /// essayée, et retirée pour ça.
+    private var helpButton: some View {
+        Button {
+            Haptics.impact(.light, intensity: 0.6)
+            withAnimation(.easeOut(duration: 0.2)) { showGuide = true }
+        } label: {
+            SwipeHelpGlyph()
+                .foregroundStyle(showGuide ? Ink.ink : Ink.ink2)
+                // La cible déborde le tracé : 17 pt ne se touchent pas.
+                .frame(width: 34, height: 34, alignment: .trailing)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.9))
+        .accessibilityLabel(String(localized: "Revoir les gestes", bundle: .app))
+        // Le tracé n'occupe pas toute sa grille : il laisse 4 pt de vide à sa
+        // droite. Sans ce retrait, le « ? » s'alignerait sur son cadre et non sur
+        // son encre, et rentrerait de 4 pt par rapport à tout le reste de l'écran.
+        .padding(.trailing, -4)
     }
 
     // MARK: - Le deck
@@ -176,40 +195,19 @@ struct SwipeDeckView: View {
                     cardStack(size: card)
                 }
 
-                // Le sillage est sous la carte qui s'en va : elle le traverse en
-                // sortant, et il reste une demi-seconde après elle.
-                if let mark = wake {
-                    SwipeWake(direction: mark.direction) {
-                        if wake?.id == mark.id { wake = nil }
-                    }
-                    .id(mark.id)
-                }
-
                 ForEach(departing) { item in
                     DepartingCardView(item: item, size: card, genre: genre(for: item.card)) {
                         departing.removeAll { $0.id == item.id }
                     }
                 }
-
-                // La démonstration emprunte la carte du dessus et la joue
-                // au-dessus de la pile restée en place : à la dernière image, il
-                // n'y a donc rien à raccorder — le fondu suffit.
-                if isIntroPlaying, let topCard = model.topCard {
-                    SwipeIntroSequence(
-                        card: topCard,
-                        genre: genre(for: topCard),
-                        cardSize: card,
-                        onFinished: endIntro
-                    )
-                    // Rien à fondre à l'entrée : la carte de la démonstration
-                    // est celle qui vient d'être retirée de la pile, au même
-                    // endroit et à la même taille. Un fondu d'entrée ferait
-                    // clignoter le deck ; c'est à la sortie qu'il sert, pour
-                    // éteindre les repères.
-                    .transition(.asymmetric(insertion: .identity, removal: .opacity))
-                }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
+            // Le toast est posé sur le haut du **deck**, et non sur le haut de
+            // l'écran : le bandeau au-dessus porte l'annulation, et la masquer
+            // pendant la seconde et demie qui suit un classement serait la
+            // masquer précisément au moment où on s'en sert. Ici il ne recouvre
+            // que le haut de l'affiche.
+            .overlay(alignment: .top) { toastLayer }
         }
     }
 
@@ -240,9 +238,7 @@ struct SwipeDeckView: View {
                     .transition(.opacity)
             }
 
-            // Pendant la démonstration, la carte du dessus est jouée par
-            // `SwipeIntroSequence` : la dessiner deux fois la dédoublerait.
-            if let card = model.topCard, !isIntroPlaying {
+            if let card = model.topCard {
                 let pivot = SwipeMotion.pivot(for: drag, grabbedHigh: grabbedHigh)
 
                 SwipeCardView(
@@ -330,31 +326,36 @@ struct SwipeDeckView: View {
         }
     }
 
-    // MARK: - Pied
+    // MARK: - L'aide aux gestes
 
-    /// Le pied ne porte plus de légende — la démonstration a remplacé la notice.
-    /// Il garde sa hauteur, et n'accueille que la sortie de secours de cette
-    /// démonstration : rien ne se déplace quand elle se termine.
-    private var footer: some View {
-        ZStack {
-            if isIntroPlaying {
-                Button {
-                    Haptics.impact(.light, intensity: 0.6)
-                    endIntro()
-                } label: {
-                    Text("Passer", bundle: .app)
-                        .planLabel()
-                        .foregroundStyle(Ink.ink3)
-                        .padding(.horizontal, 16)
-                        .contentShape(Rectangle().inset(by: -10))
-                }
-                .buttonStyle(.plain)
+    @ViewBuilder
+    private var guideOverlay: some View {
+        if showGuide {
+            SwipeGuideOverlay(onClose: closeGuide)
+                // La séquence tourne tant que la planche est là ; son retrait
+                // annule la `task` qui la fait tourner.
                 .transition(.opacity)
-            }
+                .zIndex(20)
         }
-        .frame(height: 26)
-        .padding(.bottom, 8)
-        .animation(.easeOut(duration: 0.3), value: isIntroPlaying)
+    }
+
+    /// L'accusé de réception. Il ne recouvre que le haut de l'affiche : la légende
+    /// de la carte suivante — son titre, son année, sa note — est ce qu'on lit
+    /// pour trancher, et elle vit dans la plaque du bas.
+    @ViewBuilder
+    private var toastLayer: some View {
+        if let mark = toast {
+            PlanToast(
+                title: mark.title,
+                destination: mark.destination,
+                isAcquired: mark.isAcquired
+            ) {
+                if toast?.id == mark.id { toast = nil }
+            }
+            .id(mark.id)
+            .padding(.horizontal, Metrics.margin)
+            .padding(.top, 10)
+        }
     }
 
     @ViewBuilder
@@ -485,12 +486,22 @@ struct SwipeDeckView: View {
                 reduceMotion: reduceMotion
             )
         )
-        wake = WakeMark(direction: direction)
         lastCommitted = direction
         drag = .zero
         isArmed = false
         isSynopsisOpen = false
         model.swipe(direction)
+
+        // Après `swipe`, parce que c'est lui qui sait si un palier vient d'être
+        // franchi : la célébration plein écran dit déjà que le film est rangé, et
+        // deux accusés de réception pour le même geste en font un de trop.
+        if let confirmation = direction.confirmation, model.celebratedMilestone == nil {
+            toast = ToastMark(
+                title: card.title,
+                destination: confirmation,
+                isAcquired: direction.verdict.isFilled
+            )
+        }
     }
 
     /// Le retour arrière. La carte rentre par le bord d'où elle est sortie : sans
@@ -498,7 +509,9 @@ struct SwipeDeckView: View {
     /// que c'est celui qu'on vient d'écarter.
     private func undo() {
         Haptics.impact(.light)
-        wake = nil
+        // Le film n'est plus rangé : sa confirmation ne doit pas rester à
+        // l'écran une seconde de plus.
+        toast = nil
 
         guard let direction = lastCommitted, !reduceMotion else {
             withAnimation(SwipeMotion.advance) { model.undo() }
@@ -547,32 +560,27 @@ struct SwipeDeckView: View {
         card.genreIds.lazy.compactMap { catalog.name(forGenre: $0) }.first
     }
 
-    // MARK: - La démonstration
+    // MARK: - L'aide
 
-    /// Lance la démonstration, une fois la première carte en main.
+    /// Ouvre l'aide à la toute première venue sur l'onglet.
     ///
-    /// Le délai laisse à l'affiche le temps d'arriver : une séquence qui commence
-    /// sur un cadre vide ne démontre rien.
-    private func startIntro() async {
-        guard !introPlayed, !isIntroPlaying else { return }
-        try? await Task.sleep(for: .milliseconds(360))
-        guard !introPlayed, !isIntroPlaying, selectedTab == 2, model.topCard != nil else { return }
-        withAnimation(.easeOut(duration: 0.3)) { isIntroPlaying = true }
+    /// Le drapeau est posé **avant** l'animation, et non à la fermeture : quitter
+    /// l'écran en cours de route ne doit pas condamner l'utilisateur à revoir la
+    /// planche à chaque retour. Le « ? » est là pour ceux qui l'ont manquée.
+    ///
+    /// La courte attente laisse la bascule d'onglet se terminer — une planche qui
+    /// arrive dans le même mouvement que l'écran se lit comme un raté d'animation.
+    private func openGuideOnFirstVisit() async {
+        guard !guideSeen else { return }
+        try? await Task.sleep(for: .milliseconds(280))
+        guard !guideSeen, selectedTab == 2 else { return }
+        guideSeen = true
+        withAnimation(.easeOut(duration: 0.24)) { showGuide = true }
     }
 
-    /// Quitter l'onglet en cours de séquence ne la consomme pas : elle n'a pas
-    /// été vue, elle reprendra au retour.
-    private func suspendIntro() {
-        guard isIntroPlaying else { return }
-        isIntroPlaying = false
-    }
-
-    /// La séquence est allée au bout, ou l'utilisateur l'a coupée : dans les deux
-    /// cas le geste est acquis, et le deck prend la main.
-    private func endIntro() {
-        guard isIntroPlaying else { return }
-        introPlayed = true
-        withAnimation(.easeOut(duration: 0.34)) { isIntroPlaying = false }
+    private func closeGuide() {
+        guard showGuide else { return }
+        withAnimation(.easeOut(duration: 0.22)) { showGuide = false }
     }
 
     private var libraryIDs: Set<Int> {
@@ -617,11 +625,16 @@ private struct SessionTally: View {
     }
 }
 
-// MARK: - Le sillage en attente
+// MARK: - La confirmation à l'écran
 
-private struct WakeMark: Identifiable {
+/// Un toast en cours d'affichage. L'identité est portée par un `UUID` et non par
+/// le film : classer deux fois le même titre — après une annulation — doit bien
+/// rejouer la confirmation.
+private struct ToastMark: Identifiable {
     let id = UUID()
-    let direction: SwipeDirection
+    let title: String
+    let destination: String
+    let isAcquired: Bool
 }
 
 // MARK: - Carte en cours de sortie
