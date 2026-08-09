@@ -383,7 +383,10 @@ final class AuthService: ObservableObject {
 
     private enum Operation { case signIn, signUp, reset }
 
-    private static let sdkMissing = AuthFailure.form(String(localized: "SDK Firebase manquant dans la cible iOS.", bundle: .app))
+    /// Calculée : un `static let` fige sa chaîne dans la langue du premier accès.
+    private static var sdkMissing: AuthFailure {
+        AuthFailure.form(String(localized: "SDK Firebase manquant dans la cible iOS.", bundle: .app))
+    }
 
     /// Les seuls codes Firebase qu'on rencontre réellement sur ce parcours.
     ///

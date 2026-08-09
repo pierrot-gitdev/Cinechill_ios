@@ -37,7 +37,7 @@ struct SessionFrameView: View {
             }
 
             group(String(localized: "Vous avez combien de temps ?", bundle: .app), note: lateHourNote) {
-                ForEach(Self.budgets, id: \.0) { preference, title in
+                ForEach(budgets, id: \.0) { preference, title in
                     PlanChip(title: title, isOn: budget == preference) {
                         budget = preference
                     }
@@ -57,11 +57,15 @@ struct SessionFrameView: View {
     /// Le budget de la soirée réutilise `RuntimePreference` — mêmes valeurs, mais
     /// dites en durée disponible plutôt qu'en préférence de format. `.any` n'y
     /// figure pas : on a toujours une heure à laquelle on veut être couché.
-    private static let budgets: [(RuntimePreference, String)] = [
-        (.short, String(localized: "Environ 1 h 30", bundle: .app)),
-        (.medium, String(localized: "Environ 2 h", bundle: .app)),
-        (.long, String(localized: "Toute la soirée", bundle: .app)),
-    ]
+    /// Calculée : un `static let` fige ses libellés dans la langue du premier
+    /// accès et ne les relit jamais.
+    private var budgets: [(RuntimePreference, String)] {
+        [
+            (.short, String(localized: "Environ 1 h 30", bundle: .app)),
+            (.medium, String(localized: "Environ 2 h", bundle: .app)),
+            (.long, String(localized: "Toute la soirée", bundle: .app)),
+        ]
+    }
 
     private func group(
         _ title: String,

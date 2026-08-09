@@ -102,7 +102,13 @@ nonisolated enum BadgeCatalog {
     /// depuis la planche de design : first_reel, centenary, cinematheque,
     /// archaeologist, traveler, steel_heart, sleepless, panoramic, marathon,
     /// ritual, clean_list, sorter, signature, integral, night_owl.
-    static let all: [Badge] = [
+    ///
+    /// **Calculée, jamais `static let`.** Un `static` n'est initialisé qu'une fois
+    /// par processus : les noms et les conditions y étaient figés dans la langue
+    /// du premier accès, et changer de langue ne les rattrapait pas — la mémoire
+    /// d'un `static` survit à la reconstruction de la hiérarchie de vues. Quinze
+    /// structures reconstruites à chaque lecture ne coûtent rien à côté.
+    static var all: [Badge] {[
         Badge(
             id: "first_reel", name: String(localized: "Première Bobine", bundle: .app),
             condition: String(localized: "Votre tout premier film enregistré.", bundle: .app),
@@ -178,7 +184,7 @@ nonisolated enum BadgeCatalog {
             condition: String(localized: "15 films enregistrés entre 2 h et 5 h du matin.", bundle: .app),
             rarity: .mythic, isSecret: true
         ),
-    ]
+    ]}
 
     static func badge(id: String) -> Badge? {
         all.first { $0.id == id }

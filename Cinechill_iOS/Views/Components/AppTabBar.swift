@@ -25,13 +25,21 @@ struct AppTabBar: View {
 
     private static let height: CGFloat = 58
 
-    private static let items: [(icon: CinechillIcon, label: String)] = [
-        (.accueil, String(localized: "Accueil", bundle: .app)),
-        (.cinematch, String(localized: "CinéMatch", bundle: .app)),
-        (.decouvrir, String(localized: "Découvrir", bundle: .app)),
-        (.galerie, String(localized: "Galerie", bundle: .app)),
-        (.watchlist, String(localized: "Watchlist", bundle: .app))
-    ]
+    /// **Calculée, jamais `static let`.** Une propriété statique n'est initialisée
+    /// qu'une fois par processus : les libellés y étaient résolus au premier accès
+    /// et n'en bougeaient plus. Changer de langue reconstruit bien la hiérarchie
+    /// de vues (`.id(language.selection)` à la racine), mais la mémoire d'un
+    /// `static` survit à cette reconstruction — la barre restait donc dans la
+    /// langue du tout premier affichage.
+    private var items: [(icon: CinechillIcon, label: String)] {
+        [
+            (.accueil, String(localized: "Accueil", bundle: .app)),
+            (.cinematch, String(localized: "CinéMatch", bundle: .app)),
+            (.decouvrir, String(localized: "Découvrir", bundle: .app)),
+            (.galerie, String(localized: "Galerie", bundle: .app)),
+            (.watchlist, String(localized: "Watchlist", bundle: .app))
+        ]
+    }
 
     /// Courbe du volet 04 : lente au départ, longue à l'arrivée. Une lumière qui se déplace trop
     /// vite scintille au lieu de couler.
@@ -39,7 +47,7 @@ struct AppTabBar: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let step = proxy.size.width / CGFloat(Self.items.count)
+            let step = proxy.size.width / CGFloat(items.count)
             let lampX = step * (CGFloat(selectedTab) + 0.5)
 
             ZStack(alignment: .topLeading) {
@@ -111,14 +119,14 @@ struct AppTabBar: View {
 
     private var tabRow: some View {
         HStack(spacing: 0) {
-            ForEach(Self.items.indices, id: \.self) { index in
+            ForEach(items.indices, id: \.self) { index in
                 tabButton(index)
             }
         }
     }
 
     private func tabButton(_ index: Int) -> some View {
-        let item = Self.items[index]
+        let item = items[index]
         let isSelected = selectedTab == index
 
         return Button {

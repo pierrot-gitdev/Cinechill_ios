@@ -292,7 +292,11 @@ struct PlanCriteria: View {
 /// majuscule ou un accent est une faute de conception si on la signale, pas une
 /// faute de l'utilisateur.
 enum PlanHandle {
-    static let rule = String(localized: "3 à 20 caractères, minuscules, chiffres, point et tiret bas.", bundle: .app)
+    /// Calculée : un `static let` fige sa chaîne dans la langue du premier accès
+    /// et ne la relit jamais, y compris après un changement de langue.
+    static var rule: String {
+        String(localized: "3 à 20 caractères, minuscules, chiffres, point et tiret bas.", bundle: .app)
+    }
 
     static func normalize(_ raw: String) -> String {
         let folded = raw.folding(
