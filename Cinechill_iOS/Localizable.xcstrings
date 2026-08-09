@@ -9408,22 +9408,6 @@
         }
       }
     },
-    "Système" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Système"
-          }
-        }
-      }
-    },
     "Tapez un pseudo pour retrouver quelqu'un que vous connaissez." : {
       "localizations" : {
         "en" : {

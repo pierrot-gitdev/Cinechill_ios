@@ -13,11 +13,15 @@ import SwiftUI
 /// Le choix fait ici décide donc à la fois du catalogue de chaînes lu en local
 /// et de l'en-tête `Accept-Language` envoyé au backend, qui le répercute à TMDB.
 ///
-/// `.system` n'est pas une troisième langue : c'est l'absence de choix, qui
-/// laisse iOS trancher. On la garde en tête de liste parce que c'est le
-/// comportement attendu tant qu'on n'a rien demandé.
+/// **Deux langues, pas trois.** Il y a eu un cas `.system` — l'absence de choix,
+/// qui laissait iOS trancher. Il ne proposait rien que les deux autres ne
+/// proposent déjà, et il coûtait cher : la langue effective n'était plus lisible
+/// dans le réglage lui-même, `localeIdentifier` devait rendre un optionnel, et
+/// `bundle` retombait sur `Bundle.main`, c'est-à-dire précisément sur ce que ce
+/// sélecteur a vocation à contredire. Ce que `.system` apportait vraiment — ne
+/// rien imposer au premier lancement — est conservé par `systemDefault`, qui est
+/// la valeur de départ tant que rien n'a été choisi.
 nonisolated enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
-    case system
     case french
     case english
 
@@ -28,16 +32,13 @@ nonisolated enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     /// comprendre la langue courante pour en sortir.
     var label: String {
         switch self {
-        case .system: String(localized: "Système", bundle: .app)
         case .french: "Français"
         case .english: "English"
         }
     }
 
-    /// Le code BCP 47 retenu, ou `nil` quand on suit le système.
-    var localeIdentifier: String? {
+    var localeIdentifier: String {
         switch self {
-        case .system: nil
         case .french: "fr"
         case .english: "en"
         }
@@ -47,31 +48,28 @@ nonisolated enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     /// nécessaire : TMDB ne renvoie rien pour un `fr` nu.
     var tmdbTag: String {
         switch self {
-        case .system: AppLanguage.resolvedFromSystem.tmdbTag
         case .french: "fr-FR"
         case .english: "en-US"
         }
     }
 
-    var locale: Locale {
-        localeIdentifier.map(Locale.init(identifier:)) ?? .autoupdatingCurrent
-    }
+    var locale: Locale { Locale(identifier: localeIdentifier) }
 
     /// Le paquet de ressources à interroger. C'est lui, et rien d'autre, qui
     /// décide de la langue rendue à l'écran — d'où sa présence explicite dans
     /// chaque appel de localisation de l'app.
     var bundle: Bundle {
-        guard let identifier = localeIdentifier,
-              let path = Bundle.main.path(forResource: identifier, ofType: "lproj"),
+        guard let path = Bundle.main.path(forResource: localeIdentifier, ofType: "lproj"),
               let bundle = Bundle(path: path)
         else { return .main }
         return bundle
     }
 
-    /// Celle des deux langues traduites dont le système est le plus proche.
-    /// Sert uniquement à choisir ce qu'on demande à TMDB : pour l'interface,
-    /// `Bundle.main` fait déjà ce travail tout seul.
-    private static var resolvedFromSystem: AppLanguage {
+    /// Celle des deux dont la langue du système est la plus proche. C'est le point
+    /// de départ, tant que l'utilisateur n'a rien choisi — et il n'est pas
+    /// enregistré, donc l'application suit l'appareil aussi longtemps qu'on ne
+    /// l'a pas contredite.
+    static var systemDefault: AppLanguage {
         Locale.preferredLanguages.first?.hasPrefix("fr") == true ? .french : .english
     }
 
@@ -92,9 +90,12 @@ nonisolated enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
 
     private static let storageKey = "app.language"
 
+    /// Une valeur enregistrée qu'on ne sait plus lire vaut absence de choix : les
+    /// installations qui portent l'ancien `"system"` retombent donc sur la langue
+    /// de leur appareil — exactement ce que ce réglage faisait pour elles.
     private static func load() -> AppLanguage {
         UserDefaults.standard.string(forKey: storageKey)
-            .flatMap(AppLanguage.init(rawValue:)) ?? .system
+            .flatMap(AppLanguage.init(rawValue:)) ?? systemDefault
     }
 }
 
