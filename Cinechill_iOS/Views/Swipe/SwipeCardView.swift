@@ -13,9 +13,9 @@ enum SwipeVerdict {
 
     var label: String {
         switch self {
-        case .seen: "VU"
-        case .notSeen: "PAS VU"
-        case .watchlist: "À VOIR"
+        case .seen: String(localized: "VU", bundle: .app)
+        case .notSeen: String(localized: "PAS VU", bundle: .app)
+        case .watchlist: String(localized: "À VOIR", bundle: .app)
         }
     }
 
@@ -85,8 +85,8 @@ struct SwipeCardView: View {
         .contentShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
         .onTapGesture(perform: onTap)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(card.title), \(card.displayYear), note \(card.voteAverageText) sur 10")
-        .accessibilityHint("Balayez à droite si vous l'avez vu, à gauche sinon, vers le haut pour l'ajouter à la watchlist")
+        .accessibilityLabel(String(localized: "\(card.title), \(card.displayYear), note \(card.voteAverageText) sur 10", bundle: .app))
+        .accessibilityHint(String(localized: "Balayez à droite si vous l'avez vu, à gauche sinon, vers le haut pour l'ajouter à la watchlist", bundle: .app))
     }
 
     // MARK: - Habillage
@@ -119,7 +119,7 @@ struct SwipeCardView: View {
             Spacer(minLength: 0)
 
             if card.overview?.isEmpty == false {
-                Text(isSynopsisOpen ? "Fermer" : "Résumé")
+                Text(isSynopsisOpen ? String(localized: "Fermer", bundle: .app) : String(localized: "Résumé", bundle: .app))
                     .planLabel()
                     .foregroundStyle(Ink.ink)
                     .padding(.horizontal, 11)

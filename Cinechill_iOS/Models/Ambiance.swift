@@ -38,12 +38,12 @@ nonisolated extension Mood {
     /// première fois du parcours que l'application répond quelque chose.
     var reading: String {
         switch self {
-        case .lightFun: "On cherchera un film léger, qui fait passer un bon moment."
-        case .intense: "On cherchera un film tendu, avec du rythme."
-        case .emotional: "On cherchera un film qui touche."
-        case .scary: "On cherchera un film qui fait peur."
-        case .escapist: "On cherchera un film spectaculaire, qui fait voyager."
-        case .thoughtful: "On cherchera un film qui donne à réfléchir."
+        case .lightFun: String(localized: "On cherchera un film léger, qui fait passer un bon moment.", bundle: .app)
+        case .intense: String(localized: "On cherchera un film tendu, avec du rythme.", bundle: .app)
+        case .emotional: String(localized: "On cherchera un film qui touche.", bundle: .app)
+        case .scary: String(localized: "On cherchera un film qui fait peur.", bundle: .app)
+        case .escapist: String(localized: "On cherchera un film spectaculaire, qui fait voyager.", bundle: .app)
+        case .thoughtful: String(localized: "On cherchera un film qui donne à réfléchir.", bundle: .app)
         }
     }
 }

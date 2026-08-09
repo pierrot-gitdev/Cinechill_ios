@@ -90,12 +90,12 @@ nonisolated struct SuggestionTarget: Identifiable, Hashable, Sendable {
     /// La raison affichée sous le nom quand la ligne est bloquée — jamais un
     /// message générique, toujours l'état exact.
     var blockedReason: String? {
-        if alreadySeen { return "A déjà vu ce film" }
+        if alreadySeen { return String(localized: "A déjà vu ce film", bundle: .app) }
         guard alreadySuggested else { return nil }
-        guard let suggestedAt else { return "Déjà recommandé" }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
-        formatter.dateFormat = "d MMMM"
-        return "Déjà recommandé le \(formatter.string(from: suggestedAt))"
+        guard let suggestedAt else { return String(localized: "Déjà recommandé", bundle: .app) }
+        // La date suit la langue et la région de l'appareil : « 4 août » ici,
+        // « August 4 » ailleurs — ce qu'un `dateFormat` fixe ne sait pas faire.
+        let date = suggestedAt.formatted(.dateTime.day().month(.wide))
+        return String(localized: "Déjà recommandé le \(date)", bundle: .app)
     }
 }

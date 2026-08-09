@@ -39,7 +39,7 @@ struct GalleryView: View {
                 }
             }
             .safeAreaInset(edge: .top) {
-                AppHeaderView(title: "Galerie", onProfileTap: { showProfile = true })
+                AppHeaderView(title: String(localized: "Galerie", bundle: .app), onProfileTap: { showProfile = true })
             }
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showProfile) {
@@ -148,7 +148,7 @@ struct GalleryView: View {
 
                     Spacer(minLength: 0)
 
-                    Text("\(band.count)")
+                    Text(verbatim: "\(band.count)")
                         .planLabel()
                         .monospacedDigit()
                         .foregroundStyle(Ink.ink3)
@@ -176,14 +176,14 @@ struct GalleryView: View {
                             Button {
                                 composerItem = entry.mediaItem
                             } label: {
-                                Label("Recommander", systemImage: "paperplane")
+                                Label(String(localized: "Recommander", bundle: .app), systemImage: "paperplane")
                             }
 
                             Button(role: .destructive) {
                                 Haptics.impact(.light)
                                 libraryStore.removeFromGallery(entry.mediaItem)
                             } label: {
-                                Label("Retirer de ma galerie", systemImage: "xmark")
+                                Label(String(localized: "Retirer de ma galerie", bundle: .app), systemImage: "xmark")
                             }
                         }
                     }
@@ -199,9 +199,9 @@ struct GalleryView: View {
     private var emptyState: some View {
         PlanEmptyState(
             icon: .hall,
-            title: "Votre collection est vide",
-            message: "Chaque film que vous marquez comme vu vient s'y ranger, et dessine peu à peu votre profil de cinéphile.",
-            actionTitle: "Commencer à swiper",
+            title: String(localized: "Votre collection est vide", bundle: .app),
+            message: String(localized: "Chaque film que vous marquez comme vu vient s'y ranger, et dessine peu à peu votre profil de cinéphile.", bundle: .app),
+            actionTitle: String(localized: "Commencer à swiper", bundle: .app),
             action: { selectedTab = 2 }
         )
     }

@@ -29,11 +29,11 @@ nonisolated enum CinephileTier: Int, CaseIterable, Sendable {
 
     var label: String {
         switch self {
-        case .bronze: "BRONZE"
-        case .silver: "ARGENT"
-        case .gold: "OR"
-        case .platinum: "PLATINE"
-        case .icon: "ICÔNE"
+        case .bronze: String(localized: "BRONZE", bundle: .app)
+        case .silver: String(localized: "ARGENT", bundle: .app)
+        case .gold: String(localized: "OR", bundle: .app)
+        case .platinum: String(localized: "PLATINE", bundle: .app)
+        case .icon: String(localized: "ICÔNE", bundle: .app)
         }
     }
 
@@ -81,7 +81,9 @@ nonisolated enum CinephileTier: Int, CaseIterable, Sendable {
         guard let next = nextThreshold else { return nil }
         let missing = max(0, next - count)
         let nextTier = CinephileTier(rawValue: rawValue + 1)?.label.capitalized ?? ""
-        return "\(nextTier) dans \(missing) film\(missing > 1 ? "s" : "")"
+        return missing == 1
+            ? String(localized: "\(nextTier) dans \(missing) film", bundle: .app)
+            : String(localized: "\(nextTier) dans \(missing) films", bundle: .app)
     }
 }
 

@@ -46,7 +46,7 @@ struct SwipeDeckView: View {
                 }
             }
             .safeAreaInset(edge: .top) {
-                AppHeaderView(title: "Découvrir", onProfileTap: { showProfile = true })
+                AppHeaderView(title: String(localized: "Découvrir", bundle: .app), onProfileTap: { showProfile = true })
             }
             .navigationBarHidden(true)
             .overlay { milestoneOverlay }
@@ -109,7 +109,7 @@ struct SwipeDeckView: View {
         HStack(spacing: 9) {
             if model.addedThisSession > 0 {
                 PlanLight()
-                Text("\(model.addedThisSession) ajouté\(model.addedThisSession > 1 ? "s" : "")")
+                Text(String(localized: "\(model.addedThisSession) ajoutés", bundle: .app))
                     .planLabel()
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink2)
@@ -126,7 +126,7 @@ struct SwipeDeckView: View {
                         model.undo()
                     }
                 } label: {
-                    Text("Annuler")
+                    Text("Annuler", bundle: .app)
                         .font(.system(size: 12))
                         .foregroundStyle(Ink.ink2)
                         .overlay(alignment: .bottom) {
@@ -136,7 +136,7 @@ struct SwipeDeckView: View {
                 }
                 .buttonStyle(.plain)
                 .transition(.opacity)
-                .accessibilityLabel("Annuler le dernier swipe")
+                .accessibilityLabel(String(localized: "Annuler le dernier swipe", bundle: .app))
             }
         }
         .frame(height: 34)
@@ -242,26 +242,26 @@ struct SwipeDeckView: View {
             if let errorMessage = model.errorMessage {
                 PlanEmptyState(
                     icon: .salle,
-                    title: "Impossible de charger les films",
+                    title: String(localized: "Impossible de charger les films", bundle: .app),
                     message: errorMessage,
-                    actionTitle: "Réessayer",
+                    actionTitle: String(localized: "Réessayer", bundle: .app),
                     action: { Task { await model.retry() } }
                 )
             } else if model.isLoading {
                 VStack(spacing: 16) {
                     CinechillSpinner(size: 34)
-                    Text("On prépare votre sélection…")
+                    Text("On prépare votre sélection…", bundle: .app)
                         .font(.system(size: 12.5))
                         .foregroundStyle(Ink.ink3)
                 }
             } else if model.isExhausted {
                 PlanEmptyState(
                     icon: .hall,
-                    title: "Vous avez fait le tour",
-                    message: "Les films écartés reviendront plus tard. En attendant, votre galerie a de quoi faire.",
-                    actionTitle: "Voir ma galerie",
+                    title: String(localized: "Vous avez fait le tour", bundle: .app),
+                    message: String(localized: "Les films écartés reviendront plus tard. En attendant, votre galerie a de quoi faire.", bundle: .app),
+                    actionTitle: String(localized: "Voir ma galerie", bundle: .app),
                     action: { selectedTab = 3 },
-                    secondaryTitle: "Chercher encore",
+                    secondaryTitle: String(localized: "Chercher encore", bundle: .app),
                     secondaryAction: { Task { await model.restart() } }
                 )
             } else {
@@ -282,7 +282,7 @@ struct SwipeDeckView: View {
                     Haptics.impact(.light, intensity: 0.6)
                     endIntro()
                 } label: {
-                    Text("Passer")
+                    Text("Passer", bundle: .app)
                         .planLabel()
                         .foregroundStyle(Ink.ink3)
                         .padding(.horizontal, 16)

@@ -11,20 +11,20 @@ enum BackendPopularClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingBaseURL:
-            return "URL backend absente. Définissez BACKEND_BASE_HOST dans Project.xcconfig."
+            return String(localized: "URL backend absente. Définissez BACKEND_BASE_HOST dans Project.xcconfig.", bundle: .app)
         case .invalidURL:
-            return "URL backend invalide."
+            return String(localized: "URL backend invalide.", bundle: .app)
         case .unsupportedMediaType:
-            return "Le backend popular supporte uniquement les films."
+            return String(localized: "Le backend popular supporte uniquement les films.", bundle: .app)
         case .transport(let message):
-            return "Erreur réseau backend popular : \(message)"
+            return String(localized: "Erreur réseau backend popular : \(message)", bundle: .app)
         case .httpStatus(let code, let message):
             if let message, !message.isEmpty {
-                return "Backend popular (HTTP \(code)) : \(message)"
+                return String(localized: "Backend popular (HTTP \(code)) : \(message)", bundle: .app)
             }
-            return "Erreur backend popular (HTTP \(code))."
+            return String(localized: "Erreur backend popular (HTTP \(code)).", bundle: .app)
         case .decoding(let message):
-            return "Impossible de lire la réponse backend. \(message)"
+            return String(localized: "Impossible de lire la réponse backend. \(message)", bundle: .app)
         }
     }
 }
@@ -87,7 +87,10 @@ struct BackendPopularClient: PopularPageFetching, HomeMetadataFetching, Sendable
     }
 
     private func fetch<T: Decodable>(_ type: T.Type, from url: URL) async throws -> T {
-        let key = url.absoluteString
+        // La langue voyage dans un en-tête, pas dans l'URL : sans elle dans
+        // la clé, le cache resservirait les genres français à qui vient de
+        // passer l'app en anglais.
+        let key = "\(AppLanguage.current.tmdbTag)|\(url.absoluteString)"
 
         if let cached = await cache.read(for: key), !cached.isExpired,
            let decoded = try? JSONDecoder().decode(T.self, from: cached.data) {
@@ -108,7 +111,7 @@ struct BackendPopularClient: PopularPageFetching, HomeMetadataFetching, Sendable
     }
 
     private func networkFetch(from url: URL) async throws -> Data {
-        var request = URLRequest(url: url)
+        var request = URLRequest(backend: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 

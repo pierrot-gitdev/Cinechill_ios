@@ -26,9 +26,9 @@ enum TimeBudget: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .short: "1 h 30"
-        case .medium: "2 h"
-        case .any: "Peu importe"
+        case .short: String(localized: "1 h 30", bundle: .app)
+        case .medium: String(localized: "2 h", bundle: .app)
+        case .any: String(localized: "Peu importe", bundle: .app)
         }
     }
 }
@@ -52,7 +52,9 @@ struct WatchlistItem: Identifiable, Hashable {
         guard let runtimeMinutes, runtimeMinutes > 0 else { return nil }
         let hours = runtimeMinutes / 60
         let minutes = runtimeMinutes % 60
-        return hours > 0 ? "\(hours) h \(String(format: "%02d", minutes))" : "\(minutes) min"
+        return hours > 0
+            ? String(localized: "\(hours) h \(String(format: "%02d", minutes))", bundle: .app)
+            : String(localized: "\(minutes) min", bundle: .app)
     }
 
     var trailerURL: URL? {
@@ -84,10 +86,10 @@ struct WatchlistGroup: Identifiable, Hashable {
 
     var title: String {
         switch kind {
-        case .recommended: "RECOMMANDÉS PAR VOS AMIS"
-        case .available: "DISPONIBLE CHEZ VOUS"
-        case .elsewhere: "AILLEURS"
-        case .dormant: "EN SOMMEIL · PLUS DE 3 MOIS"
+        case .recommended: String(localized: "RECOMMANDÉS PAR VOS AMIS", bundle: .app)
+        case .available: String(localized: "DISPONIBLE CHEZ VOUS", bundle: .app)
+        case .elsewhere: String(localized: "AILLEURS", bundle: .app)
+        case .dormant: String(localized: "EN SOMMEIL · PLUS DE 3 MOIS", bundle: .app)
         }
     }
 }

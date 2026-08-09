@@ -50,13 +50,13 @@ struct PublicProfileView: View {
         .toolbar(.hidden, for: .navigationBar)
         .task(id: profile.id) { await load() }
         .alert(
-            "Impossible",
+            String(localized: "Impossible", bundle: .app),
             isPresented: Binding(
                 get: { errorMessage != nil },
                 set: { if !$0 { errorMessage = nil } }
             )
         ) {
-            Button("OK", role: .cancel) { errorMessage = nil }
+            Button(String(localized: "OK", bundle: .app), role: .cancel) { errorMessage = nil }
         } message: {
             Text(errorMessage ?? "")
         }
@@ -113,9 +113,9 @@ struct PublicProfileView: View {
         VStack(spacing: 0) {
             PlanEdge()
             HStack(spacing: 0) {
-                statCell(value: shown.galleryCount, label: "Vus")
-                statCell(value: shown.followerCount, label: "Abonnés")
-                statCell(value: shown.followingCount, label: "Abonnements")
+                statCell(value: shown.galleryCount, label: String(localized: "Vus", bundle: .app))
+                statCell(value: shown.followerCount, label: String(localized: "Abonnés", bundle: .app))
+                statCell(value: shown.followingCount, label: String(localized: "Abonnements", bundle: .app))
             }
             PlanEdge()
         }
@@ -123,7 +123,7 @@ struct PublicProfileView: View {
 
     private func statCell(value: Int, label: String) -> some View {
         VStack(spacing: 5) {
-            Text("\(value)")
+            Text(verbatim: "\(value)")
                 .planTitle(21)
                 .foregroundStyle(Ink.ink)
                 .monospacedDigit()
@@ -137,7 +137,7 @@ struct PublicProfileView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(value) \(label)")
+        .accessibilityLabel(Text(verbatim: "\(value) \(label)"))
     }
 
     // MARK: - Actions
@@ -167,7 +167,7 @@ struct PublicProfileView: View {
     private var dnaSection: some View {
         if let genres = detail?.genres, !genres.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                sectionTitle("Son ADN cinéphile")
+                sectionTitle(String(localized: "Son ADN cinéphile", bundle: .app))
 
                 GeometryReader { proxy in
                     HStack(spacing: 1.5) {
@@ -201,9 +201,9 @@ struct PublicProfileView: View {
         if let posters = detail?.posters, !posters.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
-                    sectionTitle("Sa galerie")
+                    sectionTitle(String(localized: "Sa galerie", bundle: .app))
                     Spacer()
-                    Text("\(shown.galleryCount)")
+                    Text(verbatim: "\(shown.galleryCount)")
                         .planLabel()
                         .monospacedDigit()
                         .foregroundStyle(Ink.ink2)

@@ -134,7 +134,7 @@ struct ItemDetailView: View {
     private var ceiling: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                glyphButton(.back, label: "Retour") { dismiss() }
+                glyphButton(.back, label: String(localized: "Retour", bundle: .app)) { dismiss() }
 
                 Text(displayItem.title)
                     .font(.system(size: 17, weight: .semibold))
@@ -145,7 +145,7 @@ struct ItemDetailView: View {
                 Spacer(minLength: 8)
 
                 if detail?.trailerKey != nil {
-                    glyphButton(.play, label: "Voir la bande-annonce", action: openTrailer)
+                    glyphButton(.play, label: String(localized: "Voir la bande-annonce", bundle: .app), action: openTrailer)
                 }
             }
             .padding(.horizontal, 16)
@@ -264,7 +264,7 @@ struct ItemDetailView: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 7) {
                 if let rating = detail?.voteAverage ?? item.voteAverage, rating > 0 {
-                    Text(String(format: "%.1f", rating).replacingOccurrences(of: ".", with: ","))
+                    Text(rating.formatted(.number.precision(.fractionLength(1))))
                         .planTitle(22)
                         .monospacedDigit()
                         .foregroundStyle(Ink.ink)
@@ -298,8 +298,8 @@ struct ItemDetailView: View {
     }
 
     private var voteText: String {
-        guard let count = detail?.voteCount, count > 0 else { return "/ 10" }
-        return "/ 10 · \(count.formatted(.number.grouping(.automatic))) votes"
+        guard let count = detail?.voteCount, count > 0 else { return String(localized: "/ 10", bundle: .app) }
+        return String(localized: "/ 10 · \(count.formatted(.number.grouping(.automatic))) votes", bundle: .app)
     }
 
     // MARK: - La remarque
@@ -341,21 +341,23 @@ struct ItemDetailView: View {
                 entry.genreIds.contains(genreID) && decadeOf(entry.releaseDate) == decade
             }.count
             if sameVein >= 2 {
-                let label = genreName.map { "\($0) des années \(decade)" } ?? "films du même genre sur cette décennie"
-                return "\(ordinal(sameVein + 1)) \(label) dans votre galerie."
+                // Le rang est écrit dans la phrase plutôt que fabriqué à part :
+                // le suffixe ordinal ne se pose pas de la même façon d'une
+                // langue à l'autre — « 3ᵉ » ici, « 3rd » ailleurs.
+                let rank = sameVein + 1
+                if let genreName {
+                    return String(localized: "\(rank)ᵉ \(genreName) des années \(decade) dans votre galerie.", bundle: .app)
+                }
+                return String(localized: "\(rank)ᵉ films du même genre sur cette décennie dans votre galerie.", bundle: .app)
             }
         }
 
         let sameGenre = gallery.filter { $0.genreIds.contains(genreID) }.count
         guard sameGenre >= 3 else { return nil }
         if let genreName {
-            return "\(ordinal(sameGenre + 1)) \(genreName) de votre galerie."
+            return String(localized: "\(sameGenre + 1)ᵉ \(genreName) de votre galerie.", bundle: .app)
         }
-        return "Vous avez déjà \(sameGenre) films de ce genre dans votre galerie."
-    }
-
-    private func ordinal(_ value: Int) -> String {
-        value == 1 ? "Premier" : "\(value)ᵉ"
+        return String(localized: "Vous avez déjà \(sameGenre) films de ce genre dans votre galerie.", bundle: .app)
     }
 
     private var decadeOfItem: Int? {
@@ -386,7 +388,7 @@ struct ItemDetailView: View {
             VStack(alignment: .leading, spacing: 0) {
                 PlanEdge().padding(.horizontal, Metrics.margin)
 
-                Text("Où le voir")
+                Text("Où le voir", bundle: .app)
                     .planLabel()
                     .foregroundStyle(Ink.ink2)
                     .padding(.horizontal, Metrics.margin)
@@ -446,7 +448,9 @@ struct ItemDetailView: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.92))
         .accessibilityLabel(provider.providerName)
-        .accessibilityValue(isMine ? "Dans vos abonnements" : "Hors de vos abonnements")
+        .accessibilityValue(isMine
+                            ? String(localized: "Dans vos abonnements", bundle: .app)
+                            : String(localized: "Hors de vos abonnements", bundle: .app))
     }
 
     // MARK: - Synopsis
@@ -457,7 +461,7 @@ struct ItemDetailView: View {
             VStack(alignment: .leading, spacing: 0) {
                 PlanEdge().padding(.horizontal, Metrics.margin)
 
-                Text("Synopsis")
+                Text("Synopsis", bundle: .app)
                     .planLabel()
                     .foregroundStyle(Ink.ink2)
                     .padding(.top, 20)
@@ -480,7 +484,7 @@ struct ItemDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             PlanEdge().padding(.horizontal, Metrics.margin)
 
-            Text("Casting")
+            Text("Casting", bundle: .app)
                 .planLabel()
                 .foregroundStyle(Ink.ink2)
                 .padding(.horizontal, Metrics.margin)
@@ -545,8 +549,8 @@ struct ItemDetailView: View {
             PlanEdge()
 
             HStack(spacing: Metrics.gutter) {
-                decisionButton(.seen, label: "Vu")
-                decisionButton(.toWatch, label: "À voir")
+                decisionButton(.seen, label: String(localized: "Vu", bundle: .app))
+                decisionButton(.toWatch, label: String(localized: "À voir", bundle: .app))
 
                 // « Recommander » n'apparaît que si le film est vu : la règle
                 // « on ne recommande que ce qu'on a vu » n'est jamais énoncée,
@@ -567,7 +571,7 @@ struct ItemDetailView: View {
                     }
                     .buttonStyle(PressableScaleStyle(scale: 0.94))
                     .transition(.opacity)
-                    .accessibilityLabel("Recommander à un ami")
+                    .accessibilityLabel(String(localized: "Recommander à un ami", bundle: .app))
                 }
             }
             .padding(.horizontal, Metrics.margin)
@@ -612,7 +616,7 @@ struct ItemDetailView: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.96))
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
-        .accessibilityHint(isOn ? "Toucher à nouveau pour retirer de vos listes" : "")
+        .accessibilityHint(isOn ? String(localized: "Toucher à nouveau pour retirer de vos listes", bundle: .app) : "")
     }
 
     private func toggle(_ status: DetailStatus) {

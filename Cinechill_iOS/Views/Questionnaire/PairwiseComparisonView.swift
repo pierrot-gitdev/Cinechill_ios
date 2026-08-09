@@ -46,7 +46,7 @@ struct PairwiseComparisonView: View {
             VStack(spacing: 10) {
                 CandidatePosterView(candidate: candidate)
 
-                Text(candidate.title ?? "Sans titre")
+                Text(candidate.title ?? String(localized: "Sans titre", bundle: .app))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Ink.ink)
                     .lineLimit(2)
@@ -55,8 +55,8 @@ struct PairwiseComparisonView: View {
             }
         }
         .buttonStyle(PressableScaleStyle(scale: 0.97))
-        .accessibilityLabel(candidate.title ?? "Film sans titre")
-        .accessibilityHint("Choisir ce film — c'est celui-ci qui vous tente le plus")
+        .accessibilityLabel(candidate.title ?? String(localized: "Film sans titre", bundle: .app))
+        .accessibilityHint(String(localized: "Choisir ce film — c'est celui-ci qui vous tente le plus", bundle: .app))
     }
 }
 

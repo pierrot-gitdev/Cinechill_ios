@@ -79,7 +79,7 @@ struct ProfileView: View {
     /// Le plafond commun, avec ses deux actions. L'écran avait sa propre barre
     /// translucide, quatrième plafond de l'application pour un seul volume.
     private var topBar: some View {
-        PlanHeader("Profil", leading: .close) {
+        PlanHeader(String(localized: "Profil", bundle: .app), leading: .close) {
             HStack(spacing: 4) {
                 // La recherche de profils n'a pas de place permanente dans la
                 // navigation : on la trouve là où l'on gère ses relations.
@@ -91,7 +91,7 @@ struct ProfileView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(PressableScaleStyle(scale: 0.9))
-                .accessibilityLabel("Rechercher un profil")
+                .accessibilityLabel(String(localized: "Rechercher un profil", bundle: .app))
 
                 Button { showSettings = true } label: {
                     SettingsGlyph()
@@ -102,7 +102,7 @@ struct ProfileView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(PressableScaleStyle(scale: 0.9))
-                .accessibilityLabel("Réglages")
+                .accessibilityLabel(String(localized: "Réglages", bundle: .app))
             }
         }
     }
@@ -129,10 +129,10 @@ struct ProfileView: View {
             VStack(spacing: 0) {
                 PlanEdge()
                 HStack(spacing: 0) {
-                    statCell(value: socialStore.myProfile?.followingCount ?? 0, label: "Abonnements", route: .following)
-                    statCell(value: socialStore.myProfile?.followerCount ?? 0, label: "Abonnés", route: .followers)
-                    statCell(value: galleryCount, label: "Vus")
-                    statCell(value: libraryStore.watchlistItems.count, label: "À voir")
+                    statCell(value: socialStore.myProfile?.followingCount ?? 0, label: String(localized: "Abonnements", bundle: .app), route: .following)
+                    statCell(value: socialStore.myProfile?.followerCount ?? 0, label: String(localized: "Abonnés", bundle: .app), route: .followers)
+                    statCell(value: galleryCount, label: String(localized: "Vus", bundle: .app))
+                    statCell(value: libraryStore.watchlistItems.count, label: String(localized: "À voir", bundle: .app))
                 }
                 PlanEdge()
             }
@@ -141,7 +141,7 @@ struct ProfileView: View {
 
     private func statCell(value: Int, label: String, route: HallRoute? = nil) -> some View {
         let content = VStack(spacing: 5) {
-            Text("\(value)")
+            Text(verbatim: "\(value)")
                 .planTitle(21)
                 .monospacedDigit()
                 .contentTransition(.numericText())
@@ -165,7 +165,7 @@ struct ProfileView: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(value) \(label)")
+        .accessibilityLabel(Text(verbatim: "\(value) \(label)"))
     }
 
     /// Sans pseudo, on n'est ni trouvable ni suivable : l'invitation remplace
@@ -178,10 +178,10 @@ struct ProfileView: View {
                 PlanLight().padding(.top, 6)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Choisissez votre pseudo")
+                    Text("Choisissez votre pseudo", bundle: .app)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Ink.ink)
-                    Text("Pour qu'on puisse vous retrouver et vous recommander des films.")
+                    Text("Pour qu'on puisse vous retrouver et vous recommander des films.", bundle: .app)
                         .font(.system(size: 11.5))
                         .foregroundStyle(Ink.ink2)
                         .multilineTextAlignment(.leading)
@@ -202,17 +202,17 @@ struct ProfileView: View {
     private var badgesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Mes badges")
+                Text("Mes badges", bundle: .app)
                     .planTitle(21)
                     .foregroundStyle(Ink.ink)
                 Spacer()
                 NavigationLink(destination: BadgeGalleryView(model: badgesModel)) {
                     HStack(spacing: 7) {
-                        Text("\(badgesModel.unlockedCount)")
+                        Text(verbatim: "\(badgesModel.unlockedCount)")
                             .planLabel()
                             .monospacedDigit()
                             .foregroundStyle(Ink.ink3)
-                        Text("Tout voir")
+                        Text("Tout voir", bundle: .app)
                             .font(.system(size: 12))
                             .foregroundStyle(Ink.ink2)
                             .overlay(alignment: .bottom) {
@@ -248,10 +248,10 @@ struct ProfileView: View {
                     BadgeView(badge: first, isUnlocked: false, size: 52)
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Quinze badges à décrocher")
+                    Text("Quinze badges à décrocher", bundle: .app)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Ink.ink)
-                    Text("Le premier tombe dès votre premier film.")
+                    Text("Le premier tombe dès votre premier film.", bundle: .app)
                         .font(.system(size: 11.5))
                         .foregroundStyle(Ink.ink2)
                 }
@@ -272,7 +272,7 @@ struct ProfileView: View {
         let shares = genreShares
         if !shares.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Votre ADN cinéphile")
+                Text("Votre ADN cinéphile", bundle: .app)
                     .planTitle(21)
                     .foregroundStyle(Ink.ink)
 
@@ -317,14 +317,14 @@ struct ProfileView: View {
         var shares = ranked.prefix(5).enumerated().map { index, pair in
             GenreShare(
                 id: pair.key,
-                name: catalog.genreNames[pair.key] ?? "Genre \(pair.key)",
+                name: catalog.genreNames[pair.key] ?? String(localized: "Genre \(pair.key)", bundle: .app),
                 share: Double(pair.value) / total,
                 colorIndex: index
             )
         }
         let remainder = ranked.dropFirst(5).map(\.value).reduce(0, +)
         if remainder > 0 {
-            shares.append(GenreShare(id: -1, name: "Autres", share: Double(remainder) / total, colorIndex: -1))
+            shares.append(GenreShare(id: -1, name: String(localized: "Autres", bundle: .app), share: Double(remainder) / total, colorIndex: -1))
         }
         return shares
     }

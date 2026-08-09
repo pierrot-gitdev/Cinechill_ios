@@ -50,7 +50,7 @@ struct AchievementCelebrationOverlay: View {
 
     private func badgeCard(_ badge: Badge) -> some View {
         VStack(spacing: 0) {
-            eyebrow("Nouveau badge", color: badge.rarity.accent)
+            eyebrow(String(localized: "Nouveau badge", bundle: .app), color: badge.rarity.accent)
 
             BadgeView(badge: badge, isUnlocked: true, size: 138)
                 .padding(.top, 22)
@@ -74,10 +74,10 @@ struct AchievementCelebrationOverlay: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 14)
 
-            PlanButton(title: "Équiper ce badge", height: Metrics.control, action: onEquip)
+            PlanButton(title: String(localized: "Équiper ce badge", bundle: .app), height: Metrics.control, action: onEquip)
                 .padding(.top, 28)
 
-            Button("Plus tard", action: onDismiss)
+            Button(String(localized: "Plus tard", bundle: .app), action: onDismiss)
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .padding(.top, 16)
@@ -86,7 +86,7 @@ struct AchievementCelebrationOverlay: View {
         .frame(maxWidth: 340)
         .background(cardBackground(accent: badge.rarity.accent))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Nouveau badge débloqué : \(badge.name), \(badge.rarity.label). \(badge.condition)")
+        .accessibilityLabel(String(localized: "Nouveau badge débloqué : \(badge.name), \(badge.rarity.label). \(badge.condition)", bundle: .app))
     }
 
     // MARK: - Palier franchi
@@ -97,33 +97,33 @@ struct AchievementCelebrationOverlay: View {
     /// illustratif propre et où l'on n'a pas su s'en servir.
     private func tierCard(_ tier: CinephileTier) -> some View {
         VStack(spacing: 0) {
-            eyebrow("Nouveau palier", color: tier.accent)
+            eyebrow(String(localized: "Nouveau palier", bundle: .app), color: tier.accent)
 
             CinechillPlanOutline(lineWidth: 1.4)
                 .foregroundStyle(tier.accent)
                 .frame(width: 116, height: 116)
                 .padding(.top, 26)
 
-            Text("Palier \(tier.label.capitalized)")
+            Text(String(localized: "Palier \(tier.label.capitalized)", bundle: .app))
                 .planTitle(24)
                 .foregroundStyle(Ink.ink)
                 .padding(.top, 26)
 
-            Text("Votre profil change de couleur avec vous.")
+            Text("Votre profil change de couleur avec vous.", bundle: .app)
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 12)
 
-            PlanButton(title: "Continuer", height: Metrics.control, action: onDismiss)
+            PlanButton(title: String(localized: "Continuer", bundle: .app), height: Metrics.control, action: onDismiss)
                 .padding(.top, 28)
         }
         .padding(cardPadding)
         .frame(maxWidth: 340)
         .background(cardBackground(accent: tier.accent))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Nouveau palier : \(tier.label.capitalized)")
+        .accessibilityLabel(String(localized: "Nouveau palier : \(tier.label.capitalized)", bundle: .app))
     }
 
     // MARK: - Pièces communes

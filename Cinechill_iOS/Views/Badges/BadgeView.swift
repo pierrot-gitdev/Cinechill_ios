@@ -36,7 +36,7 @@ struct BadgeView: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(badge.displayName(unlocked: isUnlocked))
-            .accessibilityValue(isUnlocked ? "Obtenu" : "Verrouillé")
+            .accessibilityValue(isUnlocked ? String(localized: "Obtenu", bundle: .app) : String(localized: "Verrouillé", bundle: .app))
     }
 
     private var haloColor: Color {

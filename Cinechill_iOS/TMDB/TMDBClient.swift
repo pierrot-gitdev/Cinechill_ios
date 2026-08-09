@@ -18,14 +18,14 @@ enum TMDBClientError: LocalizedError {
             Clé TMDB absente dans l’app. Ouvrez Secrets.xcconfig (racine du projet, à côté de Project.xcconfig), définissez TMDB_API_KEY = votre_cle (sans guillemets), puis Clean Build Folder et rebuild. En Debug vous pouvez aussi passer TMDB_API_KEY dans le schéma Run → Environment Variables.
             """
         case .invalidURL:
-            return "URL TMDB invalide."
+            return String(localized: "URL TMDB invalide.", bundle: .app)
         case .httpStatus(let code, let message):
             if let message, !message.isEmpty {
-                return "TMDB (HTTP \(code)) : \(message)"
+                return String(localized: "TMDB (HTTP \(code)) : \(message)", bundle: .app)
             }
-            return "Erreur réseau TMDB (HTTP \(code))."
+            return String(localized: "Erreur réseau TMDB (HTTP \(code)).", bundle: .app)
         case .decoding:
-            return "Impossible de lire la réponse TMDB."
+            return String(localized: "Impossible de lire la réponse TMDB.", bundle: .app)
         }
     }
 }
@@ -49,7 +49,11 @@ struct TMDBClient: Sendable {
 
     init(
         apiKey: String,
-        language: String = "fr-FR",
+        // La langue suit l'appareil : c'est TMDB qui fournit les titres et
+        // les synopsis, et une interface anglaise sur des résumés français
+        // ne serait traduite qu'à moitié. La région, elle, dit où le film
+        // est disponible — elle ne se déduit pas de la langue.
+        language: String = Locale.current.identifier(.bcp47),
         region: String = "FR"
     ) {
         self.apiKey = apiKey

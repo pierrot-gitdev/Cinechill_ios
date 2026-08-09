@@ -35,7 +35,7 @@ struct WatchlistView: View {
                 }
             }
             .safeAreaInset(edge: .top) {
-                AppHeaderView(title: "Watchlist", onProfileTap: { showProfile = true })
+                AppHeaderView(title: String(localized: "Watchlist", bundle: .app), onProfileTap: { showProfile = true })
             }
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showProfile) {
@@ -106,7 +106,7 @@ struct WatchlistView: View {
     private var budgetPicker: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 9) {
-                Text("Combien de temps ce soir ?")
+                Text("Combien de temps ce soir ?", bundle: .app)
                     .planLabel()
                     .foregroundStyle(Ink.ink2)
 
@@ -143,10 +143,10 @@ struct WatchlistView: View {
                 PlanLight().padding(.top, 6)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Déclarez vos abonnements")
+                    Text("Déclarez vos abonnements", bundle: .app)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Ink.ink)
-                    Text("Pour savoir ce que vous pouvez lancer tout de suite.")
+                    Text("Pour savoir ce que vous pouvez lancer tout de suite.", bundle: .app)
                         .font(.system(size: 11.5))
                         .foregroundStyle(Ink.ink2)
                         .multilineTextAlignment(.leading)
@@ -178,7 +178,7 @@ struct WatchlistView: View {
                         Haptics.selection()
                         withAnimation(Metrics.unfold) { model.isTriaging.toggle() }
                     } label: {
-                        Text(model.isTriaging ? "Terminé" : "Faire le tri")
+                        Text(model.isTriaging ? String(localized: "Terminé", bundle: .app) : String(localized: "Faire le tri", bundle: .app))
                             .font(.system(size: 12))
                             .foregroundStyle(Ink.ink2)
                             .overlay(alignment: .bottom) {
@@ -188,7 +188,7 @@ struct WatchlistView: View {
                     }
                     .buttonStyle(.plain)
                 } else {
-                    Text("\(group.items.count)")
+                    Text(verbatim: "\(group.items.count)")
                         .planLabel()
                         .monospacedDigit()
                         .foregroundStyle(Ink.ink3)
@@ -275,7 +275,7 @@ struct WatchlistView: View {
                 }
                 .buttonStyle(PressableScaleStyle(scale: 0.9))
                 .transition(.opacity)
-                .accessibilityLabel("Retirer \(item.entry.title) de la watchlist")
+                .accessibilityLabel(String(localized: "Retirer \(item.entry.title) de la watchlist", bundle: .app))
             }
         }
         .padding(.horizontal, Metrics.margin)
@@ -287,7 +287,7 @@ struct WatchlistView: View {
         if let platform = preferredPlatform(for: item) {
             PlatformBadge(platform: platform)
         } else if item.providerIDs.isEmpty {
-            Text("—")
+            Text(verbatim: "—")
                 .font(.system(size: 11))
                 .foregroundStyle(Ink.ink3)
                 .frame(width: 20, height: 20)
@@ -297,7 +297,7 @@ struct WatchlistView: View {
             // dire ici.
             PlanLightOutline(tint: Ink.ink3)
                 .frame(width: 20, height: 20)
-                .accessibilityLabel("Hors de vos abonnements")
+                .accessibilityLabel(String(localized: "Hors de vos abonnements", bundle: .app))
         }
     }
 
@@ -308,7 +308,9 @@ struct WatchlistView: View {
                 Haptics.selection()
                 model.budget = .any
             } label: {
-                Text("\(model.hiddenByBudget) film\(model.hiddenByBudget > 1 ? "s" : "") dépasse\(model.hiddenByBudget > 1 ? "nt" : "") \(model.budget.label) · Tout voir")
+                Text(model.hiddenByBudget == 1
+                     ? String(localized: "\(model.hiddenByBudget) film dépasse \(model.budget.label) · Tout voir", bundle: .app)
+                     : String(localized: "\(model.hiddenByBudget) films dépassent \(model.budget.label) · Tout voir", bundle: .app))
                     .font(.system(size: 12))
                     .foregroundStyle(Ink.ink2)
             }
@@ -342,9 +344,9 @@ struct WatchlistView: View {
     private var emptyState: some View {
         PlanEmptyState(
             icon: .salle,
-            title: "Rien en attente",
-            message: "Balayez un film vers le haut depuis le deck pour le mettre de côté. On vous dira quoi en regarder, et quand.",
-            actionTitle: "Trouver des films",
+            title: String(localized: "Rien en attente", bundle: .app),
+            message: String(localized: "Balayez un film vers le haut depuis le deck pour le mettre de côté. On vous dira quoi en regarder, et quand.", bundle: .app),
+            actionTitle: String(localized: "Trouver des films", bundle: .app),
             action: { selectedTab = 2 }
         )
     }
@@ -380,6 +382,6 @@ private struct PlatformBadge: View {
         }
         .frame(width: 20, height: 20)
         .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
-        .accessibilityLabel("Disponible sur \(platform.name)")
+        .accessibilityLabel(String(localized: "Disponible sur \(platform.name)", bundle: .app))
     }
 }

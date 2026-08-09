@@ -37,6 +37,10 @@ struct Cinechill_iOSApp: App {
     /// consomme puis le rend.
     @State private var passwordResetCode: String?
 
+    /// La langue choisie dans les réglages. Lue ici pour une seule raison :
+    /// c'est à la racine qu'on peut redemander l'écran entier quand elle change.
+    @State private var language = LanguageStore.shared
+
     var body: some Scene {
         WindowGroup {
             Group {
@@ -70,6 +74,19 @@ struct Cinechill_iOSApp: App {
                 _ = GIDSignIn.sharedInstance.handle(url)
 #endif
             }
+            // Changer de langue rebâtit l'écran de fond en comble.
+            //
+            // La quasi-totalité des chaînes de l'app se résolvent par
+            // `String(localized:bundle:)`, hors de toute dépendance SwiftUI :
+            // rien n'irait redemander leur corps aux vues déjà affichées. Le
+            // `.id` le fait sans détour, au prix d'un retour à l'onglet
+            // d'accueil — ce que fait iOS lui-même quand on change la langue
+            // d'une app depuis ses réglages système.
+            //
+            // La locale d'environnement suit, pour les dates et les nombres que
+            // SwiftUI formate lui-même.
+            .id(language.selection)
+            .environment(\.locale, language.selection.locale)
             .animation(.easeInOut(duration: 0.45), value: splashFinished)
             .animation(.easeInOut(duration: 0.45), value: authService.isInitializing)
             // L'identité — étain, cyan, nuit — est dessinée pour le sombre ; le clair n'est

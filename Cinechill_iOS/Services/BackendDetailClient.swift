@@ -11,20 +11,20 @@ enum BackendDetailClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingBaseURL:
-            return "URL backend absente. Définissez BACKEND_BASE_HOST dans Project.xcconfig."
+            return String(localized: "URL backend absente. Définissez BACKEND_BASE_HOST dans Project.xcconfig.", bundle: .app)
         case .invalidURL:
-            return "URL backend détail invalide."
+            return String(localized: "URL backend détail invalide.", bundle: .app)
         case .unsupportedMediaType:
-            return "Le backend détail supporte uniquement les films."
+            return String(localized: "Le backend détail supporte uniquement les films.", bundle: .app)
         case .transport(let message):
-            return "Erreur réseau backend détail : \(message)"
+            return String(localized: "Erreur réseau backend détail : \(message)", bundle: .app)
         case .httpStatus(let code, let message):
             if let message, !message.isEmpty {
-                return "Backend détail (HTTP \(code)) : \(message)"
+                return String(localized: "Backend détail (HTTP \(code)) : \(message)", bundle: .app)
             }
-            return "Erreur backend détail (HTTP \(code))."
+            return String(localized: "Erreur backend détail (HTTP \(code)).", bundle: .app)
         case .decoding(let message):
-            return "Impossible de lire la réponse backend détail. \(message)"
+            return String(localized: "Impossible de lire la réponse backend détail. \(message)", bundle: .app)
         }
     }
 }
@@ -41,7 +41,7 @@ struct BackendDetailClient: Sendable {
             throw BackendDetailClientError.invalidURL
         }
 
-        var request = URLRequest(url: url)
+        var request = URLRequest(backend: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 

@@ -33,7 +33,7 @@ struct TonightCardView: View {
                     // l'app vous fasse d'elle-même, donc son accent.
                     HStack(spacing: 8) {
                         PlanLight()
-                        Text("Ce soir")
+                        Text("Ce soir", bundle: .app)
                             .planLabel()
                             .foregroundStyle(Ink.light)
                     }
@@ -82,9 +82,9 @@ struct TonightCardView: View {
 
     private var actions: some View {
         HStack(spacing: Metrics.gutter) {
-            PlanButton(title: "Je le regarde", height: Metrics.control, action: onWatch)
+            PlanButton(title: String(localized: "Je le regarde", bundle: .app), height: Metrics.control, action: onWatch)
 
-            PlanSecondaryButton(title: "Autre chose", height: Metrics.control, action: onReject)
+            PlanSecondaryButton(title: String(localized: "Autre chose", bundle: .app), height: Metrics.control, action: onReject)
                 .frame(width: 118)
 
             if let trailer = pick.item.trailerURL {
@@ -102,7 +102,7 @@ struct TonightCardView: View {
                         )
                 }
                 .buttonStyle(PressableScaleStyle(scale: 0.94))
-                .accessibilityLabel("Voir la bande-annonce")
+                .accessibilityLabel(String(localized: "Voir la bande-annonce", bundle: .app))
             }
         }
         .padding(.bottom, 18)

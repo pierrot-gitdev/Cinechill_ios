@@ -81,9 +81,9 @@ final class GalleryViewModel {
 
     private var dominantNote: String? {
         switch axis {
-        case .era: "votre décennie"
-        case .genre: "votre terrain"
-        case .added: "votre meilleur mois"
+        case .era: String(localized: "votre décennie", bundle: .app)
+        case .genre: String(localized: "votre terrain", bundle: .app)
+        case .added: String(localized: "votre meilleur mois", bundle: .app)
         case .rating: nil
         }
     }
@@ -114,7 +114,7 @@ final class GalleryViewModel {
         }
 
         if !unknown.isEmpty {
-            result.append(GalleryBand(id: "era-unknown", title: "Sans date", subtitle: nil, entries: unknown))
+            result.append(GalleryBand(id: "era-unknown", title: String(localized: "Sans date", bundle: .app), subtitle: nil, entries: unknown))
         }
         return result
     }
@@ -133,7 +133,7 @@ final class GalleryViewModel {
 
         var result: [GalleryBand] = []
         for (genreID, items) in byGenre {
-            let title: String = genreNames[genreID] ?? "Genre \(genreID)"
+            let title: String = genreNames[genreID] ?? String(localized: "Genre \(genreID)", bundle: .app)
             let sorted: [GalleryEntry] = items.sorted { $0.addedAt > $1.addedAt }
             result.append(
                 GalleryBand(id: "genre-\(genreID)", title: title, subtitle: nil, entries: sorted)
@@ -146,7 +146,7 @@ final class GalleryViewModel {
         }
 
         if !unknown.isEmpty {
-            result.append(GalleryBand(id: "genre-none", title: "Sans genre", subtitle: nil, entries: unknown))
+            result.append(GalleryBand(id: "genre-none", title: String(localized: "Sans genre", bundle: .app), subtitle: nil, entries: unknown))
         }
         return result
     }
@@ -182,11 +182,11 @@ final class GalleryViewModel {
 
     private func bandsByRating() -> [GalleryBand] {
         let buckets: [(id: String, title: String, range: Range<Double>)] = [
-            ("rating-9", "9 et plus", 9 ..< 11),
+            ("rating-9", String(localized: "9 et plus", bundle: .app), 9 ..< 11),
             ("rating-8", "8 – 9", 8 ..< 9),
             ("rating-7", "7 – 8", 7 ..< 8),
             ("rating-6", "6 – 7", 6 ..< 7),
-            ("rating-0", "Moins de 6", 0 ..< 6),
+            ("rating-0", String(localized: "Moins de 6", bundle: .app), 0 ..< 6),
         ]
 
         var result = buckets.compactMap { bucket -> GalleryBand? in
@@ -205,7 +205,7 @@ final class GalleryViewModel {
 
         let unrated = entries.filter { $0.voteAverage == nil }
         if !unrated.isEmpty {
-            result.append(GalleryBand(id: "rating-none", title: "Non noté", subtitle: nil, entries: unrated))
+            result.append(GalleryBand(id: "rating-none", title: String(localized: "Non noté", bundle: .app), subtitle: nil, entries: unrated))
         }
         return result
     }
@@ -241,7 +241,7 @@ final class GalleryViewModel {
         var shares = ranked.prefix(Self.namedGenreCount).enumerated().map { index, pair in
             GenreShare(
                 id: pair.key,
-                name: genreNames[pair.key] ?? "Genre \(pair.key)",
+                name: genreNames[pair.key] ?? String(localized: "Genre \(pair.key)", bundle: .app),
                 share: Double(pair.value) / total,
                 colorIndex: index
             )
@@ -250,7 +250,7 @@ final class GalleryViewModel {
         let remainder = ranked.dropFirst(Self.namedGenreCount).map(\.value).reduce(0, +)
         if remainder > 0 {
             shares.append(
-                GenreShare(id: -1, name: "Autres", share: Double(remainder) / total, colorIndex: -1)
+                GenreShare(id: -1, name: String(localized: "Autres", bundle: .app), share: Double(remainder) / total, colorIndex: -1)
             )
         }
 
@@ -281,10 +281,10 @@ final class GalleryViewModel {
         components.month = month
         guard let date = Calendar.current.date(from: components) else { return "—" }
 
-        let locale = Locale(identifier: "fr_FR")
-        let formatter = DateFormatter()
-        formatter.locale = locale
-        formatter.dateFormat = "LLLL yyyy"
-        return formatter.string(from: date).capitalized(with: locale)
+        // Le nom du mois suit la langue de l'appareil : « Août 2026 » ici,
+        // « August 2026 » ailleurs — ce qu'un `fr_FR` gravé ne sait pas faire.
+        return date
+            .formatted(.dateTime.month(.wide).year())
+            .capitalized(with: Locale.current)
     }
 }

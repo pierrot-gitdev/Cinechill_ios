@@ -73,7 +73,7 @@ struct ProfileSignatureCard: View {
             // La mesure du palier : un libellé, un filet, et ce qui reste à
             // parcourir. Le même dispositif que la progression d'un badge.
             HStack(spacing: 12) {
-                Text("Palier \(tier.label.lowercased())")
+                Text(String(localized: "Palier \(tier.label.lowercased())", bundle: .app))
                     .planLabel()
                     .foregroundStyle(Ink.ink3)
                     .fixedSize()
@@ -92,7 +92,7 @@ struct ProfileSignatureCard: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "\(profileStore.displayName), palier \(tier.label), \(galleryCount) films"
+            String(localized: "\(profileStore.displayName), palier \(tier.label), \(galleryCount) films", bundle: .app)
         )
     }
 

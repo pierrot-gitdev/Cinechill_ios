@@ -32,14 +32,14 @@ nonisolated enum Axis: String, CaseIterable, Hashable, Sendable, Codable {
     /// fois le système expliqué, ce qui est l'inverse du contrat de cet écran.
     var label: String {
         switch self {
-        case .charge: "Émotions"
-        case .rythme: "Rythme"
-        case .familiarite: "Découverte"
-        case .densite: "Complexité"
-        case .ancrage: "Réalisme"
-        case .ton: "Ton"
-        case .echelle: "Ampleur"
-        case .investissement: "Durée"
+        case .charge: String(localized: "Émotions", bundle: .app)
+        case .rythme: String(localized: "Rythme", bundle: .app)
+        case .familiarite: String(localized: "Découverte", bundle: .app)
+        case .densite: String(localized: "Complexité", bundle: .app)
+        case .ancrage: String(localized: "Réalisme", bundle: .app)
+        case .ton: String(localized: "Ton", bundle: .app)
+        case .echelle: String(localized: "Ampleur", bundle: .app)
+        case .investissement: String(localized: "Durée", bundle: .app)
         }
     }
 }

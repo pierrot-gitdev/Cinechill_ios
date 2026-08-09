@@ -130,8 +130,8 @@ struct PosterCell: View {
 
     private var accessibilityText: String {
         title
-            + (inGallery ? ", déjà vu" : "")
-            + (inWatchlist ? ", dans votre watchlist" : "")
+            + (inGallery ? String(localized: ", déjà vu", bundle: .app) : "")
+            + (inWatchlist ? String(localized: ", dans votre watchlist", bundle: .app) : "")
     }
 }
 

@@ -16,7 +16,7 @@ nonisolated struct BackendBadgesClient: BadgesFetching, Sendable {
         guard let user = Auth.auth().currentUser else { throw URLError(.userAuthenticationRequired) }
         let token = try await user.getIDToken()
 
-        var request = URLRequest(url: url)
+        var request = URLRequest(backend: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

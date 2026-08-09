@@ -24,7 +24,7 @@ struct VerdictPromptView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
                 PlanLightOutline()
-                Text("Votre dernier film")
+                Text("Votre dernier film", bundle: .app)
                     .planLabel()
                     .foregroundStyle(Ink.ink3)
             }
@@ -35,7 +35,7 @@ struct VerdictPromptView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 12)
 
-            Text("Votre réponse nous aide à mieux choisir la prochaine fois.")
+            Text("Votre réponse nous aide à mieux choisir la prochaine fois.", bundle: .app)
                 .font(.system(size: 12.5))
                 .foregroundStyle(Ink.ink2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -61,7 +61,7 @@ struct VerdictPromptView: View {
             .padding(.top, 18)
 
             Button(action: onDismiss) {
-                Text("Une autre fois")
+                Text("Une autre fois", bundle: .app)
                     .font(.system(size: 12.5))
                     .foregroundStyle(Ink.ink3)
                     .frame(maxWidth: .infinity)
@@ -79,9 +79,9 @@ struct VerdictPromptView: View {
 
     private var question: String {
         guard let title = pending.title, !title.isEmpty else {
-            return "Vous avez aimé le film que nous vous avions proposé ?"
+            return String(localized: "Vous avez aimé le film que nous vous avions proposé ?", bundle: .app)
         }
-        return "Vous avez aimé \(title) ?"
+        return String(localized: "Vous avez aimé \(title) ?", bundle: .app)
     }
 }
 

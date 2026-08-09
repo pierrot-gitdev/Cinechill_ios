@@ -53,14 +53,14 @@ struct SuggestionComposerSheet: View {
                 } else if let loadError {
                     HallEmptyState(
                         icon: .hall,
-                        title: "Liste indisponible",
+                        title: String(localized: "Liste indisponible", bundle: .app),
                         message: loadError
                     )
                 } else if targets.isEmpty {
                     HallEmptyState(
                         icon: .hall,
-                        title: "Vous ne suivez personne",
-                        message: "Suivez quelqu'un pour pouvoir lui recommander un film."
+                        title: String(localized: "Vous ne suivez personne", bundle: .app),
+                        message: String(localized: "Suivez quelqu'un pour pouvoir lui recommander un film.", bundle: .app)
                     )
                 } else {
                     content
@@ -68,7 +68,7 @@ struct SuggestionComposerSheet: View {
             }
             .background(Ink.ground)
             .safeAreaInset(edge: .top) {
-                PlanHeader("Recommander", leading: .close)
+                PlanHeader(String(localized: "Recommander", bundle: .app), leading: .close)
             }
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .bottom) {
@@ -88,7 +88,7 @@ struct SuggestionComposerSheet: View {
                 header
 
                 if targets.count > 8 {
-                    HallSearchField(placeholder: "Filtrer mes abonnements", text: $filter)
+                    HallSearchField(placeholder: String(localized: "Filtrer mes abonnements", bundle: .app), text: $filter)
                         .padding(.horizontal, 18)
                         .padding(.bottom, 10)
                 }
@@ -111,7 +111,7 @@ struct SuggestionComposerSheet: View {
                     .planTitle(17)
                     .foregroundStyle(Ink.ink)
                     .lineLimit(2)
-                Text("À qui l'envoyer ?")
+                Text("À qui l'envoyer ?", bundle: .app)
                     .font(.system(size: 12))
                     .foregroundStyle(Ink.ink2)
             }
@@ -164,7 +164,7 @@ struct SuggestionComposerSheet: View {
         .buttonStyle(.plain)
         .disabled(!target.canReceive)
         .accessibilityLabel(target.displayName)
-        .accessibilityHint(target.blockedReason ?? "Sélectionner")
+        .accessibilityHint(target.blockedReason ?? String(localized: "Sélectionner", bundle: .app))
     }
 
     private func handleText(_ target: SuggestionTarget) -> String {
@@ -200,7 +200,7 @@ struct SuggestionComposerSheet: View {
 
             PlanButton(
                 title: sendTitle,
-                loadingTitle: "Envoi…",
+                loadingTitle: String(localized: "Envoi…", bundle: .app),
                 isLoading: isSending,
                 isEnabled: !selected.isEmpty,
                 height: Metrics.control
@@ -217,10 +217,9 @@ struct SuggestionComposerSheet: View {
 
     private var sendTitle: String {
         switch selected.count {
-        case 0 where selectableCount == 0: "Personne ne peut le recevoir"
-        case 0: "Choisissez au moins une personne"
-        case 1: "Recommander à 1 personne"
-        default: "Recommander à \(selected.count) personnes"
+        case 0 where selectableCount == 0: String(localized: "Personne ne peut le recevoir", bundle: .app)
+        case 0: String(localized: "Choisissez au moins une personne", bundle: .app)
+        default: String(localized: "Recommander à \(selected.count) personnes", bundle: .app)
         }
     }
 
@@ -295,35 +294,39 @@ struct SuggestionOutcome: Equatable {
 
     var title: String {
         if !alreadySeen.isEmpty, sent.isEmpty {
-            return "\(list(alreadySeen)) a déjà vu \(film)."
+            return String(localized: "\(list(alreadySeen)) a déjà vu \(film).", bundle: .app)
         }
         if hadFailure, sent.isEmpty {
-            return "Rien n'a pu être envoyé."
+            return String(localized: "Rien n'a pu être envoyé.", bundle: .app)
         }
-        return "Recommandé à \(list(sent))."
+        return String(localized: "Recommandé à \(list(sent)).", bundle: .app)
     }
 
     var message: String? {
         if !alreadySeen.isEmpty, sent.isEmpty {
-            return "Rien ne lui a été envoyé."
+            return String(localized: "Rien ne lui a été envoyé.", bundle: .app)
         }
         if !alreadySeen.isEmpty {
-            return "\(list(alreadySeen)) l'avait déjà vu — rien ne lui a été envoyé."
+            return String(localized: "\(list(alreadySeen)) l'avait déjà vu — rien ne lui a été envoyé.", bundle: .app)
         }
         if hadFailure {
-            return "Une partie des envois a échoué. Réessayez."
+            return String(localized: "Une partie des envois a échoué. Réessayez.", bundle: .app)
         }
         return sent.count == 1
-            ? "Cette personne le verra dans ses notifications."
-            : "Ils le verront dans leurs notifications."
+            ? String(localized: "Cette personne le verra dans ses notifications.", bundle: .app)
+            : String(localized: "Ils le verront dans leurs notifications.", bundle: .app)
     }
 
     private func list(_ names: [String]) -> String {
         switch names.count {
-        case 0: return "Personne"
+        case 0: return String(localized: "Personne", bundle: .app)
         case 1: return names[0]
-        case 2: return "\(names[0]) et \(names[1])"
-        default: return "\(names[0]) et \(names.count - 1) autres"
+        case 2: return String(localized: "\(names[0]) et \(names[1])", bundle: .app)
+        default:
+            let others = names.count - 1
+            return others == 1
+                ? String(localized: "\(names[0]) et \(others) autre", bundle: .app)
+                : String(localized: "\(names[0]) et \(others) autres", bundle: .app)
         }
     }
 }

@@ -70,7 +70,7 @@ struct PlatformGrid: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.94))
         .accessibilityLabel(platform.name)
-        .accessibilityValue(isOn ? "Abonné" : "Pas abonné")
+        .accessibilityValue(isOn ? String(localized: "Abonné", bundle: .app) : String(localized: "Pas abonné", bundle: .app))
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
     }
 }
@@ -97,13 +97,13 @@ struct PlatformPickerSheet: View {
             Ink.ground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                PlanHeader("Mes abonnements", leading: .close) {
+                PlanHeader(String(localized: "Mes abonnements", bundle: .app), leading: .close) {
                     if !libraryStore.preferredPlatformIDs.isEmpty {
                         Button {
                             Haptics.selection()
                             libraryStore.setPreferredPlatforms([])
                         } label: {
-                            Text("Tout décocher")
+                            Text("Tout décocher", bundle: .app)
                                 .planLabel()
                                 .foregroundStyle(Ink.ink3)
                                 .contentShape(Rectangle().inset(by: -10))
@@ -114,7 +114,7 @@ struct PlatformPickerSheet: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        Text("Ce qui n'est pas chez vous ne vous sera pas proposé. Ne rien cocher, c'est ne pas filtrer.")
+                        Text("Ce qui n'est pas chez vous ne vous sera pas proposé. Ne rien cocher, c'est ne pas filtrer.", bundle: .app)
                             .font(.system(size: 12.5))
                             .foregroundStyle(Ink.ink3)
                             .fixedSize(horizontal: false, vertical: true)
@@ -122,7 +122,7 @@ struct PlatformPickerSheet: View {
                         if catalog.platforms.isEmpty {
                             HStack(spacing: 10) {
                                 CinechillSpinner(size: 18)
-                                Text("Chargement des plateformes…")
+                                Text("Chargement des plateformes…", bundle: .app)
                                     .font(.system(size: 12.5))
                                     .foregroundStyle(Ink.ink3)
                             }

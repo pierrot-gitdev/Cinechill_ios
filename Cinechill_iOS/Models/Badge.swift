@@ -16,11 +16,11 @@ nonisolated enum BadgeRarity: String, Sendable, Hashable {
 
     var label: String {
         switch self {
-        case .common: "Commun"
-        case .rare: "Rare"
-        case .epic: "Épique"
-        case .legendary: "Légendaire"
-        case .mythic: "Secret"
+        case .common: String(localized: "Commun", bundle: .app)
+        case .rare: String(localized: "Rare", bundle: .app)
+        case .epic: String(localized: "Épique", bundle: .app)
+        case .legendary: String(localized: "Légendaire", bundle: .app)
+        case .mythic: String(localized: "Secret", bundle: .app)
         }
     }
 
@@ -68,7 +68,7 @@ nonisolated struct Badge: Identifiable, Sendable, Hashable {
     }
 
     func displayCondition(unlocked: Bool) -> String {
-        isSecret && !unlocked ? "Un badge reste à découvrir." : condition
+        isSecret && !unlocked ? String(localized: "Un badge reste à découvrir.", bundle: .app) : condition
     }
 }
 
@@ -104,78 +104,78 @@ nonisolated enum BadgeCatalog {
     /// ritual, clean_list, sorter, signature, integral, night_owl.
     static let all: [Badge] = [
         Badge(
-            id: "first_reel", name: "Première Bobine",
-            condition: "Votre tout premier film enregistré.",
+            id: "first_reel", name: String(localized: "Première Bobine", bundle: .app),
+            condition: String(localized: "Votre tout premier film enregistré.", bundle: .app),
             rarity: .common, isSecret: false
         ),
         Badge(
-            id: "centenary", name: "Le Centenaire",
-            condition: "100 films dans la galerie.",
+            id: "centenary", name: String(localized: "Le Centenaire", bundle: .app),
+            condition: String(localized: "100 films dans la galerie.", bundle: .app),
             rarity: .rare, isSecret: false
         ),
         Badge(
-            id: "cinematheque", name: "La Cinémathèque",
-            condition: "500 films. Une vie de spectateur, archivée.",
+            id: "cinematheque", name: String(localized: "La Cinémathèque", bundle: .app),
+            condition: String(localized: "500 films. Une vie de spectateur, archivée.", bundle: .app),
             rarity: .legendary, isSecret: false
         ),
         Badge(
-            id: "archaeologist", name: "Archéologue",
-            condition: "25 films sortis avant 1970.",
+            id: "archaeologist", name: String(localized: "Archéologue", bundle: .app),
+            condition: String(localized: "25 films sortis avant 1970.", bundle: .app),
             rarity: .epic, isSecret: false
         ),
         Badge(
-            id: "traveler", name: "Le Voyageur",
-            condition: "Au moins un film dans 8 décennies différentes.",
+            id: "traveler", name: String(localized: "Le Voyageur", bundle: .app),
+            condition: String(localized: "Au moins un film dans 8 décennies différentes.", bundle: .app),
             rarity: .epic, isSecret: false
         ),
         Badge(
-            id: "steel_heart", name: "Cœur d'Acier",
-            condition: "75 films d'action.",
+            id: "steel_heart", name: String(localized: "Cœur d'Acier", bundle: .app),
+            condition: String(localized: "75 films d'action.", bundle: .app),
             rarity: .rare, isSecret: false
         ),
         Badge(
-            id: "sleepless", name: "Sans Dormir",
-            condition: "40 films d'horreur.",
+            id: "sleepless", name: String(localized: "Sans Dormir", bundle: .app),
+            condition: String(localized: "40 films d'horreur.", bundle: .app),
             rarity: .rare, isSecret: false
         ),
         Badge(
-            id: "panoramic", name: "L'Œil Panoramique",
-            condition: "Au moins 10 films dans 8 genres différents.",
+            id: "panoramic", name: String(localized: "L'Œil Panoramique", bundle: .app),
+            condition: String(localized: "Au moins 10 films dans 8 genres différents.", bundle: .app),
             rarity: .epic, isSecret: false
         ),
         Badge(
-            id: "marathon", name: "Marathon",
-            condition: "7 jours d'affilée à enrichir votre galerie.",
+            id: "marathon", name: String(localized: "Marathon", bundle: .app),
+            condition: String(localized: "7 jours d'affilée à enrichir votre galerie.", bundle: .app),
             rarity: .common, isSecret: false
         ),
         Badge(
-            id: "ritual", name: "Le Rituel",
-            condition: "60 jours d'affilée. Sans une seule absence.",
+            id: "ritual", name: String(localized: "Le Rituel", bundle: .app),
+            condition: String(localized: "60 jours d'affilée. Sans une seule absence.", bundle: .app),
             rarity: .legendary, isSecret: false
         ),
         Badge(
-            id: "clean_list", name: "Liste Nette",
-            condition: "Ramener une watchlist d'au moins 15 films à zéro.",
+            id: "clean_list", name: String(localized: "Liste Nette", bundle: .app),
+            condition: String(localized: "Ramener une watchlist d'au moins 15 films à zéro.", bundle: .app),
             rarity: .rare, isSecret: false
         ),
         Badge(
-            id: "sorter", name: "Le Trieur",
-            condition: "500 cartes tranchées dans le deck.",
+            id: "sorter", name: String(localized: "Le Trieur", bundle: .app),
+            condition: String(localized: "500 cartes tranchées dans le deck.", bundle: .app),
             rarity: .common, isSecret: false
         ),
         Badge(
-            id: "signature", name: "Signature",
-            condition: "8 films d'un même réalisateur.",
+            id: "signature", name: String(localized: "Signature", bundle: .app),
+            condition: String(localized: "8 films d'un même réalisateur.", bundle: .app),
             rarity: .epic, isSecret: false
         ),
         Badge(
-            id: "integral", name: "L'Intégrale",
-            condition: "Une saga entière, sans en manquer un seul épisode.",
+            id: "integral", name: String(localized: "L'Intégrale", bundle: .app),
+            condition: String(localized: "Une saga entière, sans en manquer un seul épisode.", bundle: .app),
             rarity: .legendary, isSecret: false
         ),
         Badge(
-            id: "night_owl", name: "Le Noctambule",
-            condition: "15 films enregistrés entre 2 h et 5 h du matin.",
+            id: "night_owl", name: String(localized: "Le Noctambule", bundle: .app),
+            condition: String(localized: "15 films enregistrés entre 2 h et 5 h du matin.", bundle: .app),
             rarity: .mythic, isSecret: true
         ),
     ]

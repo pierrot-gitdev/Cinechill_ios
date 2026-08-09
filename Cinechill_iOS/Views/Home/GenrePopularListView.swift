@@ -43,18 +43,18 @@ struct GenrePopularListView: View {
                 } else if let errorMessage {
                     PlanEmptyState(
                         icon: .salle,
-                        title: "Chargement impossible",
+                        title: String(localized: "Chargement impossible", bundle: .app),
                         message: errorMessage,
-                        actionTitle: "Réessayer",
+                        actionTitle: String(localized: "Réessayer", bundle: .app),
                         action: { Task { await load() } }
                     )
                     .padding(.top, 60)
                 } else if items.isEmpty {
                     PlanEmptyState(
                         icon: .chercher,
-                        title: "Rien dans cette catégorie",
+                        title: String(localized: "Rien dans cette catégorie", bundle: .app),
                         message: emptyMessage,
-                        actionTitle: hasPlatformFilter ? "Voir sans filtre" : nil,
+                        actionTitle: hasPlatformFilter ? String(localized: "Voir sans filtre", bundle: .app) : nil,
                         action: hasPlatformFilter ? { libraryStore.setPreferredPlatforms([]) } : nil
                     )
                     .padding(.top, 60)
@@ -68,7 +68,7 @@ struct GenrePopularListView: View {
         .safeAreaInset(edge: .top) {
             PlanHeader(category.title) {
                 if !items.isEmpty {
-                    PlanHeaderCount(value: "\(items.count)")
+                    PlanHeaderCount(value: items.count.formatted())
                 }
             }
         }
@@ -92,7 +92,9 @@ struct GenrePopularListView: View {
     private var platformRow: some View {
         VStack(spacing: 0) {
             HStack(spacing: 9) {
-                Text(selectedPlatforms.isEmpty ? "Toutes plateformes" : "Chez vous")
+                Text(selectedPlatforms.isEmpty
+                     ? String(localized: "Toutes plateformes", bundle: .app)
+                     : String(localized: "Chez vous", bundle: .app))
                     .planLabel()
                     .foregroundStyle(Ink.ink3)
 
@@ -102,7 +104,7 @@ struct GenrePopularListView: View {
                             platformLogo(platform)
                         }
                         if selectedPlatforms.count > 4 {
-                            Text("+\(selectedPlatforms.count - 4)")
+                            Text(verbatim: "+\(selectedPlatforms.count - 4)")
                                 .font(.system(size: 10))
                                 .monospacedDigit()
                                 .foregroundStyle(Ink.ink3)
@@ -115,7 +117,7 @@ struct GenrePopularListView: View {
                 Button {
                     showPlatforms = true
                 } label: {
-                    Text("Modifier")
+                    Text("Modifier", bundle: .app)
                         .font(.system(size: 12))
                         .foregroundStyle(Ink.ink2)
                         .overlay(alignment: .bottom) {
@@ -124,7 +126,7 @@ struct GenrePopularListView: View {
                         .contentShape(Rectangle().inset(by: -10))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Modifier mes abonnements")
+                .accessibilityLabel(String(localized: "Modifier mes abonnements", bundle: .app))
             }
             .frame(height: 44)
             .padding(.horizontal, Metrics.margin)
@@ -185,7 +187,7 @@ struct GenrePopularListView: View {
     private var loadingState: some View {
         VStack(spacing: 14) {
             CinechillSpinner(size: 30)
-            Text("Chargement…")
+            Text("Chargement…", bundle: .app)
                 .font(.system(size: 12.5))
                 .foregroundStyle(Ink.ink3)
         }
@@ -195,8 +197,8 @@ struct GenrePopularListView: View {
 
     private var emptyMessage: String {
         hasPlatformFilter
-            ? "Aucun film de cette catégorie n'est disponible sur vos plateformes en ce moment."
-            : "Essayez une autre catégorie."
+            ? String(localized: "Aucun film de cette catégorie n'est disponible sur vos plateformes en ce moment.", bundle: .app)
+            : String(localized: "Essayez une autre catégorie.", bundle: .app)
     }
 
     private func load() async {

@@ -54,7 +54,7 @@ struct SplashView: View {
                 .frame(width: markSize, height: markSize)
                 .scaleEffect(markScale)
 
-                Text("Cinechill")
+                Text(verbatim: "Cinechill")
                     .font(.system(size: 27, weight: .light))
                     .kerning(-0.76)
                     .tracking(1.6)

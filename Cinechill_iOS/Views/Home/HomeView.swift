@@ -59,7 +59,7 @@ struct HomeView: View {
                 .scrollIndicators(.hidden)
             }
             .safeAreaInset(edge: .top) {
-                AppHeaderView(title: "Accueil", onProfileTap: { showProfile = true })
+                AppHeaderView(title: String(localized: "Accueil", bundle: .app), onProfileTap: { showProfile = true })
             }
             .navigationBarHidden(true)
             .navigationDestination(for: MediaItem.self) { item in
@@ -97,7 +97,7 @@ struct HomeView: View {
     private var loadingState: some View {
         VStack(spacing: 14) {
             CinechillSpinner(size: 30)
-            Text("Chargement…")
+            Text("Chargement…", bundle: .app)
                 .font(.system(size: 12.5))
                 .foregroundStyle(Ink.ink3)
         }
@@ -114,7 +114,7 @@ struct HomeView: View {
     private var inTheatersSection: some View {
         if !homeModel.rows.inTheaters.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
-                sectionTitle("Au cinéma en ce moment")
+                sectionTitle(String(localized: "Au cinéma en ce moment", bundle: .app))
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 12) {
@@ -144,7 +144,10 @@ struct HomeView: View {
     private var becauseYouWatchedSection: some View {
         if let seeded = homeModel.rows.becauseYouWatched, !seeded.items.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
-                sectionTitle(seeded.seedTitle.map { "Parce que vous avez vu \($0)" } ?? "Dans la même veine")
+                sectionTitle(
+                    seeded.seedTitle.map { String(localized: "Parce que vous avez vu \($0)", bundle: .app) }
+                        ?? String(localized: "Dans la même veine", bundle: .app)
+                )
                 posterRail(seeded.items)
             }
         }
@@ -159,7 +162,7 @@ struct HomeView: View {
     private var trendingSection: some View {
         if !homeModel.rows.trending.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
-                sectionTitle("Tendances de la semaine")
+                sectionTitle(String(localized: "Tendances de la semaine", bundle: .app))
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 12) {
@@ -184,7 +187,7 @@ struct HomeView: View {
                                     // mangeait une demi-affiche de largeur pour une
                                     // information qui tient en deux caractères.
                                     HStack(alignment: .top, spacing: 6) {
-                                        Text("\(index + 1)")
+                                        Text(verbatim: "\(index + 1)")
                                             .planLabel()
                                             .monospacedDigit()
                                             .foregroundStyle(Ink.light)
@@ -211,7 +214,7 @@ struct HomeView: View {
 
     private var popularSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionTitle("Populaire en ce moment")
+            sectionTitle(String(localized: "Populaire en ce moment", bundle: .app))
 
             platformRow
 
@@ -230,7 +233,9 @@ struct HomeView: View {
     /// que celui des réglages, désormais unique dans l'application.
     private var platformRow: some View {
         HStack(spacing: 9) {
-            Text(selectedPlatforms.isEmpty ? "Toutes plateformes" : "Chez vous")
+            Text(selectedPlatforms.isEmpty
+                 ? String(localized: "Toutes plateformes", bundle: .app)
+                 : String(localized: "Chez vous", bundle: .app))
                 .planLabel()
                 .foregroundStyle(Ink.ink3)
 
@@ -240,7 +245,7 @@ struct HomeView: View {
                         platformLogo(platform)
                     }
                     if selectedPlatforms.count > 4 {
-                        Text("+\(selectedPlatforms.count - 4)")
+                        Text(verbatim: "+\(selectedPlatforms.count - 4)")
                             .font(.system(size: 10))
                             .monospacedDigit()
                             .foregroundStyle(Ink.ink3)
@@ -253,7 +258,7 @@ struct HomeView: View {
             Button {
                 showPlatformSheet = true
             } label: {
-                Text("Modifier")
+                Text("Modifier", bundle: .app)
                     .font(.system(size: 12))
                     .foregroundStyle(Ink.ink2)
                     .overlay(alignment: .bottom) {
@@ -262,7 +267,7 @@ struct HomeView: View {
                     .contentShape(Rectangle().inset(by: -10))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Choisir vos plateformes")
+            .accessibilityLabel(String(localized: "Choisir vos plateformes", bundle: .app))
         }
     }
 
@@ -294,8 +299,8 @@ struct HomeView: View {
 
     private var emptyPopularMessage: String {
         libraryStore.preferredPlatformIDs.isEmpty
-            ? "Rien à afficher pour le moment."
-            : "Aucun film disponible sur vos plateformes en ce moment."
+            ? String(localized: "Rien à afficher pour le moment.", bundle: .app)
+            : String(localized: "Aucun film disponible sur vos plateformes en ce moment.", bundle: .app)
     }
 
     // MARK: - Parcourir
@@ -303,10 +308,10 @@ struct HomeView: View {
     private var browseSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                sectionTitle("Parcourir")
+                sectionTitle(String(localized: "Parcourir", bundle: .app))
                 Spacer()
                 NavigationLink(destination: HomeGenresListView(categories: homeModel.browseCategories, homeModel: homeModel)) {
-                    Text("Tout voir")
+                    Text("Tout voir", bundle: .app)
                         .font(.system(size: 12))
                         .foregroundStyle(Ink.ink2)
                         .overlay(alignment: .bottom) {
@@ -447,8 +452,8 @@ struct TheaterCardView: View {
         guard let date = formatter.date(from: releaseDate) else { return nil }
 
         let days = Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
-        guard days >= 0 else { return "Bientôt" }
-        if days <= 7 { return "Cette semaine" }
-        return "Depuis \(days) j"
+        guard days >= 0 else { return String(localized: "Bientôt", bundle: .app) }
+        if days <= 7 { return String(localized: "Cette semaine", bundle: .app) }
+        return String(localized: "Depuis \(days) j", bundle: .app)
     }
 }

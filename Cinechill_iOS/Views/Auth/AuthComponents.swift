@@ -226,7 +226,7 @@ struct PlanAlert: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if let retry {
-                Button("Réessayer", action: retry)
+                Button(String(localized: "Réessayer", bundle: .app), action: retry)
                     .buttonStyle(.plain)
                     .planLabel()
                     .foregroundStyle(AuthInk.ink)
@@ -262,17 +262,17 @@ struct PlanCriteria: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            item("8 caractères", met: Self.isLongEnough(password))
-            Text("·").foregroundStyle(AuthInk.ink3)
-            item("une majuscule ou un chiffre", met: Self.hasVariety(password))
+            item(String(localized: "8 caractères", bundle: .app), met: Self.isLongEnough(password))
+            Text(verbatim: "·").foregroundStyle(AuthInk.ink3)
+            item(String(localized: "une majuscule ou un chiffre", bundle: .app), met: Self.hasVariety(password))
         }
         .font(.system(size: 12))
         .padding(.top, 9)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
             Self.isAcceptable(password)
-                ? "Mot de passe conforme"
-                : "Il faut 8 caractères et une majuscule ou un chiffre"
+                ? String(localized: "Mot de passe conforme", bundle: .app)
+                : String(localized: "Il faut 8 caractères et une majuscule ou un chiffre", bundle: .app)
         )
     }
 
@@ -292,7 +292,7 @@ struct PlanCriteria: View {
 /// majuscule ou un accent est une faute de conception si on la signale, pas une
 /// faute de l'utilisateur.
 enum PlanHandle {
-    static let rule = "3 à 20 caractères, minuscules, chiffres, point et tiret bas."
+    static let rule = String(localized: "3 à 20 caractères, minuscules, chiffres, point et tiret bas.", bundle: .app)
 
     static func normalize(_ raw: String) -> String {
         let folded = raw.folding(

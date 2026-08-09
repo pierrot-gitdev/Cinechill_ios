@@ -19,7 +19,10 @@ final class MediaCatalog {
     private(set) var platforms: [StreamingPlatform] = []
 
     private let client: any HomeMetadataFetching
-    private var hasLoaded = false
+    /// La langue sous laquelle le répertoire courant a été chargé. Les noms
+    /// de genres et de plateformes viennent de TMDB traduits : ils sont à
+    /// refaire dès que la langue change, pas seulement au premier écran.
+    private var loadedLanguage: AppLanguage?
 
     /// Le client par défaut est construit dans le corps de l'initialiseur, et
     /// non en valeur par défaut de paramètre : ces expressions sont
@@ -34,8 +37,9 @@ final class MediaCatalog {
     }
 
     func loadIfNeeded() async {
-        guard !hasLoaded else { return }
-        hasLoaded = true
+        let language = AppLanguage.current
+        guard loadedLanguage != language else { return }
+        loadedLanguage = language
 
         if let genres = try? await client.movieGenres() {
             genreNames = Dictionary(

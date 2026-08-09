@@ -34,7 +34,7 @@ struct FilmChoiceView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 34) {
             group(
-                "Quel genre de film ?",
+                String(localized: "Quel genre de film ?", bundle: .app),
                 note: genreNote
             ) {
                 ForEach(availableGenres, id: \.self) { genre in
@@ -50,7 +50,7 @@ struct FilmChoiceView: View {
                 }
             }
 
-            group("D'où vient le film ?", note: originNote) {
+            group(String(localized: "D'où vient le film ?", bundle: .app), note: originNote) {
                 ForEach(OriginCountry.allCases, id: \.self) { origin in
                     let selectable = isOriginSelectable(origin)
                     PlanChip(title: origin.label, isOn: selectedOrigins.contains(origin)) {
@@ -61,7 +61,7 @@ struct FilmChoiceView: View {
                 }
             }
 
-            group("Quelle ambiance ?", note: nil) {
+            group(String(localized: "Quelle ambiance ?", bundle: .app), note: nil) {
                 ForEach(Mood.allCases, id: \.self) { value in
                     PlanChip(title: value.label, isOn: mood == value) {
                         mood = value
@@ -76,17 +76,17 @@ struct FilmChoiceView: View {
     /// « Encore un genre possible » arrive au moment où ça compte.
     private var genreNote: String {
         switch selectedGenres.count {
-        case 0: "Facultatif — laissez vide si vous êtes ouvert·e à tout."
-        case maxGenres: "C'est le maximum. Touchez un genre pour le retirer."
-        default: "Vous pouvez en choisir un second."
+        case 0: String(localized: "Facultatif — laissez vide si vous êtes ouvert·e à tout.", bundle: .app)
+        case maxGenres: String(localized: "C'est le maximum. Touchez un genre pour le retirer.", bundle: .app)
+        default: String(localized: "Vous pouvez en choisir un second.", bundle: .app)
         }
     }
 
     private var originNote: String {
         switch selectedOrigins.count {
-        case 0: "Facultatif — laissez vide pour ne rien exclure."
-        case maxOrigins: "C'est le maximum. Touchez un pays pour le retirer."
-        default: "Vous pouvez en choisir \(maxOrigins - selectedOrigins.count) de plus."
+        case 0: String(localized: "Facultatif — laissez vide pour ne rien exclure.", bundle: .app)
+        case maxOrigins: String(localized: "C'est le maximum. Touchez un pays pour le retirer.", bundle: .app)
+        default: String(localized: "Vous pouvez en choisir \(maxOrigins - selectedOrigins.count) de plus.", bundle: .app)
         }
     }
 

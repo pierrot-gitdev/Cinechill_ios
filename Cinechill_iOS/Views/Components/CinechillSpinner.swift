@@ -87,7 +87,7 @@ struct CinechillSpinner: View {
                 sweep = 360
             }
         }
-        .accessibilityLabel("Chargement")
+        .accessibilityLabel(String(localized: "Chargement", bundle: .app))
     }
 
     private var wallStyle: LinearGradient {

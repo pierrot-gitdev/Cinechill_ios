@@ -111,9 +111,10 @@
 				};
 			};
 			buildConfigurationList = 8FD80F4A2F81756100066FC9 /* Build configuration list for PBXProject "Cinechill_iOS" */;
-			developmentRegion = en;
+			developmentRegion = fr;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				fr,
 				en,
 				Base,
 			);

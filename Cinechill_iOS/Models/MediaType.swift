@@ -13,15 +13,15 @@ enum MediaType: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .movie: "Films"
-        case .tv: "Séries"
+        case .movie: String(localized: "Films", bundle: .app)
+        case .tv: String(localized: "Séries", bundle: .app)
         }
     }
 
     var singularLabel: String {
         switch self {
-        case .movie: "Film"
-        case .tv: "Série"
+        case .movie: String(localized: "Film", bundle: .app)
+        case .tv: String(localized: "Série", bundle: .app)
         }
     }
 

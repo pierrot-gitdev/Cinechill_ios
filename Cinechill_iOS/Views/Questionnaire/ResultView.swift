@@ -32,7 +32,7 @@ struct ResultView: View {
 
                 if let onReject {
                     Button(action: onReject) {
-                        Text("Aucun ne me tente, proposez-m'en d'autres")
+                        Text("Aucun ne me tente, proposez-m'en d'autres", bundle: .app)
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(Ink.ink2)
                             .frame(maxWidth: .infinity)
@@ -44,7 +44,7 @@ struct ResultView: View {
 
                 if let onExplain {
                     Button(action: onExplain) {
-                        Text("Pourquoi ces films ?")
+                        Text("Pourquoi ces films ?", bundle: .app)
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(Ink.ink2)
                             .frame(maxWidth: .infinity)
@@ -55,7 +55,7 @@ struct ResultView: View {
                 }
 
                 Button(action: onRestart) {
-                    Text("Recommencer une recherche")
+                    Text("Recommencer une recherche", bundle: .app)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Ink.ink3)
                         .frame(maxWidth: .infinity)
@@ -70,15 +70,15 @@ struct ResultView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Vos résultats")
+            Text("Vos résultats", bundle: .app)
                 .planLabel()
                 .foregroundStyle(Ink.ink3)
 
-            Text("Trois films pour ce soir")
+            Text("Trois films pour ce soir", bundle: .app)
                 .planTitle(26)
                 .foregroundStyle(Ink.ink)
 
-            Text("Classés du plus proche au moins proche de ce que vous cherchez ce soir.")
+            Text("Classés du plus proche au moins proche de ce que vous cherchez ce soir.", bundle: .app)
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -107,7 +107,7 @@ private struct ResultRowView: View {
 
                     VStack(alignment: .leading, spacing: 7) {
                         HStack(spacing: 7) {
-                            Text("N°\(rank)")
+                            Text(String(localized: "N°\(rank)", bundle: .app))
                                 .planLabel()
                                 .foregroundStyle(Ink.ink3)
                                 .monospacedDigit()
@@ -121,7 +121,7 @@ private struct ResultRowView: View {
                             .foregroundStyle(Ink.ink)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Text("\(result.item.mediaType.singularLabel) · \(result.item.displayYear)")
+                        Text(verbatim: "\(result.item.mediaType.singularLabel) · \(result.item.displayYear)")
                             .font(.system(size: 12))
                             .foregroundStyle(Ink.ink3)
 
@@ -179,11 +179,11 @@ private struct ResultRowView: View {
             watchlistButton
 
             if result.trailerURL != nil {
-                iconButton(systemImage: "play.fill", label: "Bande-annonce", action: openTrailer)
+                iconButton(systemImage: "play.fill", label: String(localized: "Bande-annonce", bundle: .app), action: openTrailer)
             }
 
             if result.watchWebURL != nil {
-                iconButton(systemImage: "arrow.up.forward", label: "Regarder ce film", action: openStreamingApp)
+                iconButton(systemImage: "arrow.up.forward", label: String(localized: "Regarder ce film", bundle: .app), action: openStreamingApp)
             }
         }
     }
@@ -195,7 +195,7 @@ private struct ResultRowView: View {
         if inWatchlist {
             HStack(spacing: 7) {
                 PlanLightOutline()
-                Text("Dans votre liste")
+                Text("Dans votre liste", bundle: .app)
                     .font(.system(size: 12.5, weight: .medium))
                     .foregroundStyle(Ink.ink2)
             }
@@ -214,7 +214,7 @@ private struct ResultRowView: View {
                         .stroke(Ink.ruleSet, lineWidth: 1)
                 )
         } else {
-            PlanSecondaryButton(title: "Ajouter à ma liste", height: Metrics.control) {
+            PlanSecondaryButton(title: String(localized: "Ajouter à ma liste", bundle: .app), height: Metrics.control) {
                 isAddingToWatchlist = true
                 libraryStore.addToWatchlist(result.item)
             }

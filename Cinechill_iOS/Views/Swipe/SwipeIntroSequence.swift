@@ -67,9 +67,9 @@ struct SwipeIntroSequence: View {
         .accessibilityElement()
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel(
-            "Démonstration des gestes. Balayez vers la droite pour ranger le film dans votre galerie, vers la gauche si vous ne l'avez jamais vu, vers le haut pour l'ajouter à votre watchlist."
+            String(localized: "Démonstration des gestes. Balayez vers la droite pour ranger le film dans votre galerie, vers la gauche si vous ne l'avez jamais vu, vers le haut pour l'ajouter à votre watchlist.", bundle: .app)
         )
-        .accessibilityHint("Touchez pour commencer")
+        .accessibilityHint(String(localized: "Touchez pour commencer", bundle: .app))
         .accessibilityAction { onFinished() }
     }
 
@@ -248,9 +248,9 @@ private enum Move: CaseIterable {
 
     var destination: String {
         switch self {
-        case .right: "Galerie"
-        case .left: "Jamais vu"
-        case .up: "Watchlist"
+        case .right: String(localized: "Galerie", bundle: .app)
+        case .left: String(localized: "Jamais vu", bundle: .app)
+        case .up: String(localized: "Watchlist", bundle: .app)
         }
     }
 

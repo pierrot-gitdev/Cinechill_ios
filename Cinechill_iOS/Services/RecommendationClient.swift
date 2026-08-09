@@ -18,13 +18,13 @@ enum RecommendationClientError: LocalizedError {
     private static func knownServerMessage(in body: String?) -> String? {
         guard let body else { return nil }
         if body.contains("no_candidates_in_requested_genres") {
-            return "Aucun film de ce genre ne correspond au reste de vos critères. Essayez un autre genre, ou plus de temps devant vous."
+            return String(localized: "Aucun film de ce genre ne correspond au reste de vos critères. Essayez un autre genre, ou plus de temps devant vous.", bundle: .app)
         }
         if body.contains("no_candidates_in_requested_origins") {
-            return "Aucun film de ces pays ne correspond au reste de vos critères. Essayez d'ajouter un pays, ou de changer de genre."
+            return String(localized: "Aucun film de ces pays ne correspond au reste de vos critères. Essayez d'ajouter un pays, ou de changer de genre.", bundle: .app)
         }
         if body.contains("no_candidates") {
-            return "Aucun film ne correspond à ces critères pour le moment."
+            return String(localized: "Aucun film ne correspond à ces critères pour le moment.", bundle: .app)
         }
         return nil
     }
@@ -32,13 +32,13 @@ enum RecommendationClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingBaseURL:
-            return "URL backend absente. Définissez BACKEND_BASE_HOST dans Project.xcconfig."
+            return String(localized: "URL backend absente. Définissez BACKEND_BASE_HOST dans Project.xcconfig.", bundle: .app)
         case .invalidURL:
-            return "URL backend invalide."
+            return String(localized: "URL backend invalide.", bundle: .app)
         case .notAuthenticated:
-            return "Vous devez être connecté(e) pour obtenir des recommandations."
+            return String(localized: "Vous devez être connecté(e) pour obtenir des recommandations.", bundle: .app)
         case .transport(let message):
-            return "Erreur réseau CinéMatch : \(message)"
+            return String(localized: "Erreur réseau CinéMatch : \(message)", bundle: .app)
         case .httpStatus(let code, let message):
             // Les cas que le serveur sait nommer sont traduits ici. Le reste
             // garde le corps brut : il ne s'adresse plus à l'utilisateur mais à
@@ -48,11 +48,11 @@ enum RecommendationClientError: LocalizedError {
                 return known
             }
             if let message, !message.isEmpty {
-                return "CinéMatch (HTTP \(code)) : \(message)"
+                return String(localized: "CinéMatch (HTTP \(code)) : \(message)", bundle: .app)
             }
-            return "Erreur CinéMatch (HTTP \(code))."
+            return String(localized: "Erreur CinéMatch (HTTP \(code)).", bundle: .app)
         case .decoding(let message):
-            return "Impossible de lire la réponse CinéMatch. \(message)"
+            return String(localized: "Impossible de lire la réponse CinéMatch. \(message)", bundle: .app)
         }
     }
 }
@@ -166,7 +166,7 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
         }
         let token = try await user.getIDToken()
 
-        var request = URLRequest(url: url)
+        var request = URLRequest(backend: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")

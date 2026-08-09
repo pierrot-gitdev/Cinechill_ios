@@ -119,8 +119,8 @@ struct AppHeaderView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(
             socialStore.unreadCount > 0
-                ? "Notifications, \(socialStore.unreadCount) en attente"
-                : "Notifications"
+                ? String(localized: "Notifications, \(socialStore.unreadCount) en attente", bundle: .app)
+                : String(localized: "Notifications", bundle: .app)
         )
     }
 
@@ -152,7 +152,7 @@ struct AppHeaderView: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Profil")
+        .accessibilityLabel(String(localized: "Profil", bundle: .app))
     }
 
     @ViewBuilder
@@ -286,7 +286,7 @@ struct PlanHeader<Trailing: View>: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(PressableScaleStyle(scale: 0.9))
-            .accessibilityLabel(leading == .back ? "Retour" : "Fermer")
+            .accessibilityLabel(leading == .back ? String(localized: "Retour", bundle: .app) : String(localized: "Fermer", bundle: .app))
             // Le glyphe est collé au bord : sans ce retrait, la marge de 16
             // s'ajouterait à la moitié vide de la cible et le titre partirait
             // à 40 pt du bord, seul écran de l'app dans ce cas.

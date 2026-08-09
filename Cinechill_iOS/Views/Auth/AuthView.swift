@@ -140,7 +140,7 @@ struct AuthView: View {
             CinechillMarkOutline()
                 .foregroundStyle(AuthInk.ink)
                 .frame(width: 20, height: 20)
-            Text("Cinechill")
+            Text(verbatim: "Cinechill")
                 .planLabel()
                 .foregroundStyle(AuthInk.ink)
             Spacer(minLength: 0)
@@ -148,7 +148,7 @@ struct AuthView: View {
         .padding(.horizontal, AuthMetrics.margin)
         .frame(height: AuthMetrics.signatureBand)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Cinechill")
+        .accessibilityLabel(Text(verbatim: "Cinechill"))
     }
 
     // MARK: - Les six étapes
@@ -171,9 +171,12 @@ struct AuthView: View {
 
     @ViewBuilder
     private func signIn(gap: CGFloat, compact: Bool) -> some View {
-        title("Connexion", gap: gap, compact: compact)
+        title(String(localized: "Connexion", bundle: .app), gap: gap, compact: compact)
 
-        crossLink(question: "Pas encore de compte ?", action: "Créer un compte") {
+        crossLink(
+            question: String(localized: "Pas encore de compte ?", bundle: .app),
+            action: String(localized: "Créer un compte", bundle: .app)
+        ) {
             go(.signUp)
         }
 
@@ -181,12 +184,12 @@ struct AuthView: View {
             emailField(contentType: .username, submitLabel: .next) { focus = .password }
 
             PlanField(
-                label: "Mot de passe", text: $password, field: .password, focus: $focus,
+                label: String(localized: "Mot de passe", bundle: .app), text: $password, field: .password, focus: $focus,
                 placeholder: "••••••••",
                 isSecure: true,
                 contentType: .password,
                 submitLabel: .go,
-                accessory: .action("Oublié ?") { go(.resetRequest) },
+                accessory: .action(String(localized: "Oublié ?", bundle: .app)) { go(.resetRequest) },
                 error: message(for: .password),
                 isDisabled: isWorking,
                 onSubmit: submit
@@ -198,7 +201,7 @@ struct AuthView: View {
 
         actions {
             PlanButton(
-                title: "Entrer", loadingTitle: "Connexion…",
+                title: String(localized: "Entrer", bundle: .app), loadingTitle: String(localized: "Connexion…", bundle: .app),
                 isLoading: isWorking, action: submit
             )
             doors
@@ -209,9 +212,12 @@ struct AuthView: View {
 
     @ViewBuilder
     private func signUp(gap: CGFloat, compact: Bool) -> some View {
-        title("Inscription", gap: gap, compact: compact)
+        title(String(localized: "Inscription", bundle: .app), gap: gap, compact: compact)
 
-        crossLink(question: "Déjà un compte ?", action: "Se connecter") {
+        crossLink(
+            question: String(localized: "Déjà un compte ?", bundle: .app),
+            action: String(localized: "Se connecter", bundle: .app)
+        ) {
             go(.signIn)
         }
 
@@ -222,16 +228,16 @@ struct AuthView: View {
             // sur le seul écran où chaque rangée coûte cher.
             HStack(alignment: .top, spacing: 16) {
                 PlanField(
-                    label: "Prénom", text: $firstName, field: .firstName, focus: $focus,
-                    placeholder: "Pierre",
+                    label: String(localized: "Prénom", bundle: .app), text: $firstName, field: .firstName, focus: $focus,
+                    placeholder: String(localized: "Pierre", bundle: .app),
                     contentType: .givenName,
                     error: message(for: .name),
                     isDisabled: isWorking,
                     onSubmit: { focus = .lastName }
                 )
                 PlanField(
-                    label: "Nom", text: $lastName, field: .lastName, focus: $focus,
-                    placeholder: "Robert",
+                    label: String(localized: "Nom", bundle: .app), text: $lastName, field: .lastName, focus: $focus,
+                    placeholder: String(localized: "Robert", bundle: .app),
                     contentType: .familyName,
                     isDisabled: isWorking,
                     onSubmit: { focus = .handle }
@@ -258,11 +264,11 @@ struct AuthView: View {
 
         actions {
             PlanButton(
-                title: "Créer mon compte", loadingTitle: "Création…",
+                title: String(localized: "Créer mon compte", bundle: .app), loadingTitle: String(localized: "Création…", bundle: .app),
                 isLoading: isWorking, action: submit
             )
             doors
-            Text("En créant un compte, vous acceptez les conditions et la politique de confidentialité.")
+            Text("En créant un compte, vous acceptez les conditions et la politique de confidentialité.", bundle: .app)
                 .font(.system(size: 11))
                 .foregroundStyle(AuthInk.ink3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -274,9 +280,9 @@ struct AuthView: View {
 
     @ViewBuilder
     private func resetRequest(gap: CGFloat, compact: Bool) -> some View {
-        title("Mot de passe\noublié", gap: gap, compact: compact)
+        title(String(localized: "Mot de passe\noublié", bundle: .app), gap: gap, compact: compact)
 
-        say("Indiquez l'adresse de votre compte. Nous envoyons un lien pour en choisir un nouveau.")
+        say(String(localized: "Indiquez l'adresse de votre compte. Nous envoyons un lien pour en choisir un nouveau.", bundle: .app))
 
         VStack(alignment: .leading, spacing: 32) {
             emailField(contentType: .username, submitLabel: .go, onSubmit: submit)
@@ -287,10 +293,10 @@ struct AuthView: View {
 
         actions {
             PlanButton(
-                title: "Envoyer le lien", loadingTitle: "Envoi…",
+                title: String(localized: "Envoyer le lien", bundle: .app), loadingTitle: String(localized: "Envoi…", bundle: .app),
                 isLoading: isWorking, action: submit
             )
-            PlanSecondaryButton(title: "Revenir à la connexion") { go(.signIn) }
+            PlanSecondaryButton(title: String(localized: "Revenir à la connexion", bundle: .app)) { go(.signIn) }
         }
     }
 
@@ -304,20 +310,21 @@ struct AuthView: View {
         // serait une fuite d'information.
         outcome(
             gap: gap,
-            headline: "Le lien est parti.",
-            detail: "Si un compte existe pour \(AuthService.normalize(email)), "
-                + "vous recevrez un message d'ici une minute. Pensez aux indésirables."
+            headline: String(localized: "Le lien est parti.", bundle: .app),
+            detail: String(localized: "Si un compte existe pour \(AuthService.normalize(email)), vous recevrez un message d'ici une minute. Pensez aux indésirables.", bundle: .app)
         )
 
         Spacer(minLength: 32)
 
         actions {
-            PlanButton(title: "Revenir à la connexion") { go(.signIn) }
+            PlanButton(title: String(localized: "Revenir à la connexion", bundle: .app)) { go(.signIn) }
             // Le bouton reste lisible et annonce son délai. Un bouton grisé sans
             // explication est la première cause de tapotement répété — donc de
             // limitation côté serveur.
             PlanSecondaryButton(
-                title: resendIn > 0 ? "Renvoyer dans \(resendIn) s" : "Renvoyer le lien",
+                title: resendIn > 0
+                    ? String(localized: "Renvoyer dans \(resendIn) s", bundle: .app)
+                    : String(localized: "Renvoyer le lien", bundle: .app),
                 isEnabled: resendIn == 0 && !isWorking
             ) {
                 Task { await resend() }
@@ -334,14 +341,14 @@ struct AuthView: View {
 
     @ViewBuilder
     private func resetNew(gap: CGFloat, compact: Bool) -> some View {
-        title("Nouveau\nmot de passe", gap: gap, compact: compact)
+        title(String(localized: "Nouveau\nmot de passe", bundle: .app), gap: gap, compact: compact)
 
         if !email.isEmpty {
-            say("Pour \(email).")
+            say(String(localized: "Pour \(email).", bundle: .app))
         }
 
         VStack(alignment: .leading, spacing: 26) {
-            passwordField(label: "Nouveau mot de passe")
+            passwordField(label: String(localized: "Nouveau mot de passe", bundle: .app))
 
             if PlanCriteria.isAcceptable(password) {
                 confirmationField
@@ -355,7 +362,7 @@ struct AuthView: View {
 
         actions {
             PlanButton(
-                title: "Enregistrer", loadingTitle: "Enregistrement…",
+                title: String(localized: "Enregistrer", bundle: .app), loadingTitle: String(localized: "Enregistrement…", bundle: .app),
                 isLoading: isWorking, action: submit
             )
         }
@@ -367,15 +374,14 @@ struct AuthView: View {
     private func resetDone(gap: CGFloat) -> some View {
         outcome(
             gap: gap,
-            headline: "Mot de passe modifié.",
-            detail: "Vous pouvez vous connecter avec le nouveau. "
-                + "Votre adresse est déjà reportée sur l'écran suivant."
+            headline: String(localized: "Mot de passe modifié.", bundle: .app),
+            detail: String(localized: "Vous pouvez vous connecter avec le nouveau. Votre adresse est déjà reportée sur l'écran suivant.", bundle: .app)
         )
 
         Spacer(minLength: 32)
 
         actions {
-            PlanButton(title: "Se connecter") { go(.signIn) }
+            PlanButton(title: String(localized: "Se connecter", bundle: .app)) { go(.signIn) }
         }
     }
 
@@ -465,13 +471,13 @@ struct AuthView: View {
     private var doors: some View {
         Group {
             PlanSecondaryButton(
-                title: "Continuer avec Apple",
+                title: String(localized: "Continuer avec Apple", bundle: .app),
                 icon: Image(systemName: "apple.logo"),
                 isEnabled: !isWorking
             ) {
                 Task { await run { try await authService.signInWithApple() } }
             }
-            PlanSecondaryButton(title: "Continuer avec Google", isEnabled: !isWorking) {
+            PlanSecondaryButton(title: String(localized: "Continuer avec Google", bundle: .app), isEnabled: !isWorking) {
                 Task { await run { try await authService.signInWithGoogle() } }
             }
         }
@@ -485,8 +491,8 @@ struct AuthView: View {
         onSubmit: @escaping () -> Void = {}
     ) -> some View {
         PlanField(
-            label: "Email", text: $email, field: .email, focus: $focus,
-            placeholder: "vous@exemple.com",
+            label: String(localized: "Email", bundle: .app), text: $email, field: .email, focus: $focus,
+            placeholder: String(localized: "vous@exemple.com", bundle: .app),
             keyboard: .emailAddress,
             contentType: contentType,
             submitLabel: submitLabel,
@@ -496,7 +502,7 @@ struct AuthView: View {
         )
     }
 
-    private func passwordField(label: String = "Mot de passe") -> some View {
+    private func passwordField(label: String = String(localized: "Mot de passe", bundle: .app)) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             PlanField(
                 label: label, text: $password, field: .password, focus: $focus,
@@ -515,7 +521,7 @@ struct AuthView: View {
 
     private var confirmationField: some View {
         PlanField(
-            label: "Confirmer", text: $confirmation, field: .confirmation, focus: $focus,
+            label: String(localized: "Confirmer", bundle: .app), text: $confirmation, field: .confirmation, focus: $focus,
             placeholder: "••••••••",
             isSecure: true,
             contentType: .newPassword,
@@ -555,13 +561,13 @@ struct AuthView: View {
     private var handleField: some View {
         VStack(alignment: .leading, spacing: 0) {
             PlanField(
-                label: "Pseudo", text: handleEntry, field: .handle, focus: $focus,
-                placeholder: "pierre.robert",
+                label: String(localized: "Pseudo", bundle: .app), text: handleEntry, field: .handle, focus: $focus,
+                placeholder: String(localized: "pierre.robert", bundle: .app),
                 prefix: "@",
                 contentType: .username,
                 accessory: handleAvailability == .free ? .light : .none,
                 error: handleAvailability == .taken
-                    ? "Ce pseudo est déjà pris." : message(for: .handle),
+                    ? String(localized: "Ce pseudo est déjà pris.", bundle: .app) : message(for: .handle),
                 note: handleAvailability == .taken ? nil : PlanHandle.rule,
                 isDisabled: isWorking,
                 onSubmit: { focus = .email }
@@ -605,7 +611,7 @@ struct AuthView: View {
                     handleAvailability = .unknown
                     Haptics.selection()
                 } label: {
-                    Text("@\(candidate)")
+                    Text(verbatim: "@\(candidate)")
                         .font(.system(size: 11.5))
                         .foregroundStyle(AuthInk.ink)
                         .padding(.horizontal, 11)
@@ -632,9 +638,9 @@ struct AuthView: View {
 
     private func repair(_ repair: AuthRepair?) -> String {
         switch repair {
-        case .resetPassword: return " Vous pouvez le **réinitialiser**."
-        case .signIn:        return " **Se connecter** ?"
-        case .signUp:        return " **Créer un compte** ?"
+        case .resetPassword: return String(localized: " Vous pouvez le **réinitialiser**.", bundle: .app)
+        case .signIn:        return String(localized: " **Se connecter** ?", bundle: .app)
+        case .signUp:        return String(localized: " **Créer un compte** ?", bundle: .app)
         case nil:            return ""
         }
     }
@@ -680,7 +686,8 @@ struct AuthView: View {
             } catch {
                 // Lien expiré ou déjà servi : on le dit, et on propose d'en
                 // redemander un. Jamais de cul-de-sac.
-                failure = (error as? AuthFailure) ?? .form("Ce lien a expiré ou a déjà servi.")
+                failure = (error as? AuthFailure)
+                    ?? .form(String(localized: "Ce lien a expiré ou a déjà servi.", bundle: .app))
                 withAnimation(.easeInOut(duration: 0.22)) { step = .resetRequest }
             }
             onResetCodeConsumed()
@@ -743,7 +750,7 @@ struct AuthView: View {
         // L'ordre de validation suit l'ordre de lecture : sinon le focus saute
         // par-dessus un champ fautif et l'utilisateur corrige à l'aveugle.
         guard !firstName.trimmingCharacters(in: .whitespaces).isEmpty else {
-            throw AuthFailure(field: .name, message: "Indiquez votre prénom.")
+            throw AuthFailure(field: .name, message: String(localized: "Indiquez votre prénom.", bundle: .app))
         }
         guard PlanHandle.isValid(handle) else {
             throw AuthFailure(field: .handle, message: PlanHandle.rule)
@@ -755,7 +762,7 @@ struct AuthView: View {
         // affiche déjà « Ce pseudo est déjà pris. » depuis `handleAvailability` ;
         // cette panne ne sert qu'à ramener le focus dessus.
         guard handleAvailability != .taken else {
-            throw AuthFailure(field: .handle, message: "Ce pseudo est déjà pris.")
+            throw AuthFailure(field: .handle, message: String(localized: "Ce pseudo est déjà pris.", bundle: .app))
         }
         guard confirmation == password else {
             // Le seul geste utile : vider la confirmation et y revenir. On
@@ -763,7 +770,7 @@ struct AuthView: View {
             confirmation = ""
             throw AuthFailure(
                 field: .confirmation,
-                message: "Les deux mots de passe ne correspondent pas."
+                message: String(localized: "Les deux mots de passe ne correspondent pas.", bundle: .app)
             )
         }
 
@@ -789,13 +796,13 @@ struct AuthView: View {
 
     private func runResetNew() async throws {
         guard let code = resetCode, !code.isEmpty else {
-            throw AuthFailure(field: .form, message: "Ce lien a expiré ou a déjà servi.")
+            throw AuthFailure(field: .form, message: String(localized: "Ce lien a expiré ou a déjà servi.", bundle: .app))
         }
         guard confirmation == password else {
             confirmation = ""
             throw AuthFailure(
                 field: .confirmation,
-                message: "Les deux mots de passe ne correspondent pas."
+                message: String(localized: "Les deux mots de passe ne correspondent pas.", bundle: .app)
             )
         }
 

@@ -24,8 +24,10 @@ struct SessionFrameView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 34) {
             group(
-                "Vous regardez avec qui ?",
-                note: audience == .family ? "On ne proposera que des films adaptés aux enfants." : nil
+                String(localized: "Vous regardez avec qui ?", bundle: .app),
+                note: audience == .family
+                    ? String(localized: "On ne proposera que des films adaptés aux enfants.", bundle: .app)
+                    : nil
             ) {
                 ForEach(Audience.allCases, id: \.self) { value in
                     PlanChip(title: value.label, isOn: audience == value) {
@@ -34,7 +36,7 @@ struct SessionFrameView: View {
                 }
             }
 
-            group("Vous avez combien de temps ?", note: lateHourNote) {
+            group(String(localized: "Vous avez combien de temps ?", bundle: .app), note: lateHourNote) {
                 ForEach(Self.budgets, id: \.0) { preference, title in
                     PlanChip(title: title, isOn: budget == preference) {
                         budget = preference
@@ -42,7 +44,7 @@ struct SessionFrameView: View {
                 }
             }
 
-            group("Vous cherchez quoi ?", note: nil) {
+            group(String(localized: "Vous cherchez quoi ?", bundle: .app), note: nil) {
                 ForEach(ContentFormat.allCases, id: \.self) { value in
                     PlanChip(title: value.label, isOn: contentFormat == value) {
                         contentFormat = value
@@ -56,9 +58,9 @@ struct SessionFrameView: View {
     /// dites en durée disponible plutôt qu'en préférence de format. `.any` n'y
     /// figure pas : on a toujours une heure à laquelle on veut être couché.
     private static let budgets: [(RuntimePreference, String)] = [
-        (.short, "Environ 1 h 30"),
-        (.medium, "Environ 2 h"),
-        (.long, "Toute la soirée"),
+        (.short, String(localized: "Environ 1 h 30", bundle: .app)),
+        (.medium, String(localized: "Environ 2 h", bundle: .app)),
+        (.long, String(localized: "Toute la soirée", bundle: .app)),
     ]
 
     private func group(

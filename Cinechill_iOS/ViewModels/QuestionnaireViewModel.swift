@@ -18,21 +18,21 @@ enum QuestionStep: Int, CaseIterable, Hashable {
 
     var title: String {
         switch self {
-        case .posterDuel: "Lequel vous tente le plus ce soir ?"
-        case .mindset: "Ce soir, vous avez surtout envie de…"
-        case .dealbreaker: "Qu'est-ce qui vous ferait arrêter un film en cours de route ?"
-        case .popularity: "Vous préférez un film connu ou une découverte ?"
-        case .cast: "Et côté acteurs ?"
-        case .horrorFlavor: "Dans un film qui fait peur, vous préférez…"
-        case .comedyFlavor: "Quel genre de comédie vous fait rire ?"
-        case .dramaFlavor: "Quelle histoire vous touche le plus ?"
-        case .cognitiveMode: "Un bon film, pour vous, c'est plutôt…"
-        case .storyOrigin: "S'il fallait choisir entre ces deux films…"
-        case .attachment: "Qu'est-ce qui vous accroche le plus dans un film ?"
-        case .creditsMoment: "Le film se termine. Dans le meilleur des cas, vous…"
-        case .lastingTrace: "Pensez au dernier film qui vous a marqué·e. Il vous a laissé…"
-        case .elimination: "Lequel ne vous tente pas du tout ce soir ?"
-        case .surpriseIntensity: "Vous voulez être surpris·e jusqu'à quel point ?"
+        case .posterDuel: String(localized: "Lequel vous tente le plus ce soir ?", bundle: .app)
+        case .mindset: String(localized: "Ce soir, vous avez surtout envie de…", bundle: .app)
+        case .dealbreaker: String(localized: "Qu'est-ce qui vous ferait arrêter un film en cours de route ?", bundle: .app)
+        case .popularity: String(localized: "Vous préférez un film connu ou une découverte ?", bundle: .app)
+        case .cast: String(localized: "Et côté acteurs ?", bundle: .app)
+        case .horrorFlavor: String(localized: "Dans un film qui fait peur, vous préférez…", bundle: .app)
+        case .comedyFlavor: String(localized: "Quel genre de comédie vous fait rire ?", bundle: .app)
+        case .dramaFlavor: String(localized: "Quelle histoire vous touche le plus ?", bundle: .app)
+        case .cognitiveMode: String(localized: "Un bon film, pour vous, c'est plutôt…", bundle: .app)
+        case .storyOrigin: String(localized: "S'il fallait choisir entre ces deux films…", bundle: .app)
+        case .attachment: String(localized: "Qu'est-ce qui vous accroche le plus dans un film ?", bundle: .app)
+        case .creditsMoment: String(localized: "Le film se termine. Dans le meilleur des cas, vous…", bundle: .app)
+        case .lastingTrace: String(localized: "Pensez au dernier film qui vous a marqué·e. Il vous a laissé…", bundle: .app)
+        case .elimination: String(localized: "Lequel ne vous tente pas du tout ce soir ?", bundle: .app)
+        case .surpriseIntensity: String(localized: "Vous voulez être surpris·e jusqu'à quel point ?", bundle: .app)
         }
     }
 
@@ -41,20 +41,20 @@ enum QuestionStep: Int, CaseIterable, Hashable {
     /// test de personnalité dont on ne voyait pas le rapport avec un film.
     var subtitle: String? {
         switch self {
-        case .posterDuel: "Votre choix nous en dit plus que n'importe quelle question."
-        case .mindset: "Pour viser le bon type de film, pas seulement le bon genre."
-        case .dealbreaker: "On évitera les films qui risquent de vous faire ça."
-        case .popularity: "Pour savoir jusqu'où aller chercher."
+        case .posterDuel: String(localized: "Votre choix nous en dit plus que n'importe quelle question.", bundle: .app)
+        case .mindset: String(localized: "Pour viser le bon type de film, pas seulement le bon genre.", bundle: .app)
+        case .dealbreaker: String(localized: "On évitera les films qui risquent de vous faire ça.", bundle: .app)
+        case .popularity: String(localized: "Pour savoir jusqu'où aller chercher.", bundle: .app)
         case .cast: nil
-        case .horrorFlavor: "Il y a plusieurs façons de faire peur."
+        case .horrorFlavor: String(localized: "Il y a plusieurs façons de faire peur.", bundle: .app)
         case .comedyFlavor: nil
         case .dramaFlavor: nil
-        case .cognitiveMode: "Pas de bonne réponse : les deux existent, on veut juste savoir laquelle vous ressemble."
-        case .storyOrigin: "Il faut trancher, même si les deux vous vont."
+        case .cognitiveMode: String(localized: "Pas de bonne réponse : les deux existent, on veut juste savoir laquelle vous ressemble.", bundle: .app)
+        case .storyOrigin: String(localized: "Il faut trancher, même si les deux vous vont.", bundle: .app)
         case .attachment: nil
-        case .creditsMoment: "Ce que vous espérez ressentir après nous aide à choisir avant."
-        case .lastingTrace: "On se connaît mieux au passé qu'au futur."
-        case .elimination: "Écarter un film nous apprend autant qu'en choisir un."
+        case .creditsMoment: String(localized: "Ce que vous espérez ressentir après nous aide à choisir avant.", bundle: .app)
+        case .lastingTrace: String(localized: "On se connaît mieux au passé qu'au futur.", bundle: .app)
+        case .elimination: String(localized: "Écarter un film nous apprend autant qu'en choisir un.", bundle: .app)
         case .surpriseIntensity: nil
         }
     }
@@ -184,31 +184,31 @@ final class QuestionnaireViewModel {
     /// sur l'écran, sous les yeux de quelqu'un en train de le lire. Ce qu'on sait
     /// déjà de la personne ne change plus la promesse, seulement la ligne
     /// personnelle en bas, qui s'ajoute au lieu de remplacer.
-    let openingTitle = "Trouvez le film de ce soir"
+    let openingTitle = String(localized: "Trouvez le film de ce soir", bundle: .app)
 
     var openingLead: String {
-        "Répondez à quelques questions rapides : votre humeur, le temps que vous avez, ce dont vous avez envie."
+        String(localized: "Répondez à quelques questions rapides : votre humeur, le temps que vous avez, ce dont vous avez envie.", bundle: .app)
     }
 
     /// Ce que la personne obtient à la fin, dit avant de commencer. Trois lignes
     /// concrètes valent mieux qu'une promesse abstraite.
     let openingSteps: [String] = [
-        "Vous répondez à quelques questions courtes",
-        "On cherche parmi les films de vos plateformes",
-        "Vous repartez avec trois films à regarder ce soir",
+        String(localized: "Vous répondez à quelques questions courtes", bundle: .app),
+        String(localized: "On cherche parmi les films de vos plateformes", bundle: .app),
+        String(localized: "Vous repartez avec trois films à regarder ce soir", bundle: .app),
     ]
 
-    let openingDuration = "Environ deux minutes."
+    let openingDuration = String(localized: "Environ deux minutes.", bundle: .app)
 
     /// La ligne personnelle, qui n'apparaît qu'une fois le profil chargé et
     /// n'efface rien. Elle dit à quoi servent les films déjà marqués comme vus.
     var openingProvenance: String? {
         guard taste.galleryCount > 0 else { return nil }
-        let films = "\(taste.galleryCount) film\(taste.galleryCount > 1 ? "s" : "") vu\(taste.galleryCount > 1 ? "s" : "")"
+        let films = String(localized: "\(taste.galleryCount) films vus", bundle: .app)
         guard taste.establishedAxisCount > 0 else {
-            return "\(films) — ils nous aident déjà à vous proposer mieux"
+            return String(localized: "\(films) — ils nous aident déjà à vous proposer mieux", bundle: .app)
         }
-        return "\(films) — on commence à connaître vos goûts, il y aura moins de questions"
+        return String(localized: "\(films) — on commence à connaître vos goûts, il y aura moins de questions", bundle: .app)
     }
 
     // MARK: - Le cadre
@@ -310,7 +310,7 @@ final class QuestionnaireViewModel {
         pool.removeAll { rejectedIDs.contains($0.id) }
         enrichedPool.removeAll { rejectedIDs.contains($0.id) }
         guard !enrichedPool.isEmpty else {
-            phase = .error("On n'a plus d'autres films à vous proposer avec ces critères. Recommencez une recherche pour élargir.")
+            phase = .error(String(localized: "On n'a plus d'autres films à vous proposer avec ces critères. Recommencez une recherche pour élargir.", bundle: .app))
             return
         }
         results = []
@@ -330,7 +330,7 @@ final class QuestionnaireViewModel {
         }
         answers.runtime = .short
         let formatted = String(format: "%d h %02d", hour, minute)
-        lateHourNote = "Il est \(formatted) : on a présélectionné un format court pour que vous puissiez le finir ce soir."
+        lateHourNote = String(localized: "Il est \(formatted) : on a présélectionné un format court pour que vous puissiez le finir ce soir.", bundle: .app)
     }
 
     func loadPlatformsIfNeeded() async {
@@ -499,7 +499,7 @@ final class QuestionnaireViewModel {
         shownPosterIDs.formUnion(shown.map(\.id))
 
         eliminationOptions = nil
-        reading = "Noté : on s'éloignera de ce genre de film."
+        reading = String(localized: "Noté : on s'éloignera de ce genre de film.", bundle: .app)
         advance()
     }
 
@@ -589,7 +589,7 @@ final class QuestionnaireViewModel {
         do {
             let response = try await recommendationClient.fetchCandidatePool(trunk: answers)
             guard !response.candidates.isEmpty else {
-                phase = .error("Aucun film ne correspond à ces critères pour le moment.")
+                phase = .error(String(localized: "Aucun film ne correspond à ces critères pour le moment.", bundle: .app))
                 return
             }
             pool = response.candidates
@@ -698,7 +698,7 @@ final class QuestionnaireViewModel {
             // lequel il serait revenu dans le vivier.
             finalCandidates.removeAll { excludedIDs.contains($0.id) }
             guard !finalCandidates.isEmpty else {
-                phase = .error("Aucun film ne correspond à ces critères pour le moment.")
+                phase = .error(String(localized: "Aucun film ne correspond à ces critères pour le moment.", bundle: .app))
                 return
             }
             // Conservé pour que le refus du trio puisse recomposer une sélection
@@ -733,22 +733,22 @@ final class QuestionnaireViewModel {
         switch dimension {
         case .dealbreaker:
             switch answers.dealbreaker {
-            case .slowPace: "On écartera les films qui traînent en longueur."
-            case .heavyMood: "On écartera les films trop lourds."
-            case .tooLong: "On surveillera la durée."
-            case .predictablePlot: "On cherchera une histoire qui surprend."
+            case .slowPace: String(localized: "On écartera les films qui traînent en longueur.", bundle: .app)
+            case .heavyMood: String(localized: "On écartera les films trop lourds.", bundle: .app)
+            case .tooLong: String(localized: "On surveillera la durée.", bundle: .app)
+            case .predictablePlot: String(localized: "On cherchera une histoire qui surprend.", bundle: .app)
             case nil: nil
             }
         case .popularity:
             switch answers.popularity {
-            case .hiddenGem: "On ira chercher au-delà des films les plus vus."
-            case .mainstream: "On restera sur des films largement appréciés."
+            case .hiddenGem: String(localized: "On ira chercher au-delà des films les plus vus.", bundle: .app)
+            case .mainstream: String(localized: "On restera sur des films largement appréciés.", bundle: .app)
             default: nil
             }
         case .cognitiveMode:
             answers.cognitiveMode == .understand
-                ? "On privilégiera les films qui donnent à réfléchir."
-                : "On privilégiera les films qui font d'abord ressentir."
+                ? String(localized: "On privilégiera les films qui donnent à réfléchir.", bundle: .app)
+                : String(localized: "On privilégiera les films qui font d'abord ressentir.", bundle: .app)
         default:
             nil
         }
@@ -761,7 +761,7 @@ final class QuestionnaireViewModel {
         let gap = winner.axes[.familiarite] - loser.axes[.familiarite]
         guard abs(gap) > 0.4 else { return nil }
         return gap < 0
-            ? "Vous allez vers les films connus : on en tient compte."
-            : "Vous allez vers les films moins connus : on en tient compte."
+            ? String(localized: "Vous allez vers les films connus : on en tient compte.", bundle: .app)
+            : String(localized: "Vous allez vers les films moins connus : on en tient compte.", bundle: .app)
     }
 }

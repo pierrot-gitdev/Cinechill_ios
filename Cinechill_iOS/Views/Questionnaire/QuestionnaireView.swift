@@ -23,7 +23,7 @@ struct QuestionnaireView: View {
             }
             .safeAreaInset(edge: .top) {
                 if viewModel.phase == .intro {
-                    AppHeaderView(title: "CinéMatch", onProfileTap: { showProfile = true })
+                    AppHeaderView(title: String(localized: "CinéMatch", bundle: .app), onProfileTap: { showProfile = true })
                 }
             }
             .navigationBarHidden(true)
@@ -52,13 +52,13 @@ struct QuestionnaireView: View {
         case .filmChoice:
             filmChoiceFlow
         case .poolLoading:
-            SessionLoadingView(message: "On cherche des films qui vous correspondent…")
+            SessionLoadingView(message: String(localized: "On cherche des films qui vous correspondent…", bundle: .app))
         case .asking:
             adaptiveFlow
         case .enriching:
-            SessionLoadingView(message: "On regarde les meilleurs de plus près…")
+            SessionLoadingView(message: String(localized: "On regarde les meilleurs de plus près…", bundle: .app))
         case .finalizing:
-            SessionLoadingView(message: "On choisit vos trois films…")
+            SessionLoadingView(message: String(localized: "On choisit vos trois films…", bundle: .app))
         case .results:
             ResultView(
                 results: viewModel.results,
@@ -101,7 +101,7 @@ struct QuestionnaireView: View {
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(viewModel.openingSteps.enumerated()), id: \.offset) { index, step in
                     HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        Text("\(index + 1)")
+                        Text(verbatim: "\(index + 1)")
                             .planLabel()
                             .foregroundStyle(Ink.ink3)
                             .monospacedDigit()
@@ -139,7 +139,7 @@ struct QuestionnaireView: View {
                 .buttonStyle(.plain)
                 .padding(.top, 16)
                 .transition(.opacity)
-                .accessibilityHint("Voir ce que Cinechill a retenu de vos goûts")
+                .accessibilityHint(String(localized: "Voir ce que Cinechill a retenu de vos goûts", bundle: .app))
             }
 
             Spacer()
@@ -157,7 +157,7 @@ struct QuestionnaireView: View {
             if !viewModel.selectedPlatformNames.isEmpty {
                 PlanEdge()
                 HStack(alignment: .firstTextBaseline) {
-                    Text("Vos plateformes")
+                    Text("Vos plateformes", bundle: .app)
                         .planLabel()
                         .foregroundStyle(Ink.ink3)
                     Spacer(minLength: 16)
@@ -171,7 +171,7 @@ struct QuestionnaireView: View {
                     .padding(.bottom, 24)
             }
 
-            PlanButton(title: "Commencer") {
+            PlanButton(title: String(localized: "Commencer", bundle: .app)) {
                 viewModel.start(
                     preferredPlatformIDs: libraryStore.preferredPlatformIDs,
                     bannedGenreIDs: libraryStore.bannedGenreIDs
@@ -191,16 +191,16 @@ struct QuestionnaireView: View {
 
     private var frameFlow: some View {
         VStack(spacing: 0) {
-            sessionHeader(step: "Étape 1 sur 2", onBack: { viewModel.restart() }, isFirst: true)
+            sessionHeader(step: String(localized: "Étape 1 sur 2", bundle: .app), onBack: { viewModel.restart() }, isFirst: true)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Votre soirée")
+                        Text("Votre soirée", bundle: .app)
                             .planTitle()
                             .foregroundStyle(Ink.ink)
 
-                        Text("Trois réglages pour éliminer d'emblée ce qui ne convient pas.")
+                        Text("Trois réglages pour éliminer d'emblée ce qui ne convient pas.", bundle: .app)
                             .font(.system(size: 13))
                             .foregroundStyle(Ink.ink2)
                             .fixedSize(horizontal: false, vertical: true)
@@ -219,7 +219,7 @@ struct QuestionnaireView: View {
             }
 
             PlanButton(
-                title: "Continuer",
+                title: String(localized: "Continuer", bundle: .app),
                 isEnabled: viewModel.canAdvanceFrame,
                 height: Metrics.control
             ) {
@@ -235,17 +235,17 @@ struct QuestionnaireView: View {
     /// L'écran du film cherché : genre et ambiance, deux listes d'options.
     private var filmChoiceFlow: some View {
         VStack(spacing: 0) {
-            sessionHeader(step: "Étape 2 sur 2", onBack: { viewModel.goBackToFrame() }, isFirst: false)
+            sessionHeader(step: String(localized: "Étape 2 sur 2", bundle: .app), onBack: { viewModel.goBackToFrame() }, isFirst: false)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Quel film ce soir ?")
+                        Text("Quel film ce soir ?", bundle: .app)
                             .planTitle()
                             .foregroundStyle(Ink.ink)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Text("C'est ce qui nous permet de resserrer la recherche. Les questions suivantes affineront.")
+                        Text("C'est ce qui nous permet de resserrer la recherche. Les questions suivantes affineront.", bundle: .app)
                             .font(.system(size: 13))
                             .foregroundStyle(Ink.ink2)
                             .fixedSize(horizontal: false, vertical: true)
@@ -275,7 +275,9 @@ struct QuestionnaireView: View {
 
             // Le bouton inactif dit ce qui manque plutôt que de rester muet.
             PlanButton(
-                title: viewModel.canConfirmFilmChoice ? "Trouver mes films" : "Choisissez une ambiance",
+                title: viewModel.canConfirmFilmChoice
+                    ? String(localized: "Trouver mes films", bundle: .app)
+                    : String(localized: "Choisissez une ambiance", bundle: .app),
                 isEnabled: viewModel.canConfirmFilmChoice,
                 height: Metrics.control
             ) {
@@ -291,7 +293,7 @@ struct QuestionnaireView: View {
     private var adaptiveFlow: some View {
         VStack(spacing: 0) {
             sessionHeader(
-                step: "Question \(viewModel.questionNumber)",
+                step: String(localized: "Question \(viewModel.questionNumber)", bundle: .app),
                 onBack: { viewModel.goBackAdaptive() },
                 isFirst: false
             )
@@ -335,7 +337,7 @@ struct QuestionnaireView: View {
         VStack(spacing: 12) {
             if viewModel.pairwiseOptions == nil && viewModel.eliminationOptions == nil {
                 PlanButton(
-                    title: "Suivant",
+                    title: String(localized: "Suivant", bundle: .app),
                     isEnabled: viewModel.canAdvanceAdaptive,
                     height: Metrics.control
                 ) {
@@ -346,7 +348,7 @@ struct QuestionnaireView: View {
             Button {
                 viewModel.finishNow()
             } label: {
-                Text("Passer les questions et voir mes films")
+                Text("Passer les questions et voir mes films", bundle: .app)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Ink.ink2)
                     .overlay(alignment: .bottom) {
@@ -450,7 +452,9 @@ struct QuestionnaireView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(isFirst ? "Quitter la recherche" : "Revenir à l'écran précédent")
+                .accessibilityLabel(isFirst
+                                    ? String(localized: "Quitter la recherche", bundle: .app)
+                                    : String(localized: "Revenir à l'écran précédent", bundle: .app))
 
                 Spacer()
 
@@ -482,7 +486,7 @@ struct QuestionnaireView: View {
         .fixedSize(horizontal: false, vertical: true)
         .transition(.opacity)
         .animation(Metrics.shift, value: text)
-        .accessibilityLabel("Ce que ça change : \(text)")
+        .accessibilityLabel(String(localized: "Ce que ça change : \(text)", bundle: .app))
     }
 
     // MARK: - Erreur
@@ -490,11 +494,11 @@ struct QuestionnaireView: View {
     private func errorView(_ message: String) -> some View {
         PlanEmptyState(
             icon: .salle,
-            title: "La recherche s'est interrompue",
+            title: String(localized: "La recherche s'est interrompue", bundle: .app),
             message: message,
-            actionTitle: "Réessayer",
+            actionTitle: String(localized: "Réessayer", bundle: .app),
             action: { viewModel.retrySubmit() },
-            secondaryTitle: "Recommencer du début",
+            secondaryTitle: String(localized: "Recommencer du début", bundle: .app),
             secondaryAction: { viewModel.restart() }
         )
         .frame(maxHeight: .infinity)

@@ -15,17 +15,17 @@ struct SwipeMilestoneOverlay: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("\(count)")
+            Text(verbatim: "\(count)")
                 .planTitle(64)
                 .monospacedDigit()
                 .foregroundStyle(Ink.ink)
 
-            Text("films ajoutés")
+            Text("films ajoutés", bundle: .app)
                 .planLabel()
                 .foregroundStyle(Ink.light)
                 .padding(.top, 10)
 
-            Text("Votre galerie s'étoffe, et vos suggestions avec elle.")
+            Text("Votre galerie s'étoffe, et vos suggestions avec elle.", bundle: .app)
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
@@ -44,7 +44,7 @@ struct SwipeMilestoneOverlay: View {
                 .strokeBorder(Ink.ruleSet, lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(count) films ajoutés à votre galerie")
+        .accessibilityLabel(String(localized: "\(count) films ajoutés à votre galerie", bundle: .app))
     }
 }
 

@@ -23,7 +23,7 @@ struct ProfileSearchView: View {
                 // Le champ dit lui-même ce qu'il accepte : pseudo, prénom ou
                 // nom — la recherche interroge les deux, pas seulement l'un.
                 HallSearchField(
-                    placeholder: "Pseudo, prénom ou nom",
+                    placeholder: String(localized: "Pseudo, prénom ou nom", bundle: .app),
                     text: $model.query,
                     isBusy: model.isSearching
                 )
@@ -43,7 +43,7 @@ struct ProfileSearchView: View {
         }
         .background(Ink.ground)
         .safeAreaInset(edge: .top) {
-            PlanHeader("Rechercher")
+            PlanHeader(String(localized: "Rechercher", bundle: .app))
         }
         .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(item: $openedProfile) { profile in
@@ -62,9 +62,7 @@ struct ProfileSearchView: View {
     private var resultsSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             sectionHeader(
-                model.results.count == 1
-                    ? "1 profil"
-                    : "\(model.results.count) profils"
+                String(localized: "\(model.results.count) profils", bundle: .app)
             )
             rows(model.results)
         }
@@ -77,13 +75,13 @@ struct ProfileSearchView: View {
         if model.suggestions.isEmpty {
             HallEmptyState(
                 icon: .hall,
-                title: "Personne à proposer pour l'instant",
-                message: "Tapez un pseudo pour retrouver quelqu'un que vous connaissez."
+                title: String(localized: "Personne à proposer pour l'instant", bundle: .app),
+                message: String(localized: "Tapez un pseudo pour retrouver quelqu'un que vous connaissez.", bundle: .app)
             )
             .padding(.top, 40)
         } else {
             VStack(alignment: .leading, spacing: 0) {
-                sectionHeader("Suggestions")
+                sectionHeader(String(localized: "Suggestions", bundle: .app))
                 rows(model.suggestions)
             }
         }
@@ -92,8 +90,8 @@ struct ProfileSearchView: View {
     private var noResults: some View {
         HallEmptyState(
             icon: .chercher,
-            title: "Aucun profil pour « \(model.settledQuery) »",
-            message: "Vérifiez l'orthographe, ou invitez cette personne à rejoindre Cinéchill."
+            title: String(localized: "Aucun profil pour « \(model.settledQuery) »", bundle: .app),
+            message: String(localized: "Vérifiez l'orthographe, ou invitez cette personne à rejoindre Cinéchill.", bundle: .app)
         )
         .padding(.top, 40)
     }

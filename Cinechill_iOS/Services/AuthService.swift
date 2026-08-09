@@ -149,10 +149,10 @@ final class AuthService: ObservableObject {
     func signIn(email: String, password: String) async throws {
         let address = Self.normalize(email)
         guard Self.isPlausibleEmail(address) else {
-            throw fail(AuthFailure(field: .email, message: "Cette adresse n'est pas valide."))
+            throw fail(AuthFailure(field: .email, message: String(localized: "Cette adresse n'est pas valide.", bundle: .app)))
         }
         guard !password.isEmpty else {
-            throw fail(AuthFailure(field: .password, message: "Saisissez votre mot de passe."))
+            throw fail(AuthFailure(field: .password, message: String(localized: "Saisissez votre mot de passe.", bundle: .app)))
         }
 
 #if canImport(FirebaseAuth)
@@ -170,10 +170,10 @@ final class AuthService: ObservableObject {
     func signUp(email: String, password: String) async throws {
         let address = Self.normalize(email)
         guard Self.isPlausibleEmail(address) else {
-            throw fail(AuthFailure(field: .email, message: "Cette adresse n'est pas valide."))
+            throw fail(AuthFailure(field: .email, message: String(localized: "Cette adresse n'est pas valide.", bundle: .app)))
         }
         guard password.count >= 8 else {
-            throw fail(AuthFailure(field: .password, message: "8 caractères au minimum."))
+            throw fail(AuthFailure(field: .password, message: String(localized: "8 caractères au minimum.", bundle: .app)))
         }
 
 #if canImport(FirebaseAuth)
@@ -213,7 +213,7 @@ final class AuthService: ObservableObject {
     func sendPasswordReset(email: String) async throws {
         let address = Self.normalize(email)
         guard Self.isPlausibleEmail(address) else {
-            throw fail(AuthFailure(field: .email, message: "Cette adresse n'est pas valide."))
+            throw fail(AuthFailure(field: .email, message: String(localized: "Cette adresse n'est pas valide.", bundle: .app)))
         }
 
 #if canImport(FirebaseAuth)
@@ -253,7 +253,7 @@ final class AuthService: ObservableObject {
     /// vers l'application.
     func confirmPasswordReset(code: String, newPassword: String) async throws {
         guard newPassword.count >= 8 else {
-            throw fail(AuthFailure(field: .password, message: "8 caractères au minimum."))
+            throw fail(AuthFailure(field: .password, message: String(localized: "8 caractères au minimum.", bundle: .app)))
         }
 #if canImport(FirebaseAuth)
         do {
@@ -333,10 +333,10 @@ final class AuthService: ObservableObject {
     func signInWithGoogle() async throws {
 #if canImport(FirebaseAuth) && canImport(GoogleSignIn)
         guard let clientID = FirebaseApp.app()?.options.clientID else {
-            throw fail(.form("Configuration Google Sign-In invalide."))
+            throw fail(.form(String(localized: "Configuration Google Sign-In invalide.", bundle: .app)))
         }
         guard let rootViewController = Self.rootViewController else {
-            throw fail(.form("Impossible d'ouvrir Google Sign-In."))
+            throw fail(.form(String(localized: "Impossible d'ouvrir Google Sign-In.", bundle: .app)))
         }
 
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
@@ -344,7 +344,7 @@ final class AuthService: ObservableObject {
         do {
             let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController)
             guard let idToken = result.user.idToken?.tokenString else {
-                throw AuthFailure.form("Google Sign-In incomplet.")
+                throw AuthFailure.form(String(localized: "Google Sign-In incomplet.", bundle: .app))
             }
             let credential = GoogleAuthProvider.credential(
                 withIDToken: idToken,
@@ -383,7 +383,7 @@ final class AuthService: ObservableObject {
 
     private enum Operation { case signIn, signUp, reset }
 
-    private static let sdkMissing = AuthFailure.form("SDK Firebase manquant dans la cible iOS.")
+    private static let sdkMissing = AuthFailure.form(String(localized: "SDK Firebase manquant dans la cible iOS.", bundle: .app))
 
     /// Les seuls codes Firebase qu'on rencontre réellement sur ce parcours.
     ///
@@ -396,12 +396,12 @@ final class AuthService: ObservableObject {
 
         switch code {
         case AuthErrorCode.invalidEmail.rawValue:
-            return AuthFailure(field: .email, message: "Cette adresse n'est pas valide.")
+            return AuthFailure(field: .email, message: String(localized: "Cette adresse n'est pas valide.", bundle: .app))
 
         case AuthErrorCode.emailAlreadyInUse.rawValue:
             return AuthFailure(
                 field: .email,
-                message: "Un compte existe déjà pour cette adresse.",
+                message: String(localized: "Un compte existe déjà pour cette adresse.", bundle: .app),
                 repair: .signIn
             )
 
@@ -412,7 +412,7 @@ final class AuthService: ObservableObject {
             // récupérer le sien.
             return AuthFailure(
                 field: .email,
-                message: "Aucun compte pour cette adresse.",
+                message: String(localized: "Aucun compte pour cette adresse.", bundle: .app),
                 repair: operation == .reset ? nil : .signUp
             )
 
@@ -422,31 +422,31 @@ final class AuthService: ObservableObject {
             // inconnu » : la phrase ne doit donc pas prétendre le contraire.
             return AuthFailure(
                 field: .password,
-                message: "Email ou mot de passe incorrect.",
+                message: String(localized: "Email ou mot de passe incorrect.", bundle: .app),
                 repair: .resetPassword
             )
 
         case AuthErrorCode.weakPassword.rawValue:
-            return AuthFailure(field: .password, message: "8 caractères au minimum.")
+            return AuthFailure(field: .password, message: String(localized: "8 caractères au minimum.", bundle: .app))
 
         case AuthErrorCode.expiredActionCode.rawValue,
              AuthErrorCode.invalidActionCode.rawValue:
-            return AuthFailure(field: .form, message: "Ce lien a expiré ou a déjà servi.")
+            return AuthFailure(field: .form, message: String(localized: "Ce lien a expiré ou a déjà servi.", bundle: .app))
 
         case AuthErrorCode.userDisabled.rawValue:
-            return AuthFailure(field: .form, message: "Ce compte a été désactivé.")
+            return AuthFailure(field: .form, message: String(localized: "Ce compte a été désactivé.", bundle: .app))
 
         case AuthErrorCode.tooManyRequests.rawValue:
             return AuthFailure(
                 field: .form,
-                message: "Trop de tentatives. Réessayez dans quelques minutes."
+                message: String(localized: "Trop de tentatives. Réessayez dans quelques minutes.", bundle: .app)
             )
 
         case AuthErrorCode.networkError.rawValue:
-            return AuthFailure(field: .form, message: "Connexion au serveur impossible.")
+            return AuthFailure(field: .form, message: String(localized: "Connexion au serveur impossible.", bundle: .app))
 
         default:
-            return AuthFailure(field: .form, message: "Connexion au serveur impossible.")
+            return AuthFailure(field: .form, message: String(localized: "Connexion au serveur impossible.", bundle: .app))
         }
 #else
         return sdkMissing

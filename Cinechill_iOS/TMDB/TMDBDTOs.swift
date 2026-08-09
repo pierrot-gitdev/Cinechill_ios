@@ -181,7 +181,7 @@ struct TMDBDetailResponse: Decodable, Sendable {
     }
 
     func asMediaItem(mediaType: MediaType) -> MediaItem {
-        let t = (mediaType == .movie ? title : nil) ?? name ?? "Sans titre"
+        let t = (mediaType == .movie ? title : nil) ?? name ?? String(localized: "Sans titre", bundle: .app)
         let date = mediaType == .movie ? releaseDate : firstAirDate
         return MediaItem(
             tmdbId: id,
@@ -196,7 +196,7 @@ struct TMDBDetailResponse: Decodable, Sendable {
     }
 
     var displayTitle: String {
-        (title ?? name) ?? "Sans titre"
+        (title ?? name) ?? String(localized: "Sans titre", bundle: .app)
     }
 
     var posterDetailURL: URL? {
@@ -232,6 +232,8 @@ struct TMDBDetailResponse: Decodable, Sendable {
         guard let runtime, runtime > 0 else { return nil }
         let hours = runtime / 60
         let minutes = runtime % 60
-        return hours > 0 ? "\(hours) h \(String(format: "%02d", minutes))" : "\(minutes) min"
+        return hours > 0
+            ? String(localized: "\(hours) h \(String(format: "%02d", minutes))", bundle: .app)
+            : String(localized: "\(minutes) min", bundle: .app)
     }
 }

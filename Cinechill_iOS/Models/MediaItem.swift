@@ -35,7 +35,7 @@ extension MediaItem {
         self.mediaType = mediaType
         self.title = (mediaType == .movie ? tmdbListRow.title : nil)
             ?? tmdbListRow.name
-            ?? "Sans titre"
+            ?? String(localized: "Sans titre", bundle: .app)
         self.posterPath = tmdbListRow.posterPath
         self.overview = tmdbListRow.overview
         self.voteAverage = tmdbListRow.voteAverage

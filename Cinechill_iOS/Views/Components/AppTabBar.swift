@@ -26,11 +26,11 @@ struct AppTabBar: View {
     private static let height: CGFloat = 58
 
     private static let items: [(icon: CinechillIcon, label: String)] = [
-        (.accueil, "Accueil"),
-        (.cinematch, "CinéMatch"),
-        (.decouvrir, "Découvrir"),
-        (.galerie, "Galerie"),
-        (.watchlist, "Watchlist")
+        (.accueil, String(localized: "Accueil", bundle: .app)),
+        (.cinematch, String(localized: "CinéMatch", bundle: .app)),
+        (.decouvrir, String(localized: "Découvrir", bundle: .app)),
+        (.galerie, String(localized: "Galerie", bundle: .app)),
+        (.watchlist, String(localized: "Watchlist", bundle: .app))
     ]
 
     /// Courbe du volet 04 : lente au départ, longue à l'arrivée. Une lumière qui se déplace trop

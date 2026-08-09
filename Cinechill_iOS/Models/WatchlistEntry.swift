@@ -93,7 +93,9 @@ struct WatchlistEntry: Identifiable, Hashable, Codable, Sendable {
     var recommendedByText: String? {
         guard let first = recommendedBy.first else { return nil }
         let others = recommendedBy.count - 1
-        guard others > 0 else { return "Par \(first.displayName)" }
-        return "Par \(first.displayName) et \(others) autre\(others > 1 ? "s" : "")"
+        guard others > 0 else { return String(localized: "Par \(first.displayName)", bundle: .app) }
+        return others == 1
+            ? String(localized: "Par \(first.displayName) et \(others) autre", bundle: .app)
+            : String(localized: "Par \(first.displayName) et \(others) autres", bundle: .app)
     }
 }

@@ -47,6 +47,9 @@ struct SettingsView: View {
     /// dans le flux de lecture.
     @State private var isAccountOpen = false
     @State private var introReplayArmed = false
+    /// Le choix de langue vit hors de cet écran : il décide de `Bundle.app`,
+    /// que lisent aussi bien les vues que les services.
+    @State private var language = LanguageStore.shared
     /// Le même drapeau que celui du deck : le remettre à zéro suffit à réarmer la
     /// démonstration des gestes (voir `SwipeIntroSequence`).
     @AppStorage("swipe.introPlayed") private var swipeIntroPlayed = false
@@ -59,36 +62,43 @@ struct SettingsView: View {
             Ink.ground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                PlanHeader("Réglages", leading: .close)
+                PlanHeader(String(localized: "Réglages", bundle: .app), leading: .close)
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
                         identity
 
                         declaration(
-                            "Mes abonnements",
-                            note: "Ce qui n'est pas chez vous ne vous sera pas proposé."
+                            String(localized: "Langue", bundle: .app),
+                            note: String(localized: "Elle vaut pour l'application comme pour les films : titres, résumés et genres suivent.", bundle: .app)
+                        ) {
+                            languagePicker
+                        }
+
+                        declaration(
+                            String(localized: "Mes abonnements", bundle: .app),
+                            note: String(localized: "Ce qui n'est pas chez vous ne vous sera pas proposé.", bundle: .app)
                         ) {
                             platforms
                         }
 
                         declaration(
-                            "Jamais de…",
-                            note: "Exclus partout, sans exception."
+                            String(localized: "Jamais de…", bundle: .app),
+                            note: String(localized: "Exclus partout, sans exception.", bundle: .app)
                         ) {
                             bannedGenres
                         }
 
                         declaration(
-                            "Ma génération",
-                            note: "À 25 et à 55 ans, on n'a pas vu les mêmes classiques."
+                            String(localized: "Ma génération", bundle: .app),
+                            note: String(localized: "À 25 et à 55 ans, on n'a pas vu les mêmes classiques.", bundle: .app)
                         ) {
                             generation
                         }
 
                         declaration(
-                            "Les gestes de Découvrir",
-                            note: "Les trois directions remontrées en quelques secondes, sur votre prochaine carte.",
+                            String(localized: "Les gestes de Découvrir", bundle: .app),
+                            note: String(localized: "Les trois directions remontrées en quelques secondes, sur votre prochaine carte.", bundle: .app),
                             isLast: true
                         ) {
                             gestureDemo
@@ -112,36 +122,36 @@ struct SettingsView: View {
             guard let item else { return }
             Task { await loadPhoto(from: item) }
         }
-        .alert("Supprimer la photo", isPresented: $showRemovePhotoAlert) {
-            Button("Supprimer", role: .destructive) { profileStore.removeCustomPhoto() }
-            Button("Annuler", role: .cancel) {}
+        .alert(String(localized: "Supprimer la photo", bundle: .app), isPresented: $showRemovePhotoAlert) {
+            Button(String(localized: "Supprimer", bundle: .app), role: .destructive) { profileStore.removeCustomPhoto() }
+            Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
-            Text("La photo de profil sera supprimée.")
+            Text("La photo de profil sera supprimée.", bundle: .app)
         }
-        .alert("Remettre les films en jeu", isPresented: $showResetSkipsAlert) {
-            Button("Réinitialiser") { Task { await resetSkips() } }
-            Button("Annuler", role: .cancel) {}
+        .alert(String(localized: "Remettre les films en jeu", bundle: .app), isPresented: $showResetSkipsAlert) {
+            Button(String(localized: "Réinitialiser", bundle: .app)) { Task { await resetSkips() } }
+            Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
-            Text("Les films que vous avez écartés au swipe vous seront à nouveau proposés.")
+            Text("Les films que vous avez écartés au swipe vous seront à nouveau proposés.", bundle: .app)
         }
-        .alert("Supprimer votre compte", isPresented: $showDeleteAccountAlert) {
-            Button("Supprimer définitivement", role: .destructive) {
+        .alert(String(localized: "Supprimer votre compte", bundle: .app), isPresented: $showDeleteAccountAlert) {
+            Button(String(localized: "Supprimer définitivement", bundle: .app), role: .destructive) {
                 Task { await deleteAccount() }
             }
-            Button("Annuler", role: .cancel) {}
+            Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
-            Text("Votre galerie, votre watchlist et votre profil seront effacés. Cette action est irréversible.")
+            Text("Votre galerie, votre watchlist et votre profil seront effacés. Cette action est irréversible.", bundle: .app)
         }
         // La déconnexion ne détruit rien, mais elle renvoie à l'écran de
         // connexion : le message rassure sur ce point plutôt que d'alarmer.
-        .alert("Se déconnecter", isPresented: $showSignOutAlert) {
-            Button("Se déconnecter", role: .destructive) {
+        .alert(String(localized: "Se déconnecter", bundle: .app), isPresented: $showSignOutAlert) {
+            Button(String(localized: "Se déconnecter", bundle: .app), role: .destructive) {
                 try? authService.signOut()
                 dismiss()
             }
-            Button("Annuler", role: .cancel) {}
+            Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
-            Text("Vous retrouverez votre galerie et votre watchlist à la prochaine connexion.")
+            Text("Vous retrouverez votre galerie et votre watchlist à la prochaine connexion.", bundle: .app)
         }
     }
 
@@ -182,14 +192,14 @@ struct SettingsView: View {
                     avatar
                 }
                 .buttonStyle(PressableScaleStyle(scale: 0.94))
-                .accessibilityLabel("Changer la photo de profil")
+                .accessibilityLabel(String(localized: "Changer la photo de profil", bundle: .app))
 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 8) {
                         TextField(
                             "",
                             text: $nameField,
-                            prompt: Text("Nom d'affichage").foregroundColor(Ink.ink3)
+                            prompt: Text("Nom d'affichage", bundle: .app).foregroundColor(Ink.ink3)
                         )
                         .planTitle(20)
                         .foregroundStyle(Ink.ink)
@@ -227,7 +237,7 @@ struct SettingsView: View {
             }
 
             HStack(spacing: 10) {
-                Text("Palier \(tier.label.lowercased()) · \(libraryStore.galleryItems.count) films")
+                Text(String(localized: "Palier \(tier.label.lowercased()) · \(libraryStore.galleryItems.count) films", bundle: .app))
                     .planLabel()
                     .foregroundStyle(Ink.ink3)
                     .fixedSize()
@@ -268,6 +278,31 @@ struct SettingsView: View {
         .overlay(Circle().strokeBorder(Ink.ruleSet, lineWidth: 1))
     }
 
+    // MARK: - Langue
+
+    /// Trois puces, comme partout ailleurs dans cet écran. « Système » d'abord :
+    /// c'est l'état par défaut, et le seul qui se contente de ne rien imposer.
+    ///
+    /// Le changement se voit tout de suite — l'application entière est
+    /// redemandée à la racine (voir `Cinechill_iOSApp`), ce qui ramène à
+    /// l'accueil. C'est le comportement d'iOS lui-même quand on change la
+    /// langue d'une app depuis ses réglages, et ça évite un écran à moitié
+    /// traduit le temps d'un retour en arrière.
+    private var languagePicker: some View {
+        HStack(spacing: 7) {
+            ForEach(AppLanguage.allCases) { candidate in
+                PlanChip(
+                    title: candidate.label,
+                    isOn: language.selection == candidate,
+                    fillsWidth: true
+                ) {
+                    Haptics.selection()
+                    language.select(candidate)
+                }
+            }
+        }
+    }
+
     // MARK: - Abonnements
 
     @ViewBuilder
@@ -275,7 +310,7 @@ struct SettingsView: View {
         if catalog.platforms.isEmpty {
             HStack(spacing: 10) {
                 CinechillSpinner(size: 16)
-                Text("Chargement des plateformes…")
+                Text("Chargement des plateformes…", bundle: .app)
                     .font(.system(size: 12.5))
                     .foregroundStyle(Ink.ink3)
             }
@@ -296,7 +331,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var bannedGenres: some View {
         if catalog.genreNames.isEmpty {
-            Text("Chargement des genres…")
+            Text("Chargement des genres…", bundle: .app)
                 .font(.system(size: 12.5))
                 .foregroundStyle(Ink.ink3)
         } else {
@@ -309,7 +344,7 @@ struct SettingsView: View {
                         if isBanned { ids.remove(genre.id) } else { ids.insert(genre.id) }
                         libraryStore.setBannedGenres(ids)
                     }
-                    .accessibilityValue(isBanned ? "Exclu" : "Autorisé")
+                    .accessibilityValue(isBanned ? String(localized: "Exclu", bundle: .app) : String(localized: "Autorisé", bundle: .app))
                 }
             }
         }
@@ -331,7 +366,7 @@ struct SettingsView: View {
                     Haptics.selection()
                     libraryStore.setBirthDecade(isOn ? nil : generation.decade)
                 }
-                .accessibilityLabel("Né dans les années \(generation.label)")
+                .accessibilityLabel(String(localized: "Né dans les années \(generation.label)", bundle: .app))
             }
         }
     }
@@ -349,7 +384,7 @@ struct SettingsView: View {
         if introReplayArmed {
             HStack(alignment: .top, spacing: 11) {
                 PlanLight().padding(.top, 5)
-                Text("La démonstration se rejouera à votre prochain passage sur Découvrir.")
+                Text("La démonstration se rejouera à votre prochain passage sur Découvrir.", bundle: .app)
                     .font(.system(size: 12.5))
                     .foregroundStyle(Ink.ink2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -358,7 +393,7 @@ struct SettingsView: View {
             .frame(minHeight: Metrics.control)
             .transition(.opacity)
         } else {
-            PlanSecondaryButton(title: "Revoir la démonstration", height: Metrics.control) {
+            PlanSecondaryButton(title: String(localized: "Revoir la démonstration", bundle: .app), height: Metrics.control) {
                 Haptics.selection()
                 swipeIntroPlayed = false
                 withAnimation(Metrics.shift) { introReplayArmed = true }
@@ -382,7 +417,7 @@ struct SettingsView: View {
                 withAnimation(Metrics.unfold) { isAccountOpen.toggle() }
             } label: {
                 HStack {
-                    Text("Le compte")
+                    Text("Le compte", bundle: .app)
                         .planLabel()
                         .foregroundStyle(Ink.ink2)
                     Spacer()
@@ -395,8 +430,8 @@ struct SettingsView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Le compte")
-            .accessibilityValue(isAccountOpen ? "Déplié" : "Replié")
+            .accessibilityLabel(String(localized: "Le compte", bundle: .app))
+            .accessibilityValue(isAccountOpen ? String(localized: "Déplié", bundle: .app) : String(localized: "Replié", bundle: .app))
 
             if isAccountOpen {
                 accountBody
@@ -415,29 +450,29 @@ struct SettingsView: View {
     private var accountBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let email {
-                accountLine(label: "Adresse", value: email)
+                accountLine(label: String(localized: "Adresse", bundle: .app), value: email)
             }
 
             accountAction(
-                "Réinitialiser les films écartés",
+                String(localized: "Réinitialiser les films écartés", bundle: .app),
                 note: skipsSubtitle
             ) {
                 showResetSkipsAlert = true
             }
 
             if profileStore.customPhotoData != nil {
-                accountAction("Supprimer la photo de profil", note: nil) {
+                accountAction(String(localized: "Supprimer la photo de profil", bundle: .app), note: nil) {
                     showRemovePhotoAlert = true
                 }
             }
 
-            accountAction("Se déconnecter", note: nil) {
+            accountAction(String(localized: "Se déconnecter", bundle: .app), note: nil) {
                 showSignOutAlert = true
             }
 
             accountAction(
-                "Supprimer mon compte",
-                note: "Galerie, watchlist et profil. Irréversible.",
+                String(localized: "Supprimer mon compte", bundle: .app),
+                note: String(localized: "Galerie, watchlist et profil. Irréversible.", bundle: .app),
                 isDestructive: true
             ) {
                 showDeleteAccountAlert = true
@@ -458,7 +493,7 @@ struct SettingsView: View {
             if isWorking {
                 HStack(spacing: 10) {
                     CinechillSpinner(size: 16)
-                    Text("En cours…")
+                    Text("En cours…", bundle: .app)
                         .font(.system(size: 12.5))
                         .foregroundStyle(Ink.ink3)
                 }
@@ -510,15 +545,15 @@ struct SettingsView: View {
     }
 
     private var skipsSubtitle: String {
-        guard let pendingSkips else { return "Ceux que vous avez dit ne pas avoir vus" }
-        guard pendingSkips > 0 else { return "Aucun film en attente" }
-        return "\(pendingSkips) film\(pendingSkips > 1 ? "s" : "") en attente de réapparition"
+        guard let pendingSkips else { return String(localized: "Ceux que vous avez dit ne pas avoir vus", bundle: .app) }
+        guard pendingSkips > 0 else { return String(localized: "Aucun film en attente", bundle: .app) }
+        return String(localized: "\(pendingSkips) films en attente de réapparition", bundle: .app)
     }
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-        return "Cinéchill · version \(version) (\(build))"
+        return String(localized: "Cinéchill · version \(version) (\(build))", bundle: .app)
     }
 
     // MARK: - Actions
@@ -531,10 +566,10 @@ struct SettingsView: View {
             let deleted = try await libraryStore.resetSwipeSkips()
             pendingSkips = 0
             actionMessage = deleted > 0
-                ? "\(deleted) film\(deleted > 1 ? "s" : "") remis en jeu."
-                : "Aucun film n'était en attente."
+                ? String(localized: "\(deleted) films remis en jeu.", bundle: .app)
+                : String(localized: "Aucun film n'était en attente.", bundle: .app)
         } catch {
-            actionMessage = "La réinitialisation a échoué. Réessayez dans un instant."
+            actionMessage = String(localized: "La réinitialisation a échoué. Réessayez dans un instant.", bundle: .app)
         }
     }
 
@@ -546,7 +581,7 @@ struct SettingsView: View {
             try await libraryStore.deleteAccount()
             dismiss()
         } catch {
-            actionMessage = "La suppression a échoué. Reconnectez-vous puis réessayez."
+            actionMessage = String(localized: "La suppression a échoué. Reconnectez-vous puis réessayez.", bundle: .app)
         }
     }
 

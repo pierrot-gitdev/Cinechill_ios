@@ -26,13 +26,13 @@ struct GallerySignatureView: View {
 
     private var countRow: some View {
         HStack(alignment: .firstTextBaseline, spacing: 9) {
-            Text("\(signature.total)")
+            Text(verbatim: "\(signature.total)")
                 .planTitle(38)
                 .monospacedDigit()
                 .foregroundStyle(Ink.ink)
                 .contentTransition(.numericText())
 
-            Text(signature.total > 1 ? "films vus" : "film vu")
+            Text(signature.total > 1 ? String(localized: "films vus", bundle: .app) : String(localized: "film vu", bundle: .app))
                 .planLabel()
                 .foregroundStyle(Ink.ink2)
 
@@ -43,7 +43,7 @@ struct GallerySignatureView: View {
             if signature.addedThisMonth > 0 {
                 HStack(spacing: 7) {
                     PlanLight()
-                    Text("+\(signature.addedThisMonth) ce mois")
+                    Text(String(localized: "+\(signature.addedThisMonth) ce mois", bundle: .app))
                         .planLabel()
                         .monospacedDigit()
                         .foregroundStyle(Ink.light)
@@ -51,7 +51,7 @@ struct GallerySignatureView: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(signature.total) films vus, dont \(signature.addedThisMonth) ce mois")
+        .accessibilityLabel(String(localized: "\(signature.total) films vus, dont \(signature.addedThisMonth) ce mois", bundle: .app))
     }
 
     /// Une seule ligne proportionnelle plutôt qu'un camembert : la comparaison

@@ -461,10 +461,10 @@ struct LibraryMark: View {
         Group {
             if inGallery {
                 PlanLight()
-                    .accessibilityLabel("Déjà vu")
+                    .accessibilityLabel(String(localized: "Déjà vu", bundle: .app))
             } else if inWatchlist {
                 PlanLightOutline()
-                    .accessibilityLabel("Dans votre watchlist")
+                    .accessibilityLabel(String(localized: "Dans votre watchlist", bundle: .app))
             }
         }
         // Le point est posé sur une affiche, dont on ne connaît pas la valeur :
@@ -491,8 +491,8 @@ struct LibraryMark: View {
 
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .firstTextBaseline, spacing: 7) {
-                        Text("214").planTitle(26).foregroundStyle(Ink.ink).monospacedDigit()
-                        Text("sur 250 · il en reste 36").planLabel().foregroundStyle(Ink.ink3)
+                        Text("214", bundle: .app).planTitle(26).foregroundStyle(Ink.ink).monospacedDigit()
+                        Text("sur 250 · il en reste 36", bundle: .app).planLabel().foregroundStyle(Ink.ink3)
                     }
                     PlanProgressRule(fraction: 0.86)
                 }

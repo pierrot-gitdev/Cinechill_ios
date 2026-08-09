@@ -114,7 +114,7 @@ struct HallFollowButton: View {
                 if isBusy {
                     CinechillSpinner(size: 13, tint: isFollowing ? .brand : .onAccent)
                 } else {
-                    Text(isFollowing ? "Suivi" : "Suivre")
+                    Text(isFollowing ? String(localized: "Suivi", bundle: .app) : String(localized: "Suivre", bundle: .app))
                         .font(.system(size: 12.5, weight: isFollowing ? .regular : .semibold))
                 }
             }
@@ -134,7 +134,7 @@ struct HallFollowButton: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.94))
         .disabled(isBusy)
-        .accessibilityLabel(isFollowing ? "Se désabonner" : "Suivre")
+        .accessibilityLabel(isFollowing ? String(localized: "Se désabonner", bundle: .app) : String(localized: "Suivre", bundle: .app))
     }
 }
 
@@ -179,7 +179,7 @@ struct HallProfileRow: View {
         guard showsGalleryCount, profile.galleryCount > 0 else {
             return profile.handleDisplay
         }
-        return "\(profile.handleDisplay) · \(profile.galleryCount) vus"
+        return String(localized: "\(profile.handleDisplay) · \(profile.galleryCount) vus", bundle: .app)
     }
 }
 
@@ -296,7 +296,7 @@ struct HallSearchField: View {
                             .contentShape(Rectangle().inset(by: -10))
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Effacer la recherche")
+                    .accessibilityLabel(String(localized: "Effacer la recherche", bundle: .app))
                 }
             }
             .frame(height: Metrics.field)

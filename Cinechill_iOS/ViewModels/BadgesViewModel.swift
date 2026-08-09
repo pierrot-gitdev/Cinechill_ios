@@ -14,10 +14,10 @@ final class BadgesViewModel {
 
         var label: String {
             switch self {
-            case .all: "Tous"
-            case .unlocked: "Obtenus"
-            case .locked: "À débloquer"
-            case .secret: "Secrets"
+            case .all: String(localized: "Tous", bundle: .app)
+            case .unlocked: String(localized: "Obtenus", bundle: .app)
+            case .locked: String(localized: "À débloquer", bundle: .app)
+            case .secret: String(localized: "Secrets", bundle: .app)
             }
         }
     }
@@ -109,7 +109,7 @@ final class BadgesViewModel {
             )
             errorMessage = nil
         } catch {
-            errorMessage = "Impossible de mettre à jour vos badges."
+            errorMessage = String(localized: "Impossible de mettre à jour vos badges.", bundle: .app)
         }
     }
 

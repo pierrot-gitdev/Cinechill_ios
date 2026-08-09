@@ -56,14 +56,16 @@ struct ClaimHandleSheet: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 PlanHeader(
-                    isFirstClaim ? "Votre pseudo" : "Changer de pseudo",
+                    isFirstClaim
+                        ? String(localized: "Votre pseudo", bundle: .app)
+                        : String(localized: "Changer de pseudo", bundle: .app),
                     leading: .close
                 )
 
                 VStack(alignment: .leading, spacing: 0) {
                     Text(isFirstClaim
-                         ? "C'est ce que vos amis taperont pour vous retrouver."
-                         : "Il ne pourra plus être changé après celui-ci.")
+                         ? String(localized: "C'est ce que vos amis taperont pour vous retrouver.", bundle: .app)
+                         : String(localized: "Il ne pourra plus être changé après celui-ci.", bundle: .app))
                         .font(.system(size: 14.5))
                         .foregroundStyle(isFirstClaim ? Ink.ink2 : Ink.warn)
                         .fixedSize(horizontal: false, vertical: true)
@@ -71,13 +73,13 @@ struct ClaimHandleSheet: View {
                         .padding(.top, 28)
 
                     PlanField(
-                        label: "Pseudo", text: entry, field: Field.handle, focus: $focus,
-                        placeholder: "pierre.robert",
+                        label: String(localized: "Pseudo", bundle: .app), text: entry, field: Field.handle, focus: $focus,
+                        placeholder: String(localized: "pierre.robert", bundle: .app),
                         prefix: "@",
                         contentType: .username,
                         submitLabel: .go,
                         accessory: isValid ? .light : .none,
-                        error: isTaken ? "Ce pseudo est déjà pris." : errorMessage,
+                        error: isTaken ? String(localized: "Ce pseudo est déjà pris.", bundle: .app) : errorMessage,
                         note: isTaken ? nil : PlanHandle.rule,
                         isDisabled: isSubmitting,
                         onSubmit: { Task { await submit() } }
@@ -91,8 +93,10 @@ struct ClaimHandleSheet: View {
                     Spacer(minLength: 24)
 
                     PlanButton(
-                        title: isFirstClaim ? "Choisir ce pseudo" : "Changer définitivement",
-                        loadingTitle: "Enregistrement…",
+                        title: isFirstClaim
+                            ? String(localized: "Choisir ce pseudo", bundle: .app)
+                            : String(localized: "Changer définitivement", bundle: .app),
+                        loadingTitle: String(localized: "Enregistrement…", bundle: .app),
                         isLoading: isSubmitting,
                         isEnabled: isValid
                     ) {
@@ -122,7 +126,7 @@ struct ClaimHandleSheet: View {
                     isTaken = false
                     Haptics.selection()
                 } label: {
-                    Text("@\(candidate)")
+                    Text(verbatim: "@\(candidate)")
                         .font(.system(size: 11.5))
                         .foregroundStyle(Ink.ink)
                         .padding(.horizontal, 11)

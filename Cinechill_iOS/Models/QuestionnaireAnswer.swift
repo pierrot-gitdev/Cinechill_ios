@@ -42,8 +42,8 @@ nonisolated enum ContentFormat: String, QuestionOption {
     /// demandaient plus d'attention qu'elles n'en faisaient gagner.
     var label: String {
         switch self {
-        case .animated: "Dessin animé"
-        case .liveAction: "Film"
+        case .animated: String(localized: "contentFormat.animated", defaultValue: "Dessin animé", bundle: .app)
+        case .liveAction: String(localized: "contentFormat.liveAction", defaultValue: "Film", bundle: .app)
         }
     }
 }
@@ -55,15 +55,15 @@ nonisolated enum Genre: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .action: "Action"
-        case .comedy: "Comédie"
-        case .drama: "Drame"
-        case .thriller: "Thriller"
-        case .scifiFantasy: "SF / Fantastique"
-        case .horror: "Horreur"
-        case .romance: "Romance"
-        case .animation: "Animation"
-        case .documentary: "Documentaire"
+        case .action: String(localized: "Action", bundle: .app)
+        case .comedy: String(localized: "Comédie", bundle: .app)
+        case .drama: String(localized: "Drame", bundle: .app)
+        case .thriller: String(localized: "Thriller", bundle: .app)
+        case .scifiFantasy: String(localized: "SF / Fantastique", bundle: .app)
+        case .horror: String(localized: "Horreur", bundle: .app)
+        case .romance: String(localized: "Romance", bundle: .app)
+        case .animation: String(localized: "Animation", bundle: .app)
+        case .documentary: String(localized: "Documentaire", bundle: .app)
         }
     }
 
@@ -94,10 +94,10 @@ nonisolated enum Audience: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .alone: "Seul·e"
-        case .couple: "En couple"
-        case .friends: "Entre amis"
-        case .family: "En famille, avec des enfants"
+        case .alone: String(localized: "Seul·e", bundle: .app)
+        case .couple: String(localized: "En couple", bundle: .app)
+        case .friends: String(localized: "Entre amis", bundle: .app)
+        case .family: String(localized: "En famille, avec des enfants", bundle: .app)
         }
     }
 }
@@ -109,12 +109,12 @@ nonisolated enum Mood: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .lightFun: "Léger et drôle"
-        case .intense: "Tendu, avec de l'action"
-        case .emotional: "Émouvant"
-        case .scary: "Qui fait peur"
-        case .escapist: "Spectaculaire, qui fait voyager"
-        case .thoughtful: "Qui fait réfléchir"
+        case .lightFun: String(localized: "Léger et drôle", bundle: .app)
+        case .intense: String(localized: "Tendu, avec de l'action", bundle: .app)
+        case .emotional: String(localized: "Émouvant", bundle: .app)
+        case .scary: String(localized: "Qui fait peur", bundle: .app)
+        case .escapist: String(localized: "Spectaculaire, qui fait voyager", bundle: .app)
+        case .thoughtful: String(localized: "Qui fait réfléchir", bundle: .app)
         }
     }
 }
@@ -126,9 +126,9 @@ nonisolated enum OriginPreference: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .french: "Français"
-        case .international: "International"
-        case .any: "Peu importe"
+        case .french: String(localized: "Français", bundle: .app)
+        case .international: String(localized: "International", bundle: .app)
+        case .any: String(localized: "Peu importe", bundle: .app)
         }
     }
 }
@@ -148,11 +148,11 @@ nonisolated enum OriginCountry: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .france: "France"
-        case .unitedKingdom: "Angleterre"
-        case .unitedStates: "États-Unis"
-        case .japan: "Japon"
-        case .elsewhere: "Autre pays"
+        case .france: String(localized: "France", bundle: .app)
+        case .unitedKingdom: String(localized: "Angleterre", bundle: .app)
+        case .unitedStates: String(localized: "États-Unis", bundle: .app)
+        case .japan: String(localized: "Japon", bundle: .app)
+        case .elsewhere: String(localized: "Autre pays", bundle: .app)
         }
     }
 }
@@ -164,10 +164,10 @@ nonisolated enum Mindset: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .noThinking: "Me vider la tête"
-        case .beSurprised: "Être surpris·e"
-        case .seeMyself: "Me reconnaître dans l'histoire"
-        case .learnSomething: "Apprendre quelque chose"
+        case .noThinking: String(localized: "Me vider la tête", bundle: .app)
+        case .beSurprised: String(localized: "Être surpris·e", bundle: .app)
+        case .seeMyself: String(localized: "Me reconnaître dans l'histoire", bundle: .app)
+        case .learnSomething: String(localized: "Apprendre quelque chose", bundle: .app)
         }
     }
 }
@@ -179,10 +179,10 @@ nonisolated enum Dealbreaker: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .slowPace: "Rythme trop lent"
-        case .predictablePlot: "Scénario trop prévisible"
-        case .tooLong: "Film trop long"
-        case .heavyMood: "Ambiance trop lourde"
+        case .slowPace: String(localized: "Rythme trop lent", bundle: .app)
+        case .predictablePlot: String(localized: "Scénario trop prévisible", bundle: .app)
+        case .tooLong: String(localized: "Film trop long", bundle: .app)
+        case .heavyMood: String(localized: "Ambiance trop lourde", bundle: .app)
         }
     }
 }
@@ -194,10 +194,10 @@ nonisolated enum PopularityPreference: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .mainstream: "Un grand succès"
-        case .wellRatedKnown: "Un film reconnu"
-        case .hiddenGem: "Un film peu connu"
-        case .any: "Peu importe"
+        case .mainstream: String(localized: "Un grand succès", bundle: .app)
+        case .wellRatedKnown: String(localized: "Un film reconnu", bundle: .app)
+        case .hiddenGem: String(localized: "Un film peu connu", bundle: .app)
+        case .any: String(localized: "Peu importe", bundle: .app)
         }
     }
 }
@@ -209,9 +209,9 @@ nonisolated enum CastPreference: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .familiarFaces: "Des acteurs que je connais"
-        case .any: "Peu importe"
-        case .discovery: "Des visages nouveaux"
+        case .familiarFaces: String(localized: "Des acteurs que je connais", bundle: .app)
+        case .any: String(localized: "Peu importe", bundle: .app)
+        case .discovery: String(localized: "Des visages nouveaux", bundle: .app)
         }
     }
 }
@@ -223,10 +223,10 @@ nonisolated enum RuntimePreference: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .short: "< 1h30"
-        case .medium: "1h30 – 2h"
-        case .long: "2h +"
-        case .any: "Peu importe"
+        case .short: String(localized: "< 1h30", bundle: .app)
+        case .medium: String(localized: "1h30 – 2h", bundle: .app)
+        case .long: String(localized: "2h +", bundle: .app)
+        case .any: String(localized: "Peu importe", bundle: .app)
         }
     }
 }
@@ -238,10 +238,10 @@ nonisolated enum EraPreference: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .thisYear: "Sorti cette année"
-        case .lastFiveYears: "5 dernières années"
-        case .any: "Peu importe l'époque"
-        case .cultClassic: "Classique culte"
+        case .thisYear: String(localized: "Sorti cette année", bundle: .app)
+        case .lastFiveYears: String(localized: "5 dernières années", bundle: .app)
+        case .any: String(localized: "Peu importe l'époque", bundle: .app)
+        case .cultClassic: String(localized: "Classique culte", bundle: .app)
         }
     }
 }
@@ -253,8 +253,8 @@ nonisolated enum HorrorFlavor: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .suspense: "La tension qui monte lentement"
-        case .visceral: "Les sensations fortes"
+        case .suspense: String(localized: "La tension qui monte lentement", bundle: .app)
+        case .visceral: String(localized: "Les sensations fortes", bundle: .app)
         }
     }
 }
@@ -264,8 +264,8 @@ nonisolated enum ComedyFlavor: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .family: "Gentille, bon enfant"
-        case .edgy: "Grinçante, qui ne s'interdit rien"
+        case .family: String(localized: "Gentille, bon enfant", bundle: .app)
+        case .edgy: String(localized: "Grinçante, qui ne s'interdit rien", bundle: .app)
         }
     }
 }
@@ -275,8 +275,8 @@ nonisolated enum DramaFlavor: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .social: "Une grande histoire, sur fond d'époque ou de société"
-        case .intimate: "L'histoire de quelques personnes"
+        case .social: String(localized: "Une grande histoire, sur fond d'époque ou de société", bundle: .app)
+        case .intimate: String(localized: "L'histoire de quelques personnes", bundle: .app)
         }
     }
 }
@@ -288,8 +288,8 @@ nonisolated enum CognitiveMode: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .understand: "Un film qui me fait réfléchir"
-        case .feel: "Un film qui me fait ressentir"
+        case .understand: String(localized: "Un film qui me fait réfléchir", bundle: .app)
+        case .feel: String(localized: "Un film qui me fait ressentir", bundle: .app)
         }
     }
 }
@@ -307,8 +307,8 @@ nonisolated enum StoryOrigin: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .trueStory: "Une histoire vraie"
-        case .onlyInCinema: "Une histoire complètement inventée"
+        case .trueStory: String(localized: "Une histoire vraie", bundle: .app)
+        case .onlyInCinema: String(localized: "Une histoire complètement inventée", bundle: .app)
         }
     }
 }
@@ -318,8 +318,8 @@ nonisolated enum AttachmentMode: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .character: "Un personnage auquel s'attacher"
-        case .world: "Un monde où se perdre"
+        case .character: String(localized: "Un personnage auquel s'attacher", bundle: .app)
+        case .world: String(localized: "Un monde où se perdre", bundle: .app)
         }
     }
 }
@@ -334,10 +334,10 @@ nonisolated enum CreditsMoment: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .silence: "Personne ne parle pendant une minute"
-        case .discuss: "Vous voulez en parler tout de suite"
-        case .contentment: "Vous êtes bien, c'est tout"
-        case .keepGoing: "Vous enchaînez sur la suite"
+        case .silence: String(localized: "Personne ne parle pendant une minute", bundle: .app)
+        case .discuss: String(localized: "Vous voulez en parler tout de suite", bundle: .app)
+        case .contentment: String(localized: "Vous êtes bien, c'est tout", bundle: .app)
+        case .keepGoing: String(localized: "Vous enchaînez sur la suite", bundle: .app)
         }
     }
 }
@@ -347,10 +347,10 @@ nonisolated enum LastingTrace: String, QuestionOption {
 
     var label: String {
         switch self {
-        case .weight: "Un poids, longtemps après"
-        case .smile: "Le sourire pendant deux jours"
-        case .questions: "Des questions sans réponse"
-        case .wantMore: "L'envie d'en voir plus tout de suite"
+        case .weight: String(localized: "Un poids, longtemps après", bundle: .app)
+        case .smile: String(localized: "Le sourire pendant deux jours", bundle: .app)
+        case .questions: String(localized: "Des questions sans réponse", bundle: .app)
+        case .wantMore: String(localized: "L'envie d'en voir plus tout de suite", bundle: .app)
         }
     }
 }

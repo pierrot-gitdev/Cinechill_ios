@@ -58,7 +58,7 @@ struct EliminationView: View {
                             .padding(6)
                     }
 
-                Text(candidate.title ?? "Sans titre")
+                Text(candidate.title ?? String(localized: "Sans titre", bundle: .app))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Ink.ink)
                     .lineLimit(2)
@@ -67,8 +67,8 @@ struct EliminationView: View {
             }
         }
         .buttonStyle(PressableScaleStyle(scale: 0.97))
-        .accessibilityLabel(candidate.title ?? "Film sans titre")
-        .accessibilityHint("Écarter ce film — c'est celui-ci qui vous tente le moins")
+        .accessibilityLabel(candidate.title ?? String(localized: "Film sans titre", bundle: .app))
+        .accessibilityHint(String(localized: "Écarter ce film — c'est celui-ci qui vous tente le moins", bundle: .app))
     }
 }
 

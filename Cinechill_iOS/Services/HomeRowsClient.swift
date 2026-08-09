@@ -45,7 +45,7 @@ nonisolated struct BackendHomeRowsClient: HomeRowsFetching, Sendable {
         }
         let token = try await user.getIDToken()
 
-        var request = URLRequest(url: url)
+        var request = URLRequest(backend: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -93,15 +93,15 @@ enum HomeRowsClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingBaseURL:
-            return "URL backend absente. Définissez BACKEND_BASE_HOST dans Project.xcconfig."
+            return String(localized: "URL backend absente. Définissez BACKEND_BASE_HOST dans Project.xcconfig.", bundle: .app)
         case .invalidURL:
-            return "URL backend invalide."
+            return String(localized: "URL backend invalide.", bundle: .app)
         case .notAuthenticated:
-            return "Vous devez être connecté(e) pour voir vos suggestions."
+            return String(localized: "Vous devez être connecté(e) pour voir vos suggestions.", bundle: .app)
         case .transport(let message):
-            return "Erreur réseau : \(message)"
+            return String(localized: "Erreur réseau : \(message)", bundle: .app)
         case .httpStatus(let code):
-            return "Erreur serveur (HTTP \(code))."
+            return String(localized: "Erreur serveur (HTTP \(code)).", bundle: .app)
         }
     }
 }
@@ -153,7 +153,7 @@ private struct HomeRowItemDTO: Decodable, Sendable {
         MediaItem(
             tmdbId: id,
             mediaType: .movie,
-            title: title ?? "Sans titre",
+            title: title ?? String(localized: "Sans titre", bundle: .app),
             posterPath: posterPath,
             overview: overview,
             voteAverage: voteAverage,

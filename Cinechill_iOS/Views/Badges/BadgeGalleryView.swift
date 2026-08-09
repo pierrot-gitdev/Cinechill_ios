@@ -37,8 +37,8 @@ struct BadgeGalleryView: View {
         }
         .background(Ink.ground)
         .safeAreaInset(edge: .top) {
-            PlanHeader("Mes badges") {
-                PlanHeaderCount(value: "\(model.unlockedCount) / \(model.totalCount)")
+            PlanHeader(String(localized: "Mes badges", bundle: .app)) {
+                PlanHeaderCount(value: "\(model.unlockedCount.formatted()) / \(model.totalCount.formatted())")
             }
         }
         .toolbar(.hidden, for: .navigationBar)
@@ -98,7 +98,9 @@ struct BadgeGalleryView: View {
                     .lineLimit(2)
 
                 if !state.unlocked {
-                    Text(badge.isSecret ? "Secret" : "\(state.current) / \(state.target)")
+                    Text(badge.isSecret
+                         ? String(localized: "Secret", bundle: .app)
+                         : "\(state.current.formatted()) / \(state.target.formatted())")
                         .planLabel()
                         .monospacedDigit()
                         .foregroundStyle(Ink.ink3)
@@ -193,7 +195,7 @@ struct BadgeDetailView: View {
     private var progressBlock: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("\(progress.current)")
+                Text(verbatim: "\(progress.current)")
                     .planTitle(26)
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink)
@@ -210,19 +212,19 @@ struct BadgeDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 34)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(progress.current) sur \(progress.target)")
+        .accessibilityLabel(String(localized: "\(progress.current) sur \(progress.target)", bundle: .app))
     }
 
     private var remainingText: String {
         let missing = max(0, progress.target - progress.current)
-        guard missing > 0 else { return "sur \(progress.target)" }
-        return "sur \(progress.target) · il en reste \(missing)"
+        guard missing > 0 else { return String(localized: "sur \(progress.target)", bundle: .app) }
+        return String(localized: "sur \(progress.target) · il en reste \(missing)", bundle: .app)
     }
 
     @ViewBuilder
     private var unlockedNote: some View {
         if let date = progress.unlockedAt {
-            Text("Obtenu le \(date.formatted(date: .abbreviated, time: .omitted))")
+            Text(String(localized: "Obtenu le \(date.formatted(date: .abbreviated, time: .omitted))", bundle: .app))
                 .planLabel()
                 .foregroundStyle(Ink.ink3)
                 .padding(.top, 26)
@@ -237,12 +239,14 @@ struct BadgeDetailView: View {
 
             Group {
                 if isDisplayed && !isConfirming {
-                    PlanSecondaryButton(title: "Retirer de mon profil", height: Metrics.control) {
+                    PlanSecondaryButton(title: String(localized: "Retirer de mon profil", bundle: .app), height: Metrics.control) {
                         handleTap()
                     }
                 } else {
                     PlanButton(
-                        title: isConfirming ? "Affiché sur votre profil" : "Afficher sur mon profil",
+                        title: isConfirming
+                            ? String(localized: "Affiché sur votre profil", bundle: .app)
+                            : String(localized: "Afficher sur mon profil", bundle: .app),
                         isEnabled: !isConfirming,
                         height: Metrics.control
                     ) {

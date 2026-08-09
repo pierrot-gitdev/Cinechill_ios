@@ -17,15 +17,15 @@ struct FollowListView: View {
 
         var title: String {
             switch self {
-            case .following: "Abonnements"
-            case .followers: "Abonnés"
+            case .following: String(localized: "Abonnements", bundle: .app)
+            case .followers: String(localized: "Abonnés", bundle: .app)
             }
         }
 
         var emptyTitle: String {
             switch self {
-            case .following: "Vous ne suivez personne"
-            case .followers: "Personne ne vous suit encore"
+            case .following: String(localized: "Vous ne suivez personne", bundle: .app)
+            case .followers: String(localized: "Personne ne vous suit encore", bundle: .app)
             }
         }
 
@@ -72,7 +72,7 @@ struct FollowListView: View {
                     emptyState.padding(.top, 44)
                 } else {
                     if profiles.count > 8 {
-                        HallSearchField(placeholder: "Filtrer", text: $filter)
+                        HallSearchField(placeholder: String(localized: "Filtrer", bundle: .app), text: $filter)
                             .padding(.horizontal, 18)
                             .padding(.top, 8)
                             .padding(.bottom, 12)
@@ -86,7 +86,7 @@ struct FollowListView: View {
         .safeAreaInset(edge: .top) {
             PlanHeader(mode.title) {
                 if !profiles.isEmpty {
-                    PlanHeaderCount(value: "\(profiles.count)")
+                    PlanHeaderCount(value: profiles.count.formatted())
                 }
             }
         }
@@ -144,9 +144,9 @@ struct FollowListView: View {
                 icon: .hall,
                 title: mode.emptyTitle,
                 message: isOwnList
-                    ? "Les films qu'on vous recommande arrivent ici. Commencez par quelqu'un dont vous aimez les goûts."
-                    : "Cette personne ne suit encore personne.",
-                actionTitle: isOwnList ? "Chercher un profil" : nil,
+                    ? String(localized: "Les films qu'on vous recommande arrivent ici. Commencez par quelqu'un dont vous aimez les goûts.", bundle: .app)
+                    : String(localized: "Cette personne ne suit encore personne.", bundle: .app),
+                actionTitle: isOwnList ? String(localized: "Chercher un profil", bundle: .app) : nil,
                 action: isOwnList ? { showsSearch = true } : nil
             )
         case .followers:
@@ -155,16 +155,16 @@ struct FollowListView: View {
                 title: mode.emptyTitle,
                 message: isOwnList
                     ? followersHint
-                    : "Personne ne suit encore cette personne."
+                    : String(localized: "Personne ne suit encore cette personne.", bundle: .app)
             )
         }
     }
 
     private var followersHint: String {
         guard let handle = socialStore.myProfile?.handleDisplay else {
-            return "Choisissez un pseudo pour qu'on puisse vous retrouver."
+            return String(localized: "Choisissez un pseudo pour qu'on puisse vous retrouver.", bundle: .app)
         }
-        return "Votre pseudo est \(handle). Partagez-le pour qu'on vous retrouve."
+        return String(localized: "Votre pseudo est \(handle). Partagez-le pour qu'on vous retrouve.", bundle: .app)
     }
 
     // MARK: - Chargement

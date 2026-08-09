@@ -17,10 +17,10 @@ enum GalleryAxis: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .era: "Époque"
-        case .genre: "Genre"
-        case .added: "Ajouts"
-        case .rating: "Note"
+        case .era: String(localized: "Époque", bundle: .app)
+        case .genre: String(localized: "Genre", bundle: .app)
+        case .added: String(localized: "Ajouts", bundle: .app)
+        case .rating: String(localized: "Note", bundle: .app)
         }
     }
 }
@@ -52,7 +52,9 @@ nonisolated struct GenreShare: Identifiable, Hashable, Sendable {
     var color: Color { GalleryPalette.color(at: colorIndex) }
 
     var percentText: String {
-        "\(Int((share * 100).rounded())) %"
+        // Le signe pour cent ne se pose pas partout pareil — « 9 % » ici,
+        // « 9% » ailleurs : c'est le format système qui le sait.
+        share.formatted(.percent.precision(.fractionLength(0)))
     }
 }
 

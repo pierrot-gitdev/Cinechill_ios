@@ -37,8 +37,8 @@ struct HomeGenresListView: View {
         }
         .background(Ink.ground)
         .safeAreaInset(edge: .top) {
-            PlanHeader("Parcourir") {
-                PlanHeaderCount(value: "\(categories.count)")
+            PlanHeader(String(localized: "Parcourir", bundle: .app)) {
+                PlanHeaderCount(value: categories.count.formatted())
             }
         }
         .toolbar(.hidden, for: .navigationBar)

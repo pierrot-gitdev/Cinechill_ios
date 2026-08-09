@@ -234,27 +234,29 @@ final class WatchlistViewModel {
         if let recommender = item.entry.recommendedBy.first {
             let others = item.entry.recommendedBy.count - 1
             if others > 0 {
-                return "Recommandé par \(recommender.displayName) et \(others) autre\(others > 1 ? "s" : "")."
+                return others == 1
+                    ? String(localized: "Recommandé par \(recommender.displayName) et \(others) autre.", bundle: .app)
+                    : String(localized: "Recommandé par \(recommender.displayName) et \(others) autres.", bundle: .app)
             }
-            return "Recommandé par \(recommender.displayName)."
+            return String(localized: "Recommandé par \(recommender.displayName).", bundle: .app)
         }
 
         let months = Int(monthsWaiting(item))
         if months >= 3 {
-            return "Dans votre liste depuis \(months) mois."
+            return String(localized: "Dans votre liste depuis \(months) mois.", bundle: .app)
         }
         if let runtime = item.runtimeMinutes,
            let shortest = pool.compactMap(\.runtimeMinutes).min(),
            runtime == shortest, pool.count > 2 {
-            return "Le plus court de ce qui rentre dans votre soirée."
+            return String(localized: "Le plus court de ce qui rentre dans votre soirée.", bundle: .app)
         }
         if let platform = preferredPlatformName(for: item) {
-            return "Sur \(platform), vous pouvez le lancer tout de suite."
+            return String(localized: "Sur \(platform), vous pouvez le lancer tout de suite.", bundle: .app)
         }
         if let rating = item.entry.voteAverage, rating >= 8 {
-            return "Le mieux noté de votre liste."
+            return String(localized: "Le mieux noté de votre liste.", bundle: .app)
         }
-        return "Il attend son tour depuis un moment."
+        return String(localized: "Il attend son tour depuis un moment.", bundle: .app)
     }
 
     private func preferredPlatformName(for item: WatchlistItem) -> String? {

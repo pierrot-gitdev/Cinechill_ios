@@ -31,31 +31,31 @@ enum SocialError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return "Vous devez être connecté."
+            return String(localized: "Vous devez être connecté.", bundle: .app)
         case .missingBaseURL:
-            return "Configuration serveur manquante."
+            return String(localized: "Configuration serveur manquante.", bundle: .app)
         case .handleTaken:
-            return "Ce pseudo est déjà pris."
+            return String(localized: "Ce pseudo est déjà pris.", bundle: .app)
         case .handleChangeLimit:
-            return "Vous avez déjà changé de pseudo une fois."
+            return String(localized: "Vous avez déjà changé de pseudo une fois.", bundle: .app)
         case .invalidHandle:
-            return "3 à 20 caractères : lettres, chiffres, point, tiret ou tiret bas."
+            return String(localized: "3 à 20 caractères : lettres, chiffres, point, tiret ou tiret bas.", bundle: .app)
         case .ownProfileMissing:
-            return "Choisissez d'abord un pseudo."
+            return String(localized: "Choisissez d'abord un pseudo.", bundle: .app)
         case .targetNotFound:
-            return "Ce profil n'existe plus."
+            return String(localized: "Ce profil n'existe plus.", bundle: .app)
         case .notFollowing:
-            return "Vous ne suivez plus cette personne."
+            return String(localized: "Vous ne suivez plus cette personne.", bundle: .app)
         case .notInGallery:
-            return "Vous ne pouvez recommander qu'un film que vous avez vu."
+            return String(localized: "Vous ne pouvez recommander qu'un film que vous avez vu.", bundle: .app)
         case .targetAlreadySeen:
-            return "Cette personne a déjà vu ce film."
+            return String(localized: "Cette personne a déjà vu ce film.", bundle: .app)
         case .alreadySuggested:
-            return "Vous lui avez déjà recommandé ce film."
+            return String(localized: "Vous lui avez déjà recommandé ce film.", bundle: .app)
         case .suggestionNotFound:
-            return "Cette recommandation n'existe plus."
+            return String(localized: "Cette recommandation n'existe plus.", bundle: .app)
         case .server(let code):
-            return "Le serveur a refusé la demande (\(code))."
+            return String(localized: "Le serveur a refusé la demande (\(code)).", bundle: .app)
         case .transport(let message):
             return message
         }
@@ -162,7 +162,7 @@ nonisolated struct SocialClient: SocialServicing, Sendable {
         guard let user = Auth.auth().currentUser else { throw SocialError.notAuthenticated }
         let token = try await user.getIDToken()
 
-        var request = URLRequest(url: url)
+        var request = URLRequest(backend: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -175,7 +175,7 @@ nonisolated struct SocialClient: SocialServicing, Sendable {
     /// qu'il doit répondre avant qu'un compte n'existe.
     private func get(from url: URL) async throws -> Data {
         guard BackendConfiguration.baseURL != nil else { throw SocialError.missingBaseURL }
-        var request = URLRequest(url: url)
+        var request = URLRequest(backend: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         return try await send(request)
@@ -195,7 +195,7 @@ nonisolated struct SocialClient: SocialServicing, Sendable {
         }
 
         guard let http = response as? HTTPURLResponse else {
-            throw SocialError.transport(message: "Réponse serveur illisible.")
+            throw SocialError.transport(message: String(localized: "Réponse serveur illisible.", bundle: .app))
         }
         guard (200...299).contains(http.statusCode) else {
             // Le corps porte le code métier ; sans lui on ne peut rien dire de
@@ -242,7 +242,7 @@ private nonisolated struct PublicProfileDetailDTO: Decodable {
             profile: PublicProfile(
                 id: uid,
                 handle: handle ?? "",
-                displayName: displayName ?? handle ?? "Sans nom",
+                displayName: displayName ?? handle ?? String(localized: "Sans nom", bundle: .app),
                 avatarURL: avatarURL.flatMap(URL.init(string:)),
                 badgeSignature: badgeSignature,
                 followerCount: followerCount,
@@ -276,7 +276,7 @@ private nonisolated struct TargetDTO: Decodable {
         SuggestionTarget(
             id: uid,
             handle: handle,
-            displayName: displayName ?? handle ?? "Sans nom",
+            displayName: displayName ?? handle ?? String(localized: "Sans nom", bundle: .app),
             avatarURL: avatarURL.flatMap(URL.init(string:)),
             alreadySeen: alreadySeen,
             alreadySuggested: alreadySuggested,
