@@ -257,7 +257,11 @@ struct QuestionnaireView: View {
                         mood: $viewModel.answers.mood,
                         maxGenres: viewModel.maxGenres,
                         isGenreSelectable: { viewModel.isGenreSelectable($0) },
-                        onToggleGenre: { viewModel.toggleGenre($0) }
+                        onToggleGenre: { viewModel.toggleGenre($0) },
+                        selectedOrigins: viewModel.answers.originCountries,
+                        maxOrigins: viewModel.maxOriginCountries,
+                        isOriginSelectable: { viewModel.isOriginCountrySelectable($0) },
+                        onToggleOrigin: { viewModel.toggleOriginCountry($0) }
                     )
 
                     if let reading = viewModel.ambianceReading {

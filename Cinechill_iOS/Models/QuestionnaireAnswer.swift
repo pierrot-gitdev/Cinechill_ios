@@ -133,6 +133,30 @@ nonisolated enum OriginPreference: String, QuestionOption {
     }
 }
 
+// MARK: - Origine du film (filtre)
+
+/// D'où vient le film : les quatre pays qui pèsent le plus dans ce qui se
+/// regarde en France, plus un « ailleurs » qui couvre tout le reste du monde.
+///
+/// `elsewhere` n'est pas un pays mais un complément, et c'est ce qui le rend
+/// particulier : TMDB ne sait pas exprimer « tous les pays sauf ceux-là ». La
+/// requête l'approche en interrogeant les grandes cinématographies hors de ces
+/// quatre-là, et c'est un filtre serveur qui garantit ensuite l'exactitude —
+/// voir `matchesRequestedOrigins` côté backend.
+nonisolated enum OriginCountry: String, QuestionOption {
+    case france, unitedKingdom, unitedStates, japan, elsewhere
+
+    var label: String {
+        switch self {
+        case .france: "France"
+        case .unitedKingdom: "Angleterre"
+        case .unitedStates: "États-Unis"
+        case .japan: "Japon"
+        case .elsewhere: "Autre pays"
+        }
+    }
+}
+
 // MARK: - Q7 · État d'esprit (score, surprise)
 
 nonisolated enum Mindset: String, QuestionOption {
@@ -335,9 +359,14 @@ nonisolated enum LastingTrace: String, QuestionOption {
 /// tout le mapping vers les paramètres TMDB (with_genres, mots-clés, seuils…) est fait côté backend.
 nonisolated struct QuestionnaireAnswers: Equatable, Sendable {
     static let maxGenres = 2
+    /// Trois origines sur cinq, c'est le dernier cran où la réponse dit encore
+    /// quelque chose : au-delà on n'exclut plus qu'une catégorie, et la question
+    /// ne trie plus rien. Ne rien cocher vaut « peu importe ».
+    static let maxOriginCountries = 3
 
     var contentFormat: ContentFormat?
     var genres: Set<Genre> = []
+    var originCountries: Set<OriginCountry> = []
     var platformIDs: Set<String> = []
     var audience: Audience?
     var mood: Mood?

@@ -25,6 +25,12 @@ struct FilmChoiceView: View {
     let isGenreSelectable: (Genre) -> Bool
     let onToggleGenre: (Genre) -> Void
 
+    /// En lecture seule, comme les genres : le plafond se tient dans le modèle.
+    let selectedOrigins: Set<OriginCountry>
+    let maxOrigins: Int
+    let isOriginSelectable: (OriginCountry) -> Bool
+    let onToggleOrigin: (OriginCountry) -> Void
+
     var body: some View {
         VStack(alignment: .leading, spacing: 34) {
             group(
@@ -38,6 +44,17 @@ struct FilmChoiceView: View {
                     // et la limite à deux genres ne concerne que cet écran.
                     PlanChip(title: genre.label, isOn: selectedGenres.contains(genre)) {
                         onToggleGenre(genre)
+                    }
+                    .disabled(!selectable)
+                    .opacity(selectable ? 1 : 0.35)
+                }
+            }
+
+            group("D'où vient le film ?", note: originNote) {
+                ForEach(OriginCountry.allCases, id: \.self) { origin in
+                    let selectable = isOriginSelectable(origin)
+                    PlanChip(title: origin.label, isOn: selectedOrigins.contains(origin)) {
+                        onToggleOrigin(origin)
                     }
                     .disabled(!selectable)
                     .opacity(selectable ? 1 : 0.35)
@@ -65,6 +82,14 @@ struct FilmChoiceView: View {
         }
     }
 
+    private var originNote: String {
+        switch selectedOrigins.count {
+        case 0: "Facultatif — laissez vide pour ne rien exclure."
+        case maxOrigins: "C'est le maximum. Touchez un pays pour le retirer."
+        default: "Vous pouvez en choisir \(maxOrigins - selectedOrigins.count) de plus."
+        }
+    }
+
     private func group(
         _ title: String,
         note: String?,
@@ -82,6 +107,7 @@ struct FilmChoiceView: View {
 #Preview("Quel film ce soir") {
     struct Harness: View {
         @State private var genres: Set<Genre> = [.thriller]
+        @State private var origins: Set<OriginCountry> = [.france, .japan]
         @State private var mood: Mood? = .intense
 
         var body: some View {
@@ -96,6 +122,12 @@ struct FilmChoiceView: View {
                         isGenreSelectable: { genres.contains($0) || genres.count < 2 },
                         onToggleGenre: { genre in
                             if genres.contains(genre) { genres.remove(genre) } else { genres.insert(genre) }
+                        },
+                        selectedOrigins: origins,
+                        maxOrigins: 3,
+                        isOriginSelectable: { origins.contains($0) || origins.count < 3 },
+                        onToggleOrigin: { origin in
+                            if origins.contains(origin) { origins.remove(origin) } else { origins.insert(origin) }
                         }
                     )
                     .padding(Metrics.margin)

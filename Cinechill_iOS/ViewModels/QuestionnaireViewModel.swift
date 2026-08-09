@@ -387,6 +387,21 @@ final class QuestionnaireViewModel {
         answers.genres.contains(genre) || answers.genres.count < QuestionnaireAnswers.maxGenres
     }
 
+    var maxOriginCountries: Int { QuestionnaireAnswers.maxOriginCountries }
+
+    func toggleOriginCountry(_ origin: OriginCountry) {
+        if answers.originCountries.contains(origin) {
+            answers.originCountries.remove(origin)
+        } else if answers.originCountries.count < QuestionnaireAnswers.maxOriginCountries {
+            answers.originCountries.insert(origin)
+        }
+    }
+
+    func isOriginCountrySelectable(_ origin: OriginCountry) -> Bool {
+        answers.originCountries.contains(origin)
+            || answers.originCountries.count < QuestionnaireAnswers.maxOriginCountries
+    }
+
     /// Seule l'ambiance est obligatoire. Le genre reste facultatif : quelqu'un
     /// d'ouvert à tout ne doit pas être forcé de restreindre sa recherche pour
     /// pouvoir avancer.

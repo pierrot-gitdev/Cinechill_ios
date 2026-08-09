@@ -20,6 +20,9 @@ enum RecommendationClientError: LocalizedError {
         if body.contains("no_candidates_in_requested_genres") {
             return "Aucun film de ce genre ne correspond au reste de vos critères. Essayez un autre genre, ou plus de temps devant vous."
         }
+        if body.contains("no_candidates_in_requested_origins") {
+            return "Aucun film de ces pays ne correspond au reste de vos critères. Essayez d'ajouter un pays, ou de changer de genre."
+        }
         if body.contains("no_candidates") {
             return "Aucun film ne correspond à ces critères pour le moment."
         }
@@ -207,6 +210,7 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
         [
             "contentFormat": answers.contentFormat?.rawValue as Any,
             "genres": answers.genres.map(\.rawValue).sorted(),
+            "originCountries": answers.originCountries.map(\.rawValue).sorted(),
             "platformIds": answers.platformIDs.sorted(),
             "watchRegion": "FR",
             "audience": answers.audience?.rawValue as Any,
