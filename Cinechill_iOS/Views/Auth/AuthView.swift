@@ -92,8 +92,9 @@ struct AuthView: View {
     var body: some View {
         ZStack {
             AuthInk.ground.ignoresSafeArea()
-            plan
             planche
+                // Le tracé est un **fond**, jamais un frère : voir `plan`.
+                .background { plan }
         }
         .onAppear(perform: adoptResetCode)
         .onChange(of: resetCode) { _, _ in adoptResetCode() }
@@ -102,6 +103,16 @@ struct AuthView: View {
     /// Le tracé : le contour du logo, agrandi et sorti du cadre par le haut et
     /// la droite. Ce n'est pas un décor — c'est la même forme que la signature,
     /// à une autre échelle et à un autre poids.
+    ///
+    /// **Il doit rester posé en `background` de la planche.** Frère dans le
+    /// `ZStack`, il pesait sur la mise en page : ses 552 pt de large sont une
+    /// taille idéale, et il suffisait que la pile reçoive une proposition
+    /// indéterminée — ce qui arrive quand `AuthView` remplace `MainTabView` à la
+    /// déconnexion, là où un lancement à froid propose d'emblée la taille de
+    /// l'écran — pour que le `ZStack` adopte 552. Le `GeometryReader` de la
+    /// planche lisait alors 552, tout le contenu se centrait sur cette largeur,
+    /// et l'écran partait 79 pt à gauche, marges comprises. Un fond, lui, reçoit
+    /// la taille de ce qu'il habille et ne peut jamais la changer.
     private var plan: some View {
         CinechillPlanOutline()
             .foregroundStyle(Color(hex: 0xC6D3DF).opacity(0.11))
