@@ -166,7 +166,7 @@ final class QuestionnaireViewModel {
     /// donnait l'impression d'avoir raté deux écrans.
     var questionNumber: Int { askedDimensions.count + 1 }
 
-    /// Les abonnements retenus, tels qu'on les rappelle au seuil. Vide tant que la
+    /// Les plateformes retenues, telles qu'on les rappelle au seuil. Vide tant que la
     /// liste des fournisseurs n'est pas revenue — la ligne disparaît alors au lieu
     /// d'afficher des identifiants bruts.
     var selectedPlatformNames: [String] {
@@ -206,9 +206,9 @@ final class QuestionnaireViewModel {
         guard taste.galleryCount > 0 else { return nil }
         let films = String(localized: "\(taste.galleryCount) films vus", bundle: .app)
         guard taste.establishedAxisCount > 0 else {
-            return String(localized: "\(films) — ils nous aident déjà à vous proposer mieux", bundle: .app)
+            return String(localized: "\(films) : ils nous aident déjà à vous proposer mieux", bundle: .app)
         }
-        return String(localized: "\(films) — on commence à connaître vos goûts, il y aura moins de questions", bundle: .app)
+        return String(localized: "\(films) : on commence à connaître vos goûts, il y aura moins de questions", bundle: .app)
     }
 
     // MARK: - Le cadre
@@ -218,7 +218,7 @@ final class QuestionnaireViewModel {
     }
 
     /// - Parameters:
-    ///   - preferredPlatformIDs: abonnements déclarés dans les réglages. Ils ne sont
+    ///   - preferredPlatformIDs: plateformes déclarées dans les réglages. Elles ne sont
     ///     plus demandés — seulement rappelés au seuil, et modifiables là où ils
     ///     vivent vraiment.
     ///   - bannedGenreIDs: genres exclus dans les réglages. Attention, le backend

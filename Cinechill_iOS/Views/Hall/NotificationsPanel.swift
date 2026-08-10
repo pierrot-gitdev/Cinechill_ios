@@ -273,7 +273,7 @@ struct NotificationsPanel: View {
             // Vu entretemps par un autre chemin : la recommandation n'a plus
             // d'objet, et rien n'entre en watchlist.
             withAnimation(.easeOut(duration: 0.2)) {
-                settled[suggestion.id] = String(localized: "\(suggestion.item.title) — vous l'aviez déjà vu", bundle: .app)
+                settled[suggestion.id] = String(localized: "\(suggestion.item.title) : vous l'aviez déjà vu", bundle: .app)
             }
         } else {
             onAccepted(suggestion.item.title)

@@ -106,7 +106,7 @@ struct TasteSheetView: View {
     /// qu'un écran de profil doit répondre avant toute autre chose.
     private var provenanceLine: String {
         guard !profile.isEmpty else {
-            return String(localized: "On ne sait encore rien de vous. À chaque film que vous marquez comme vu et à chaque recherche, cette page se remplit — et il y a de moins en moins de questions à vous poser.", bundle: .app)
+            return String(localized: "On ne sait encore rien de vous. À chaque film que vous marquez comme vu et à chaque recherche, cette page se remplit, et il y a de moins en moins de questions à vous poser.", bundle: .app)
         }
         // L'accord du pluriel n'est pas une affaire de « s » ajouté au bout :
         // il se règle dans le catalogue, langue par langue.

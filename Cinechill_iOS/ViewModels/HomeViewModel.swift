@@ -66,7 +66,7 @@ final class HomeViewModel {
     /// Charge le socle de l'écran. La liste « populaire » n'est volontairement
     /// pas chargée ici : elle dépend des plateformes déclarées et appartient à
     /// `refreshPopular`, qui est appelé juste après — la charger deux fois était
-    /// un aller-retour réseau gaspillé dès qu'un abonnement était déclaré.
+    /// un aller-retour réseau gaspillé dès qu'une plateforme était déclarée.
     private func loadHome() async {
         errorMessage = nil
         do {

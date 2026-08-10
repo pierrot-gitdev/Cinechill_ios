@@ -72,7 +72,7 @@ struct SettingsView: View {
                         }
 
                         declaration(
-                            String(localized: "Mes abonnements", bundle: .app),
+                            String(localized: "Mes plateformes", bundle: .app),
                             note: String(localized: "Ce qui n'est pas chez vous ne vous sera pas proposé.", bundle: .app)
                         ) {
                             platforms
@@ -292,7 +292,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Abonnements
+    // MARK: - Plateformes
 
     @ViewBuilder
     private var platforms: some View {

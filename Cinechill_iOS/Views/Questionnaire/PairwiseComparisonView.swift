@@ -56,7 +56,7 @@ struct PairwiseComparisonView: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.97))
         .accessibilityLabel(candidate.title ?? String(localized: "Film sans titre", bundle: .app))
-        .accessibilityHint(String(localized: "Choisir ce film — c'est celui-ci qui vous tente le plus", bundle: .app))
+        .accessibilityHint(String(localized: "Choisir ce film : c'est celui-ci qui vous tente le plus", bundle: .app))
     }
 }
 

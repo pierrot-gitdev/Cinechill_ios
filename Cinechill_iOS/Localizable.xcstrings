@@ -148,50 +148,50 @@
         }
       }
     },
-    "%@ — ils nous aident déjà à vous proposer mieux" : {
+    "%@ : ils nous aident déjà à vous proposer mieux" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ — they already help us suggest better"
+            "value" : "%@: they already help us suggest better"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ — ils nous aident déjà à vous proposer mieux"
+            "value" : "%@ : ils nous aident déjà à vous proposer mieux"
           }
         }
       }
     },
-    "%@ — on commence à connaître vos goûts, il y aura moins de questions" : {
+    "%@ : on commence à connaître vos goûts, il y aura moins de questions" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ — we're getting to know your taste, there will be fewer questions"
+            "value" : "%@: we're getting to know your taste, there will be fewer questions"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ — on commence à connaître vos goûts, il y aura moins de questions"
+            "value" : "%@ : on commence à connaître vos goûts, il y aura moins de questions"
           }
         }
       }
     },
-    "%@ — vous l'aviez déjà vu" : {
+    "%@ : vous l'aviez déjà vu" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ — you had already seen it"
+            "value" : "%@: you had already seen it"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ — vous l'aviez déjà vu"
+            "value" : "%@ : vous l'aviez déjà vu"
           }
         }
       }
@@ -324,18 +324,18 @@
         }
       }
     },
-    "%@ l'avait déjà vu — rien ne lui a été envoyé." : {
+    "%@ l'avait déjà vu. Rien ne lui a été envoyé." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ had already seen it — nothing was sent."
+            "value" : "%@ had already seen it. Nothing was sent."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ l'avait déjà vu — rien ne lui a été envoyé."
+            "value" : "%@ l'avait déjà vu. Rien ne lui a été envoyé."
           }
         }
       }
@@ -1174,6 +1174,102 @@
         }
       }
     },
+    "Mes plateformes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My platforms"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mes plateformes"
+          }
+        }
+      }
+    },
+    "Déclarez vos plateformes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tell us your platforms"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déclarez vos plateformes"
+          }
+        }
+      }
+    },
+    "Modifier mes plateformes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit my platforms"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier mes plateformes"
+          }
+        }
+      }
+    },
+    "Sur vos plateformes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On your platforms"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur vos plateformes"
+          }
+        }
+      }
+    },
+    "Hors de vos plateformes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not on your platforms"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hors de vos plateformes"
+          }
+        }
+      }
+    },
+    "Pas chez vous" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't have it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas chez vous"
+          }
+        }
+      }
+    },
     "À 25 et à 55 ans, on n'a pas vu les mêmes classiques." : {
       "localizations" : {
         "en" : {
@@ -1266,22 +1362,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "À VOIR"
-          }
-        }
-      }
-    },
-    "Abonné" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subscribed"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abonné"
           }
         }
       }
@@ -2694,18 +2774,18 @@
         }
       }
     },
-    "Choisir ce film — c'est celui-ci qui vous tente le plus" : {
+    "Choisir ce film : c'est celui-ci qui vous tente le plus" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose this film — this is the one that tempts you most"
+            "value" : "Choose this film: this is the one that tempts you most"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choisir ce film — c'est celui-ci qui vous tente le plus"
+            "value" : "Choisir ce film : c'est celui-ci qui vous tente le plus"
           }
         }
       }
@@ -3320,22 +3400,6 @@
         }
       }
     },
-    "Dans vos abonnements" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In your subscriptions"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dans vos abonnements"
-          }
-        }
-      }
-    },
     "Dans votre liste" : {
       "localizations" : {
         "en" : {
@@ -3380,22 +3444,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dans votre watchlist"
-          }
-        }
-      }
-    },
-    "Déclarez vos abonnements" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Declare your subscriptions"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Déclarez vos abonnements"
           }
         }
       }
@@ -3688,18 +3736,18 @@
         }
       }
     },
-    "Écarter ce film — c'est celui-ci qui vous tente le moins" : {
+    "Écarter ce film : c'est celui-ci qui vous tente le moins" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rule out this film — this is the one that tempts you least"
+            "value" : "Rule out this film: this is the one that tempts you least"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Écarter ce film — c'est celui-ci qui vous tente le moins"
+            "value" : "Écarter ce film : c'est celui-ci qui vous tente le moins"
           }
         }
       }
@@ -4424,34 +4472,34 @@
         }
       }
     },
-    "Facultatif — laissez vide pour ne rien exclure." : {
+    "Facultatif : laissez vide pour ne rien exclure." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Optional — leave empty to exclude nothing."
+            "value" : "Optional: leave empty to exclude nothing."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Facultatif — laissez vide pour ne rien exclure."
+            "value" : "Facultatif : laissez vide pour ne rien exclure."
           }
         }
       }
     },
-    "Facultatif — laissez vide si vous êtes ouvert·e à tout." : {
+    "Facultatif : laissez vide si vous êtes ouvert·e à tout." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Optional — leave empty if you're open to anything."
+            "value" : "Optional: leave empty if you're open to anything."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Facultatif — laissez vide si vous êtes ouvert·e à tout."
+            "value" : "Facultatif : laissez vide si vous êtes ouvert·e à tout."
           }
         }
       }
@@ -4884,22 +4932,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Horreur"
-          }
-        }
-      }
-    },
-    "Hors de vos abonnements" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Outside your subscriptions"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hors de vos abonnements"
           }
         }
       }
@@ -6120,22 +6152,6 @@
         }
       }
     },
-    "Mes abonnements" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "My subscriptions"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mes abonnements"
-          }
-        }
-      }
-    },
     "Mes badges" : {
       "localizations" : {
         "en" : {
@@ -6180,22 +6196,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modifier"
-          }
-        }
-      }
-    },
-    "Modifier mes abonnements" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edit my subscriptions"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Modifier mes abonnements"
           }
         }
       }
@@ -6856,18 +6856,18 @@
         }
       }
     },
-    "On ne sait encore rien de vous. À chaque film que vous marquez comme vu et à chaque recherche, cette page se remplit — et il y a de moins en moins de questions à vous poser." : {
+    "On ne sait encore rien de vous. À chaque film que vous marquez comme vu et à chaque recherche, cette page se remplit, et il y a de moins en moins de questions à vous poser." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We don't know anything about you yet. With every film you mark as watched and every search, this page fills in — and there are fewer and fewer questions to ask you."
+            "value" : "We don't know anything about you yet. With every film you mark as watched and every search, this page fills in, and there are fewer and fewer questions to ask you."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "On ne sait encore rien de vous. À chaque film que vous marquez comme vu et à chaque recherche, cette page se remplit — et il y a de moins en moins de questions à vous poser."
+            "value" : "On ne sait encore rien de vous. À chaque film que vous marquez comme vu et à chaque recherche, cette page se remplit, et il y a de moins en moins de questions à vous poser."
           }
         }
       }
@@ -7156,22 +7156,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Parcourir"
-          }
-        }
-      }
-    },
-    "Pas abonné" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not subscribed"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pas abonné"
           }
         }
       }

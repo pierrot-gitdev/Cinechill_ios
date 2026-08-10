@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Le sélecteur d'abonnements — **un seul, pour toute l'application**.
+/// Le sélecteur de plateformes — **un seul, pour toute l'application**.
 ///
 /// Il en existait deux : la grille des réglages et `PlatformFilterSheet`, ouverte
 /// depuis l'accueil. Deux dessins, deux jeux de couleurs, deux comportements
@@ -70,7 +70,7 @@ struct PlatformGrid: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.94))
         .accessibilityLabel(platform.name)
-        .accessibilityValue(isOn ? String(localized: "Abonné", bundle: .app) : String(localized: "Pas abonné", bundle: .app))
+        .accessibilityValue(isOn ? String(localized: "Chez vous", bundle: .app) : String(localized: "Pas chez vous", bundle: .app))
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
     }
 }
@@ -97,7 +97,7 @@ struct PlatformPickerSheet: View {
             Ink.ground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                PlanHeader(String(localized: "Mes abonnements", bundle: .app), leading: .close) {
+                PlanHeader(String(localized: "Mes plateformes", bundle: .app), leading: .close) {
                     if !libraryStore.preferredPlatformIDs.isEmpty {
                         Button {
                             Haptics.selection()

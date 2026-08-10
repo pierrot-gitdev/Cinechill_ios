@@ -6,7 +6,7 @@ import FirebaseFirestore
 final class LibraryStore: ObservableObject {
     @Published private(set) var galleryItems: [GalleryEntry] = []
     @Published private(set) var watchlistItems: [WatchlistEntry] = []
-    /// Les plateformes auxquelles l'utilisateur a déclaré être abonné.
+    /// Les plateformes que l'utilisateur a déclaré avoir chez lui.
     ///
     /// Vide ne veut pas dire « toutes » mais « pas encore déclaré » : chaque
     /// écran qui s'en sert doit alors cesser de filtrer plutôt que de tout

@@ -377,7 +377,7 @@ struct ItemDetailView: View {
     ///
     /// Vos plateformes d'abord, les autres en retrait — mais jamais rien de
     /// caché : l'ancienne version masquait toute la section quand vous n'étiez
-    /// abonné à aucune, alors que l'information existait.
+    /// aucune des siennes, alors que l'information existait.
     @ViewBuilder
     private var watchSection: some View {
         let all = detail?.watchProvidersFR ?? []
@@ -441,7 +441,7 @@ struct ItemDetailView: View {
                 RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
                     .strokeBorder(isMine ? Ink.ink : Ink.rule, lineWidth: 1)
             )
-            // Retenue : pleine saturation. Hors abonnement : en retrait. Le même
+            // Retenue : pleine saturation. Hors de vos plateformes : en retrait. Le même
             // couple que dans les réglages, pour le même objet.
             .opacity(isMine ? 1 : 0.4)
             .saturation(isMine ? 1 : 0.25)
@@ -449,8 +449,8 @@ struct ItemDetailView: View {
         .buttonStyle(PressableScaleStyle(scale: 0.92))
         .accessibilityLabel(provider.providerName)
         .accessibilityValue(isMine
-                            ? String(localized: "Dans vos abonnements", bundle: .app)
-                            : String(localized: "Hors de vos abonnements", bundle: .app))
+                            ? String(localized: "Sur vos plateformes", bundle: .app)
+                            : String(localized: "Hors de vos plateformes", bundle: .app))
     }
 
     // MARK: - Synopsis

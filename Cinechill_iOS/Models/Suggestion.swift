@@ -65,7 +65,7 @@ extension Suggestion {
     }
 }
 
-/// Un abonnement, et ce qu'il peut recevoir pour un film donné.
+/// Une plateforme, et ce qu'elle peut recevoir pour un film donné.
 ///
 /// L'état arrive du serveur avec la liste, pas après coup : c'est ce qui
 /// permet de désactiver la ligne au lieu d'échouer à l'envoi. Le client ne

@@ -307,7 +307,7 @@ struct SuggestionOutcome: Equatable {
             return String(localized: "Rien ne lui a été envoyé.", bundle: .app)
         }
         if !alreadySeen.isEmpty {
-            return String(localized: "\(list(alreadySeen)) l'avait déjà vu — rien ne lui a été envoyé.", bundle: .app)
+            return String(localized: "\(list(alreadySeen)) l'avait déjà vu. Rien ne lui a été envoyé.", bundle: .app)
         }
         if hadFailure {
             return String(localized: "Une partie des envois a échoué. Réessayez.", bundle: .app)

@@ -126,7 +126,7 @@ struct GenrePopularListView: View {
                         .contentShape(Rectangle().inset(by: -10))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Modifier mes abonnements", bundle: .app))
+                .accessibilityLabel(String(localized: "Modifier mes plateformes", bundle: .app))
             }
             .frame(height: 44)
             .padding(.horizontal, Metrics.margin)

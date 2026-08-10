@@ -479,7 +479,7 @@ struct LibraryMark: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 34) {
                 PlanSectionLabel(
-                    title: "Mes abonnements",
+                    title: "Mes plateformes",
                     note: "Ce qui n'est pas chez vous ne vous sera pas proposé."
                 )
 
