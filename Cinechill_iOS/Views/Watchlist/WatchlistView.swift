@@ -20,15 +20,17 @@ struct WatchlistView: View {
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(MediaCatalog.self) private var catalog
+    @Environment(OnboardingTour.self) private var tour
 
     @State private var showProfile = false
+    @State private var showPlatformSheet = false
 
     var body: some View {
         NavigationStack {
             ZStack {
                 Ink.ground.ignoresSafeArea()
 
-                if libraryStore.watchlistItems.isEmpty {
+                if displayedEntries.isEmpty {
                     emptyState.padding(.horizontal, 34)
                 } else {
                     content
@@ -45,6 +47,11 @@ struct WatchlistView: View {
                     .environmentObject(authService)
                     .environmentObject(socialStore)
             }
+            .sheet(isPresented: $showPlatformSheet) {
+                PlatformPickerSheet()
+                    .environmentObject(libraryStore)
+                    .environment(catalog)
+            }
         }
         .task {
             await catalog.loadIfNeeded()
@@ -53,11 +60,19 @@ struct WatchlistView: View {
         .onChange(of: libraryStore.watchlistItems) { _, _ in Task { await syncModel() } }
         .onChange(of: libraryStore.preferredPlatformIDs) { _, _ in Task { await syncModel() } }
         .onChange(of: catalog.platforms) { _, _ in Task { await syncModel() } }
+        .onChange(of: tour.isRunning) { _, _ in Task { await syncModel() } }
+    }
+
+    /// Ce que la liste range. Pendant la prise en main, trois films d'exemple :
+    /// l'étape a le tri par temps disponible à montrer, et un écran vide ne
+    /// montre aucun tri. Rien n'est écrit nulle part.
+    private var displayedEntries: [WatchlistEntry] {
+        tour.isRunning ? OnboardingShowcase.watchlist : libraryStore.watchlistItems
     }
 
     private func syncModel() async {
         await model.update(
-            entries: libraryStore.watchlistItems,
+            entries: displayedEntries,
             preferredPlatformIDs: libraryStore.preferredPlatformIDs,
             platforms: catalog.platforms
         )
@@ -130,20 +145,26 @@ struct WatchlistView: View {
         .padding(.bottom, 16)
     }
 
-    /// Sans abonnement déclaré, « Disponible chez vous » ne peut rien vouloir
+    /// Sans plateforme déclarée, « Disponible chez vous » ne peut rien vouloir
     /// dire : on le remplace par l'invitation à les déclarer, plutôt que
     /// d'afficher un groupe systématiquement vide.
     /// Une invitation n'est pas une carte : c'est une ligne, entre deux filets,
     /// précédée du point. Le même dispositif que la remarque de la fiche film.
+    ///
+    /// Elle ouvre le sélecteur, et non le profil. Elle y menait auparavant, ce
+    /// qui obligeait à traverser le profil puis les réglages pour trouver la
+    /// grille — trois écrans pour une invitation qui tient en un tap.
+    /// `PlatformPickerSheet` est le sélecteur unique de l'application ;
+    /// l'accueil l'ouvre déjà directement.
     private var declarePlatformsBanner: some View {
         Button {
-            showProfile = true
+            showPlatformSheet = true
         } label: {
             HStack(alignment: .top, spacing: 11) {
                 PlanLight().padding(.top, 6)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Déclarez vos abonnements", bundle: .app)
+                    Text("Déclarez vos plateformes", bundle: .app)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Ink.ink)
                     Text("Pour savoir ce que vous pouvez lancer tout de suite.", bundle: .app)
@@ -297,7 +318,7 @@ struct WatchlistView: View {
             // dire ici.
             PlanLightOutline(tint: Ink.ink3)
                 .frame(width: 20, height: 20)
-                .accessibilityLabel(String(localized: "Hors de vos abonnements", bundle: .app))
+                .accessibilityLabel(String(localized: "Hors de vos plateformes", bundle: .app))
         }
     }
 

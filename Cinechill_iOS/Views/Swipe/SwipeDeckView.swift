@@ -15,6 +15,7 @@ struct SwipeDeckView: View {
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(MediaCatalog.self) private var catalog
+    @Environment(OnboardingTour.self) private var tour
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -110,6 +111,13 @@ struct SwipeDeckView: View {
             closeGuide()
             Task { await model.flushPending() }
         }
+        // L'étape « Découvrir » de la prise en main écrit les trois gestes : la
+        // planche n'a plus rien à apprendre à quelqu'un qui vient de les lire,
+        // et s'ouvrir à la première venue serait une seconde leçon pour la même
+        // chose. Le « ? » reste là pour ceux qui voudront la revoir.
+        .onChange(of: tour.step) { _, step in
+            if step == .decouvrir { guideSeen = true }
+        }
         .onDisappear {
             Task { await model.flushPending() }
         }
@@ -188,7 +196,7 @@ struct SwipeDeckView: View {
             let card = cardSize(in: proxy.size)
 
             ZStack {
-                if model.cards.isEmpty {
+                if displayedCards.isEmpty {
                     placeholderState
                         .padding(.horizontal, 32)
                 } else {
@@ -224,9 +232,22 @@ struct SwipeDeckView: View {
         return CGSize(width: width, height: width * Self.cardRatio)
     }
 
+    /// Les cartes affichées.
+    ///
+    /// Pendant la prise en main, ce sont trois films d'exemple : le deck réel
+    /// arrive par le réseau, et l'étape qui explique les trois gestes ne peut
+    /// pas se jouer devant une roue de chargement ou un message d'erreur. Le
+    /// vrai deck continue de se remplir derrière — il sera prêt à la sortie.
+    private var displayedCards: [SwipeCard] {
+        tour.isRunning ? OnboardingShowcase.deck : model.cards
+    }
+
     private func cardStack(size: CGSize) -> some View {
-        ZStack {
-            ForEach(Array(model.backingCards.enumerated()).reversed(), id: \.element.id) { index, card in
+        // Les deux cartes qu'on voit dépasser sous celle du dessus.
+        let backing = Array(displayedCards.dropFirst().prefix(2))
+
+        return ZStack {
+            ForEach(Array(backing.enumerated()).reversed(), id: \.element.id) { index, card in
                 let step = depth(at: index)
 
                 SwipeCardView(card: card, genre: genre(for: card))
@@ -238,7 +259,7 @@ struct SwipeDeckView: View {
                     .transition(.opacity)
             }
 
-            if let card = model.topCard {
+            if let card = displayedCards.first {
                 let pivot = SwipeMotion.pivot(for: drag, grabbedHigh: grabbedHigh)
 
                 SwipeCardView(
@@ -268,7 +289,7 @@ struct SwipeDeckView: View {
         // refermer le synopsis se fait à la première image d'un glissement, et
         // un ressort posé à cette hauteur ferait traîner la carte derrière le
         // doigt pendant toute sa détente.
-        .animation(SwipeMotion.advance, value: model.topCard?.id)
+        .animation(SwipeMotion.advance, value: displayedCards.first?.id)
     }
 
     /// La profondeur d'une carte du dessous, en crans, **avancement du geste
@@ -570,8 +591,13 @@ struct SwipeDeckView: View {
     ///
     /// La courte attente laisse la bascule d'onglet se terminer — une planche qui
     /// arrive dans le même mouvement que l'écran se lit comme un raté d'animation.
+    ///
+    /// Pendant la prise en main, elle ne s'ouvre pas : l'étape « Découvrir »
+    /// écrit déjà les trois gestes dans son cartouche, et une planche qui
+    /// s'ouvrirait par-dessus recouvrirait la carte qu'on est en train de
+    /// présenter.
     private func openGuideOnFirstVisit() async {
-        guard !guideSeen else { return }
+        guard !guideSeen, !tour.isRunning else { return }
         try? await Task.sleep(for: .milliseconds(280))
         guard !guideSeen, selectedTab == 2 else { return }
         guideSeen = true

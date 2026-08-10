@@ -1270,6 +1270,86 @@
         }
       }
     },
+    "Trouver quoi regarder, ce soir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finding something to watch tonight"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouver quoi regarder, ce soir"
+          }
+        }
+      }
+    },
+    "Quand vous ne savez pas quoi regarder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you have no idea what to watch"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand vous ne savez pas quoi regarder"
+          }
+        }
+      }
+    },
+    "Dites-lui ce que vous avez vu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tell it what you've already seen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites-lui ce que vous avez vu"
+          }
+        }
+      }
+    },
+    "Tout ce que vous avez vu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything you've seen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout ce que vous avez vu"
+          }
+        }
+      }
+    },
+    "Ce que vous gardez pour plus tard" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What you're saving for later"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce que vous gardez pour plus tard"
+          }
+        }
+      }
+    },
     "À 25 et à 55 ans, on n'a pas vu les mêmes classiques." : {
       "localizations" : {
         "en" : {
@@ -3732,6 +3812,422 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Durée"
+          }
+        }
+      }
+    },
+    "À vous" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Over to you"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À vous"
+          }
+        }
+      }
+    },
+    "C'est tout ce que fait Cinechill. L'accueil montre les sorties en salle, les tendances, et de quoi fouiller par genre." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That's all Cinechill does. Home shows what's in cinemas, what's trending, and plenty to dig through by genre."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C'est tout ce que fait Cinechill. L'accueil montre les sorties en salle, les tendances, et de quoi fouiller par genre."
+          }
+        }
+      }
+    },
+    "Quelques questions courtes sur le temps que vous avez et l'envie du moment, puis trois films à départager pour ce soir." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A few short questions about how much time you have and what you're in the mood for, then three films to choose between tonight."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelques questions courtes sur le temps que vous avez et l'envie du moment, puis trois films à départager pour ce soir."
+          }
+        }
+      }
+    },
+    "Des affiches, une par une. Plus vous en classez, plus les propositions deviennent justes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posters, one at a time. The more you sort, the sharper the suggestions get."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des affiches, une par une. Plus vous en classez, plus les propositions deviennent justes."
+          }
+        }
+      }
+    },
+    "Rangée par décennie, par genre ou par note. La taille des affiches dit le volume : votre cinéphilie se lit d'un coup d'œil." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sorted by decade, genre or rating. Poster size shows volume: your taste in cinema reads at a glance."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rangée par décennie, par genre ou par note. La taille des affiches dit le volume : votre cinéphilie se lit d'un coup d'œil."
+          }
+        }
+      }
+    },
+    "Dites le temps que vous avez. On vous dit quoi lancer maintenant, et ce qui est déjà disponible sur vos plateformes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tell us how much time you have. We'll tell you what to start now, and what's already on your platforms."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites le temps que vous avez. On vous dit quoi lancer maintenant, et ce qui est déjà disponible sur vos plateformes."
+          }
+        }
+      }
+    },
+    "Votre profil, vos badges et vos plateformes sont derrière votre photo, en haut à droite." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your profile, your badges and your platforms live behind your picture, top right."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre profil, vos badges et vos plateformes sont derrière votre photo, en haut à droite."
+          }
+        }
+      }
+    },
+    "Il rejoint votre galerie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It joins your gallery"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il rejoint votre galerie"
+          }
+        }
+      }
+    },
+    "Il part en watchlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It goes to your watchlist"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il part en watchlist"
+          }
+        }
+      }
+    },
+    "Passer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passer"
+          }
+        }
+      }
+    },
+    "Passer la prise en main" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip the walkthrough"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passer la prise en main"
+          }
+        }
+      }
+    },
+    "Interstellar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interstellar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interstellar"
+          }
+        }
+      }
+    },
+    "Inception" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inception"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inception"
+          }
+        }
+      }
+    },
+    "Le Seigneur des anneaux : La Communauté de l'anneau" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Lord of the Rings: The Fellowship of the Ring"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le Seigneur des anneaux : La Communauté de l'anneau"
+          }
+        }
+      }
+    },
+    "Matrix" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Matrix"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matrix"
+          }
+        }
+      }
+    },
+    "Titanic" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titanic"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titanic"
+          }
+        }
+      }
+    },
+    "Pulp Fiction" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulp Fiction"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulp Fiction"
+          }
+        }
+      }
+    },
+    "Le Roi lion" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Lion King"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le Roi lion"
+          }
+        }
+      }
+    },
+    "Le Parrain" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Godfather"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le Parrain"
+          }
+        }
+      }
+    },
+    "Dune" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dune"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dune"
+          }
+        }
+      }
+    },
+    "Parasite" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parasite"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parasite"
+          }
+        }
+      }
+    },
+    "Jurassic Park" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jurassic Park"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jurassic Park"
+          }
+        }
+      }
+    },
+    "Retour vers le futur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to the Future"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retour vers le futur"
+          }
+        }
+      }
+    },
+    "Fight Club" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fight Club"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fight Club"
+          }
+        }
+      }
+    },
+    "Forrest Gump" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forrest Gump"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forrest Gump"
+          }
+        }
+      }
+    },
+    "Marty McFly, 17 ans, est propulsé trente ans en arrière par la machine à voyager dans le temps d'un savant excentrique. Il y croise ses parents adolescents et compromet sans le vouloir leur rencontre." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seventeen-year-old Marty McFly is thrown thirty years into the past by an eccentric scientist's time machine. There he runs into his teenage parents and accidentally jeopardises their first meeting."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marty McFly, 17 ans, est propulsé trente ans en arrière par la machine à voyager dans le temps d'un savant excentrique. Il y croise ses parents adolescents et compromet sans le vouloir leur rencontre."
           }
         }
       }

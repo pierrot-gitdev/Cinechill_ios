@@ -41,6 +41,12 @@ struct Cinechill_iOSApp: App {
     /// c'est à la racine qu'on peut redemander l'écran entier quand elle change.
     @State private var language = LanguageStore.shared
 
+    /// La prise en main. Tenue à la racine, et non dans `MainTabView`, pour une
+    /// raison précise : changer de langue rebâtit tout l'écran (`.id` plus bas),
+    /// et une visite en cours ne doit pas repartir de zéro pour autant. L'état
+    /// de la vue ne survivrait pas ; celui de l'application, si.
+    @State private var tour = OnboardingTour()
+
     var body: some Scene {
         WindowGroup {
             Group {
@@ -97,6 +103,7 @@ struct Cinechill_iOSApp: App {
             .environmentObject(libraryStore)
             .environmentObject(profileStore)
             .environmentObject(socialStore)
+            .environment(tour)
             .task {
                 libraryStore.start()
                 socialStore.start()

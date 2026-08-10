@@ -7,6 +7,8 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
+    @Environment(OnboardingTour.self) private var tour
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var homeModel: HomeViewModel
     @State private var questionnaireModel: QuestionnaireViewModel
@@ -21,6 +23,11 @@ struct MainTabView: View {
     /// mais ne sont construits qu'à la première visite, pour qu'ouvrir l'app ne
     /// déclenche pas les chargements des quatre autres onglets.
     @State private var mountedTabs: Set<Int> = [0]
+
+    /// Les onglets tenus allumés par la dernière étape de la prise en main, et
+    /// la position imposée de la lampe pendant qu'elle les parcourt.
+    @State private var litTabs: Set<Int> = []
+    @State private var closingLamp: Int?
 
     private static let tabCount = 5
 
@@ -59,16 +66,23 @@ struct MainTabView: View {
                             content(for: tab)
                                 .frame(width: proxy.size.width, height: proxy.size.height)
                                 .opacity(selectedTab == tab ? 1 : 0)
-                                .allowsHitTesting(selectedTab == tab)
+                                .allowsHitTesting(selectedTab == tab && !tour.isRunning)
                                 .accessibilityHidden(selectedTab != tab)
                                 .zIndex(selectedTab == tab ? 1 : 0)
                         }
                     }
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
+                .overlay { if tour.isRunning { OnboardingVeil().transition(.opacity) } }
+                .overlay(alignment: .bottom) { cartouche }
             }
 
-            AppTabBar(selectedTab: $selectedTab)
+            // La barre reste **visible** de bout en bout — c'est elle qui montre
+            // où l'on est, et sa lampe est tout ce que la visite a à enseigner
+            // sur la navigation. Elle est seulement rendue inerte : on regarde,
+            // on ne pilote pas.
+            AppTabBar(selectedTab: $selectedTab, litTabs: litTabs, lampOverride: closingLamp)
+                .allowsHitTesting(!tour.isRunning)
         }
         .environment(catalog)
         .environment(badgesModel)
@@ -84,6 +98,7 @@ struct MainTabView: View {
         .onChange(of: libraryStore.hasLoadedGalleryOnce) { _, loaded in
             if loaded {
                 Task { await badgesModel.checkForNewAchievements(galleryCount: libraryStore.galleryItems.count) }
+                Task { await startTourIfNeeded() }
             } else {
                 badgesModel.resetAchievementTracking()
             }
@@ -92,7 +107,81 @@ struct MainTabView: View {
             guard libraryStore.hasLoadedGalleryOnce else { return }
             Task { await badgesModel.checkForNewAchievements(galleryCount: newCount) }
         }
+        .onChange(of: tour.tabRequest) { _, _ in
+            selectedTab = tour.requestedTab
+        }
+        .onChange(of: tour.isClosing) { _, closing in
+            if closing { Task { await runClosingSequence() } }
+        }
+        .onChange(of: tour.isRunning) { _, running in
+            if !running {
+                litTabs = []
+                closingLamp = nil
+            }
+        }
+        .task {
+            // Filet de sécurité : si la galerie était déjà chargée avant que
+            // cette vue n'existe, l'`onChange` ci-dessus ne se déclenchera
+            // jamais et personne ne serait jamais pris en main.
+            if libraryStore.hasLoadedGalleryOnce { await startTourIfNeeded() }
+        }
     }
+
+    // MARK: - La prise en main
+
+    private func startTourIfNeeded() async {
+        await tour.startIfNeeded(
+            galleryCount: libraryStore.galleryItems.count,
+            watchlistCount: libraryStore.watchlistItems.count
+        )
+    }
+
+    @ViewBuilder
+    private var cartouche: some View {
+        if let step = tour.step {
+            OnboardingCartouche(
+                step: step,
+                counter: tour.counter,
+                progress: tour.progress,
+                onNext: { tour.next() },
+                onSkip: { tour.skip() }
+            )
+            .transition(.opacity)
+        }
+    }
+
+    /// La lampe repasse sur les cinq onglets et **allume chacun au passage**.
+    /// Au repos la barre n'écrit qu'un seul libellé : pendant ces trois
+    /// secondes, et une seule fois dans la vie du compte, la carte entière de
+    /// l'application est lisible d'un coup d'œil.
+    ///
+    /// La lampe est déplacée par `lampOverride`, jamais par la sélection : faire
+    /// défiler les onglets pour de vrai monterait les cinq écrans et
+    /// déclencherait leurs chargements pour une animation.
+    private func runClosingSequence() async {
+        guard !reduceMotion else {
+            litTabs = Set(0 ..< Self.tabCount)
+            closingLamp = 0
+            return
+        }
+
+        litTabs = []
+        closingLamp = 0
+        for tab in 0 ..< Self.tabCount {
+            // Pas de `withAnimation` ici : `AppTabBar` tient déjà la courbe du
+            // Seuil sur cette valeur, et l'envelopper superposerait deux courbes
+            // sur un même déplacement.
+            closingLamp = tab
+            try? await Task.sleep(for: .milliseconds(260))
+            guard tour.isClosing else { return }
+            withAnimation(.easeOut(duration: 0.22)) { _ = litTabs.insert(tab) }
+        }
+        try? await Task.sleep(for: .milliseconds(500))
+        guard tour.isClosing else { return }
+        closingLamp = 0
+    }
+
+    // MARK: - Chrome
 
     @ViewBuilder
     private var celebrationOverlay: some View {

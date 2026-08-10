@@ -23,6 +23,20 @@ import SwiftUI
 struct AppTabBar: View {
     @Binding var selectedTab: Int
 
+    /// Onglets tenus allumés **en plus** de l'onglet actif.
+    ///
+    /// Vide en régime courant, et c'est ce qui fait tout l'intérêt de la barre :
+    /// au repos elle n'écrit qu'un seul libellé. La prise en main s'en sert une
+    /// fois, à sa dernière seconde, pour rendre la carte entière lisible d'un
+    /// coup d'œil — voir la dernière étape d'`OnboardingTour`.
+    var litTabs: Set<Int> = []
+
+    /// Position imposée de la lampe, indépendamment de l'onglet actif. `nil` en
+    /// régime courant. Elle existe pour que le récapitulatif puisse promener la
+    /// lumière **sans** changer d'onglet : déplacer la sélection monterait les
+    /// cinq onglets et déclencherait leurs chargements pour une animation.
+    var lampOverride: Int?
+
     private static let height: CGFloat = 58
 
     /// **Calculée, jamais `static let`.** Une propriété statique n'est initialisée
@@ -48,7 +62,7 @@ struct AppTabBar: View {
     var body: some View {
         GeometryReader { proxy in
             let step = proxy.size.width / CGFloat(items.count)
-            let lampX = step * (CGFloat(selectedTab) + 0.5)
+            let lampX = step * (CGFloat(lampOverride ?? selectedTab) + 0.5)
 
             ZStack(alignment: .topLeading) {
                 // La nappe descend de la lampe et s'évanouit avant le bas. Plus large que sur un
@@ -78,6 +92,7 @@ struct AppTabBar: View {
                 tabRow
             }
             .animation(Self.travel, value: selectedTab)
+            .animation(Self.travel, value: lampOverride)
         }
         .frame(height: Self.height)
         .background { scrim }
@@ -128,6 +143,11 @@ struct AppTabBar: View {
     private func tabButton(_ index: Int) -> some View {
         let item = items[index]
         let isSelected = selectedTab == index
+        // La lumière et la sélection se séparent : le récapitulatif allume des
+        // onglets sur lesquels on n'est pas. La sélection, elle, reste seule à
+        // porter le trait d'accessibilité — un onglet allumé n'est pas l'onglet
+        // courant, et VoiceOver n'a aucune raison d'en annoncer cinq.
+        let isLit = isSelected || litTabs.contains(index)
 
         return Button {
             select(index)
@@ -142,10 +162,10 @@ struct AppTabBar: View {
                     .minimumScaleFactor(0.85)
                     // L'opacité, jamais la présence : la place reste réservée, donc rien
                     // ne se déplace quand le libellé apparaît.
-                    .opacity(isSelected ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.28), value: isSelected)
+                    .opacity(isLit ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.28), value: isLit)
             }
-            .foregroundStyle(isSelected ? activeTint : inactiveTint)
+            .foregroundStyle(isLit ? activeTint : inactiveTint)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
         }
