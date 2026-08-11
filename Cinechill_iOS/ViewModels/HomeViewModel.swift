@@ -168,6 +168,14 @@ final class HomeViewModel {
         browsePosterByGenreID[genreID]
     }
 
+    /// Le plancher de votes d'une couverture de genre.
+    ///
+    /// La couverture se choisissait sur la seule note, et une note ne veut rien
+    /// dire sans le nombre de gens qui l'ont donnée : un film à 9,2 porté par
+    /// trente votes illustrait un genre entier sans que personne le reconnaisse.
+    /// Même seuil que le mur de l'entrée de CinéMatch, et pour la même raison.
+    private static let minimumCoverVotes = 2_000
+
     /// Choisit l'affiche qui illustre chaque genre dans « Parcourir ».
     ///
     /// Les genres sont interrogés en parallèle : en série, dix-neuf
@@ -201,9 +209,17 @@ final class HomeViewModel {
         var collected: [Int: URL] = [:]
 
         for category in categories {
-            let candidate = (itemsByGenre[category.id] ?? [])
+            let available = (itemsByGenre[category.id] ?? [])
                 .filter { $0.posterURL != nil && !usedMovieIDs.contains($0.tmdbId) }
-                .max { ($0.voteAverage ?? 0) < ($1.voteAverage ?? 0) }
+
+            // La mieux notée parmi celles que beaucoup de gens ont vues. Quand
+            // aucune ne franchit le plancher — un genre confidentiel, ou un
+            // vivier déjà épuisé par les cartes précédentes — on prend la plus
+            // vue de ce qui reste : une carte sans image coûte plus cher qu'une
+            // couverture discutable.
+            let known = available.filter { ($0.voteCount ?? 0) >= Self.minimumCoverVotes }
+            let candidate = known.max { ($0.voteAverage ?? 0) < ($1.voteAverage ?? 0) }
+                ?? available.max { ($0.voteCount ?? 0) < ($1.voteCount ?? 0) }
 
             guard let candidate, let url = candidate.posterURL else { continue }
             usedMovieIDs.insert(candidate.tmdbId)
