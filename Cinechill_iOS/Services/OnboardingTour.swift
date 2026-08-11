@@ -62,12 +62,12 @@ final class OnboardingTour {
         /// écrit dans le plafond, juste au-dessus.
         var title: String {
             switch self {
-            case .accueil: String(localized: "Trouver quoi regarder, ce soir", bundle: .app)
-            case .cinematch: String(localized: "Quand vous ne savez pas quoi regarder", bundle: .app)
-            case .decouvrir: String(localized: "Dites-lui ce que vous avez vu", bundle: .app)
-            case .galerie: String(localized: "Tout ce que vous avez vu", bundle: .app)
-            case .watchlist: String(localized: "Ce que vous gardez pour plus tard", bundle: .app)
-            case .sortie: String(localized: "À vous", bundle: .app)
+            case .accueil: String(localized: "Le hall d'entrée", bundle: .app)
+            case .cinematch: String(localized: "Marre de perdre 30 min à trouver un film ?", bundle: .app)
+            case .decouvrir: String(localized: "Tu swipes ou tu swipes pas ?", bundle: .app)
+            case .galerie: String(localized: "Tous les films que tu as vus", bundle: .app)
+            case .watchlist: String(localized: "La liste des films à regarder", bundle: .app)
+            case .sortie: String(localized: "À toi de jouer désormais", bundle: .app)
             }
         }
 
@@ -76,17 +76,17 @@ final class OnboardingTour {
         var detail: String {
             switch self {
             case .accueil:
-                String(localized: "C'est tout ce que fait Cinechill. L'accueil montre les sorties en salle, les tendances, et de quoi fouiller par genre.", bundle: .app)
+                String(localized: "Découvre ici les films actuellement au cinéma, les plus populaires du moment ainsi que les suggestions Cinechill basées sur tes goûts.", bundle: .app)
             case .cinematch:
-                String(localized: "Quelques questions courtes sur le temps que vous avez et l'envie du moment, puis trois films à départager pour ce soir.", bundle: .app)
+                String(localized: "Ne laisse plus ton plat refroidir pendant que tu choisis un film, en 60 sec Cinechill te propose la pépite que tu cherches.", bundle: .app)
             case .decouvrir:
-                String(localized: "Des affiches, une par une. Plus vous en classez, plus les propositions deviennent justes.", bundle: .app)
+                String(localized: "Construis la galerie des films que tu as vus et ajoute ceux que tu souhaites voir.", bundle: .app)
             case .galerie:
-                String(localized: "Rangée par décennie, par genre ou par note. La taille des affiches dit le volume : votre cinéphilie se lit d'un coup d'œil.", bundle: .app)
+                String(localized: "Es-tu vraiment le cinéphile que tu penses être ?", bundle: .app)
             case .watchlist:
-                String(localized: "Dites le temps que vous avez. On vous dit quoi lancer maintenant, et ce qui est déjà disponible sur vos plateformes.", bundle: .app)
+                String(localized: "Finis les films ajoutés dans une note que l'on ne retrouve jamais, Cinechill te garde tout bien au chaud.", bundle: .app)
             case .sortie:
-                String(localized: "Votre profil, vos badges et vos plateformes sont derrière votre photo, en haut à droite.", bundle: .app)
+                String(localized: "Commence par construire ta galerie, Cinechill pourra ainsi mieux déterminer ton profil et te proposer les meilleurs films pour toi.", bundle: .app)
             }
         }
 
@@ -187,7 +187,9 @@ final class OnboardingTour {
     func next() {
         guard let current = step else { return }
         guard let following = Step(rawValue: current.rawValue + 1) else {
-            finish()
+            // La visite s'achève sur « Commencer » : elle dépose sur Découvrir,
+            // l'étape qui construit la galerie et fait tourner les suggestions.
+            finish(navigatingTo: .decouvrir)
             return
         }
         Haptics.selection()
@@ -201,12 +203,13 @@ final class OnboardingTour {
     /// Quelqu'un qui refuse une présentation la refuse pour de bon.
     func skip() {
         Haptics.selection()
-        finish()
+        finish(navigatingTo: nil)
     }
 
-    private func finish() {
+    private func finish(navigatingTo destination: Step?) {
         guard step != nil else { return }
         withAnimation(.easeOut(duration: 0.3)) { step = nil }
+        if let destination { requestTab(destination.tab) }
         guard let uid else { return }
         let record = Record(done: true, step: 0, startedAt: .now)
         saveLocal(record, uid: uid)

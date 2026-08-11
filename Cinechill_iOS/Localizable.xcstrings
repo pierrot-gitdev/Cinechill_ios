@@ -1270,86 +1270,6 @@
         }
       }
     },
-    "Trouver quoi regarder, ce soir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Finding something to watch tonight"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trouver quoi regarder, ce soir"
-          }
-        }
-      }
-    },
-    "Quand vous ne savez pas quoi regarder" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When you have no idea what to watch"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quand vous ne savez pas quoi regarder"
-          }
-        }
-      }
-    },
-    "Dites-lui ce que vous avez vu" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tell it what you've already seen"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dites-lui ce que vous avez vu"
-          }
-        }
-      }
-    },
-    "Tout ce que vous avez vu" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Everything you've seen"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tout ce que vous avez vu"
-          }
-        }
-      }
-    },
-    "Ce que vous gardez pour plus tard" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What you're saving for later"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce que vous gardez pour plus tard"
-          }
-        }
-      }
-    },
     "À 25 et à 55 ans, on n'a pas vu les mêmes classiques." : {
       "localizations" : {
         "en" : {
@@ -3812,118 +3732,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Durée"
-          }
-        }
-      }
-    },
-    "À vous" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Over to you"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "À vous"
-          }
-        }
-      }
-    },
-    "C'est tout ce que fait Cinechill. L'accueil montre les sorties en salle, les tendances, et de quoi fouiller par genre." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "That's all Cinechill does. Home shows what's in cinemas, what's trending, and plenty to dig through by genre."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "C'est tout ce que fait Cinechill. L'accueil montre les sorties en salle, les tendances, et de quoi fouiller par genre."
-          }
-        }
-      }
-    },
-    "Quelques questions courtes sur le temps que vous avez et l'envie du moment, puis trois films à départager pour ce soir." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A few short questions about how much time you have and what you're in the mood for, then three films to choose between tonight."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quelques questions courtes sur le temps que vous avez et l'envie du moment, puis trois films à départager pour ce soir."
-          }
-        }
-      }
-    },
-    "Des affiches, une par une. Plus vous en classez, plus les propositions deviennent justes." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Posters, one at a time. The more you sort, the sharper the suggestions get."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Des affiches, une par une. Plus vous en classez, plus les propositions deviennent justes."
-          }
-        }
-      }
-    },
-    "Rangée par décennie, par genre ou par note. La taille des affiches dit le volume : votre cinéphilie se lit d'un coup d'œil." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sorted by decade, genre or rating. Poster size shows volume: your taste in cinema reads at a glance."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rangée par décennie, par genre ou par note. La taille des affiches dit le volume : votre cinéphilie se lit d'un coup d'œil."
-          }
-        }
-      }
-    },
-    "Dites le temps que vous avez. On vous dit quoi lancer maintenant, et ce qui est déjà disponible sur vos plateformes." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tell us how much time you have. We'll tell you what to start now, and what's already on your platforms."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dites le temps que vous avez. On vous dit quoi lancer maintenant, et ce qui est déjà disponible sur vos plateformes."
-          }
-        }
-      }
-    },
-    "Votre profil, vos badges et vos plateformes sont derrière votre photo, en haut à droite." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your profile, your badges and your platforms live behind your picture, top right."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Votre profil, vos badges et vos plateformes sont derrière votre photo, en haut à droite."
           }
         }
       }
@@ -11804,6 +11612,198 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Watchlist"
+          }
+        }
+      }
+    },
+    "Le hall d'entrée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The lobby"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le hall d'entrée"
+          }
+        }
+      }
+    },
+    "Découvre ici les films actuellement au cinéma, les plus populaires du moment ainsi que les suggestions Cinechill basées sur tes goûts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Here you'll find what's in theaters now, what's trending, and Cinechill's picks based on your taste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Découvre ici les films actuellement au cinéma, les plus populaires du moment ainsi que les suggestions Cinechill basées sur tes goûts."
+          }
+        }
+      }
+    },
+    "Marre de perdre 30 min à trouver un film ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tired of losing 30 minutes just picking a film?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marre de perdre 30 min à trouver un film ?"
+          }
+        }
+      }
+    },
+    "Ne laisse plus ton plat refroidir pendant que tu choisis un film, en 60 sec Cinechill te propose la pépite que tu cherches." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop letting your dinner go cold while you pick a film. In 60 seconds Cinechill finds the gem you're after."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne laisse plus ton plat refroidir pendant que tu choisis un film, en 60 sec Cinechill te propose la pépite que tu cherches."
+          }
+        }
+      }
+    },
+    "Tu swipes ou tu swipes pas ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To swipe, or not to swipe?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu swipes ou tu swipes pas ?"
+          }
+        }
+      }
+    },
+    "Construis la galerie des films que tu as vus et ajoute ceux que tu souhaites voir." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Build your gallery of watched films, and add the ones you still want to see."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Construis la galerie des films que tu as vus et ajoute ceux que tu souhaites voir."
+          }
+        }
+      }
+    },
+    "Tous les films que tu as vus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every film you've watched"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tous les films que tu as vus"
+          }
+        }
+      }
+    },
+    "Es-tu vraiment le cinéphile que tu penses être ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you really the film buff you think you are?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es-tu vraiment le cinéphile que tu penses être ?"
+          }
+        }
+      }
+    },
+    "La liste des films à regarder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your list of films to watch"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La liste des films à regarder"
+          }
+        }
+      }
+    },
+    "Finis les films ajoutés dans une note que l'on ne retrouve jamais, Cinechill te garde tout bien au chaud." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No more films buried in a note you'll never reopen again. Cinechill keeps them all warm for you."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finis les films ajoutés dans une note que l'on ne retrouve jamais, Cinechill te garde tout bien au chaud."
+          }
+        }
+      }
+    },
+    "À toi de jouer désormais" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now it's your turn"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À toi de jouer désormais"
+          }
+        }
+      }
+    },
+    "Commence par construire ta galerie, Cinechill pourra ainsi mieux déterminer ton profil et te proposer les meilleurs films pour toi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start by building your gallery. Cinechill will get to know your taste and suggest the best films for you."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commence par construire ta galerie, Cinechill pourra ainsi mieux déterminer ton profil et te proposer les meilleurs films pour toi."
           }
         }
       }
