@@ -27,10 +27,11 @@ import SwiftUI
 /// a déjà répondu. C'est un choix, pas un oubli — le splash est le seul moment où la marque a
 /// l'écran pour elle. Les données, elles, se chargent en tâche de fond pendant ce temps
 /// (`RootView` précharge l'accueil), si bien que l'animation ne coûte du temps que lorsqu'elle
-/// est plus lente que le réseau. À 5,00 s, elle l'est encore : c'est assumé.
+/// est plus lente que le réseau. À 4,57 s, elle l'est encore : c'est assumé.
 ///
-/// Ces 5 s sont un budget, pas une conséquence. Si la séquence doit encore raccourcir, on prend
-/// sur l'entrée et sur la queue, jamais sur la traversée : c'est elle qui montre la salle.
+/// Ces 4,57 s sont un budget, pas une conséquence. La traversée (étape 3) a déjà cédé un peu de
+/// sa marge de lisibilité le 12 août 2026, à la demande de Pierre, pour une ouverture plus vive.
+/// Toute réduction supplémentaire se prend sur l'entrée et sur la queue, pas sur elle.
 ///
 /// `onFinished` est appelé à la fin de la séquence ; c'est l'appelant qui décide de passer la
 /// main, une fois que l'animation **et** l'auth sont prêtes.
@@ -367,6 +368,10 @@ struct SplashView: View {
             return
         }
 
+        // 0 — un temps mort avant que la lame parte : l'écran n'est pas encore vide qu'on y
+        // superpose déjà quelque chose.
+        await sleep(500)
+
         // 1 — la lame arrive de la droite.
         withAnimation(.easeOut(duration: 0.15)) { bladeOpacity = 1 }
         withAnimation(.timingCurve(0.2, 0.7, 0.25, 1, duration: 0.72)) { bladeOffset = 0 }
@@ -382,17 +387,18 @@ struct SplashView: View {
         //
         // La courbe est presque droite, et c'est tout l'enjeu : à vitesse constante, l'œil
         // comprend qu'il regarde un espace traversé. Les cinq rangs s'allument au passage du
-        // front, à 0,92 s, 1,07 s, 1,22 s, 1,36 s et 1,51 s — non pas parce que ces instants
-        // sont écrits ici, mais parce que c'est là que la lumière les atteint. Changer la
-        // durée ci-dessous les réécarte donc toute seule, dans les mêmes proportions.
+        // front, non pas parce que ces instants sont écrits ici, mais parce que c'est là que
+        // la lumière les atteint. Changer la durée ci-dessous les réécarte donc toute seule,
+        // dans les mêmes proportions.
         //
-        // C'est la phase qu'on protège quand il faut raccourcir : les quatorze centièmes qui
-        // séparent deux rangs sont le minimum pour qu'on lise une salle traversée plutôt que
-        // cinq arcs qui s'allument ensemble.
-        withAnimation(.timingCurve(0.35, 0.15, 0.55, 0.92, duration: 1.35)) {
+        // Accélérée le 12 août 2026, à la demande de Pierre : l'ouverture traînait. L'intervalle
+        // entre deux rangs est descendu bien sous les quatorze centièmes qu'on visait initialement
+        // comme seuil de lisibilité ; si la traversée redevient un aplat plutôt qu'une salle
+        // qu'on parcourt, c'est le premier réglage à revenir en arrière.
+        withAnimation(.timingCurve(0.35, 0.15, 0.55, 0.92, duration: 0.60)) {
             lightReach = 260
         }
-        await sleep(1130)
+        await sleep(200)
 
         // 4 — le front atteint la paroi opposée : l'écran s'embrase, et déborde.
         withAnimation(.easeOut(duration: 0.20)) {
