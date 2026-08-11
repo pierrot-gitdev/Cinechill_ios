@@ -138,6 +138,7 @@ private struct HomeRowItemDTO: Decodable, Sendable {
     let overview: String?
     let posterPath: String?
     let voteAverage: Double?
+    let voteCount: Int?
     let genreIds: [Int]?
     let releaseDate: String?
 
@@ -145,6 +146,7 @@ private struct HomeRowItemDTO: Decodable, Sendable {
         case id, title, overview
         case posterPath = "poster_path"
         case voteAverage = "vote_average"
+        case voteCount = "vote_count"
         case genreIds = "genre_ids"
         case releaseDate = "release_date"
     }
@@ -157,7 +159,7 @@ private struct HomeRowItemDTO: Decodable, Sendable {
             posterPath: posterPath,
             overview: overview,
             voteAverage: voteAverage,
-            voteCount: nil,
+            voteCount: voteCount,
             genreIds: genreIds ?? [],
             releaseDate: releaseDate
         )
