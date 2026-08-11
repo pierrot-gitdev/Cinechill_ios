@@ -14,9 +14,9 @@ phrase bancale. Trois traitements couvrent tous les cas rencontrés.
 
 | Ce que le tiret portait | Traitement | Exemple, dans l'app |
 |---|---|---|
-| Une explication qui suit | Deux-points | `Facultatif : laissez vide pour ne rien exclure.` |
+| Une explication qui suit | Deux-points | `Facultatif : laisse vide pour ne rien exclure.` |
 | Une seconde proposition | Une phrase de plus | `%@ l'avait déjà vu. Rien ne lui a été envoyé.` |
-| Une incise au milieu | Refonte de la phrase | `Quelques questions courtes sur le temps que vous avez et l'envie du moment, puis trois films à départager.` |
+| Une incise au milieu | Refonte de la phrase | `Ne laisse plus ton plat refroidir pendant que tu choisis un film, en 60 sec Cinechill te propose la pépite que tu cherches.` |
 
 En français, le deux-points prend une espace avant. En anglais, non
 (`Optional: leave empty…`).
@@ -38,15 +38,37 @@ python3 -c "import json;d=json.load(open('Cinechill_iOS/Localizable.xcstrings'))
 
 Les deux doivent rendre le vide.
 
+### On tutoie, partout
+
+**Aucune chaîne visible ne vouvoie.** L'application dit « tu », « ton », « te ».
+Le vouvoiement tenait l'app entière jusqu'au 12 août 2026 ; il a été retiré d'un
+bloc, sur 182 chaînes, parce qu'un produit qui cherche un film pour la soirée de
+quelqu'un n'a aucune raison de lui parler comme un formulaire administratif.
+
+Le passage ne se fait pas au pronom seul : les formes verbales suivent
+(« Réessayez » devient « Réessaie », « Choisissez » devient « Choisis »,
+« Balayez » devient « Balaie »).
+
+**Une seule exception**, et elle n'en est pas vraiment une : le « vous » de
+**groupe**, quand la phrase s'adresse aux personnes devant l'écran et non à celle
+qui tient le téléphone. `Vous êtes combien ce soir ?` est correct et doit le
+rester.
+
+Contrôle, qui doit rendre le vide :
+
+```bash
+python3 -c "import json,re;d=json.load(open('Cinechill_iOS/Localizable.xcstrings'))['strings'];print([k for k in d if re.search(r'\b(vous|votre|vos)\b',k,re.I)])"
+```
+
 ### Le registre général
 
 Les textes disent une **conséquence**, jamais un mécanisme, et jamais un
-encouragement creux. « Ce qui n'est pas chez vous ne vous sera pas proposé »
+encouragement creux. « Ce qui n'est pas chez toi ne te sera pas proposé »
 plutôt que la liste des écrans qui consomment le réglage. Une ligne qui ne se
 résume pas honnêtement coûte plus cher que pas de ligne du tout.
 
 L'application parle à la première personne du pluriel indéfinie (« on cherche »,
-« on vous dira »), jamais « je ».
+« on te dira »), jamais « je ».
 
 ### Vocabulaire
 
