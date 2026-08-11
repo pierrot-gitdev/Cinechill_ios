@@ -334,6 +334,10 @@ private struct RecommendationRow: Decodable, Sendable {
                 posterPath: posterPath,
                 overview: overview,
                 voteAverage: voteAverage,
+                // Le backend ne renvoie pas le nombre de votes sur ce contrat,
+                // et le trio n'en a pas l'usage : c'est le mur de l'entrée qui
+                // s'en sert, et il puise ailleurs.
+                voteCount: nil,
                 genreIds: genreIds ?? [],
                 releaseDate: releaseDate
             ),

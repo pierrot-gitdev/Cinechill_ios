@@ -57,6 +57,7 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
             posterPath: posterPath,
             overview: overview,
             voteAverage: voteAverage,
+            voteCount: nil,
             genreIds: genreIds,
             releaseDate: releaseDate
         )

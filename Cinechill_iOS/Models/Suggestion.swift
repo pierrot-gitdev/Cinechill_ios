@@ -58,6 +58,7 @@ extension Suggestion {
             posterPath: itemData["posterPath"] as? String,
             overview: itemData["overview"] as? String,
             voteAverage: itemData["voteAverage"] as? Double,
+            voteCount: nil,
             genreIds: itemData["genreIds"] as? [Int] ?? [],
             releaseDate: itemData["releaseDate"] as? String
         )

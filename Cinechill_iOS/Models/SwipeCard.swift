@@ -7,11 +7,15 @@ import Foundation
 
 /// Une carte du deck de swipe.
 ///
-/// Superset de `MediaItem` sur deux points : `voteCount`, que le reste de l'app
-/// n'enregistre nulle part alors que c'est le meilleur proxy de « combien de
-/// gens ont vraiment vu ce film » — donc ce qui permet au backend d'apprendre
-/// le niveau de « niche » de l'utilisateur au fil des swipes — et `source`, qui
-/// dit quelle stratégie de recommandation a ramené le film.
+/// Superset de `MediaItem` sur un point : `source`, qui dit quelle stratégie de
+/// recommandation a ramené le film.
+///
+/// `voteCount` était le second, du temps où `MediaItem` ne le portait pas. Il y
+/// vit maintenant — le mur de l'entrée de CinéMatch s'en sert pour ne retenir
+/// que des films que beaucoup de gens ont vus — et reste ici parce que c'est le
+/// meilleur proxy de « combien de gens ont vraiment vu ce film », donc ce qui
+/// permet au backend d'apprendre le niveau de « niche » de l'utilisateur au fil
+/// des swipes.
 nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
     let tmdbId: Int
     let title: String
@@ -33,6 +37,7 @@ nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
             posterPath: posterPath,
             overview: overview,
             voteAverage: voteAverage,
+            voteCount: voteCount,
             genreIds: genreIds,
             releaseDate: releaseDate
         )

@@ -28,8 +28,9 @@ import SwiftUI
 /// lisible sur une image dont on ne connaît pas les valeurs, et c'est le rôle
 /// documenté de `PlanScrim` dans la direction.
 struct SessionEntryView: View {
-    /// Les films dont on emprunte les affiches. Décoratifs : aucun n'est
-    /// désigné, aucun n'est cliquable, et ils ne présagent en rien du trio.
+    /// Le vivier où le mur puise ses affiches, tel quel : c'est `wallItems` qui
+    /// y fait le tri. Décoratives de bout en bout — aucune n'est désignée, aucune
+    /// n'est cliquable, et elles ne présagent en rien du trio.
     let posters: [MediaItem]
     @Binding var audience: Audience?
     /// Le verdict de la veille, quand il y en a un. Il vivait sur l'écran que
@@ -45,8 +46,43 @@ struct SessionEntryView: View {
     /// quoi reconnaître un film sans qu'aucun ne se donne pour un choix.
     private static let columns = 4
     /// De quoi couvrir la hauteur d'un grand écran sans en demander davantage au
-    /// catalogue, qui en tient une vingtaine.
+    /// catalogue, qui en tient une cinquantaine.
     private static let rows = 7
+    private static var capacity: Int { rows * columns }
+
+    /// Le seuil de notoriété du mur.
+    ///
+    /// **C'est le seul nombre à régler ici.** Trop haut, presque aucun film ne
+    /// passe et le classement par note ne s'applique plus à rien ; trop bas, une
+    /// sortie de la semaine notée 8,4 par trois cents personnes se retrouve au
+    /// mur alors que personne ne la reconnaît. Deux mille votes est le point où
+    /// un film cesse d'être confidentiel sans qu'il faille être un blockbuster.
+    private static let minimumVotes = 2_000
+
+    /// Les affiches retenues : **les mieux notées parmi celles que beaucoup de
+    /// gens ont vues**.
+    ///
+    /// La note seule ne suffisait pas. Le vivier est celui de l'accueil, c'est-à-dire
+    /// les films populaires du moment sur les plateformes de la personne : trié sur
+    /// la seule note, il remonte des sorties récentes acclamées par une poignée de
+    /// spectateurs, et le mur cesse d'être un mur de films qu'on reconnaît.
+    ///
+    /// Quand trop peu de films franchissent le seuil, on complète par les **plus
+    /// vus** plutôt que de laisser des trous : un mur troué se lit comme un
+    /// chargement raté, jamais comme un parti pris.
+    private var wallItems: [MediaItem] {
+        let known = posters
+            .filter { ($0.voteCount ?? 0) >= Self.minimumVotes }
+            .sorted { ($0.voteAverage ?? 0) > ($1.voteAverage ?? 0) }
+        guard known.count < Self.capacity else {
+            return Array(known.prefix(Self.capacity))
+        }
+        let retained = Set(known.map(\.id))
+        let filler = posters
+            .filter { !retained.contains($0.id) }
+            .sorted { ($0.voteCount ?? 0) > ($1.voteCount ?? 0) }
+        return Array((known + filler).prefix(Self.capacity))
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -65,13 +101,17 @@ struct SessionEntryView: View {
     // MARK: - Le mur
 
     private var wall: some View {
-        GeometryReader { proxy in
+        // Retenu une fois pour toutes : `wallItems` filtre et trie, et l'appeler
+        // dans chaque case le referait vingt-huit fois par rendu.
+        let items = wallItems
+        return GeometryReader { proxy in
             let side = (proxy.size.width - CGFloat(Self.columns - 1) * 3) / CGFloat(Self.columns)
             VStack(spacing: 3) {
                 ForEach(0 ..< Self.rows, id: \.self) { row in
                     HStack(spacing: 3) {
                         ForEach(0 ..< Self.columns, id: \.self) { column in
-                            let item = poster(row: row, column: column)
+                            let index = row * Self.columns + column
+                            let item = index < items.count ? items[index] : nil
                             PosterFrame(posterPath: item?.posterPath, title: item?.title ?? "")
                                 .frame(width: side)
                                 .opacity(item == nil ? 0 : 1)
@@ -91,14 +131,6 @@ struct SessionEntryView: View {
         // titres avant d'atteindre la question.
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-    }
-
-    /// Le catalogue est plus court que le mur : au-delà, la case reste vide
-    /// plutôt que de reprendre une affiche déjà posée. Un mur qui se répète se
-    /// lit comme une texture ratée, pas comme une salle.
-    private func poster(row: Int, column: Int) -> MediaItem? {
-        let index = row * Self.columns + column
-        return index < posters.count ? posters[index] : nil
     }
 
     // MARK: - Le voile

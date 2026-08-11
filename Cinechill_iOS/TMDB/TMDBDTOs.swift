@@ -10,6 +10,7 @@ struct TMDBListResultRow: Decodable, Sendable {
     let posterPath: String?
     let overview: String?
     let voteAverage: Double?
+    let voteCount: Int?
     let genreIds: [Int]?
     let title: String?
     let name: String?
@@ -21,6 +22,7 @@ struct TMDBListResultRow: Decodable, Sendable {
         case posterPath = "poster_path"
         case overview
         case voteAverage = "vote_average"
+        case voteCount = "vote_count"
         case genreIds = "genre_ids"
         case title
         case name
@@ -190,6 +192,7 @@ struct TMDBDetailResponse: Decodable, Sendable {
             posterPath: posterPath,
             overview: overview,
             voteAverage: voteAverage,
+            voteCount: voteCount,
             genreIds: [],
             releaseDate: date
         )

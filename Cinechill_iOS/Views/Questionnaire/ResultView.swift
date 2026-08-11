@@ -278,6 +278,7 @@ private struct ResultRowView: View {
                             posterPath: nil,
                             overview: nil,
                             voteAverage: 8.3,
+                            voteCount: 34_000,
                             genreIds: [],
                             releaseDate: "2014-01-01"
                         ),

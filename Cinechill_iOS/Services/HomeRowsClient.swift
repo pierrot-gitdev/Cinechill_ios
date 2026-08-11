@@ -157,6 +157,7 @@ private struct HomeRowItemDTO: Decodable, Sendable {
             posterPath: posterPath,
             overview: overview,
             voteAverage: voteAverage,
+            voteCount: nil,
             genreIds: genreIds ?? [],
             releaseDate: releaseDate
         )

@@ -14,6 +14,14 @@ nonisolated struct MediaItem: Identifiable, Hashable, Sendable {
     let posterPath: String?
     let overview: String?
     let voteAverage: Double?
+    /// Le nombre de votes TMDB, quand la source le donne.
+    ///
+    /// Il ne sert pas à noter mais à **jauger la notoriété** : une note de 9
+    /// portée par quarante personnes ne dit pas qu'un film est aimé, elle dit
+    /// qu'il est confidentiel. Seules les listes TMDB le renseignent ; la
+    /// galerie, la watchlist et le deck, qui décrivent des films déjà connus de
+    /// la personne, le laissent à `nil`.
+    let voteCount: Int?
     let genreIds: [Int]
     let releaseDate: String?
 
@@ -39,6 +47,7 @@ extension MediaItem {
         self.posterPath = tmdbListRow.posterPath
         self.overview = tmdbListRow.overview
         self.voteAverage = tmdbListRow.voteAverage
+        self.voteCount = tmdbListRow.voteCount
         self.genreIds = tmdbListRow.genreIds ?? []
         self.releaseDate = mediaType == .movie ? tmdbListRow.releaseDate : tmdbListRow.firstAirDate
     }
