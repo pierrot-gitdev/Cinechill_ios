@@ -44,6 +44,24 @@ enum CinechillMarkMetrics {
         (92, 34), (120, 34), (148, 32), (176, 29), (204, 25)
     ]
 
+    /// Distance de la cabine au bord d'un rang de fauteuils.
+    ///
+    /// Les rangées sont centrées sur l'écran : le point d'un rang le plus proche
+    /// de la cabine est à `screenFocus.x + radius`. Un rang de grand rayon est
+    /// donc **près** de la cabine, et c'est lui que la projection atteint
+    /// d'abord. Cette fonction est ce qui permet à l'ouverture d'allumer la salle
+    /// rang par rang sans qu'aucun délai ne soit écrit à la main.
+    static func boothToRow(_ radius: CGFloat) -> CGFloat {
+        booth.x - (screenFocus.x + radius)
+    }
+
+    /// Distance de la cabine à l'écran, la plus grande de la salle.
+    static var boothToScreen: CGFloat { booth.x - (center.x - screenRadius) }
+
+    /// Épaisseur du front de lumière : la progression qu'il faut à un rang pour
+    /// passer de l'ombre à la pleine lumière.
+    static let frontWidth: CGFloat = 34
+
     /// Décalage de la face du mur par rapport à sa couche « arête », qui crée le biseau.
     /// C'est ce décalage qui rendait le bas du C invisible : la face y déborde sous l'arête,
     /// et c'est sa teinte la plus sombre qui formait le bord. Le liseré est tracé à part,
@@ -197,11 +215,17 @@ struct CinechillMark: View {
     var wallReveal: Double = 1
     /// Fraction du pourtour déjà parcourue par le liseré. C'est la lumière qui « dessine » le C.
     var rimTrim: Double = 1
-    /// Rayon atteint par la lumière depuis la cabine, en unités de dessin. Au-delà de ~320 la
+    /// Rayon atteint par la lumière depuis la cabine, en unités de dessin. Au-delà de ~240 la
     /// salle est entièrement éclairée.
+    ///
+    /// C'est aussi ce qui allume les rangs de fauteuils, un par un : voir `rowReveal`.
     var lightReach: CGFloat = 512
-    /// Présence des fauteuils, qui n'apparaissent qu'une fois la salle éclairée.
+    /// Présence des fauteuils. Multiplie la révélation par la lumière, elle ne la remplace pas :
+    /// à 0 la salle reste vide quoi qu'éclaire la projection, ce dont le bandeau a besoin.
     var seatsOpacity: Double = 1
+    /// L'embrasement de l'écran, au moment où la projection l'atteint. C'est un pic, pas un
+    /// état : le halo permanent de l'écran vit dans `lightedRoom`, celui-ci monte puis retombe.
+    var screenFlare: Double = 0
     var boothGlow: Double = 1
 
     var body: some View {
@@ -236,6 +260,7 @@ struct CinechillMark: View {
                 .position(space.center)
 
             lightedRoom(space)
+            flare(space)
         }
         .mask {
             Circle()
@@ -287,6 +312,9 @@ struct CinechillMark: View {
 
     /// Les fauteuils : des tirets sombres découpés dans la lumière, avec un liseré clair sur le
     /// haut du dossier. Ils ne se voient que là où le faisceau tombe — comme dans une vraie salle.
+    ///
+    /// Chaque rang est un groupe à part, avec sa propre opacité : c'est ce qui permet à la
+    /// projection de les allumer l'un après l'autre au lieu de les faire apparaître ensemble.
     private func seats(_ space: CinechillMarkSpace) -> some View {
         let style = StrokeStyle(
             lineWidth: space.length(8),
@@ -296,16 +324,47 @@ struct CinechillMark: View {
 
         return ZStack {
             ForEach(CinechillMarkMetrics.seatRows.indices, id: \.self) { index in
-                seatRow(space, row: CinechillMarkMetrics.seatRows[index])
-                    .stroke(CinechillPalette.seatRim.opacity(0.16), style: style)
-                    .offset(y: -space.length(2.5))
-            }
-            ForEach(CinechillMarkMetrics.seatRows.indices, id: \.self) { index in
-                seatRow(space, row: CinechillMarkMetrics.seatRows[index])
-                    .stroke(CinechillPalette.seat.opacity(0.72), style: style)
+                let row = CinechillMarkMetrics.seatRows[index]
+                ZStack {
+                    seatRow(space, row: row)
+                        .stroke(CinechillPalette.seatRim.opacity(0.16), style: style)
+                        .offset(y: -space.length(2.5))
+                    seatRow(space, row: row)
+                        .stroke(CinechillPalette.seat.opacity(0.72), style: style)
+                }
+                .opacity(rowReveal(row))
             }
         }
         .opacity(seatsOpacity)
+    }
+
+    /// Un rang ne s'allume qu'une fois atteint par le front de lumière.
+    ///
+    /// L'écart entre deux rangs n'est pas un réglage d'animation : c'est la distance qui les
+    /// sépare dans le dessin. `lightReach` étant mesuré depuis la cabine comme `boothToRow`,
+    /// il suffit de comparer les deux. Une seule valeur animée éclaire donc la salle dans
+    /// l'ordre exact où la projection la traverse, et une projection plus lente écarte les
+    /// rangs d'elle-même.
+    private func rowReveal(_ row: (radius: CGFloat, halfSpan: Double)) -> Double {
+        let front = lightReach - CinechillMarkMetrics.boothToRow(row.radius)
+        return Double(min(max(front / CinechillMarkMetrics.frontWidth, 0), 1))
+    }
+
+    /// L'embrasement, quand le front atteint la paroi opposée. Deux couches : la surexposition
+    /// large qui déborde sur la salle, et le trait de l'écran lui-même poussé au blanc.
+    private func flare(_ space: CinechillMarkSpace) -> some View {
+        let m = CinechillMarkMetrics.self
+
+        return ZStack {
+            trimmedArc(space, radius: m.screenRadius, from: m.screenStart, to: m.screenEnd)
+                .stroke(CinechillPalette.lightPale, lineWidth: space.length(58))
+                .blur(radius: space.length(20))
+
+            trimmedArc(space, radius: m.screenRadius, from: m.screenStart, to: m.screenEnd)
+                .stroke(.white, lineWidth: space.length(22))
+                .blur(radius: space.length(4.5))
+        }
+        .opacity(screenFlare)
     }
 
     private func seatRow(_ space: CinechillMarkSpace, row: (radius: CGFloat, halfSpan: Double)) -> some Shape {
