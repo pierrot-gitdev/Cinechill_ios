@@ -82,7 +82,9 @@ struct HomeView: View {
             }
             .task {
                 await catalog.loadIfNeeded()
-                await homeModel.loadAll(preferredPlatformIDs: libraryStore.preferredPlatformIDs)
+                // `RootView` a normalement déjà tout demandé pendant l'ouverture ; cet appel
+                // ne sert qu'aux cas où le préchargement n'a pas eu lieu ou n'a pas abouti.
+                await homeModel.loadAllIfNeeded(preferredPlatformIDs: libraryStore.preferredPlatformIDs)
             }
             .task(id: libraryStore.preferredPlatformIDs) {
                 guard homeModel.hasLoadedOnce else { return }

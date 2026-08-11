@@ -31,6 +31,13 @@ final class HomeViewModel {
     private var rawPopularItems: [MediaItem] = []
     private var rawBrowseCategories: [HomeBrowseCategory] = []
 
+    /// Les plateformes du dernier chargement de « populaire ».
+    ///
+    /// L'écran est préchargé pendant l'ouverture de l'app, puis la vue redemande la même liste
+    /// en apparaissant : sans cette mémoire, chaque lancement payait un aller-retour pour un
+    /// résultat déjà en main. Elle sert aussi quand on coche puis décoche une plateforme.
+    private var loadedPopularProviderIDs: [Int]?
+
     init(
         repository: PopularRepository,
         metadataClient: any HomeMetadataFetching,
@@ -39,6 +46,14 @@ final class HomeViewModel {
         self.repository = repository
         self.metadataClient = metadataClient
         self.rowsClient = rowsClient
+    }
+
+    /// Le préchargement de l'ouverture et l'apparition de l'écran demandent tous deux le
+    /// chargement ; il ne doit avoir lieu qu'une fois. `loading` couvre le cas où le
+    /// préchargement est encore en vol, `hasLoadedOnce` celui où il a déjà abouti.
+    func loadAllIfNeeded(preferredPlatformIDs: Set<String>) async {
+        guard !hasLoadedOnce else { return }
+        await loadAll(preferredPlatformIDs: preferredPlatformIDs)
     }
 
     /// Charge tout l'écran d'un bloc.
@@ -107,12 +122,15 @@ final class HomeViewModel {
     }
 
     func refreshPopular(using selectedPlatformIDs: Set<String>) async {
+        // Aucune plateforme déclarée ne veut pas dire « aucun résultat » :
+        // la liste vide se traduit naturellement en « pas de filtre ».
+        let providerIDs = availablePlatforms
+            .filter { selectedPlatformIDs.contains($0.id) }
+            .map(\.providerID)
+            .sorted()
+        guard providerIDs != loadedPopularProviderIDs else { return }
+
         do {
-            // Aucune plateforme déclarée ne veut pas dire « aucun résultat » :
-            // la liste vide se traduit naturellement en « pas de filtre ».
-            let providerIDs = availablePlatforms
-                .filter { selectedPlatformIDs.contains($0.id) }
-                .map(\.providerID)
             rawPopularItems = try await repository.loadPopularTop(
                 for: .movie,
                 limit: 50,
@@ -120,11 +138,13 @@ final class HomeViewModel {
                 providerIDs: providerIDs
             )
             popularItems = filteringBannedGenres(rawPopularItems)
+            loadedPopularProviderIDs = providerIDs
         } catch {
             if error is CancellationError { return }
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             rawPopularItems = []
             popularItems = []
+            loadedPopularProviderIDs = nil
         }
     }
 

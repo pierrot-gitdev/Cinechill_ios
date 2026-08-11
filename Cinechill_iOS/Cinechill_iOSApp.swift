@@ -5,9 +5,6 @@
 
 import SwiftUI
 import FirebaseCore
-#if canImport(GoogleSignIn)
-import GoogleSignIn
-#endif
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
@@ -27,19 +24,15 @@ struct Cinechill_iOSApp: App {
     @StateObject private var profileStore = UserProfileStore()
     @StateObject private var socialStore = SocialStore()
 
-    /// Le splash joue sa séquence en entier avant de passer la main. On garde donc l'écran tant
-    /// que l'animation n'est pas allée au bout **ou** que l'auth n'a pas répondu : la donnée
-    /// arrive en tâche de fond pendant l'animation, et c'est le plus lent des deux qui décide.
-    @State private var splashFinished = false
-
-    /// Le code d'action d'un lien « mot de passe oublié ». L'app est seule à
-    /// voir passer les URL entrantes ; elle le transmet à l'écran, qui le
-    /// consomme puis le rend.
-    @State private var passwordResetCode: String?
-
     /// La langue choisie dans les réglages. Lue ici pour une seule raison :
     /// c'est à la racine qu'on peut redemander l'écran entier quand elle change.
     @State private var language = LanguageStore.shared
+
+    /// L'ouverture est-elle allée jusqu'au bout. Tenue ici, et non dans `RootView` à qui elle
+    /// appartient pourtant, pour la même raison que la prise en main : changer de langue
+    /// rebâtit tout l'écran (`.id` plus bas), et rejouer sept secondes d'animation pour un
+    /// réglage serait une punition.
+    @State private var splashFinished = false
 
     /// La prise en main. Tenue à la racine, et non dans `MainTabView`, pour une
     /// raison précise : changer de langue rebâtit tout l'écran (`.id` plus bas),
@@ -49,37 +42,9 @@ struct Cinechill_iOSApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if !splashFinished || authService.isInitializing {
-                    SplashView { splashFinished = true }
-                        .transition(.opacity)
-                } else if authService.isAuthenticated {
-                    MainTabView()
-                        .transition(.opacity)
-                } else {
-                    AuthView(
-                        resetCode: passwordResetCode,
-                        onResetCodeConsumed: { passwordResetCode = nil }
-                    )
-                    .transition(.opacity)
-                }
-            }
-            // Le lien de réinitialisation ramène dans l'app plutôt que sur la
-            // page web de Firebase — à condition qu'une URL d'action
-            // personnalisée soit déclarée en console et le domaine associé dans
-            // les entitlements. Sans cette configuration, ce bloc n'est jamais
-            // atteint et le parcours s'arrête à l'écran « lien envoyé ».
-            .onOpenURL { url in
-                if let code = AuthService.passwordResetCode(from: url) {
-                    passwordResetCode = code
-                    splashFinished = true
-                    return
-                }
-#if canImport(GoogleSignIn)
-                // Le retour de la feuille Google, quand elle passe par Safari.
-                _ = GIDSignIn.sharedInstance.handle(url)
-#endif
-            }
+            // L'aiguillage vit dans `RootView`, et non ici, parce qu'il doit exister pendant
+            // l'ouverture : c'est là que l'accueil se précharge, tandis que le splash joue.
+            RootView(splashFinished: $splashFinished)
             // Changer de langue rebâtit l'écran de fond en comble.
             //
             // La quasi-totalité des chaînes de l'app se résolvent par
@@ -93,8 +58,6 @@ struct Cinechill_iOSApp: App {
             // SwiftUI formate lui-même.
             .id(language.selection)
             .environment(\.locale, language.selection.locale)
-            .animation(.easeInOut(duration: 0.45), value: splashFinished)
-            .animation(.easeInOut(duration: 0.45), value: authService.isInitializing)
             // L'identité — étain, cyan, nuit — est dessinée pour le sombre ; le clair n'est
             // qu'un filet de sécurité pour du code encore non porté. On verrouille donc l'app
             // plutôt que de maintenir deux palettes dont une seule est réellement dessinée.

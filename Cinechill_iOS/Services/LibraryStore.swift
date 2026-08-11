@@ -4,6 +4,16 @@ import FirebaseAuth
 import FirebaseFirestore
 
 final class LibraryStore: ObservableObject {
+    /// Ce qu'un film peut devenir depuis une fiche : vu, à voir, ou rien.
+    ///
+    /// Dans le corps de la classe et non dans l'extension privée plus bas :
+    /// `pendingStatusByItemID` et `pendingStatus(for:)` le donnent à lire au
+    /// reste de l'app, et un type privé ne peut pas transparaître dans une
+    /// déclaration qui ne l'est pas.
+    enum MediaStatus: String {
+        case toWatch, seen, none
+    }
+
     @Published private(set) var galleryItems: [GalleryEntry] = []
     @Published private(set) var watchlistItems: [WatchlistEntry] = []
     /// Les plateformes que l'utilisateur a déclaré avoir chez lui.
@@ -24,6 +34,23 @@ final class LibraryStore: ObservableObject {
     /// lui, la transition 0 → N du premier chargement se ferait passer pour
     /// un ajout massif aux yeux de tout ce qui célèbre la progression.
     @Published private(set) var hasLoadedGalleryOnce = false
+    /// Même rôle pour les préférences, et pour un besoin précis : l'accueil est préchargé
+    /// pendant l'ouverture de l'app, avant que le moindre écran n'existe, et « populaire »
+    /// dépend des plateformes déclarées. Sans ce signal, le préchargement partirait sur une
+    /// liste vide et l'écran se corrigerait sous les yeux de l'utilisateur.
+    @Published private(set) var hasLoadedPreferencesOnce = false
+    /// Les films dont le statut est en cours d'écriture, et l'état visé par chacun.
+    ///
+    /// Marquer un film « vu » ne change rien localement : la requête part vers le backend, qui
+    /// écrit dans Firestore, dont le listener revient enfin peupler `galleryItems`. Tant que
+    /// cette boucle n'est pas bouclée, l'écran n'a strictement rien à montrer. C'est ce que
+    /// cette table répare.
+    ///
+    /// L'attente ne prend d'ailleurs pas fin au retour de la requête mais à l'instant où les
+    /// listeners l'ont répercutée : ce sont eux que l'écran affiche. Sans cette nuance,
+    /// l'indicateur s'éteindrait deux ou trois dixièmes de seconde avant que le bouton ne
+    /// bascule, ce qui se lit comme un raté.
+    @Published private(set) var pendingStatusByItemID: [String: MediaStatus] = [:]
     @Published private(set) var errorMessage: String?
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
@@ -32,6 +59,11 @@ final class LibraryStore: ObservableObject {
     private var preferencesListener: ListenerRegistration?
     private var profileListener: ListenerRegistration?
     private var hasStarted = false
+
+    /// Date du dernier réveil de la fonction d'écriture. Google garde l'instance éveillée
+    /// quelques minutes : la resolliciter à chaque fiche ouverte ne servirait à rien.
+    private var lastStatusWarmUp: Date?
+    private static let warmUpValidity: TimeInterval = 240
 
     init() {
     }
@@ -50,6 +82,66 @@ final class LibraryStore: ObservableObject {
         watchlistListener?.remove()
         preferencesListener?.remove()
         profileListener?.remove()
+    }
+
+    /// Attend la première réponse de Firestore sur les préférences, sans jamais bloquer plus
+    /// que la durée donnée.
+    ///
+    /// L'attente est bornée parce que le préchargement doit démarrer même si le réseau ne
+    /// répond pas : au pire on part sur une liste vide, et « populaire » se corrigera comme il
+    /// le faisait déjà. La boucle est délibérément naïve — pas de pont Combine, pas de
+    /// listener à défaire — puisqu'elle meurt avec la tâche qui l'a lancée.
+    @MainActor
+    func waitForPreferences(upTo limit: Duration) async {
+        guard !hasLoadedPreferencesOnce else { return }
+        let deadline = ContinuousClock.now.advanced(by: limit)
+        while !hasLoadedPreferencesOnce, ContinuousClock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(40))
+        }
+    }
+
+    /// L'état visé pour ce film, si une écriture est en cours.
+    func pendingStatus(for item: MediaItem) -> MediaStatus? {
+        pendingStatusByItemID[item.id]
+    }
+
+    /// Réveille la fonction d'écriture avant qu'on en ait besoin.
+    ///
+    /// Les fonctions du backend dorment quand personne ne s'en sert, et il faut plusieurs
+    /// secondes pour en réveiller une : conteneur, Node, chargement du module, initialisation
+    /// de l'Admin SDK, récupération des clés de signature Google. C'est ce réveil, et non
+    /// l'écriture elle-même, qui rend le premier « Vu » d'une session si lent.
+    ///
+    /// On choisit donc **quand** le payer plutôt que de payer une instance éveillée en
+    /// permanence : à l'ouverture de l'app, pendant les cinq secondes où l'utilisateur regarde
+    /// la salle s'éclairer, et à l'ouverture d'une fiche, qui est le meilleur signe qu'un
+    /// « Vu » approche. Google garde ensuite l'instance éveillée quelques minutes.
+    ///
+    /// La requête est volontairement incomplète. Elle porte un vrai jeton, que la fonction
+    /// vérifie — c'est la partie coûteuse du réveil, celle qu'on veut payer d'avance — mais
+    /// aucun statut, si bien qu'elle est refusée avant d'atteindre la moindre écriture. Rien
+    /// n'est modifié, et le refus n'est pas journalisé côté serveur.
+    ///
+    /// Échouer n'a aucune conséquence : au pire le premier « Vu » sera lent, comme avant.
+    @MainActor
+    func warmUpStatusEndpoint() async {
+        if let last = lastStatusWarmUp, Date().timeIntervalSince(last) < Self.warmUpValidity {
+            return
+        }
+        guard let url = APIEndpoints.setMediaStatus() else { return }
+        guard let user = Auth.auth().currentUser else { return }
+        // Marqué avant l'appel : deux fiches ouvertes coup sur coup ne doivent pas envoyer
+        // deux réveils, et un réveil lent ne doit pas en autoriser un second entre-temps.
+        lastStatusWarmUp = Date()
+
+        guard let token = try? await user.getIDToken() else { return }
+
+        var request = URLRequest(backend: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = Data("{}".utf8)
+        _ = try? await URLSession.shared.data(for: request)
     }
 
     func isInGallery(_ item: MediaItem) -> Bool {
@@ -186,21 +278,48 @@ final class LibraryStore: ObservableObject {
 }
 
 private extension LibraryStore {
-    enum MediaStatus: String {
-        case toWatch, seen, none
-    }
-
     func setStatus(_ status: MediaStatus, for item: MediaItem, extras: [String: Any] = [:]) {
+        pendingStatusByItemID[item.id] = status
+
         Task { [weak self] in
             guard let self else { return }
             do {
                 try await callSetMediaStatus(status: status, item: item, extras: extras)
+                // Filet de sécurité. Normalement c'est le listener qui met fin à l'attente,
+                // mais il ne se déclenche pas si le document était déjà dans l'état demandé :
+                // l'indicateur tournerait alors sans fin pour une action pourtant réussie.
+                try? await Task.sleep(for: .seconds(4))
+                await MainActor.run { self.clearPendingStatus(for: item.id, ifStill: status) }
             } catch {
                 await MainActor.run {
+                    self.clearPendingStatus(for: item.id, ifStill: status)
                     self.errorMessage = error.localizedDescription
                 }
             }
         }
+    }
+
+    /// Retire de l'attente tout ce que les listeners ont déjà répercuté.
+    private func resolvePendingStatuses() {
+        guard !pendingStatusByItemID.isEmpty else { return }
+        pendingStatusByItemID = pendingStatusByItemID.filter { id, target in
+            switch target {
+            case .seen:
+                return !galleryItems.contains { $0.id == id }
+            case .toWatch:
+                return !watchlistItems.contains { $0.id == id }
+            case .none:
+                return galleryItems.contains { $0.id == id }
+                    || watchlistItems.contains { $0.id == id }
+            }
+        }
+    }
+
+    /// `ifStill` protège du cas où l'utilisateur a retouché le bouton entre-temps : le filet
+    /// de sécurité de l'action précédente ne doit pas éteindre l'attente de la suivante.
+    private func clearPendingStatus(for id: String, ifStill target: MediaStatus) {
+        guard pendingStatusByItemID[id] == target else { return }
+        pendingStatusByItemID.removeValue(forKey: id)
     }
 
     func callSetMediaStatus(
@@ -254,6 +373,8 @@ private extension LibraryStore {
                 self.birthDecade = nil
                 self.displayedBadgeID = nil
                 self.hasLoadedGalleryOnce = false
+                self.hasLoadedPreferencesOnce = false
+                self.pendingStatusByItemID = [:]
 
                 guard let uid = user?.uid else { return }
                 self.startGalleryListener(uid: uid)
@@ -279,6 +400,7 @@ private extension LibraryStore {
                     self.galleryItems = docs.compactMap { self.galleryEntry(from: $0.data()) }
                         .sorted(by: { $0.addedAt > $1.addedAt })
                     self.hasLoadedGalleryOnce = true
+                    self.resolvePendingStatuses()
                 }
             }
     }
@@ -297,6 +419,7 @@ private extension LibraryStore {
                     let docs = snapshot?.documents ?? []
                     self.watchlistItems = docs.compactMap { self.watchlistEntry(from: $0.data()) }
                         .sorted(by: { $0.addedAt > $1.addedAt })
+                    self.resolvePendingStatuses()
                 }
             }
     }
@@ -319,10 +442,12 @@ private extension LibraryStore {
                     // vide de sens.
                     guard let snapshot, snapshot.exists else {
                         self.preferredPlatformIDs = []
+                        self.hasLoadedPreferencesOnce = true
                         return
                     }
                     let ids = snapshot.data()?["preferredPlatformIDs"] as? [String] ?? []
                     self.preferredPlatformIDs = Set(ids)
+                    self.hasLoadedPreferencesOnce = true
                 }
             }
     }

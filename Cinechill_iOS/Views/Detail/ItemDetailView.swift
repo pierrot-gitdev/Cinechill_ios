@@ -75,6 +75,9 @@ struct ItemDetailView: View {
             .environmentObject(socialStore)
         }
         .task { await loadDetail() }
+        // Ouvrir une fiche est le meilleur signe qu'un « Vu » approche. Le réveil de
+        // l'ouverture a pu expirer depuis, et le magasin sait s'il est encore valable.
+        .task { await libraryStore.warmUpStatusEndpoint() }
         .task(id: outcome) {
             guard outcome != nil else { return }
             try? await Task.sleep(for: .seconds(3))
@@ -580,10 +583,25 @@ struct ItemDetailView: View {
         }
         .background(Ink.ground)
         .animation(Metrics.shift, value: currentStatus)
+        .animation(Metrics.shift, value: waitingButton)
+    }
+
+    /// Le bouton qui doit montrer l'attente : celui qu'on vient de toucher.
+    ///
+    /// Retirer un film vise l'état « aucun », qui n'a pas de bouton à lui ; l'attente se montre
+    /// alors sur celui qui est encore allumé, c'est-à-dire celui qu'on est en train d'éteindre.
+    private var waitingButton: DetailStatus? {
+        guard let target = libraryStore.pendingStatus(for: displayItem) else { return nil }
+        switch target {
+        case .seen: return .seen
+        case .toWatch: return .toWatch
+        case .none: return currentStatus
+        }
     }
 
     private func decisionButton(_ status: DetailStatus, label: String) -> some View {
         let isOn = currentStatus == status
+        let isWaiting = waitingButton == status
         return Button {
             Haptics.impact(isOn ? .light : .medium)
             toggle(status)
@@ -592,7 +610,12 @@ struct ItemDetailView: View {
                 Text(label)
                     .font(.system(size: 14, weight: isOn ? .semibold : .regular))
 
-                if isOn {
+                // Le point de lumière s'ouvre en faisceau qui tourne : c'est le même signe,
+                // arrêté d'un côté, en train de travailler de l'autre. Le bouton garde sa
+                // largeur, seul le libellé glisse de trois points, que l'animation porte.
+                if isWaiting {
+                    CinechillSpinner(size: 12, tint: isOn ? .onAccent : .brand)
+                } else if isOn {
                     if status == .seen {
                         PlanLight(tint: Ink.ground)
                     } else {
@@ -615,8 +638,17 @@ struct ItemDetailView: View {
             .contentShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
         }
         .buttonStyle(PressableScaleStyle(scale: 0.96))
+        // Les deux boutons sont figés, pas seulement celui qui attend : deux écritures
+        // concurrentes sur le même film arriveraient dans un ordre que personne ne contrôle.
+        .disabled(waitingButton != nil)
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
-        .accessibilityHint(isOn ? String(localized: "Toucher à nouveau pour retirer de vos listes", bundle: .app) : "")
+        .accessibilityHint(hint(isOn: isOn, isWaiting: isWaiting))
+    }
+
+    private func hint(isOn: Bool, isWaiting: Bool) -> String {
+        if isWaiting { return String(localized: "Enregistrement…", bundle: .app) }
+        if isOn { return String(localized: "Toucher à nouveau pour retirer de vos listes", bundle: .app) }
+        return ""
     }
 
     private func toggle(_ status: DetailStatus) {

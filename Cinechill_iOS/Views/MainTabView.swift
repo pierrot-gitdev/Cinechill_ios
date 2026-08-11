@@ -10,12 +10,16 @@ struct MainTabView: View {
     @Environment(OnboardingTour.self) private var tour
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var homeModel: HomeViewModel
+    /// Prêtés par `RootView`, qui les a créés bien avant cette vue pour que l'accueil se
+    /// charge pendant l'ouverture. Les autres onglets n'étant pas montés au lancement, ils
+    /// n'ont rien à gagner à remonter d'un cran.
+    private let catalog: MediaCatalog
+    private let homeModel: HomeViewModel
+
     @State private var questionnaireModel: QuestionnaireViewModel
     @State private var swipeModel = SwipeDeckViewModel()
     @State private var galleryModel = GalleryViewModel()
     @State private var watchlistModel = WatchlistViewModel()
-    @State private var catalog = MediaCatalog()
     @State private var badgesModel = BadgesViewModel()
     @State private var selectedTab = 0
     /// Onglets déjà ouverts au moins une fois. Ils restent montés pour garder
@@ -31,15 +35,12 @@ struct MainTabView: View {
 
     private static let tabCount = 5
 
-    init() {
-        let client = BackendPopularClient()
-        _homeModel = State(initialValue: HomeViewModel(
-            repository: PopularRepository(client: client),
-            metadataClient: client
-        ))
+    init(catalog: MediaCatalog, homeModel: HomeViewModel) {
+        self.catalog = catalog
+        self.homeModel = homeModel
         _questionnaireModel = State(initialValue: QuestionnaireViewModel(
             recommendationClient: BackendRecommendationClient(),
-            metadataClient: client
+            metadataClient: BackendPopularClient()
         ))
     }
 
