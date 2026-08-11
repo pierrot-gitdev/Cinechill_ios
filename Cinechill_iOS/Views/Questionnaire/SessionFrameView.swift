@@ -9,11 +9,14 @@ import SwiftUI
 ///
 /// Remplace les quatre écrans du socle. Les plateformes ne sont plus demandées —
 /// elles vivent dans les réglages et sont rappelées à l'accueil ; le genre et
-/// l'ambiance ont leur propre écran (voir `FilmChoiceView`). Restent trois choses
-/// qu'aucune donnée ne peut deviner : avec qui, combien de temps, et sous quelle
-/// forme.
+/// l'ambiance ont leur propre écran (voir `FilmChoiceView`).
+///
+/// **« Avec qui » n'est plus demandé ici** : la question est posée sur l'écran
+/// d'entrée, à même le mur d'affiches (`SessionEntryView`), et sa réponse arrive
+/// jusqu'ici par `start(audience:)`. La reposer reviendrait à afficher deux fois
+/// la même question à trente points d'écart, ce qui est précisément le défaut
+/// qu'on est venu corriger. Pour la changer, on revient en arrière.
 struct SessionFrameView: View {
-    @Binding var audience: Audience?
     @Binding var budget: RuntimePreference
     @Binding var contentFormat: ContentFormat?
 
@@ -23,19 +26,6 @@ struct SessionFrameView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 34) {
-            group(
-                String(localized: "Tu regardes avec qui ?", bundle: .app),
-                note: audience == .family
-                    ? String(localized: "On ne proposera que des films adaptés aux enfants.", bundle: .app)
-                    : nil
-            ) {
-                ForEach(Audience.allCases, id: \.self) { value in
-                    PlanChip(title: value.label, isOn: audience == value) {
-                        audience = value
-                    }
-                }
-            }
-
             group(String(localized: "Tu as combien de temps ?", bundle: .app), note: lateHourNote) {
                 ForEach(budgets, id: \.0) { preference, title in
                     PlanChip(title: title, isOn: budget == preference) {
@@ -83,7 +73,6 @@ struct SessionFrameView: View {
 
 #Preview("Ta soirée") {
     struct Harness: View {
-        @State private var audience: Audience? = .couple
         @State private var budget: RuntimePreference = .medium
         @State private var format: ContentFormat? = .liveAction
 
@@ -91,7 +80,6 @@ struct SessionFrameView: View {
             ZStack {
                 Ink.ground.ignoresSafeArea()
                 SessionFrameView(
-                    audience: $audience,
                     budget: $budget,
                     contentFormat: $format,
                     lateHourNote: "Il est 21 h 40 : on a présélectionné un format court pour que tu puisses le finir ce soir."

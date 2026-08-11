@@ -166,51 +166,6 @@ final class QuestionnaireViewModel {
     /// donnait l'impression d'avoir raté deux écrans.
     var questionNumber: Int { askedDimensions.count + 1 }
 
-    /// Les plateformes retenues, telles qu'on les rappelle au seuil. Vide tant que la
-    /// liste des fournisseurs n'est pas revenue — la ligne disparaît alors au lieu
-    /// d'afficher des identifiants bruts.
-    var selectedPlatformNames: [String] {
-        availablePlatforms
-            .filter { answers.platformIDs.contains($0.id) }
-            .map(\.name)
-    }
-
-    // MARK: - L'accueil
-
-    /// Ce que l'accueil annonce — et il ne change jamais.
-    ///
-    /// Le titre et l'accroche dépendaient auparavant du profil de goût, chargé
-    /// en réseau : le texte se remplaçait tout seul une seconde après l'arrivée
-    /// sur l'écran, sous les yeux de quelqu'un en train de le lire. Ce qu'on sait
-    /// déjà de la personne ne change plus la promesse, seulement la ligne
-    /// personnelle en bas, qui s'ajoute au lieu de remplacer.
-    let openingTitle = String(localized: "Trouve le film de ce soir", bundle: .app)
-
-    var openingLead: String {
-        String(localized: "Réponds à quelques questions rapides : ton humeur, le temps que tu as, ce dont tu as envie.", bundle: .app)
-    }
-
-    /// Ce que la personne obtient à la fin, dit avant de commencer. Trois lignes
-    /// concrètes valent mieux qu'une promesse abstraite.
-    let openingSteps: [String] = [
-        String(localized: "Tu réponds à quelques questions courtes", bundle: .app),
-        String(localized: "On cherche parmi les films de tes plateformes", bundle: .app),
-        String(localized: "Tu repars avec trois films à regarder ce soir", bundle: .app),
-    ]
-
-    let openingDuration = String(localized: "Environ deux minutes.", bundle: .app)
-
-    /// La ligne personnelle, qui n'apparaît qu'une fois le profil chargé et
-    /// n'efface rien. Elle dit à quoi servent les films déjà marqués comme vus.
-    var openingProvenance: String? {
-        guard taste.galleryCount > 0 else { return nil }
-        let films = String(localized: "\(taste.galleryCount) films vus", bundle: .app)
-        guard taste.establishedAxisCount > 0 else {
-            return String(localized: "\(films) : ils nous aident déjà à te proposer mieux", bundle: .app)
-        }
-        return String(localized: "\(films) : on commence à connaître tes goûts, il y aura moins de questions", bundle: .app)
-    }
-
     // MARK: - Le cadre
 
     var canAdvanceFrame: Bool {
@@ -225,10 +180,14 @@ final class QuestionnaireViewModel {
     ///     n'en fait qu'un malus de score, pas un filtre dur : c'est
     ///     `availableGenres` qui garantit qu'un genre banni ne sera jamais demandé
     ///     à TMDB, en ne le proposant pas.
-    func start(preferredPlatformIDs: Set<String>, bannedGenreIDs: Set<Int> = []) {
+    ///   - audience: la réponse déjà donnée sur l'écran d'entrée. Elle est
+    ///     reposée **après** la remise à zéro : `answers` est reconstruit ici, et
+    ///     l'écrire avant reviendrait à l'effacer.
+    func start(preferredPlatformIDs: Set<String>, bannedGenreIDs: Set<Int> = [], audience: Audience? = nil) {
         answers = QuestionnaireAnswers()
         answers.platformIDs = preferredPlatformIDs
         answers.avoidedGenreIDs = bannedGenreIDs
+        answers.audience = audience
         presetBudgetForHour()
         belief = BeliefState()
         pool = []

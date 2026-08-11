@@ -148,38 +148,6 @@
         }
       }
     },
-    "%@ : ils nous aident déjà à te proposer mieux" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@: they already help us suggest better"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ : ils nous aident déjà à te proposer mieux"
-          }
-        }
-      }
-    },
-    "%@ : on commence à connaître tes goûts, il y aura moins de questions" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@: we're getting to know your taste, there will be fewer questions"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ : on commence à connaître tes goûts, il y aura moins de questions"
-          }
-        }
-      }
-    },
     "%@ : tu l'avais déjà vu" : {
       "localizations" : {
         "en" : {
@@ -623,46 +591,6 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld films remis en jeu."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld films vus" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld film watched"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld films watched"
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld film vu"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld films vus"
                 }
               }
             }
@@ -4360,22 +4288,6 @@
         }
       }
     },
-    "Environ deux minutes." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About two minutes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Environ deux minutes."
-          }
-        }
-      }
-    },
     "Envoi…" : {
       "localizations" : {
         "en" : {
@@ -6920,22 +6832,6 @@
         }
       }
     },
-    "On cherche parmi les films de tes plateformes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We search among the films on your platforms"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On cherche parmi les films de tes plateformes"
-          }
-        }
-      }
-    },
     "On cherchera un film léger, qui fait passer un bon moment." : {
       "localizations" : {
         "en" : {
@@ -8720,22 +8616,6 @@
         }
       }
     },
-    "Réponds à quelques questions rapides : ton humeur, le temps que tu as, ce dont tu as envie." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Answer a few quick questions: your mood, the time you have, what you feel like."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réponds à quelques questions rapides : ton humeur, le temps que tu as, ce dont tu as envie."
-          }
-        }
-      }
-    },
     "Réponse serveur illisible." : {
       "localizations" : {
         "en" : {
@@ -9936,22 +9816,6 @@
         }
       }
     },
-    "Trois réglages pour éliminer d'emblée ce qui ne convient pas." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Three settings to rule out what won't do, straight away."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trois réglages pour éliminer d'emblée ce qui ne convient pas."
-          }
-        }
-      }
-    },
     "Trop de tentatives. Réessaie dans quelques minutes." : {
       "localizations" : {
         "en" : {
@@ -9996,22 +9860,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trouver mes films"
-          }
-        }
-      }
-    },
-    "Trouve le film de ce soir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Find tonight's film"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trouve le film de ce soir"
           }
         }
       }
@@ -10464,22 +10312,6 @@
         }
       }
     },
-    "Voir ce que Cinechill a retenu de tes goûts" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See what Cinechill has learned about your taste"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voir ce que Cinechill a retenu de tes goûts"
-          }
-        }
-      }
-    },
     "Voir la bande-annonce" : {
       "localizations" : {
         "en" : {
@@ -10540,22 +10372,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tes goûts"
-          }
-        }
-      }
-    },
-    "Tes plateformes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your platforms"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tes plateformes"
           }
         }
       }
@@ -11424,54 +11240,6 @@
         }
       }
     },
-    "Tu regardes avec qui ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Who are you watching with?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu regardes avec qui ?"
-          }
-        }
-      }
-    },
-    "Tu repars avec trois films à regarder ce soir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You leave with three films to watch tonight"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu repars avec trois films à regarder ce soir"
-          }
-        }
-      }
-    },
-    "Tu réponds à quelques questions courtes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You answer a few short questions"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu réponds à quelques questions courtes"
-          }
-        }
-      }
-    },
     "Tu retrouveras ta galerie et ta watchlist à la prochaine connexion." : {
       "localizations" : {
         "en" : {
@@ -11804,6 +11572,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Commence par construire ta galerie, Cinechill pourra ainsi mieux déterminer ton profil et te proposer les meilleurs films pour toi."
+          }
+        }
+      }
+    },
+    "Trouve ton film du soir en 60 sec avant que ton plat refroidisse" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find tonight's film in 60 seconds, before your dinner goes cold"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve ton film du soir en 60 sec avant que ton plat refroidisse"
+          }
+        }
+      }
+    },
+    "Vous êtes combien ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How many of you tonight?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous êtes combien ?"
+          }
+        }
+      }
+    },
+    "Deux réglages pour éliminer d'emblée ce qui ne convient pas." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Two settings to rule out what won't work, right away."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deux réglages pour éliminer d'emblée ce qui ne convient pas."
           }
         }
       }

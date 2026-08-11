@@ -7,6 +7,10 @@ import SwiftUI
 
 struct QuestionnaireView: View {
     @State var viewModel: QuestionnaireViewModel
+    /// Prêté par `MainTabView`, qui l'a reçu de `RootView` : c'est le catalogue de
+    /// l'accueil, préchargé pendant l'ouverture de l'app. L'entrée y puise ses
+    /// affiches, ce qui lui évite la moindre requête.
+    let homeModel: HomeViewModel
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
@@ -21,11 +25,10 @@ struct QuestionnaireView: View {
                 Ink.ground.ignoresSafeArea()
                 content
             }
-            .safeAreaInset(edge: .top) {
-                if viewModel.phase == .intro {
-                    AppHeaderView(title: String(localized: "CinéMatch", bundle: .app), onProfileTap: { showProfile = true })
-                }
-            }
+            // Pas de `safeAreaInset` pour l'en-tête de l'entrée : il réserverait
+            // sa hauteur et couperait le mur sous lui. `SessionEntryView` le pose
+            // elle-même en surcouche, ce que le voile en dégradé d'`AppHeaderView`
+            // prévoit depuis toujours.
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showProfile) {
                 ProfileView(badgesModel: badgesModel)
@@ -46,7 +49,25 @@ struct QuestionnaireView: View {
     private var content: some View {
         switch viewModel.phase {
         case .intro:
-            introView
+            SessionEntryView(
+                posters: homeModel.popularItems,
+                audience: $viewModel.answers.audience,
+                verdict: viewModel.taste.pendingVerdict,
+                onVerdict: { viewModel.answerVerdict($0) },
+                onDismissVerdict: { viewModel.dismissVerdict() },
+                onProfileTap: { showProfile = true },
+                onNext: {
+                    viewModel.start(
+                        preferredPlatformIDs: libraryStore.preferredPlatformIDs,
+                        bannedGenreIDs: libraryStore.bannedGenreIDs,
+                        audience: viewModel.answers.audience
+                    )
+                }
+            )
+            .task {
+                await viewModel.loadPlatformsIfNeeded()
+                await viewModel.loadTasteProfile()
+            }
         case .frame:
             frameFlow
         case .filmChoice:
@@ -72,121 +93,6 @@ struct QuestionnaireView: View {
         }
     }
 
-    // MARK: - L'accueil
-
-    private var introView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Spacer()
-
-            CinechillHallIconView(.salle)
-                .frame(width: 34, height: 34)
-                .foregroundStyle(Ink.ink3)
-
-            Text(viewModel.openingTitle)
-                .planTitle(28)
-                .foregroundStyle(Ink.ink)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 24)
-
-            Text(viewModel.openingLead)
-                .font(.system(size: 13.5))
-                .foregroundStyle(Ink.ink2)
-                .lineSpacing(2)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 12)
-
-            // Ce que la personne obtient, dit avant de commencer plutôt que
-            // promis en abstrait. Les trois lignes sont numérotées parce qu'elles
-            // décrivent un ordre réel, pas pour décorer.
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(viewModel.openingSteps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        Text(verbatim: "\(index + 1)")
-                            .planLabel()
-                            .foregroundStyle(Ink.ink3)
-                            .monospacedDigit()
-                        Text(step)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Ink.ink2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-            .padding(.top, 22)
-
-            Text(viewModel.openingDuration)
-                .font(.system(size: 12.5))
-                .foregroundStyle(Ink.ink3)
-                .padding(.top, 18)
-
-            // N'apparaît qu'une fois le profil chargé, et ne remplace rien : le
-            // reste de l'écran est lisible dès la première image.
-            if let provenance = viewModel.openingProvenance {
-                Button { showTasteSheet = true } label: {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        PlanLight()
-                        Text(provenance)
-                            .font(.system(size: 12))
-                            .foregroundStyle(Ink.ink2)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundStyle(Ink.ink3)
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 16)
-                .transition(.opacity)
-                .accessibilityHint(String(localized: "Voir ce que Cinechill a retenu de tes goûts", bundle: .app))
-            }
-
-            Spacer()
-
-            if let pending = viewModel.taste.pendingVerdict {
-                VerdictPromptView(
-                    pending: pending,
-                    onAnswer: { viewModel.answerVerdict($0) },
-                    onDismiss: { viewModel.dismissVerdict() }
-                )
-                .padding(.bottom, 24)
-                .transition(.opacity)
-            }
-
-            if !viewModel.selectedPlatformNames.isEmpty {
-                PlanEdge()
-                HStack(alignment: .firstTextBaseline) {
-                    Text("Tes plateformes", bundle: .app)
-                        .planLabel()
-                        .foregroundStyle(Ink.ink3)
-                    Spacer(minLength: 16)
-                    Text(viewModel.selectedPlatformNames.joined(separator: " · "))
-                        .font(.system(size: 12))
-                        .foregroundStyle(Ink.ink2)
-                        .multilineTextAlignment(.trailing)
-                }
-                .padding(.vertical, 14)
-                PlanEdge()
-                    .padding(.bottom, 24)
-            }
-
-            PlanButton(title: String(localized: "Commencer", bundle: .app)) {
-                viewModel.start(
-                    preferredPlatformIDs: libraryStore.preferredPlatformIDs,
-                    bannedGenreIDs: libraryStore.bannedGenreIDs
-                )
-            }
-        }
-        .padding(.horizontal, Metrics.margin)
-        .padding(.bottom, Metrics.margin)
-        .animation(Metrics.shift, value: viewModel.openingProvenance)
-        .task {
-            await viewModel.loadPlatformsIfNeeded()
-            await viewModel.loadTasteProfile()
-        }
-    }
-
     // MARK: - Ta soirée
 
     private var frameFlow: some View {
@@ -200,14 +106,13 @@ struct QuestionnaireView: View {
                             .planTitle()
                             .foregroundStyle(Ink.ink)
 
-                        Text("Trois réglages pour éliminer d'emblée ce qui ne convient pas.", bundle: .app)
+                        Text("Deux réglages pour éliminer d'emblée ce qui ne convient pas.", bundle: .app)
                             .font(.system(size: 13))
                             .foregroundStyle(Ink.ink2)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
                     SessionFrameView(
-                        audience: $viewModel.answers.audience,
                         budget: $viewModel.answers.runtime,
                         contentFormat: $viewModel.answers.contentFormat,
                         lateHourNote: viewModel.lateHourNote
