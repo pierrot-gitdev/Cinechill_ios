@@ -166,7 +166,7 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
         }
         let token = try await user.getIDToken()
 
-        var request = URLRequest(backend: url)
+        var request = await URLRequest(backend: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")

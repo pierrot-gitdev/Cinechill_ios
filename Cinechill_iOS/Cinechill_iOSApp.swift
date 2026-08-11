@@ -11,6 +11,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // Avant `configure()`, impérativement : Firebase instancie son
+        // fournisseur d'attestation à ce moment-là et ne le relit plus ensuite.
+        AppAttestation.install()
         FirebaseApp.configure()
         return true
     }

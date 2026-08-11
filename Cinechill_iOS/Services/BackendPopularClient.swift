@@ -111,7 +111,7 @@ struct BackendPopularClient: PopularPageFetching, HomeMetadataFetching, Sendable
     }
 
     private func networkFetch(from url: URL) async throws -> Data {
-        var request = URLRequest(backend: url)
+        var request = await URLRequest(backend: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 

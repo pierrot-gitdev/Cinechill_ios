@@ -144,8 +144,22 @@ nonisolated extension URLRequest {
     ///
     /// L'en-tête plutôt qu'un paramètre : il vaut pour les `GET` comme pour les
     /// `POST`, et il n'oblige aucun corps de requête à se rallonger d'un champ.
-    init(backend url: URL) {
+    ///
+    /// Elle joint aussi l'attestation de l'app. C'est ce qui distingue notre
+    /// application d'un client fabriqué, et c'est la seule protection des points
+    /// d'entrée que le backend laisse ouverts : le jeton utilisateur dit qui
+    /// appelle, jamais depuis quoi, et un compte Firebase est gratuit à créer.
+    ///
+    /// `async` pour cette seule raison : obtenir le jeton peut demander un
+    /// aller-retour au réseau. Il est mis en cache par le SDK et renouvelé bien
+    /// avant son expiration, donc l'attente est nulle en régime établi.
+    /// Une attestation indisponible ne bloque pas la requête : elle part sans
+    /// l'en-tête, et c'est le serveur qui tranche selon son mode.
+    init(backend url: URL) async {
         self.init(url: url)
         setValue(AppLanguage.current.tmdbTag, forHTTPHeaderField: "Accept-Language")
+        if let attestation = await AppAttestation.token() {
+            setValue(attestation, forHTTPHeaderField: "X-Firebase-AppCheck")
+        }
     }
 }

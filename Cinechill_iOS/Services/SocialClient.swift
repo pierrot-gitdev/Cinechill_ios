@@ -162,7 +162,7 @@ nonisolated struct SocialClient: SocialServicing, Sendable {
         guard let user = Auth.auth().currentUser else { throw SocialError.notAuthenticated }
         let token = try await user.getIDToken()
 
-        var request = URLRequest(backend: url)
+        var request = await URLRequest(backend: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -175,7 +175,7 @@ nonisolated struct SocialClient: SocialServicing, Sendable {
     /// qu'il doit répondre avant qu'un compte n'existe.
     private func get(from url: URL) async throws -> Data {
         guard BackendConfiguration.baseURL != nil else { throw SocialError.missingBaseURL }
-        var request = URLRequest(backend: url)
+        var request = await URLRequest(backend: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         return try await send(request)

@@ -41,7 +41,7 @@ struct BackendDetailClient: Sendable {
             throw BackendDetailClientError.invalidURL
         }
 
-        var request = URLRequest(backend: url)
+        var request = await URLRequest(backend: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
