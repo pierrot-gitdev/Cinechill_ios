@@ -78,7 +78,7 @@ struct NotificationsPanel: View {
             Text("Aucune notification", bundle: .app)
                 .font(.system(size: 13.5))
                 .foregroundStyle(Ink.ink2)
-            Text("Les films qu'on vous recommande arriveront ici.", bundle: .app)
+            Text("Les films qu'on te recommande arriveront ici.", bundle: .app)
                 .font(.system(size: 11.5))
                 .foregroundStyle(Ink.ink3)
                 .multilineTextAlignment(.center)
@@ -132,7 +132,7 @@ struct NotificationsPanel: View {
                     (
                         Text(suggestion.fromDisplayName)
                             .font(.system(size: 13, weight: .semibold))
-                        + Text(" vous recommande", bundle: .app)
+                        + Text(" te recommande", bundle: .app)
                             .font(.system(size: 13))
                     )
                     .lineLimit(2)
@@ -175,7 +175,7 @@ struct NotificationsPanel: View {
                 .frame(width: 30, height: 30)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Ajouté à votre watchlist", bundle: .app)
+                Text("Ajouté à ta watchlist", bundle: .app)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Ink.light)
                 Text(title)
@@ -204,7 +204,7 @@ struct NotificationsPanel: View {
                 (
                     Text(profile.displayName)
                         .font(.system(size: 13, weight: .semibold))
-                    + Text(" vous suit", bundle: .app)
+                    + Text(" te suit", bundle: .app)
                         .font(.system(size: 13))
                 )
                 .lineLimit(2)
@@ -273,7 +273,7 @@ struct NotificationsPanel: View {
             // Vu entretemps par un autre chemin : la recommandation n'a plus
             // d'objet, et rien n'entre en watchlist.
             withAnimation(.easeOut(duration: 0.2)) {
-                settled[suggestion.id] = String(localized: "\(suggestion.item.title) : vous l'aviez déjà vu", bundle: .app)
+                settled[suggestion.id] = String(localized: "\(suggestion.item.title) : tu l'avais déjà vu", bundle: .app)
             }
         } else {
             onAccepted(suggestion.item.title)

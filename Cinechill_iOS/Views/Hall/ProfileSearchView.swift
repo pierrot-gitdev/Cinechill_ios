@@ -76,7 +76,7 @@ struct ProfileSearchView: View {
             HallEmptyState(
                 icon: .hall,
                 title: String(localized: "Personne à proposer pour l'instant", bundle: .app),
-                message: String(localized: "Tapez un pseudo pour retrouver quelqu'un que vous connaissez.", bundle: .app)
+                message: String(localized: "Tape un pseudo pour retrouver quelqu'un que tu connais.", bundle: .app)
             )
             .padding(.top, 40)
         } else {
@@ -91,7 +91,7 @@ struct ProfileSearchView: View {
         HallEmptyState(
             icon: .chercher,
             title: String(localized: "Aucun profil pour « \(model.settledQuery) »", bundle: .app),
-            message: String(localized: "Vérifiez l'orthographe, ou invitez cette personne à rejoindre Cinéchill.", bundle: .app)
+            message: String(localized: "Vérifie l'orthographe, ou invite cette personne à rejoindre Cinechill.", bundle: .app)
         )
         .padding(.top, 40)
     }

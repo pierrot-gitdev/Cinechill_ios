@@ -245,7 +245,7 @@ struct BadgeDetailView: View {
                 } else {
                     PlanButton(
                         title: isConfirming
-                            ? String(localized: "Affiché sur votre profil", bundle: .app)
+                            ? String(localized: "Affiché sur ton profil", bundle: .app)
                             : String(localized: "Afficher sur mon profil", bundle: .app),
                         isEnabled: !isConfirming,
                         height: Metrics.control

@@ -31,27 +31,27 @@ enum SocialError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return String(localized: "Vous devez être connecté.", bundle: .app)
+            return String(localized: "Tu dois être connecté.", bundle: .app)
         case .missingBaseURL:
             return String(localized: "Configuration serveur manquante.", bundle: .app)
         case .handleTaken:
             return String(localized: "Ce pseudo est déjà pris.", bundle: .app)
         case .handleChangeLimit:
-            return String(localized: "Vous avez déjà changé de pseudo une fois.", bundle: .app)
+            return String(localized: "Tu as déjà changé de pseudo une fois.", bundle: .app)
         case .invalidHandle:
             return String(localized: "3 à 20 caractères : lettres, chiffres, point, tiret ou tiret bas.", bundle: .app)
         case .ownProfileMissing:
-            return String(localized: "Choisissez d'abord un pseudo.", bundle: .app)
+            return String(localized: "Choisis d'abord un pseudo.", bundle: .app)
         case .targetNotFound:
             return String(localized: "Ce profil n'existe plus.", bundle: .app)
         case .notFollowing:
-            return String(localized: "Vous ne suivez plus cette personne.", bundle: .app)
+            return String(localized: "Tu ne suis plus cette personne.", bundle: .app)
         case .notInGallery:
-            return String(localized: "Vous ne pouvez recommander qu'un film que vous avez vu.", bundle: .app)
+            return String(localized: "Tu ne peux recommander qu'un film que tu as vu.", bundle: .app)
         case .targetAlreadySeen:
             return String(localized: "Cette personne a déjà vu ce film.", bundle: .app)
         case .alreadySuggested:
-            return String(localized: "Vous lui avez déjà recommandé ce film.", bundle: .app)
+            return String(localized: "Tu lui as déjà recommandé ce film.", bundle: .app)
         case .suggestionNotFound:
             return String(localized: "Cette recommandation n'existe plus.", bundle: .app)
         case .server(let code):

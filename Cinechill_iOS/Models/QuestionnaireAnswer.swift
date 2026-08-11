@@ -335,9 +335,9 @@ nonisolated enum CreditsMoment: String, QuestionOption {
     var label: String {
         switch self {
         case .silence: String(localized: "Personne ne parle pendant une minute", bundle: .app)
-        case .discuss: String(localized: "Vous voulez en parler tout de suite", bundle: .app)
-        case .contentment: String(localized: "Vous êtes bien, c'est tout", bundle: .app)
-        case .keepGoing: String(localized: "Vous enchaînez sur la suite", bundle: .app)
+        case .discuss: String(localized: "Tu veux en parler tout de suite", bundle: .app)
+        case .contentment: String(localized: "Tu es bien, c'est tout", bundle: .app)
+        case .keepGoing: String(localized: "Tu enchaînes sur la suite", bundle: .app)
         }
     }
 }

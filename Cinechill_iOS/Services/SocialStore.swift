@@ -24,7 +24,7 @@ final class SocialStore: ObservableObject {
     /// dans l'app est « est-ce que je suis cette personne ? ».
     @Published private(set) var followingUIDs: Set<String> = []
     @Published private(set) var suggestions: [Suggestion] = []
-    /// Les abonnés récents, source des notifications « X vous suit ».
+    /// Les abonnés récents, source des notifications « X te suit ».
     @Published private(set) var recentFollowers: [PublicProfile] = []
     @Published private(set) var hasLoadedProfileOnce = false
     @Published private(set) var errorMessage: String?

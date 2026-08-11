@@ -464,7 +464,7 @@ struct LibraryMark: View {
                     .accessibilityLabel(String(localized: "Déjà vu", bundle: .app))
             } else if inWatchlist {
                 PlanLightOutline()
-                    .accessibilityLabel(String(localized: "Dans votre watchlist", bundle: .app))
+                    .accessibilityLabel(String(localized: "Dans ta watchlist", bundle: .app))
             }
         }
         // Le point est posé sur une affiche, dont on ne connaît pas la valeur :
@@ -480,7 +480,7 @@ struct LibraryMark: View {
             VStack(alignment: .leading, spacing: 34) {
                 PlanSectionLabel(
                     title: "Mes plateformes",
-                    note: "Ce qui n'est pas chez vous ne vous sera pas proposé."
+                    note: "Ce qui n'est pas chez toi ne te sera pas proposé."
                 )
 
                 HStack(spacing: 7) {
@@ -506,8 +506,8 @@ struct LibraryMark: View {
 
                 PlanEmptyState(
                     icon: .hall,
-                    title: "Votre collection est vide",
-                    message: "Chaque film que vous marquez comme vu vient s'y ranger, et dessine peu à peu votre profil de cinéphile.",
+                    title: "Ta collection est vide",
+                    message: "Chaque film que tu marques comme vu vient s'y ranger, et dessine peu à peu ton profil de cinéphile.",
                     actionTitle: "Commencer à swiper",
                     action: {}
                 )

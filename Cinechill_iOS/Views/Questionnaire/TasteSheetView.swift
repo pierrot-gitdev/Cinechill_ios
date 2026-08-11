@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Vos goûts : ce que l'application a compris de vous, en toutes lettres.
+/// Tes goûts : ce que l'application a compris de toi, en toutes lettres.
 ///
 /// Un système qui apprend de quelqu'un sans jamais montrer ce qu'il en a conclu
 /// devient une boîte noire — et une boîte noire qui se trompe est insupportable.
@@ -62,7 +62,7 @@ struct TasteSheetView: View {
     private var closeBar: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Vos goûts", bundle: .app)
+                Text("Tes goûts", bundle: .app)
                     .planLabel()
                     .foregroundStyle(Ink.ink2)
                 Spacer()
@@ -87,7 +87,7 @@ struct TasteSheetView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Ce qu'on a compris de vos goûts", bundle: .app)
+            Text("Ce qu'on a compris de tes goûts", bundle: .app)
                 .planTitle(24)
                 .foregroundStyle(Ink.ink)
                 .fixedSize(horizontal: false, vertical: true)
@@ -106,19 +106,19 @@ struct TasteSheetView: View {
     /// qu'un écran de profil doit répondre avant toute autre chose.
     private var provenanceLine: String {
         guard !profile.isEmpty else {
-            return String(localized: "On ne sait encore rien de vous. À chaque film que vous marquez comme vu et à chaque recherche, cette page se remplit, et il y a de moins en moins de questions à vous poser.", bundle: .app)
+            return String(localized: "On ne sait encore rien de toi. À chaque film que tu marques comme vu et à chaque recherche, cette page se remplit, et il y a de moins en moins de questions à te poser.", bundle: .app)
         }
         // L'accord du pluriel n'est pas une affaire de « s » ajouté au bout :
         // il se règle dans le catalogue, langue par langue.
         var parts: [String] = []
         if profile.galleryCount > 0 {
-            parts.append(String(localized: "\(profile.galleryCount) films que vous avez vus", bundle: .app))
+            parts.append(String(localized: "\(profile.galleryCount) films que tu as vus", bundle: .app))
         }
         if profile.watchlistCount > 0 {
-            parts.append(String(localized: "\(profile.watchlistCount) films de votre liste à voir", bundle: .app))
+            parts.append(String(localized: "\(profile.watchlistCount) films de ta liste à voir", bundle: .app))
         }
         let sources = parts.formatted(.list(type: .and))
-        return String(localized: "Ces conclusions viennent de \(sources), et de vos réponses. Si l'une d'elles est fausse, déplacez le curseur : c'est vous qui aurez raison.", bundle: .app)
+        return String(localized: "Ces conclusions viennent de \(sources), et de tes réponses. Si l'une d'elles est fausse, déplace le curseur : c'est toi qui auras raison.", bundle: .app)
     }
 
     private var footer: some View {
@@ -166,7 +166,7 @@ struct TasteSheetView: View {
                 if savingAxis == axis {
                     CinechillSpinner(size: 12)
                 } else if corrected {
-                    Text("modifié par vous", bundle: .app)
+                    Text("modifié par toi", bundle: .app)
                         .planLabel()
                         .foregroundStyle(Ink.light)
                 }
@@ -230,41 +230,41 @@ struct TasteSheetView: View {
         switch axis {
         case .charge:
             return value > 0
-                ? (strong ? String(localized: "Vous aimez les films qui remuent.", bundle: .app) : String(localized: "Un peu d'émotion forte ne vous gêne pas.", bundle: .app))
-                : (strong ? String(localized: "Vous préférez les films qui restent légers.", bundle: .app) : String(localized: "Plutôt des films légers.", bundle: .app))
+                ? (strong ? String(localized: "Tu aimes les films qui remuent.", bundle: .app) : String(localized: "Un peu d'émotion forte ne te gêne pas.", bundle: .app))
+                : (strong ? String(localized: "Tu préfères les films qui restent légers.", bundle: .app) : String(localized: "Plutôt des films légers.", bundle: .app))
         case .rythme:
             return value > 0
-                ? (strong ? String(localized: "Il vous faut des films où ça avance vite.", bundle: .app) : String(localized: "Vous aimez que ça ne traîne pas.", bundle: .app))
-                : (strong ? String(localized: "Vous aimez les films qui prennent leur temps.", bundle: .app) : String(localized: "Plutôt des films calmes.", bundle: .app))
+                ? (strong ? String(localized: "Il te faut des films où ça avance vite.", bundle: .app) : String(localized: "Tu aimes que ça ne traîne pas.", bundle: .app))
+                : (strong ? String(localized: "Tu aimes les films qui prennent leur temps.", bundle: .app) : String(localized: "Plutôt des films calmes.", bundle: .app))
         case .familiarite:
             return value > 0
-                ? (strong ? String(localized: "Vous aimez découvrir des films dont personne ne parle.", bundle: .app) : String(localized: "Vous êtes curieux·se, sans chercher l'obscur.", bundle: .app))
-                : (strong ? String(localized: "Vous préférez les films dont vous avez déjà entendu parler.", bundle: .app) : String(localized: "Plutôt des films connus.", bundle: .app))
+                ? (strong ? String(localized: "Tu aimes découvrir des films dont personne ne parle.", bundle: .app) : String(localized: "Tu es curieux·se, sans chercher l'obscur.", bundle: .app))
+                : (strong ? String(localized: "Tu préfères les films dont tu as déjà entendu parler.", bundle: .app) : String(localized: "Plutôt des films connus.", bundle: .app))
         case .densite:
             return value > 0
-                ? (strong ? String(localized: "Vous aimez les films qui demandent de l'attention.", bundle: .app) : String(localized: "Un film un peu exigeant ne vous fait pas peur.", bundle: .app))
-                : (strong ? String(localized: "Vous voulez des films qui se laissent suivre facilement.", bundle: .app) : String(localized: "Plutôt des films faciles à suivre.", bundle: .app))
+                ? (strong ? String(localized: "Tu aimes les films qui demandent de l'attention.", bundle: .app) : String(localized: "Un film un peu exigeant ne te fait pas peur.", bundle: .app))
+                : (strong ? String(localized: "Tu veux des films qui se laissent suivre facilement.", bundle: .app) : String(localized: "Plutôt des films faciles à suivre.", bundle: .app))
         case .ancrage:
             return value > 0
-                ? (strong ? String(localized: "Vous aimez qu'un film vous emmène dans un autre monde.", bundle: .app) : String(localized: "Un peu d'imaginaire vous va bien.", bundle: .app))
-                : (strong ? String(localized: "Vous préférez les histoires qui pourraient être vraies.", bundle: .app) : String(localized: "Plutôt des histoires réalistes.", bundle: .app))
+                ? (strong ? String(localized: "Tu aimes qu'un film t'emmène dans un autre monde.", bundle: .app) : String(localized: "Un peu d'imaginaire te va bien.", bundle: .app))
+                : (strong ? String(localized: "Tu préfères les histoires qui pourraient être vraies.", bundle: .app) : String(localized: "Plutôt des histoires réalistes.", bundle: .app))
         case .ton:
             return value > 0
-                ? (strong ? String(localized: "Vous aimez les films qui font du bien.", bundle: .app) : String(localized: "Plutôt des films bienveillants.", bundle: .app))
-                : (strong ? String(localized: "Les films sombres ne vous dérangent pas.", bundle: .app) : String(localized: "Plutôt des films sans complaisance.", bundle: .app))
+                ? (strong ? String(localized: "Tu aimes les films qui font du bien.", bundle: .app) : String(localized: "Plutôt des films bienveillants.", bundle: .app))
+                : (strong ? String(localized: "Les films sombres ne te dérangent pas.", bundle: .app) : String(localized: "Plutôt des films sans complaisance.", bundle: .app))
         case .echelle:
             return value > 0
-                ? (strong ? String(localized: "Le grand spectacle vous parle.", bundle: .app) : String(localized: "Vous aimez qu'il y ait de l'ampleur.", bundle: .app))
-                : (strong ? String(localized: "Ce sont les histoires de quelques personnes qui vous touchent.", bundle: .app) : String(localized: "Plutôt des histoires à taille humaine.", bundle: .app))
+                ? (strong ? String(localized: "Le grand spectacle te parle.", bundle: .app) : String(localized: "Tu aimes qu'il y ait de l'ampleur.", bundle: .app))
+                : (strong ? String(localized: "Ce sont les histoires de quelques personnes qui te touchent.", bundle: .app) : String(localized: "Plutôt des histoires à taille humaine.", bundle: .app))
         case .investissement:
             return value > 0
-                ? (strong ? String(localized: "Un film de plus de deux heures ne vous fait pas peur.", bundle: .app) : String(localized: "Vous acceptez volontiers les films longs.", bundle: .app))
-                : (strong ? String(localized: "Vous préférez que ça tienne en une heure et demie.", bundle: .app) : String(localized: "Plutôt des films courts.", bundle: .app))
+                ? (strong ? String(localized: "Un film de plus de deux heures ne te fait pas peur.", bundle: .app) : String(localized: "Tu acceptes volontiers les films longs.", bundle: .app))
+                : (strong ? String(localized: "Tu préfères que ça tienne en une heure et demie.", bundle: .app) : String(localized: "Plutôt des films courts.", bundle: .app))
         }
     }
 }
 
-#Preview("Vos goûts") {
+#Preview("Tes goûts") {
     TasteSheetView(
         profile: TasteProfile(
             mu: [.charge: 0.62, .rythme: -0.38, .familiarite: 0.55, .densite: 0.61,

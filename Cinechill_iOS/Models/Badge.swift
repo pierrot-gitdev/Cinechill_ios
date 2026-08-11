@@ -111,7 +111,7 @@ nonisolated enum BadgeCatalog {
     static var all: [Badge] {[
         Badge(
             id: "first_reel", name: String(localized: "Première Bobine", bundle: .app),
-            condition: String(localized: "Votre tout premier film enregistré.", bundle: .app),
+            condition: String(localized: "Ton tout premier film enregistré.", bundle: .app),
             rarity: .common, isSecret: false
         ),
         Badge(
@@ -151,7 +151,7 @@ nonisolated enum BadgeCatalog {
         ),
         Badge(
             id: "marathon", name: String(localized: "Marathon", bundle: .app),
-            condition: String(localized: "7 jours d'affilée à enrichir votre galerie.", bundle: .app),
+            condition: String(localized: "7 jours d'affilée à enrichir ta galerie.", bundle: .app),
             rarity: .common, isSecret: false
         ),
         Badge(

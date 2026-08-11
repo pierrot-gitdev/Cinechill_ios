@@ -17,11 +17,11 @@ enum SwipeFeedClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingBaseURL:
-            return String(localized: "URL backend absente. Définissez BACKEND_BASE_HOST dans Project.xcconfig.", bundle: .app)
+            return String(localized: "URL backend absente. Définis BACKEND_BASE_HOST dans Project.xcconfig.", bundle: .app)
         case .invalidURL:
             return String(localized: "URL backend invalide.", bundle: .app)
         case .notAuthenticated:
-            return String(localized: "Vous devez être connecté(e) pour découvrir des films.", bundle: .app)
+            return String(localized: "Tu dois être connecté(e) pour découvrir des films.", bundle: .app)
         case .transport(let message):
             return String(localized: "Erreur réseau : \(message)", bundle: .app)
         case .httpStatus(let code, let message):

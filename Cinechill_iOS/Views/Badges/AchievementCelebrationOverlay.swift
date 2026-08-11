@@ -109,7 +109,7 @@ struct AchievementCelebrationOverlay: View {
                 .foregroundStyle(Ink.ink)
                 .padding(.top, 26)
 
-            Text("Votre profil change de couleur avec vous.", bundle: .app)
+            Text("Ton profil change de couleur avec toi.", bundle: .app)
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)

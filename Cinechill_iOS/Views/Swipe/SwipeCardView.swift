@@ -133,7 +133,7 @@ struct SwipeCardView: View {
         .onTapGesture(perform: onTap)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(String(localized: "\(card.title), \(card.displayYear), note \(card.voteAverageText) sur 10", bundle: .app))
-        .accessibilityHint(String(localized: "Balayez à droite si vous l'avez vu, à gauche sinon, vers le haut pour l'ajouter à la watchlist", bundle: .app))
+        .accessibilityHint(String(localized: "Balaie à droite si tu l'as vu, à gauche sinon, vers le haut pour l'ajouter à la watchlist", bundle: .app))
     }
 
     // MARK: - L'affiche

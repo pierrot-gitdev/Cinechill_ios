@@ -211,8 +211,8 @@ struct GalleryView: View {
     private var emptyState: some View {
         PlanEmptyState(
             icon: .hall,
-            title: String(localized: "Votre collection est vide", bundle: .app),
-            message: String(localized: "Chaque film que vous marquez comme vu vient s'y ranger, et dessine peu à peu votre profil de cinéphile.", bundle: .app),
+            title: String(localized: "Ta collection est vide", bundle: .app),
+            message: String(localized: "Chaque film que tu marques comme vu vient s'y ranger, et dessine peu à peu ton profil de cinéphile.", bundle: .app),
             actionTitle: String(localized: "Commencer à swiper", bundle: .app),
             action: { selectedTab = 2 }
         )

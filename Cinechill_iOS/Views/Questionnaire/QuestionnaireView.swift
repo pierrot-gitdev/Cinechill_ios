@@ -52,13 +52,13 @@ struct QuestionnaireView: View {
         case .filmChoice:
             filmChoiceFlow
         case .poolLoading:
-            SessionLoadingView(message: String(localized: "On cherche des films qui vous correspondent…", bundle: .app))
+            SessionLoadingView(message: String(localized: "On cherche des films qui te correspondent…", bundle: .app))
         case .asking:
             adaptiveFlow
         case .enriching:
             SessionLoadingView(message: String(localized: "On regarde les meilleurs de plus près…", bundle: .app))
         case .finalizing:
-            SessionLoadingView(message: String(localized: "On choisit vos trois films…", bundle: .app))
+            SessionLoadingView(message: String(localized: "On choisit tes trois films…", bundle: .app))
         case .results:
             ResultView(
                 results: viewModel.results,
@@ -139,7 +139,7 @@ struct QuestionnaireView: View {
                 .buttonStyle(.plain)
                 .padding(.top, 16)
                 .transition(.opacity)
-                .accessibilityHint(String(localized: "Voir ce que Cinechill a retenu de vos goûts", bundle: .app))
+                .accessibilityHint(String(localized: "Voir ce que Cinechill a retenu de tes goûts", bundle: .app))
             }
 
             Spacer()
@@ -157,7 +157,7 @@ struct QuestionnaireView: View {
             if !viewModel.selectedPlatformNames.isEmpty {
                 PlanEdge()
                 HStack(alignment: .firstTextBaseline) {
-                    Text("Vos plateformes", bundle: .app)
+                    Text("Tes plateformes", bundle: .app)
                         .planLabel()
                         .foregroundStyle(Ink.ink3)
                     Spacer(minLength: 16)
@@ -187,7 +187,7 @@ struct QuestionnaireView: View {
         }
     }
 
-    // MARK: - Votre soirée
+    // MARK: - Ta soirée
 
     private var frameFlow: some View {
         VStack(spacing: 0) {
@@ -196,7 +196,7 @@ struct QuestionnaireView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Votre soirée", bundle: .app)
+                        Text("Ta soirée", bundle: .app)
                             .planTitle()
                             .foregroundStyle(Ink.ink)
 
@@ -277,7 +277,7 @@ struct QuestionnaireView: View {
             PlanButton(
                 title: viewModel.canConfirmFilmChoice
                     ? String(localized: "Trouver mes films", bundle: .app)
-                    : String(localized: "Choisissez une ambiance", bundle: .app),
+                    : String(localized: "Choisis une ambiance", bundle: .app),
                 isEnabled: viewModel.canConfirmFilmChoice,
                 height: Metrics.control
             ) {

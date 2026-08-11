@@ -25,7 +25,7 @@ struct SwipeMilestoneOverlay: View {
                 .foregroundStyle(Ink.light)
                 .padding(.top, 10)
 
-            Text("Votre galerie s'étoffe, et vos suggestions avec elle.", bundle: .app)
+            Text("Ta galerie s'étoffe, et tes suggestions avec elle.", bundle: .app)
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
@@ -44,7 +44,7 @@ struct SwipeMilestoneOverlay: View {
                 .strokeBorder(Ink.ruleSet, lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(String(localized: "\(count) films ajoutés à votre galerie", bundle: .app))
+        .accessibilityLabel(String(localized: "\(count) films ajoutés à ta galerie", bundle: .app))
     }
 }
 

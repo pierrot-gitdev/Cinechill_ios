@@ -18,21 +18,21 @@ enum QuestionStep: Int, CaseIterable, Hashable {
 
     var title: String {
         switch self {
-        case .posterDuel: String(localized: "Lequel vous tente le plus ce soir ?", bundle: .app)
-        case .mindset: String(localized: "Ce soir, vous avez surtout envie de…", bundle: .app)
-        case .dealbreaker: String(localized: "Qu'est-ce qui vous ferait arrêter un film en cours de route ?", bundle: .app)
-        case .popularity: String(localized: "Vous préférez un film connu ou une découverte ?", bundle: .app)
+        case .posterDuel: String(localized: "Lequel te tente le plus ce soir ?", bundle: .app)
+        case .mindset: String(localized: "Ce soir, tu as surtout envie de…", bundle: .app)
+        case .dealbreaker: String(localized: "Qu'est-ce qui te ferait arrêter un film en cours de route ?", bundle: .app)
+        case .popularity: String(localized: "Tu préfères un film connu ou une découverte ?", bundle: .app)
         case .cast: String(localized: "Et côté acteurs ?", bundle: .app)
-        case .horrorFlavor: String(localized: "Dans un film qui fait peur, vous préférez…", bundle: .app)
-        case .comedyFlavor: String(localized: "Quel genre de comédie vous fait rire ?", bundle: .app)
-        case .dramaFlavor: String(localized: "Quelle histoire vous touche le plus ?", bundle: .app)
-        case .cognitiveMode: String(localized: "Un bon film, pour vous, c'est plutôt…", bundle: .app)
+        case .horrorFlavor: String(localized: "Dans un film qui fait peur, tu préfères…", bundle: .app)
+        case .comedyFlavor: String(localized: "Quel genre de comédie te fait rire ?", bundle: .app)
+        case .dramaFlavor: String(localized: "Quelle histoire te touche le plus ?", bundle: .app)
+        case .cognitiveMode: String(localized: "Un bon film, pour toi, c'est plutôt…", bundle: .app)
         case .storyOrigin: String(localized: "S'il fallait choisir entre ces deux films…", bundle: .app)
-        case .attachment: String(localized: "Qu'est-ce qui vous accroche le plus dans un film ?", bundle: .app)
-        case .creditsMoment: String(localized: "Le film se termine. Dans le meilleur des cas, vous…", bundle: .app)
-        case .lastingTrace: String(localized: "Pensez au dernier film qui vous a marqué·e. Il vous a laissé…", bundle: .app)
-        case .elimination: String(localized: "Lequel ne vous tente pas du tout ce soir ?", bundle: .app)
-        case .surpriseIntensity: String(localized: "Vous voulez être surpris·e jusqu'à quel point ?", bundle: .app)
+        case .attachment: String(localized: "Qu'est-ce qui t'accroche le plus dans un film ?", bundle: .app)
+        case .creditsMoment: String(localized: "Le film se termine. Dans le meilleur des cas, tu…", bundle: .app)
+        case .lastingTrace: String(localized: "Pense au dernier film qui t'a marqué·e. Il t'a laissé…", bundle: .app)
+        case .elimination: String(localized: "Lequel ne te tente pas du tout ce soir ?", bundle: .app)
+        case .surpriseIntensity: String(localized: "Tu veux être surpris·e jusqu'à quel point ?", bundle: .app)
         }
     }
 
@@ -41,18 +41,18 @@ enum QuestionStep: Int, CaseIterable, Hashable {
     /// test de personnalité dont on ne voyait pas le rapport avec un film.
     var subtitle: String? {
         switch self {
-        case .posterDuel: String(localized: "Votre choix nous en dit plus que n'importe quelle question.", bundle: .app)
+        case .posterDuel: String(localized: "Ton choix nous en dit plus que n'importe quelle question.", bundle: .app)
         case .mindset: String(localized: "Pour viser le bon type de film, pas seulement le bon genre.", bundle: .app)
-        case .dealbreaker: String(localized: "On évitera les films qui risquent de vous faire ça.", bundle: .app)
+        case .dealbreaker: String(localized: "On évitera les films qui risquent de te faire ça.", bundle: .app)
         case .popularity: String(localized: "Pour savoir jusqu'où aller chercher.", bundle: .app)
         case .cast: nil
         case .horrorFlavor: String(localized: "Il y a plusieurs façons de faire peur.", bundle: .app)
         case .comedyFlavor: nil
         case .dramaFlavor: nil
-        case .cognitiveMode: String(localized: "Pas de bonne réponse : les deux existent, on veut juste savoir laquelle vous ressemble.", bundle: .app)
-        case .storyOrigin: String(localized: "Il faut trancher, même si les deux vous vont.", bundle: .app)
+        case .cognitiveMode: String(localized: "Pas de bonne réponse : les deux existent, on veut juste savoir laquelle te ressemble.", bundle: .app)
+        case .storyOrigin: String(localized: "Il faut trancher, même si les deux te vont.", bundle: .app)
         case .attachment: nil
-        case .creditsMoment: String(localized: "Ce que vous espérez ressentir après nous aide à choisir avant.", bundle: .app)
+        case .creditsMoment: String(localized: "Ce que tu espères ressentir après nous aide à choisir avant.", bundle: .app)
         case .lastingTrace: String(localized: "On se connaît mieux au passé qu'au futur.", bundle: .app)
         case .elimination: String(localized: "Écarter un film nous apprend autant qu'en choisir un.", bundle: .app)
         case .surpriseIntensity: nil
@@ -184,18 +184,18 @@ final class QuestionnaireViewModel {
     /// sur l'écran, sous les yeux de quelqu'un en train de le lire. Ce qu'on sait
     /// déjà de la personne ne change plus la promesse, seulement la ligne
     /// personnelle en bas, qui s'ajoute au lieu de remplacer.
-    let openingTitle = String(localized: "Trouvez le film de ce soir", bundle: .app)
+    let openingTitle = String(localized: "Trouve le film de ce soir", bundle: .app)
 
     var openingLead: String {
-        String(localized: "Répondez à quelques questions rapides : votre humeur, le temps que vous avez, ce dont vous avez envie.", bundle: .app)
+        String(localized: "Réponds à quelques questions rapides : ton humeur, le temps que tu as, ce dont tu as envie.", bundle: .app)
     }
 
     /// Ce que la personne obtient à la fin, dit avant de commencer. Trois lignes
     /// concrètes valent mieux qu'une promesse abstraite.
     let openingSteps: [String] = [
-        String(localized: "Vous répondez à quelques questions courtes", bundle: .app),
-        String(localized: "On cherche parmi les films de vos plateformes", bundle: .app),
-        String(localized: "Vous repartez avec trois films à regarder ce soir", bundle: .app),
+        String(localized: "Tu réponds à quelques questions courtes", bundle: .app),
+        String(localized: "On cherche parmi les films de tes plateformes", bundle: .app),
+        String(localized: "Tu repars avec trois films à regarder ce soir", bundle: .app),
     ]
 
     let openingDuration = String(localized: "Environ deux minutes.", bundle: .app)
@@ -206,9 +206,9 @@ final class QuestionnaireViewModel {
         guard taste.galleryCount > 0 else { return nil }
         let films = String(localized: "\(taste.galleryCount) films vus", bundle: .app)
         guard taste.establishedAxisCount > 0 else {
-            return String(localized: "\(films) : ils nous aident déjà à vous proposer mieux", bundle: .app)
+            return String(localized: "\(films) : ils nous aident déjà à te proposer mieux", bundle: .app)
         }
-        return String(localized: "\(films) : on commence à connaître vos goûts, il y aura moins de questions", bundle: .app)
+        return String(localized: "\(films) : on commence à connaître tes goûts, il y aura moins de questions", bundle: .app)
     }
 
     // MARK: - Le cadre
@@ -310,7 +310,7 @@ final class QuestionnaireViewModel {
         pool.removeAll { rejectedIDs.contains($0.id) }
         enrichedPool.removeAll { rejectedIDs.contains($0.id) }
         guard !enrichedPool.isEmpty else {
-            phase = .error(String(localized: "On n'a plus d'autres films à vous proposer avec ces critères. Recommencez une recherche pour élargir.", bundle: .app))
+            phase = .error(String(localized: "On n'a plus d'autres films à te proposer avec ces critères. Recommence une recherche pour élargir.", bundle: .app))
             return
         }
         results = []
@@ -330,7 +330,7 @@ final class QuestionnaireViewModel {
         }
         answers.runtime = .short
         let formatted = String(format: "%d h %02d", hour, minute)
-        lateHourNote = String(localized: "Il est \(formatted) : on a présélectionné un format court pour que vous puissiez le finir ce soir.", bundle: .app)
+        lateHourNote = String(localized: "Il est \(formatted) : on a présélectionné un format court pour que tu puisses le finir ce soir.", bundle: .app)
     }
 
     func loadPlatformsIfNeeded() async {
@@ -761,7 +761,7 @@ final class QuestionnaireViewModel {
         let gap = winner.axes[.familiarite] - loser.axes[.familiarite]
         guard abs(gap) > 0.4 else { return nil }
         return gap < 0
-            ? String(localized: "Vous allez vers les films connus : on en tient compte.", bundle: .app)
-            : String(localized: "Vous allez vers les films moins connus : on en tient compte.", bundle: .app)
+            ? String(localized: "Tu vas vers les films connus : on en tient compte.", bundle: .app)
+            : String(localized: "Tu vas vers les films moins connus : on en tient compte.", bundle: .app)
     }
 }

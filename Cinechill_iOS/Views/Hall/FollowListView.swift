@@ -24,8 +24,8 @@ struct FollowListView: View {
 
         var emptyTitle: String {
             switch self {
-            case .following: String(localized: "Vous ne suivez personne", bundle: .app)
-            case .followers: String(localized: "Personne ne vous suit encore", bundle: .app)
+            case .following: String(localized: "Tu ne suis personne", bundle: .app)
+            case .followers: String(localized: "Personne ne te suit encore", bundle: .app)
             }
         }
 
@@ -144,7 +144,7 @@ struct FollowListView: View {
                 icon: .hall,
                 title: mode.emptyTitle,
                 message: isOwnList
-                    ? String(localized: "Les films qu'on vous recommande arrivent ici. Commencez par quelqu'un dont vous aimez les goûts.", bundle: .app)
+                    ? String(localized: "Les films qu'on te recommande arrivent ici. Commence par quelqu'un dont tu aimes les goûts.", bundle: .app)
                     : String(localized: "Cette personne ne suit encore personne.", bundle: .app),
                 actionTitle: isOwnList ? String(localized: "Chercher un profil", bundle: .app) : nil,
                 action: isOwnList ? { showsSearch = true } : nil
@@ -162,9 +162,9 @@ struct FollowListView: View {
 
     private var followersHint: String {
         guard let handle = socialStore.myProfile?.handleDisplay else {
-            return String(localized: "Choisissez un pseudo pour qu'on puisse vous retrouver.", bundle: .app)
+            return String(localized: "Choisis un pseudo pour qu'on puisse te retrouver.", bundle: .app)
         }
-        return String(localized: "Votre pseudo est \(handle). Partagez-le pour qu'on vous retrouve.", bundle: .app)
+        return String(localized: "Ton pseudo est \(handle). Partage-le pour qu'on te retrouve.", bundle: .app)
     }
 
     // MARK: - Chargement

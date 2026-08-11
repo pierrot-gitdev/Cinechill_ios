@@ -340,7 +340,7 @@ private enum Move: CaseIterable, Hashable {
     /// pour le refus, ce n'est pas une destination du tout : c'est un délai.
     var outcome: String {
         switch self {
-        case .right: String(localized: "Vous l'avez vu", bundle: .app)
+        case .right: String(localized: "Tu l'as vu", bundle: .app)
         case .left: String(localized: "Il reviendra plus tard", bundle: .app)
         case .up: String(localized: "Envie de le voir", bundle: .app)
         }

@@ -94,7 +94,7 @@ struct GenrePopularListView: View {
             HStack(spacing: 9) {
                 Text(selectedPlatforms.isEmpty
                      ? String(localized: "Toutes plateformes", bundle: .app)
-                     : String(localized: "Chez vous", bundle: .app))
+                     : String(localized: "Chez toi", bundle: .app))
                     .planLabel()
                     .foregroundStyle(Ink.ink3)
 
@@ -197,8 +197,8 @@ struct GenrePopularListView: View {
 
     private var emptyMessage: String {
         hasPlatformFilter
-            ? String(localized: "Aucun film de cette catégorie n'est disponible sur vos plateformes en ce moment.", bundle: .app)
-            : String(localized: "Essayez une autre catégorie.", bundle: .app)
+            ? String(localized: "Aucun film de cette catégorie n'est disponible sur tes plateformes en ce moment.", bundle: .app)
+            : String(localized: "Essaie une autre catégorie.", bundle: .app)
     }
 
     private func load() async {

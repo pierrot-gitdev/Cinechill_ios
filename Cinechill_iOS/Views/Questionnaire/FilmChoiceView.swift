@@ -76,17 +76,17 @@ struct FilmChoiceView: View {
     /// « Encore un genre possible » arrive au moment où ça compte.
     private var genreNote: String {
         switch selectedGenres.count {
-        case 0: String(localized: "Facultatif : laissez vide si vous êtes ouvert·e à tout.", bundle: .app)
-        case maxGenres: String(localized: "C'est le maximum. Touchez un genre pour le retirer.", bundle: .app)
-        default: String(localized: "Vous pouvez en choisir un second.", bundle: .app)
+        case 0: String(localized: "Facultatif : laisse vide si tu es ouvert·e à tout.", bundle: .app)
+        case maxGenres: String(localized: "C'est le maximum. Touche un genre pour le retirer.", bundle: .app)
+        default: String(localized: "Tu peux en choisir un second.", bundle: .app)
         }
     }
 
     private var originNote: String {
         switch selectedOrigins.count {
-        case 0: String(localized: "Facultatif : laissez vide pour ne rien exclure.", bundle: .app)
-        case maxOrigins: String(localized: "C'est le maximum. Touchez un pays pour le retirer.", bundle: .app)
-        default: String(localized: "Vous pouvez en choisir \(maxOrigins - selectedOrigins.count) de plus.", bundle: .app)
+        case 0: String(localized: "Facultatif : laisse vide pour ne rien exclure.", bundle: .app)
+        case maxOrigins: String(localized: "C'est le maximum. Touche un pays pour le retirer.", bundle: .app)
+        default: String(localized: "Tu peux en choisir \(maxOrigins - selectedOrigins.count) de plus.", bundle: .app)
         }
     }
 

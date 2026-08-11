@@ -327,15 +327,15 @@ struct SwipeDeckView: View {
             } else if model.isLoading {
                 VStack(spacing: 16) {
                     CinechillSpinner(size: 34)
-                    Text("On prépare votre sélection…", bundle: .app)
+                    Text("On prépare ta sélection…", bundle: .app)
                         .font(.system(size: 12.5))
                         .foregroundStyle(Ink.ink3)
                 }
             } else if model.isExhausted {
                 PlanEmptyState(
                     icon: .hall,
-                    title: String(localized: "Vous avez fait le tour", bundle: .app),
-                    message: String(localized: "Les films écartés reviendront plus tard. En attendant, votre galerie a de quoi faire.", bundle: .app),
+                    title: String(localized: "Tu as fait le tour", bundle: .app),
+                    message: String(localized: "Les films écartés reviendront plus tard. En attendant, ta galerie a de quoi faire.", bundle: .app),
                     actionTitle: String(localized: "Voir ma galerie", bundle: .app),
                     action: { selectedTab = 3 },
                     secondaryTitle: String(localized: "Chercher encore", bundle: .app),

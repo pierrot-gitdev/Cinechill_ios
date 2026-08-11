@@ -32,7 +32,7 @@ struct ResultView: View {
 
                 if let onReject {
                     Button(action: onReject) {
-                        Text("Aucun ne me tente, proposez-m'en d'autres", bundle: .app)
+                        Text("Aucun ne me tente, propose-m'en d'autres", bundle: .app)
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(Ink.ink2)
                             .frame(maxWidth: .infinity)
@@ -70,7 +70,7 @@ struct ResultView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Vos résultats", bundle: .app)
+            Text("Tes résultats", bundle: .app)
                 .planLabel()
                 .foregroundStyle(Ink.ink3)
 
@@ -78,7 +78,7 @@ struct ResultView: View {
                 .planTitle(26)
                 .foregroundStyle(Ink.ink)
 
-            Text("Classés du plus proche au moins proche de ce que vous cherchez ce soir.", bundle: .app)
+            Text("Classés du plus proche au moins proche de ce que tu cherches ce soir.", bundle: .app)
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -195,7 +195,7 @@ private struct ResultRowView: View {
         if inWatchlist {
             HStack(spacing: 7) {
                 PlanLightOutline()
-                Text("Dans votre liste", bundle: .app)
+                Text("Dans ta liste", bundle: .app)
                     .font(.system(size: 12.5, weight: .medium))
                     .foregroundStyle(Ink.ink2)
             }

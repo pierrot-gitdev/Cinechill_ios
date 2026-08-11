@@ -68,7 +68,7 @@ struct EliminationView: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.97))
         .accessibilityLabel(candidate.title ?? String(localized: "Film sans titre", bundle: .app))
-        .accessibilityHint(String(localized: "Écarter ce film : c'est celui-ci qui vous tente le moins", bundle: .app))
+        .accessibilityHint(String(localized: "Écarter ce film : c'est celui-ci qui te tente le moins", bundle: .app))
     }
 }
 

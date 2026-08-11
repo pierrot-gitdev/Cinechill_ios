@@ -147,7 +147,7 @@ struct HomeView: View {
         if let seeded = homeModel.rows.becauseYouWatched, !seeded.items.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
                 sectionTitle(
-                    seeded.seedTitle.map { String(localized: "Parce que vous avez vu \($0)", bundle: .app) }
+                    seeded.seedTitle.map { String(localized: "Parce que tu as vu \($0)", bundle: .app) }
                         ?? String(localized: "Dans la même veine", bundle: .app)
                 )
                 posterRail(seeded.items)
@@ -237,7 +237,7 @@ struct HomeView: View {
         HStack(spacing: 9) {
             Text(selectedPlatforms.isEmpty
                  ? String(localized: "Toutes plateformes", bundle: .app)
-                 : String(localized: "Chez vous", bundle: .app))
+                 : String(localized: "Chez toi", bundle: .app))
                 .planLabel()
                 .foregroundStyle(Ink.ink3)
 
@@ -269,7 +269,7 @@ struct HomeView: View {
                     .contentShape(Rectangle().inset(by: -10))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(String(localized: "Choisir vos plateformes", bundle: .app))
+            .accessibilityLabel(String(localized: "Choisir tes plateformes", bundle: .app))
         }
     }
 
@@ -302,7 +302,7 @@ struct HomeView: View {
     private var emptyPopularMessage: String {
         libraryStore.preferredPlatformIDs.isEmpty
             ? String(localized: "Rien à afficher pour le moment.", bundle: .app)
-            : String(localized: "Aucun film disponible sur vos plateformes en ce moment.", bundle: .app)
+            : String(localized: "Aucun film disponible sur tes plateformes en ce moment.", bundle: .app)
     }
 
     // MARK: - Parcourir

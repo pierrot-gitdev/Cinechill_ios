@@ -57,14 +57,14 @@ struct ClaimHandleSheet: View {
             VStack(alignment: .leading, spacing: 0) {
                 PlanHeader(
                     isFirstClaim
-                        ? String(localized: "Votre pseudo", bundle: .app)
+                        ? String(localized: "Ton pseudo", bundle: .app)
                         : String(localized: "Changer de pseudo", bundle: .app),
                     leading: .close
                 )
 
                 VStack(alignment: .leading, spacing: 0) {
                     Text(isFirstClaim
-                         ? String(localized: "C'est ce que vos amis taperont pour vous retrouver.", bundle: .app)
+                         ? String(localized: "C'est ce que tes amis taperont pour te retrouver.", bundle: .app)
                          : String(localized: "Il ne pourra plus être changé après celui-ci.", bundle: .app))
                         .font(.system(size: 14.5))
                         .foregroundStyle(isFirstClaim ? Ink.ink2 : Ink.warn)

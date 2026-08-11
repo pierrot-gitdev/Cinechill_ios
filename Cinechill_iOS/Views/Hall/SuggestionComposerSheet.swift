@@ -59,8 +59,8 @@ struct SuggestionComposerSheet: View {
                 } else if targets.isEmpty {
                     HallEmptyState(
                         icon: .hall,
-                        title: String(localized: "Vous ne suivez personne", bundle: .app),
-                        message: String(localized: "Suivez quelqu'un pour pouvoir lui recommander un film.", bundle: .app)
+                        title: String(localized: "Tu ne suis personne", bundle: .app),
+                        message: String(localized: "Suis quelqu'un pour pouvoir lui recommander un film.", bundle: .app)
                     )
                 } else {
                     content
@@ -218,7 +218,7 @@ struct SuggestionComposerSheet: View {
     private var sendTitle: String {
         switch selected.count {
         case 0 where selectableCount == 0: String(localized: "Personne ne peut le recevoir", bundle: .app)
-        case 0: String(localized: "Choisissez au moins une personne", bundle: .app)
+        case 0: String(localized: "Choisis au moins une personne", bundle: .app)
         default: String(localized: "Recommander à \(selected.count) personnes", bundle: .app)
         }
     }
@@ -310,7 +310,7 @@ struct SuggestionOutcome: Equatable {
             return String(localized: "\(list(alreadySeen)) l'avait déjà vu. Rien ne lui a été envoyé.", bundle: .app)
         }
         if hadFailure {
-            return String(localized: "Une partie des envois a échoué. Réessayez.", bundle: .app)
+            return String(localized: "Une partie des envois a échoué. Réessaie.", bundle: .app)
         }
         return sent.count == 1
             ? String(localized: "Cette personne le verra dans ses notifications.", bundle: .app)

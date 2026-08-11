@@ -86,8 +86,8 @@ struct WatchlistGroup: Identifiable, Hashable {
 
     var title: String {
         switch kind {
-        case .recommended: String(localized: "RECOMMANDÉS PAR VOS AMIS", bundle: .app)
-        case .available: String(localized: "DISPONIBLE CHEZ VOUS", bundle: .app)
+        case .recommended: String(localized: "RECOMMANDÉS PAR TES AMIS", bundle: .app)
+        case .available: String(localized: "DISPONIBLE CHEZ TOI", bundle: .app)
         case .elsewhere: String(localized: "AILLEURS", bundle: .app)
         case .dormant: String(localized: "EN SOMMEIL · PLUS DE 3 MOIS", bundle: .app)
         }

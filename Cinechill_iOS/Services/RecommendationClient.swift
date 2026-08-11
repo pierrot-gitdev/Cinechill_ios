@@ -18,10 +18,10 @@ enum RecommendationClientError: LocalizedError {
     private static func knownServerMessage(in body: String?) -> String? {
         guard let body else { return nil }
         if body.contains("no_candidates_in_requested_genres") {
-            return String(localized: "Aucun film de ce genre ne correspond au reste de vos critères. Essayez un autre genre, ou plus de temps devant vous.", bundle: .app)
+            return String(localized: "Aucun film de ce genre ne correspond au reste de tes critères. Essaie un autre genre, ou plus de temps devant toi.", bundle: .app)
         }
         if body.contains("no_candidates_in_requested_origins") {
-            return String(localized: "Aucun film de ces pays ne correspond au reste de vos critères. Essayez d'ajouter un pays, ou de changer de genre.", bundle: .app)
+            return String(localized: "Aucun film de ces pays ne correspond au reste de tes critères. Essaie d'ajouter un pays, ou de changer de genre.", bundle: .app)
         }
         if body.contains("no_candidates") {
             return String(localized: "Aucun film ne correspond à ces critères pour le moment.", bundle: .app)
@@ -32,11 +32,11 @@ enum RecommendationClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingBaseURL:
-            return String(localized: "URL backend absente. Définissez BACKEND_BASE_HOST dans Project.xcconfig.", bundle: .app)
+            return String(localized: "URL backend absente. Définis BACKEND_BASE_HOST dans Project.xcconfig.", bundle: .app)
         case .invalidURL:
             return String(localized: "URL backend invalide.", bundle: .app)
         case .notAuthenticated:
-            return String(localized: "Vous devez être connecté(e) pour obtenir des recommandations.", bundle: .app)
+            return String(localized: "Tu dois être connecté(e) pour obtenir des recommandations.", bundle: .app)
         case .transport(let message):
             return String(localized: "Erreur réseau CinéMatch : \(message)", bundle: .app)
         case .httpStatus(let code, let message):

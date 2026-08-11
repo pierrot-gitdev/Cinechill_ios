@@ -152,7 +152,7 @@ final class AuthService: ObservableObject {
             throw fail(AuthFailure(field: .email, message: String(localized: "Cette adresse n'est pas valide.", bundle: .app)))
         }
         guard !password.isEmpty else {
-            throw fail(AuthFailure(field: .password, message: String(localized: "Saisissez votre mot de passe.", bundle: .app)))
+            throw fail(AuthFailure(field: .password, message: String(localized: "Saisis ton mot de passe.", bundle: .app)))
         }
 
 #if canImport(FirebaseAuth)
@@ -442,7 +442,7 @@ final class AuthService: ObservableObject {
         case AuthErrorCode.tooManyRequests.rawValue:
             return AuthFailure(
                 field: .form,
-                message: String(localized: "Trop de tentatives. Réessayez dans quelques minutes.", bundle: .app)
+                message: String(localized: "Trop de tentatives. Réessaie dans quelques minutes.", bundle: .app)
             )
 
         case AuthErrorCode.networkError.rawValue:

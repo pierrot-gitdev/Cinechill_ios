@@ -243,18 +243,18 @@ final class WatchlistViewModel {
 
         let months = Int(monthsWaiting(item))
         if months >= 3 {
-            return String(localized: "Dans votre liste depuis \(months) mois.", bundle: .app)
+            return String(localized: "Dans ta liste depuis \(months) mois.", bundle: .app)
         }
         if let runtime = item.runtimeMinutes,
            let shortest = pool.compactMap(\.runtimeMinutes).min(),
            runtime == shortest, pool.count > 2 {
-            return String(localized: "Le plus court de ce qui rentre dans votre soirée.", bundle: .app)
+            return String(localized: "Le plus court de ce qui rentre dans ta soirée.", bundle: .app)
         }
         if let platform = preferredPlatformName(for: item) {
-            return String(localized: "Sur \(platform), vous pouvez le lancer tout de suite.", bundle: .app)
+            return String(localized: "Sur \(platform), tu peux le lancer tout de suite.", bundle: .app)
         }
         if let rating = item.entry.voteAverage, rating >= 8 {
-            return String(localized: "Le mieux noté de votre liste.", bundle: .app)
+            return String(localized: "Le mieux noté de ta liste.", bundle: .app)
         }
         return String(localized: "Il attend son tour depuis un moment.", bundle: .app)
     }

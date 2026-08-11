@@ -20,7 +20,7 @@ import SwiftUI
 struct PlanToast: View {
     /// Ce qui vient d'être rangé.
     let title: String
-    /// Où il est allé, en niveau de service : « Ajouté à votre galerie ».
+    /// Où il est allé, en niveau de service : « Ajouté à ta galerie ».
     let destination: String
     /// Acquis (point plein) plutôt que prévu (point creux).
     var isAcquired: Bool = true
@@ -130,11 +130,11 @@ struct PlanToast: View {
         VStack(spacing: 14) {
             PlanToast(
                 title: "Interstellar",
-                destination: String(localized: "Ajouté à votre galerie", bundle: .app)
+                destination: String(localized: "Ajouté à ta galerie", bundle: .app)
             )
             PlanToast(
                 title: "Le Voyage de Chihiro",
-                destination: String(localized: "Ajouté à votre watchlist", bundle: .app),
+                destination: String(localized: "Ajouté à ta watchlist", bundle: .app),
                 isAcquired: false
             )
         }

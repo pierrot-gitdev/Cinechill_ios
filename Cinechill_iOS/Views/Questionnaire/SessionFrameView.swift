@@ -24,7 +24,7 @@ struct SessionFrameView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 34) {
             group(
-                String(localized: "Vous regardez avec qui ?", bundle: .app),
+                String(localized: "Tu regardes avec qui ?", bundle: .app),
                 note: audience == .family
                     ? String(localized: "On ne proposera que des films adaptés aux enfants.", bundle: .app)
                     : nil
@@ -36,7 +36,7 @@ struct SessionFrameView: View {
                 }
             }
 
-            group(String(localized: "Vous avez combien de temps ?", bundle: .app), note: lateHourNote) {
+            group(String(localized: "Tu as combien de temps ?", bundle: .app), note: lateHourNote) {
                 ForEach(budgets, id: \.0) { preference, title in
                     PlanChip(title: title, isOn: budget == preference) {
                         budget = preference
@@ -44,7 +44,7 @@ struct SessionFrameView: View {
                 }
             }
 
-            group(String(localized: "Vous cherchez quoi ?", bundle: .app), note: nil) {
+            group(String(localized: "Tu cherches quoi ?", bundle: .app), note: nil) {
                 ForEach(ContentFormat.allCases, id: \.self) { value in
                     PlanChip(title: value.label, isOn: contentFormat == value) {
                         contentFormat = value
@@ -81,7 +81,7 @@ struct SessionFrameView: View {
     }
 }
 
-#Preview("Votre soirée") {
+#Preview("Ta soirée") {
     struct Harness: View {
         @State private var audience: Audience? = .couple
         @State private var budget: RuntimePreference = .medium
@@ -94,7 +94,7 @@ struct SessionFrameView: View {
                     audience: $audience,
                     budget: $budget,
                     contentFormat: $format,
-                    lateHourNote: "Il est 21 h 40 : on a présélectionné un format court pour que vous puissiez le finir ce soir."
+                    lateHourNote: "Il est 21 h 40 : on a présélectionné un format court pour que tu puisses le finir ce soir."
                 )
                 .padding(Metrics.margin)
             }

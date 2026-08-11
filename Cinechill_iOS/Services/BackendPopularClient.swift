@@ -11,7 +11,7 @@ enum BackendPopularClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingBaseURL:
-            return String(localized: "URL backend absente. Définissez BACKEND_BASE_HOST dans Project.xcconfig.", bundle: .app)
+            return String(localized: "URL backend absente. Définis BACKEND_BASE_HOST dans Project.xcconfig.", bundle: .app)
         case .invalidURL:
             return String(localized: "URL backend invalide.", bundle: .app)
         case .unsupportedMediaType:

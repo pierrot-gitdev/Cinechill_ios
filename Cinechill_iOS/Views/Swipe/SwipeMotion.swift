@@ -117,8 +117,8 @@ extension SwipeDirection {
     /// résultat.
     var confirmation: String? {
         switch self {
-        case .right: String(localized: "Ajouté à votre galerie", bundle: .app)
-        case .up: String(localized: "Ajouté à votre watchlist", bundle: .app)
+        case .right: String(localized: "Ajouté à ta galerie", bundle: .app)
+        case .up: String(localized: "Ajouté à ta watchlist", bundle: .app)
         case .left: nil
         }
     }

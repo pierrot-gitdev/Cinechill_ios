@@ -73,7 +73,7 @@ struct SettingsView: View {
 
                         declaration(
                             String(localized: "Mes plateformes", bundle: .app),
-                            note: String(localized: "Ce qui n'est pas chez vous ne vous sera pas proposé.", bundle: .app)
+                            note: String(localized: "Ce qui n'est pas chez toi ne te sera pas proposé.", bundle: .app)
                         ) {
                             platforms
                         }
@@ -121,15 +121,15 @@ struct SettingsView: View {
             Button(String(localized: "Réinitialiser", bundle: .app)) { Task { await resetSkips() } }
             Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
-            Text("Les films que vous avez écartés au swipe vous seront à nouveau proposés.", bundle: .app)
+            Text("Les films que tu as écartés au swipe te seront à nouveau proposés.", bundle: .app)
         }
-        .alert(String(localized: "Supprimer votre compte", bundle: .app), isPresented: $showDeleteAccountAlert) {
+        .alert(String(localized: "Supprimer ton compte", bundle: .app), isPresented: $showDeleteAccountAlert) {
             Button(String(localized: "Supprimer définitivement", bundle: .app), role: .destructive) {
                 Task { await deleteAccount() }
             }
             Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
-            Text("Votre galerie, votre watchlist et votre profil seront effacés. Cette action est irréversible.", bundle: .app)
+            Text("Ta galerie, ta watchlist et ton profil seront effacés. Cette action est irréversible.", bundle: .app)
         }
         // La déconnexion ne détruit rien, mais elle renvoie à l'écran de
         // connexion : le message rassure sur ce point plutôt que d'alarmer.
@@ -140,7 +140,7 @@ struct SettingsView: View {
             }
             Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
-            Text("Vous retrouverez votre galerie et votre watchlist à la prochaine connexion.", bundle: .app)
+            Text("Tu retrouveras ta galerie et ta watchlist à la prochaine connexion.", bundle: .app)
         }
     }
 
@@ -504,7 +504,7 @@ struct SettingsView: View {
     }
 
     private var skipsSubtitle: String {
-        guard let pendingSkips else { return String(localized: "Ceux que vous avez dit ne pas avoir vus", bundle: .app) }
+        guard let pendingSkips else { return String(localized: "Ceux que tu as dit ne pas avoir vus", bundle: .app) }
         guard pendingSkips > 0 else { return String(localized: "Aucun film en attente", bundle: .app) }
         return String(localized: "\(pendingSkips) films en attente de réapparition", bundle: .app)
     }
@@ -528,7 +528,7 @@ struct SettingsView: View {
                 ? String(localized: "\(deleted) films remis en jeu.", bundle: .app)
                 : String(localized: "Aucun film n'était en attente.", bundle: .app)
         } catch {
-            actionMessage = String(localized: "La réinitialisation a échoué. Réessayez dans un instant.", bundle: .app)
+            actionMessage = String(localized: "La réinitialisation a échoué. Réessaie dans un instant.", bundle: .app)
         }
     }
 
@@ -540,7 +540,7 @@ struct SettingsView: View {
             try await libraryStore.deleteAccount()
             dismiss()
         } catch {
-            actionMessage = String(localized: "La suppression a échoué. Reconnectez-vous puis réessayez.", bundle: .app)
+            actionMessage = String(localized: "La suppression a échoué. Reconnecte-toi puis réessaie.", bundle: .app)
         }
     }
 

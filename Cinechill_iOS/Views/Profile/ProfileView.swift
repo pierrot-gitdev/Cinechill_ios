@@ -178,10 +178,10 @@ struct ProfileView: View {
                 PlanLight().padding(.top, 6)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Choisissez votre pseudo", bundle: .app)
+                    Text("Choisis ton pseudo", bundle: .app)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Ink.ink)
-                    Text("Pour qu'on puisse vous retrouver et vous recommander des films.", bundle: .app)
+                    Text("Pour qu'on puisse te retrouver et te recommander des films.", bundle: .app)
                         .font(.system(size: 11.5))
                         .foregroundStyle(Ink.ink2)
                         .multilineTextAlignment(.leading)
@@ -251,7 +251,7 @@ struct ProfileView: View {
                     Text("Quinze badges à décrocher", bundle: .app)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Ink.ink)
-                    Text("Le premier tombe dès votre premier film.", bundle: .app)
+                    Text("Le premier tombe dès ton premier film.", bundle: .app)
                         .font(.system(size: 11.5))
                         .foregroundStyle(Ink.ink2)
                 }
@@ -272,7 +272,7 @@ struct ProfileView: View {
         let shares = genreShares
         if !shares.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Votre ADN cinéphile", bundle: .app)
+                Text("Ton ADN cinéphile", bundle: .app)
                     .planTitle(21)
                     .foregroundStyle(Ink.ink)
 

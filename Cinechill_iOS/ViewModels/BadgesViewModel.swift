@@ -109,7 +109,7 @@ final class BadgesViewModel {
             )
             errorMessage = nil
         } catch {
-            errorMessage = String(localized: "Impossible de mettre à jour vos badges.", bundle: .app)
+            errorMessage = String(localized: "Impossible de mettre à jour tes badges.", bundle: .app)
         }
     }
 

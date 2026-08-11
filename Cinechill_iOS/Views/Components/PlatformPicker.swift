@@ -70,7 +70,7 @@ struct PlatformGrid: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.94))
         .accessibilityLabel(platform.name)
-        .accessibilityValue(isOn ? String(localized: "Chez vous", bundle: .app) : String(localized: "Pas chez vous", bundle: .app))
+        .accessibilityValue(isOn ? String(localized: "Chez toi", bundle: .app) : String(localized: "Pas chez toi", bundle: .app))
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
     }
 }
@@ -114,7 +114,7 @@ struct PlatformPickerSheet: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        Text("Ce qui n'est pas chez vous ne vous sera pas proposé. Ne rien cocher, c'est ne pas filtrer.", bundle: .app)
+                        Text("Ce qui n'est pas chez toi ne te sera pas proposé. Ne rien cocher, c'est ne pas filtrer.", bundle: .app)
                             .font(.system(size: 12.5))
                             .foregroundStyle(Ink.ink3)
                             .fixedSize(horizontal: false, vertical: true)

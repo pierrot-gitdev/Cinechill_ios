@@ -363,7 +363,7 @@ private struct PlanComponentsPreview: View {
             VStack(alignment: .leading, spacing: 32) {
                 PlanField(
                     label: "Email", text: $email, field: "email", focus: $focus,
-                    placeholder: "vous@exemple.com", keyboard: .emailAddress
+                    placeholder: "toi@exemple.com", keyboard: .emailAddress
                 )
                 PlanField(
                     label: "Pseudo", text: $pseudo, field: "pseudo", focus: $focus,

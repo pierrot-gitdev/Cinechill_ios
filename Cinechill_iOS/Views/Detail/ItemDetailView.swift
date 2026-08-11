@@ -349,18 +349,18 @@ struct ItemDetailView: View {
                 // langue à l'autre — « 3ᵉ » ici, « 3rd » ailleurs.
                 let rank = sameVein + 1
                 if let genreName {
-                    return String(localized: "\(rank)ᵉ \(genreName) des années \(decade) dans votre galerie.", bundle: .app)
+                    return String(localized: "\(rank)ᵉ \(genreName) des années \(decade) dans ta galerie.", bundle: .app)
                 }
-                return String(localized: "\(rank)ᵉ films du même genre sur cette décennie dans votre galerie.", bundle: .app)
+                return String(localized: "\(rank)ᵉ films du même genre sur cette décennie dans ta galerie.", bundle: .app)
             }
         }
 
         let sameGenre = gallery.filter { $0.genreIds.contains(genreID) }.count
         guard sameGenre >= 3 else { return nil }
         if let genreName {
-            return String(localized: "\(sameGenre + 1)ᵉ \(genreName) de votre galerie.", bundle: .app)
+            return String(localized: "\(sameGenre + 1)ᵉ \(genreName) de ta galerie.", bundle: .app)
         }
-        return String(localized: "Vous avez déjà \(sameGenre) films de ce genre dans votre galerie.", bundle: .app)
+        return String(localized: "Tu as déjà \(sameGenre) films de ce genre dans ta galerie.", bundle: .app)
     }
 
     private var decadeOfItem: Int? {
@@ -378,7 +378,7 @@ struct ItemDetailView: View {
     /// Remonté au-dessus du synopsis : c'est la seule information actionnable de
     /// la moitié basse, et elle passait derrière un texte de quarante lignes.
     ///
-    /// Vos plateformes d'abord, les autres en retrait — mais jamais rien de
+    /// Tes plateformes d'abord, les autres en retrait — mais jamais rien de
     /// caché : l'ancienne version masquait toute la section quand vous n'étiez
     /// aucune des siennes, alors que l'information existait.
     @ViewBuilder
@@ -444,7 +444,7 @@ struct ItemDetailView: View {
                 RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
                     .strokeBorder(isMine ? Ink.ink : Ink.rule, lineWidth: 1)
             )
-            // Retenue : pleine saturation. Hors de vos plateformes : en retrait. Le même
+            // Retenue : pleine saturation. Hors de tes plateformes : en retrait. Le même
             // couple que dans les réglages, pour le même objet.
             .opacity(isMine ? 1 : 0.4)
             .saturation(isMine ? 1 : 0.25)
@@ -452,8 +452,8 @@ struct ItemDetailView: View {
         .buttonStyle(PressableScaleStyle(scale: 0.92))
         .accessibilityLabel(provider.providerName)
         .accessibilityValue(isMine
-                            ? String(localized: "Sur vos plateformes", bundle: .app)
-                            : String(localized: "Hors de vos plateformes", bundle: .app))
+                            ? String(localized: "Sur tes plateformes", bundle: .app)
+                            : String(localized: "Hors de tes plateformes", bundle: .app))
     }
 
     // MARK: - Synopsis
@@ -647,7 +647,7 @@ struct ItemDetailView: View {
 
     private func hint(isOn: Bool, isWaiting: Bool) -> String {
         if isWaiting { return String(localized: "Enregistrement…", bundle: .app) }
-        if isOn { return String(localized: "Toucher à nouveau pour retirer de vos listes", bundle: .app) }
+        if isOn { return String(localized: "Toucher à nouveau pour retirer de tes listes", bundle: .app) }
         return ""
     }
 

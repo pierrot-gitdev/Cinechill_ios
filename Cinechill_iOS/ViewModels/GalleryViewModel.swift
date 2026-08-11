@@ -81,9 +81,9 @@ final class GalleryViewModel {
 
     private var dominantNote: String? {
         switch axis {
-        case .era: String(localized: "votre décennie", bundle: .app)
-        case .genre: String(localized: "votre terrain", bundle: .app)
-        case .added: String(localized: "votre meilleur mois", bundle: .app)
+        case .era: String(localized: "ta décennie", bundle: .app)
+        case .genre: String(localized: "ton terrain", bundle: .app)
+        case .added: String(localized: "ton meilleur mois", bundle: .app)
         case .rating: nil
         }
     }

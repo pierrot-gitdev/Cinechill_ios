@@ -114,7 +114,7 @@ struct OnboardingCartouche: View {
     private var gestures: some View {
         VStack(spacing: 0) {
             PlanEdge()
-            row(.right, outcome: String(localized: "Il rejoint votre galerie", bundle: .app))
+            row(.right, outcome: String(localized: "Il rejoint ta galerie", bundle: .app))
             PlanEdge()
             row(.left, outcome: String(localized: "Il reviendra plus tard", bundle: .app))
             PlanEdge()

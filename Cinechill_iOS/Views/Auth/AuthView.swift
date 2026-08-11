@@ -279,7 +279,7 @@ struct AuthView: View {
                 isLoading: isWorking, action: submit
             )
             doors
-            Text("En créant un compte, vous acceptez les conditions et la politique de confidentialité.", bundle: .app)
+            Text("En créant un compte, tu acceptes les conditions et la politique de confidentialité.", bundle: .app)
                 .font(.system(size: 11))
                 .foregroundStyle(AuthInk.ink3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -293,7 +293,7 @@ struct AuthView: View {
     private func resetRequest(gap: CGFloat, compact: Bool) -> some View {
         title(String(localized: "Mot de passe\noublié", bundle: .app), gap: gap, compact: compact)
 
-        say(String(localized: "Indiquez l'adresse de votre compte. Nous envoyons un lien pour en choisir un nouveau.", bundle: .app))
+        say(String(localized: "Indique l'adresse de ton compte. Nous envoyons un lien pour en choisir un nouveau.", bundle: .app))
 
         VStack(alignment: .leading, spacing: 32) {
             emailField(contentType: .username, submitLabel: .go, onSubmit: submit)
@@ -322,7 +322,7 @@ struct AuthView: View {
         outcome(
             gap: gap,
             headline: String(localized: "Le lien est parti.", bundle: .app),
-            detail: String(localized: "Si un compte existe pour \(AuthService.normalize(email)), vous recevrez un message d'ici une minute. Pensez aux indésirables.", bundle: .app)
+            detail: String(localized: "Si un compte existe pour \(AuthService.normalize(email)), tu recevras un message d'ici une minute. Pense aux indésirables.", bundle: .app)
         )
 
         Spacer(minLength: 32)
@@ -386,7 +386,7 @@ struct AuthView: View {
         outcome(
             gap: gap,
             headline: String(localized: "Mot de passe modifié.", bundle: .app),
-            detail: String(localized: "Vous pouvez vous connecter avec le nouveau. Votre adresse est déjà reportée sur l'écran suivant.", bundle: .app)
+            detail: String(localized: "Tu peux te connecter avec le nouveau. Ton adresse est déjà reportée sur l'écran suivant.", bundle: .app)
         )
 
         Spacer(minLength: 32)
@@ -503,7 +503,7 @@ struct AuthView: View {
     ) -> some View {
         PlanField(
             label: String(localized: "Email", bundle: .app), text: $email, field: .email, focus: $focus,
-            placeholder: String(localized: "vous@exemple.com", bundle: .app),
+            placeholder: String(localized: "toi@exemple.com", bundle: .app),
             keyboard: .emailAddress,
             contentType: contentType,
             submitLabel: submitLabel,
@@ -649,7 +649,7 @@ struct AuthView: View {
 
     private func repair(_ repair: AuthRepair?) -> String {
         switch repair {
-        case .resetPassword: return String(localized: " Vous pouvez le **réinitialiser**.", bundle: .app)
+        case .resetPassword: return String(localized: " Tu peux le **réinitialiser**.", bundle: .app)
         case .signIn:        return String(localized: " **Se connecter** ?", bundle: .app)
         case .signUp:        return String(localized: " **Créer un compte** ?", bundle: .app)
         case nil:            return ""
@@ -761,7 +761,7 @@ struct AuthView: View {
         // L'ordre de validation suit l'ordre de lecture : sinon le focus saute
         // par-dessus un champ fautif et l'utilisateur corrige à l'aveugle.
         guard !firstName.trimmingCharacters(in: .whitespaces).isEmpty else {
-            throw AuthFailure(field: .name, message: String(localized: "Indiquez votre prénom.", bundle: .app))
+            throw AuthFailure(field: .name, message: String(localized: "Indique ton prénom.", bundle: .app))
         }
         guard PlanHandle.isValid(handle) else {
             throw AuthFailure(field: .handle, message: PlanHandle.rule)
