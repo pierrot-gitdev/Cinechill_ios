@@ -24,7 +24,7 @@ private enum Wreath {
     /// deux ensemble. Le bas du siège s'arrête où commence l'emblème.
     static let seatDiameter: CGFloat = 64
     static let emblemBox: CGFloat = 60
-    static let emblemCenter = CGPoint(x: 110, y: 174)
+    static let emblemCenter = CGPoint(x: 110, y: 172)
 
     /// Les deux branches vont du pied vers la tête, et laissent quarante degrés
     /// d'ouverture au sommet. Une couronne fermée dirait que c'est fini.
@@ -158,7 +158,9 @@ struct LaurelLeaves: Shape {
 ///
 /// Gravés au trait, jamais remplis : ils se lisent à seize points comme à
 /// quatre-vingt-seize, parce qu'aucun ne repose sur un détail plus fin qu'un
-/// point. Aucun n'emprunte sa silhouette à une récompense existante.
+/// point. Ce sont des dessins originaux et non des reproductions : les
+/// statuettes des grandes récompenses sont protégées, leurs noms seuls sont
+/// employés.
 struct DistinctionEmblem: Shape {
     let distinction: Distinction
 
@@ -169,107 +171,147 @@ struct DistinctionEmblem: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         switch distinction {
-        case .selection: drawLaurelKnot(&path)
         case .mention: drawRibbon(&path)
-        case .prix: drawMedal(&path)
-        case .grandPrix: drawStatuette(&path)
-        case .hommage: drawStar(&path)
+        case .interpretation: drawMask(&path)
+        case .cesar: drawCompression(&path)
+        case .palme: drawPalm(&path)
+        case .oscar: drawStatuette(&path)
         }
         return path.applying(Wreath.fit(rect, reference: Self.reference))
     }
 
-    /// Le nœud des deux branches. Rien de plus : à ce degré on est retenu, on
-    /// n'est pas récompensé, et le vide au centre est le propos.
-    private func drawLaurelKnot(_ path: inout Path) {
-        path.move(to: CGPoint(x: 40, y: 38))
-        path.addCurve(
-            to: CGPoint(x: 60, y: 38),
-            control1: CGPoint(x: 46, y: 46), control2: CGPoint(x: 54, y: 46)
-        )
-        path.move(to: CGPoint(x: 42, y: 46))
-        path.addCurve(
-            to: CGPoint(x: 58, y: 46),
-            control1: CGPoint(x: 47, y: 52), control2: CGPoint(x: 53, y: 52)
-        )
-    }
-
-    /// La cocarde et ses deux pans. Un ruban se porte un soir, puis se range.
+    /// La cocarde et ses deux pans. Un ruban se porte un soir, puis se range :
+    /// c'est le degré où l'on est remarqué sans être récompensé.
     private func drawRibbon(_ path: inout Path) {
-        path.addEllipse(in: CGRect(x: 39, y: 29, width: 22, height: 22))
-        path.addEllipse(in: CGRect(x: 45, y: 35, width: 10, height: 10))
+        path.addEllipse(in: CGRect(x: 36, y: 20, width: 28, height: 28))
+        path.addEllipse(in: CGRect(x: 44, y: 28, width: 12, height: 12))
 
-        path.move(to: CGPoint(x: 43, y: 49))
-        path.addLine(to: CGPoint(x: 38, y: 68))
-        path.addLine(to: CGPoint(x: 46, y: 63))
-        path.addLine(to: CGPoint(x: 50, y: 70))
+        path.move(to: CGPoint(x: 41, y: 46))
+        path.addLine(to: CGPoint(x: 34, y: 78))
+        path.addLine(to: CGPoint(x: 45, y: 71))
+        path.addLine(to: CGPoint(x: 50, y: 80))
 
-        path.move(to: CGPoint(x: 57, y: 49))
-        path.addLine(to: CGPoint(x: 62, y: 68))
-        path.addLine(to: CGPoint(x: 54, y: 63))
-        path.addLine(to: CGPoint(x: 50, y: 70))
+        path.move(to: CGPoint(x: 59, y: 46))
+        path.addLine(to: CGPoint(x: 66, y: 78))
+        path.addLine(to: CGPoint(x: 55, y: 71))
+        path.addLine(to: CGPoint(x: 50, y: 80))
     }
 
-    /// Le disque frappé, sa bélière, et le grènetis de la tranche : douze crans,
-    /// comme sur une médaille réellement frappée.
-    private func drawMedal(_ path: inout Path) {
-        path.move(to: CGPoint(x: 42, y: 24))
-        path.addLine(to: CGPoint(x: 46, y: 36))
-        path.move(to: CGPoint(x: 58, y: 24))
-        path.addLine(to: CGPoint(x: 54, y: 36))
+    /// Le masque de scène : le prix d'interprétation récompense un visage
+    /// emprunté, pas un film. Contour, deux yeux, une bouche — rien de plus, ou
+    /// il cesse d'être lisible une fois réduit.
+    private func drawMask(_ path: inout Path) {
+        path.move(to: CGPoint(x: 50, y: 14))
+        path.addCurve(
+            to: CGPoint(x: 22, y: 45),
+            control1: CGPoint(x: 30, y: 14), control2: CGPoint(x: 21, y: 29)
+        )
+        path.addCurve(
+            to: CGPoint(x: 50, y: 87),
+            control1: CGPoint(x: 23, y: 64), control2: CGPoint(x: 35, y: 82)
+        )
+        path.addCurve(
+            to: CGPoint(x: 78, y: 45),
+            control1: CGPoint(x: 65, y: 82), control2: CGPoint(x: 77, y: 64)
+        )
+        path.addCurve(
+            to: CGPoint(x: 50, y: 14),
+            control1: CGPoint(x: 79, y: 29), control2: CGPoint(x: 70, y: 14)
+        )
+        path.closeSubpath()
 
-        path.addEllipse(in: CGRect(x: 33, y: 35, width: 34, height: 34))
-        path.addEllipse(in: CGRect(x: 39, y: 41, width: 22, height: 22))
+        path.addEllipse(in: CGRect(x: 31, y: 39, width: 15, height: 9))
+        path.addEllipse(in: CGRect(x: 54, y: 39, width: 15, height: 9))
 
-        let center = CGPoint(x: 50, y: 52)
-        for notch in 0..<12 {
-            let a = Double(notch) / 12 * 2 * .pi
-            path.move(to: CGPoint(x: center.x + 17 * cos(a), y: center.y + 17 * sin(a)))
-            path.addLine(to: CGPoint(x: center.x + 20 * cos(a), y: center.y + 20 * sin(a)))
+        path.move(to: CGPoint(x: 38, y: 65))
+        path.addCurve(
+            to: CGPoint(x: 62, y: 65),
+            control1: CGPoint(x: 44, y: 73), control2: CGPoint(x: 56, y: 73)
+        )
+    }
+
+    /// La compression : une masse aux plis irréguliers sur son socle. Les plis
+    /// ondulent au lieu d'être parallèles, sans quoi le bloc se lirait comme une
+    /// pile de briques.
+    private func drawCompression(_ path: inout Path) {
+        path.move(to: CGPoint(x: 33, y: 20))
+        path.addLine(to: CGPoint(x: 66, y: 15))
+        path.addLine(to: CGPoint(x: 70, y: 72))
+        path.addLine(to: CGPoint(x: 30, y: 76))
+        path.closeSubpath()
+
+        path.move(to: CGPoint(x: 31.5, y: 34))
+        path.addCurve(
+            to: CGPoint(x: 67.5, y: 30),
+            control1: CGPoint(x: 43, y: 37), control2: CGPoint(x: 55, y: 27)
+        )
+        path.move(to: CGPoint(x: 32, y: 48))
+        path.addCurve(
+            to: CGPoint(x: 68.5, y: 45),
+            control1: CGPoint(x: 45, y: 44), control2: CGPoint(x: 56, y: 51)
+        )
+        path.move(to: CGPoint(x: 30.7, y: 62))
+        path.addCurve(
+            to: CGPoint(x: 69.3, y: 59),
+            control1: CGPoint(x: 43, y: 65), control2: CGPoint(x: 57, y: 55)
+        )
+
+        path.addRect(CGRect(x: 26, y: 76, width: 48, height: 9))
+    }
+
+    /// La palme : une nervure centrale et ses folioles, plus longues au milieu
+    /// qu'aux deux bouts. Elles sont calculées plutôt que tracées une à une,
+    /// pour que leur progression soit régulière — c'est la même logique que les
+    /// feuilles de la couronne, à l'échelle d'un seul objet.
+    private func drawPalm(_ path: inout Path) {
+        path.move(to: CGPoint(x: 50, y: 88))
+        path.addCurve(
+            to: CGPoint(x: 50, y: 12),
+            control1: CGPoint(x: 47, y: 62), control2: CGPoint(x: 48, y: 32)
+        )
+
+        let count = 11
+        for index in 0..<count {
+            let t = Double(index) / Double(count - 1)
+            let y = 82 - t * 62
+            let length = 27 * sin(.pi * (0.14 + 0.74 * t))
+            for side in [-1.0, 1.0] {
+                path.move(to: CGPoint(x: 50 + side * 1.5, y: y))
+                path.addQuadCurve(
+                    to: CGPoint(x: 50 + side * length, y: y - length * 0.62),
+                    control: CGPoint(x: 50 + side * length * 0.55, y: y - length * 0.06)
+                )
+            }
         }
     }
 
-    /// Une silhouette effilée sur un socle à deux degrés. Elle ne se porte plus :
-    /// elle se pose, et se montre à qui entre.
+    /// La statuette : une silhouette debout, son glaive tenu devant elle, sur un
+    /// socle à deux degrés. Elle ne se porte plus et ne se range plus : elle se
+    /// pose, et se montre à qui entre.
     private func drawStatuette(_ path: inout Path) {
-        path.move(to: CGPoint(x: 50, y: 18))
+        path.addEllipse(in: CGRect(x: 44, y: 12, width: 12, height: 13))
+
+        path.move(to: CGPoint(x: 40, y: 35))
         path.addCurve(
-            to: CGPoint(x: 44, y: 54),
-            control1: CGPoint(x: 44, y: 28), control2: CGPoint(x: 42, y: 40)
+            to: CGPoint(x: 42, y: 64),
+            control1: CGPoint(x: 39, y: 47), control2: CGPoint(x: 40, y: 57)
         )
-        path.addLine(to: CGPoint(x: 56, y: 54))
+        path.addLine(to: CGPoint(x: 58, y: 64))
         path.addCurve(
-            to: CGPoint(x: 50, y: 18),
-            control1: CGPoint(x: 58, y: 40), control2: CGPoint(x: 56, y: 28)
+            to: CGPoint(x: 60, y: 35),
+            control1: CGPoint(x: 60, y: 57), control2: CGPoint(x: 61, y: 47)
+        )
+        path.addCurve(
+            to: CGPoint(x: 40, y: 35),
+            control1: CGPoint(x: 59, y: 28), control2: CGPoint(x: 41, y: 28)
         )
         path.closeSubpath()
 
-        path.move(to: CGPoint(x: 50, y: 26))
-        path.addLine(to: CGPoint(x: 50, y: 54))
+        path.move(to: CGPoint(x: 50, y: 33))
+        path.addLine(to: CGPoint(x: 50, y: 64))
 
-        path.addRect(CGRect(x: 41, y: 54, width: 18, height: 12))
-        path.addRect(CGRect(x: 37, y: 66, width: 26, height: 8))
-    }
-
-    /// L'étoile inscrite dans sa dalle et son listel. Scellée au sol, publique,
-    /// et jamais reprise.
-    private func drawStar(_ path: inout Path) {
-        path.addRoundedRect(
-            in: CGRect(x: 24, y: 24, width: 52, height: 52),
-            cornerSize: CGSize(width: 3, height: 3)
-        )
-        path.addRoundedRect(
-            in: CGRect(x: 29, y: 29, width: 42, height: 42),
-            cornerSize: CGSize(width: 2, height: 2)
-        )
-
-        let center = CGPoint(x: 50, y: 50)
-        for corner in 0..<10 {
-            let radius: CGFloat = corner.isMultiple(of: 2) ? 16 : 6.6
-            let a = -Double.pi / 2 + Double(corner) * .pi / 5
-            let point = CGPoint(x: center.x + radius * cos(a), y: center.y + radius * sin(a))
-            if corner == 0 { path.move(to: point) } else { path.addLine(to: point) }
-        }
-        path.closeSubpath()
+        path.addRect(CGRect(x: 41, y: 64, width: 18, height: 11))
+        path.addRect(CGRect(x: 35, y: 75, width: 30, height: 9))
     }
 }
 

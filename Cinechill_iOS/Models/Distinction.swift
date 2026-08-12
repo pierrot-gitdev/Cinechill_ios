@@ -7,74 +7,73 @@ import SwiftUI
 
 /// La distinction portée par le profil, lue sur la taille de la galerie.
 ///
-/// L'échelle ne monte pas en taille mais en **permanence**, qui est ce qui
-/// hiérarchise réellement une récompense : le laurier est végétal et fane, le
-/// ruban est du tissu qu'on range, la médaille est frappée dans le métal et se
-/// garde, la statuette se pose et s'expose, l'étoile est scellée au sol et
-/// devient publique. Chaque degré rend la distinction plus difficile à défaire,
-/// exactement comme une galerie qui grossit devient plus difficile à
-/// reconstituer. Le dernier degré est le seul décerné pour un ensemble et non
-/// pour une pièce, ce qui correspond à ce que la galerie enregistre : une vie
-/// de spectateur.
+/// L'échelle monte par **l'autorité qui décerne**. Un jury de festival remarque
+/// un film ; le même jury distingue un interprète ; l'académie française
+/// récompense ; Cannes consacre ; Hollywood couronne. Chaque degré élargit le
+/// cercle de ceux qui ont eu à se prononcer, ce qui est exactement ce qui rend
+/// une récompense plus difficile à obtenir que la précédente.
 ///
 /// Les seuils sont inchangés depuis les anciens paliers : quelques sessions
 /// suffisent à passer 300, d'où un dernier degré volontairement lointain.
 ///
-/// - Important: les noms des grandes récompenses du cinéma sont des marques
-///   déposées et leurs statuettes sont protégées. Seule la *grammaire* des
-///   distinctions est reprise ici, qui n'appartient à personne ; les cinq
-///   objets sont dessinés pour Cinechill dans `DistinctionEmblem`.
+/// - Note: « César », « Palme d'or » et « Oscar » sont des marques déposées.
+///   Leur emploi ici est une décision produit prise le 13 août 2026, en
+///   connaissance de cause : ce sont les seuls noms qui portent une hiérarchie
+///   que personne n'a besoin d'apprendre. Les emblèmes de `DistinctionEmblem`
+///   sont en revanche des dessins originaux, et non des reproductions des
+///   statuettes, qui sont elles aussi protégées.
 nonisolated enum Distinction: Int, CaseIterable, Sendable {
-    case selection
     case mention
-    case prix
-    case grandPrix
-    case hommage
+    case interpretation
+    case cesar
+    case palme
+    case oscar
 
     static func distinction(for count: Int) -> Distinction {
         switch count {
-        case ..<50: .selection
-        case ..<150: .mention
-        case ..<400: .prix
-        case ..<900: .grandPrix
-        default: .hommage
+        case ..<50: .mention
+        case ..<150: .interpretation
+        case ..<400: .cesar
+        case ..<900: .palme
+        default: .oscar
         }
     }
 
     /// Le nom porte son article : il est repris tel quel dans les phrases
-    /// (« Le Prix dans 43 films »), sans qu'aucun appelant n'ait à le recaser.
+    /// (« Le César dans 43 films »), sans qu'aucun appelant n'ait à le recaser.
     var label: String {
         switch self {
-        case .selection: String(localized: "La Sélection", bundle: .app)
-        case .mention: String(localized: "La Mention", bundle: .app)
-        case .prix: String(localized: "Le Prix", bundle: .app)
-        case .grandPrix: String(localized: "Le Grand Prix", bundle: .app)
-        case .hommage: String(localized: "L'Hommage", bundle: .app)
+        case .mention: String(localized: "La Mention spéciale", bundle: .app)
+        case .interpretation: String(localized: "Le Prix d'interprétation", bundle: .app)
+        case .cesar: String(localized: "Le César", bundle: .app)
+        case .palme: String(localized: "La Palme d'or", bundle: .app)
+        case .oscar: String(localized: "L'Oscar", bundle: .app)
         }
     }
 
-    /// La formule de la cérémonie. Cinq verbes, et personne n'a besoin qu'on
-    /// lui explique lequel est le plus haut. Tournées sans accord de genre :
-    /// « retenu » aurait obligé à choisir pour l'utilisateur.
+    /// La formule de la cérémonie, qui nomme l'autorité. Cinq degrés
+    /// d'audience, et personne n'a besoin qu'on lui explique lequel est le plus
+    /// haut. Tournées sans accord de genre : « retenu » aurait obligé à choisir
+    /// pour l'utilisateur.
     var citation: String {
         switch self {
-        case .selection: String(localized: "Tu entres dans la sélection", bundle: .app)
         case .mention: String(localized: "Le jury te remarque", bundle: .app)
-        case .prix: String(localized: "Le jury te décerne", bundle: .app)
-        case .grandPrix: String(localized: "Le jury te consacre", bundle: .app)
-        case .hommage: String(localized: "Le jury te rend hommage", bundle: .app)
+        case .interpretation: String(localized: "Le jury te distingue", bundle: .app)
+        case .cesar: String(localized: "L'académie te récompense", bundle: .app)
+        case .palme: String(localized: "Cannes te consacre", bundle: .app)
+        case .oscar: String(localized: "Hollywood te couronne", bundle: .app)
         }
     }
 
-    /// La matière de l'objet, dite en toutes lettres à la cérémonie. C'est elle
-    /// qui porte l'idée de permanence, donc l'échelle.
+    /// La matière de l'objet, dite en toutes lettres à la cérémonie. Elle donne
+    /// à chaque degré une identité qu'un nom seul ne porte pas.
     var matiere: String {
         switch self {
-        case .selection: String(localized: "Laurier végétal", bundle: .app)
         case .mention: String(localized: "Ruban de soie", bundle: .app)
-        case .prix: String(localized: "Bronze frappé", bundle: .app)
-        case .grandPrix: String(localized: "Statuette de vermeil", bundle: .app)
-        case .hommage: String(localized: "Étoile scellée", bundle: .app)
+        case .interpretation: String(localized: "Masque de scène", bundle: .app)
+        case .cesar: String(localized: "Compression de bronze", bundle: .app)
+        case .palme: String(localized: "Or sur cristal", bundle: .app)
+        case .oscar: String(localized: "Métal plaqué or", bundle: .app)
         }
     }
 
@@ -83,32 +82,32 @@ nonisolated enum Distinction: Int, CaseIterable, Sendable {
     /// reste donc lisible en niveaux de gris, comme partout ailleurs.
     var accent: Color {
         switch self {
-        case .selection: Color(hex: 0x8C9199)   // étain
-        case .mention: Color(hex: 0xA8434E)     // soie cramoisie
-        case .prix: Color(hex: 0xB07A45)        // bronze frappé
-        case .grandPrix: Color(hex: 0xD8B25C)   // vermeil
-        case .hommage: Color(hex: 0xEFE3C4)     // or pâle
+        case .mention: Color(hex: 0xA8434E)        // soie cramoisie
+        case .interpretation: Color(hex: 0x8C9199) // étain du masque
+        case .cesar: Color(hex: 0xB07A45)          // bronze compressé
+        case .palme: Color(hex: 0xD8B25C)          // or massif
+        case .oscar: Color(hex: 0xEFE3C4)          // or pâle
         }
     }
 
     var lowerBound: Int {
         switch self {
-        case .selection: 0
-        case .mention: 50
-        case .prix: 150
-        case .grandPrix: 400
-        case .hommage: 900
+        case .mention: 0
+        case .interpretation: 50
+        case .cesar: 150
+        case .palme: 400
+        case .oscar: 900
         }
     }
 
     /// Nombre de films de la distinction suivante, ou `nil` au sommet.
     var nextThreshold: Int? {
         switch self {
-        case .selection: 50
-        case .mention: 150
-        case .prix: 400
-        case .grandPrix: 900
-        case .hommage: nil
+        case .mention: 50
+        case .interpretation: 150
+        case .cesar: 400
+        case .palme: 900
+        case .oscar: nil
         }
     }
 
@@ -134,7 +133,7 @@ nonisolated enum Distinction: Int, CaseIterable, Sendable {
     /// Vingt feuilles par branche, quarante en tout, à chaque degré.
     ///
     /// Le compte est constant mais l'écart entre deux seuils grandit : une
-    /// feuille vaut 1,25 film à la Sélection et 12,5 au Grand Prix. La couronne
+    /// feuille vaut 1,25 film à la Mention et 12,5 à la Palme. La couronne
     /// pousse vite au début, puis se mérite — c'est ce qui remplace la jauge,
     /// et c'est là que se joue la progression.
     static let leavesPerBranch = 20
@@ -147,11 +146,8 @@ nonisolated enum Distinction: Int, CaseIterable, Sendable {
     }
 }
 
-/// Le millésime d'une citation, dans l'écriture des plaques de cérémonie et
-/// des génériques de fin.
-///
-/// Le mois reste en chiffres arabes : une date entièrement romaine ne se lit
-/// pas d'un coup d'œil, et le palmarès est une liste qu'on parcourt.
+/// Le millésime d'une cérémonie, dans l'écriture des plaques et des génériques
+/// de fin.
 nonisolated enum Millesime {
     static func roman(_ year: Int) -> String {
         let table: [(Int, String)] = [
@@ -168,14 +164,6 @@ nonisolated enum Millesime {
             }
         }
         return out
-    }
-
-    /// « 04 · MMXXVI ». Calendrier et fuseau courants : la date d'obtention est
-    /// celle que l'utilisateur a vécue, pas celle du serveur.
-    static func citation(for date: Date) -> String {
-        let parts = Calendar.current.dateComponents([.year, .month], from: date)
-        let month = String(format: "%02d", parts.month ?? 1)
-        return "\(month) · \(roman(parts.year ?? 0))"
     }
 }
 

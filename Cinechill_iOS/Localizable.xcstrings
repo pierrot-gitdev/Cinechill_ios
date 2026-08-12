@@ -1182,18 +1182,82 @@
         }
       }
     },
-    "L'Hommage" : {
+    "Cannes te consacre" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The Tribute"
+            "value" : "Cannes anoints you"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "L'Hommage"
+            "value" : "Cannes te consacre"
+          }
+        }
+      }
+    },
+    "Compression de bronze" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bronze compression"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compression de bronze"
+          }
+        }
+      }
+    },
+    "Hollywood te couronne" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hollywood crowns you"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hollywood te couronne"
+          }
+        }
+      }
+    },
+    "L'Oscar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Oscar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'Oscar"
+          }
+        }
+      }
+    },
+    "L'académie te récompense" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The academy rewards you"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'académie te récompense"
           }
         }
       }
@@ -1214,114 +1278,82 @@
         }
       }
     },
-    "La Sélection" : {
+    "La Mention spéciale" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The Selection"
+            "value" : "Special Mention"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La Sélection"
+            "value" : "La Mention spéciale"
           }
         }
       }
     },
-    "La première tombe dès ton premier film." : {
+    "La Palme d'or" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The first lands with your very first film."
+            "value" : "The Palme d'Or"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La première tombe dès ton premier film."
+            "value" : "La Palme d'or"
           }
         }
       }
     },
-    "Laurier végétal" : {
+    "Le César" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Living laurel"
+            "value" : "The César"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Laurier végétal"
+            "value" : "Le César"
           }
         }
       }
     },
-    "Le Grand Prix" : {
+    "Le Prix d'interprétation" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The Grand Prize"
+            "value" : "Best Performance"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le Grand Prix"
+            "value" : "Le Prix d'interprétation"
           }
         }
       }
     },
-    "Le Prix" : {
+    "Le jury te distingue" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The Award"
+            "value" : "The jury singles you out"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le Prix"
-          }
-        }
-      }
-    },
-    "Le jury te consacre" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The jury crowns"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le jury te consacre"
-          }
-        }
-      }
-    },
-    "Le jury te décerne" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The jury presents"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le jury te décerne"
+            "value" : "Le jury te distingue"
           }
         }
       }
@@ -1342,18 +1374,34 @@
         }
       }
     },
-    "Le jury te rend hommage" : {
+    "Le premier tombe dès ton premier film." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The jury pays tribute"
+            "value" : "The first one lands with your very first film."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le jury te rend hommage"
+            "value" : "Le premier tombe dès ton premier film."
+          }
+        }
+      }
+    },
+    "Masque de scène" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stage mask"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masque de scène"
           }
         }
       }
@@ -1406,18 +1454,34 @@
         }
       }
     },
-    "Palmarès" : {
+    "Métal plaqué or" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honours"
+            "value" : "Gold-plated metal"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Palmarès"
+            "value" : "Métal plaqué or"
+          }
+        }
+      }
+    },
+    "Or sur cristal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gold on crystal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or sur cristal"
           }
         }
       }
@@ -1438,18 +1502,18 @@
         }
       }
     },
-    "Quinze distinctions à décrocher" : {
+    "Quinze badges à décrocher" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fifteen honours to earn"
+            "value" : "Fifteen badges to earn"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quinze distinctions à décrocher"
+            "value" : "Quinze badges à décrocher"
           }
         }
       }
@@ -1466,22 +1530,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ruban de soie"
-          }
-        }
-      }
-    },
-    "Statuette de vermeil" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Silver-gilt statuette"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Statuette de vermeil"
           }
         }
       }
@@ -1530,22 +1578,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pas chez toi"
-          }
-        }
-      }
-    },
-    "Tu entres dans la sélection" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You've made the selection"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu entres dans la sélection"
           }
         }
       }
@@ -4924,22 +4956,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "États-Unis"
-          }
-        }
-      }
-    },
-    "Étoile scellée" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sealed star"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Étoile scellée"
           }
         }
       }
