@@ -5712,6 +5712,22 @@
         }
       }
     },
+    "La connexion Apple a échoué. Vérifie que tu es connecté à iCloud sur cet appareil." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple sign-in failed. Check that you're signed in to iCloud on this device."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La connexion Apple a échoué. Vérifie que tu es connecté à iCloud sur cet appareil."
+          }
+        }
+      }
+    },
     "La photo de profil sera supprimée." : {
       "localizations" : {
         "en" : {

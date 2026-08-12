@@ -315,12 +315,24 @@ final class AuthService: ObservableObject {
                 )
                 await updateDisplayName(name)
             }
+        } catch let error as ASAuthorizationError {
+            // Un refus de la feuille n'est pas une panne : on ne laisse pas un
+            // bandeau d'erreur derrière un geste volontaire.
+            guard error.code != .canceled else { return }
+            // Tout le reste vient d'Apple, jamais de Firebase, et surtout pas du
+            // réseau : `translate` ne connaît que des codes Firebase et ferait
+            // tomber ceux-ci dans son message générique de serveur injoignable,
+            // qui a déjà coûté une recherche de panne réseau inexistante. Le
+            // code 1000 se lit « unknown » mais n'a en pratique que deux causes :
+            // la capacité Sign In with Apple absente de la cible, ou aucun
+            // compte iCloud sur l'appareil.
+            throw fail(.form(String(
+                localized: "La connexion Apple a échoué. Vérifie que tu es connecté à iCloud sur cet appareil.",
+                bundle: .app
+            )))
         } catch let failure as AuthFailure {
             throw fail(failure)
         } catch {
-            // Un refus de la feuille n'est pas une panne : on ne laisse pas un
-            // bandeau d'erreur derrière un geste volontaire.
-            if (error as? ASAuthorizationError)?.code == .canceled { return }
             throw fail(Self.translate(error, during: .signIn))
         }
 #else
