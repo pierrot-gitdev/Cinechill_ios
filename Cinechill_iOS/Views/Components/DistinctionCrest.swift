@@ -17,6 +17,9 @@ private enum Wreath {
 
     static let leafLength: CGFloat = 17
     static let leafWidth: CGFloat = 5.2
+    /// Les feuilles poussent juste en dehors de la tige, comme sur une vraie
+    /// branche. Ancrées dessus, elles couvraient le ruban au lieu d'en sortir.
+    static let leafAnchorOffset: CGFloat = 2.5
 
     /// Le badge et l'emblème font désormais la même taille à quatre unités
     /// près. Le siège occupait 76 unités contre 46 à l'emblème : la couronne
@@ -68,6 +71,15 @@ private enum Wreath {
         return atan2(growth.y + 0.78 * outward.y, growth.x + 0.78 * outward.x)
     }
 
+    /// La direction de la branche en un point, sans l'inclinaison vers
+    /// l'extérieur qui, elle, ne concerne que les feuilles.
+    static func tangent(degrees: Double, onLeft: Bool) -> CGFloat {
+        let a = degrees * .pi / 180
+        return onLeft
+            ? atan2(cos(a), sin(a))
+            : atan2(-cos(a), -sin(a))
+    }
+
     /// Ramène le dessin de référence au rectangle réellement offert, centré et
     /// sans déformation.
     static func fit(_ rect: CGRect, reference: CGFloat = box) -> CGAffineTransform {
@@ -85,18 +97,17 @@ private enum Wreath {
 /// La couronne entière : les tiges, et les feuilles acquises ou restant à
 /// gagner.
 ///
-/// Trois passes séparées parce qu'une `Shape` n'a qu'un seul remplissage. Les
-/// feuilles acquises sont pleines, celles qui restent sont tracées au filet, et
-/// les tiges sont posées à part pour garder leur propre valeur. C'est le
-/// remplissage, et non la teinte, qui porte la différence entre acquis et à
-/// gagner — la règle de toute l'application.
+/// Deux passes séparées parce qu'une `Shape` n'a qu'un seul remplissage : les
+/// feuilles acquises et les tiges sont pleines, celles qui restent à gagner sont
+/// tracées au filet. C'est le remplissage, et non la teinte, qui porte la
+/// différence entre acquis et à gagner — la règle de toute l'application.
 struct LaurelLeaves: Shape {
     /// Feuilles acquises **par branche**.
     let acquired: Int
     /// `true` pour les feuilles déjà posées, `false` pour celles qui restent.
     let showsAcquired: Bool
-    /// Ajoute les deux tiges au chemin. Avec `acquired` à zéro, on obtient les
-    /// branches nues et rien d'autre.
+    /// Ajoute les deux tiges au chemin. Elles voyagent avec les feuilles
+    /// acquises, dont on sait qu'elles arrivent à l'écran.
     var includesStems: Bool = false
 
     /// Demi-épaisseur d'une tige au pied et à la tête, en unités du repère.
@@ -113,7 +124,7 @@ struct LaurelLeaves: Shape {
             for index in 0..<Distinction.leavesPerBranch {
                 guard (index < acquired) == showsAcquired else { continue }
                 let degrees = Wreath.leafAngle(index: index, onLeft: onLeft)
-                let anchor = Wreath.point(degrees)
+                let anchor = Wreath.point(degrees, offset: Wreath.leafAnchorOffset)
                 let placement = CGAffineTransform(translationX: anchor.x, y: anchor.y)
                     .rotated(by: Wreath.leafRotation(degrees: degrees, onLeft: onLeft))
                 path.addPath(leaf, transform: placement)
@@ -122,36 +133,47 @@ struct LaurelLeaves: Shape {
         return path.applying(Wreath.fit(rect))
     }
 
-    /// Les deux branches nues, en rubans fermés qui s'affinent du pied vers la
-    /// tête comme le fait une vraie tige.
+    /// Les deux branches nues, posées segment par segment.
     ///
-    /// Elles vivaient dans une `Shape` à elles, `LaurelStems`, qui ne
-    /// s'affichait pas sur l'appareil — ni en chemin ouvert tracé, ni en
-    /// surface fermée remplie, alors que ces feuilles-ci, mêmes repères et même
-    /// transformation, apparaissaient normalement. Deux géométries opposées qui
-    /// échouent de la même façon innocentent le dessin. Plutôt que de chercher
-    /// plus loin, les tiges sont entrées dans le chemin qui fonctionne.
+    /// Elles ont d'abord vécu dans une `Shape` à part, `LaurelStems`, qui ne
+    /// s'affichait pas sur l'appareil : ni en chemin ouvert tracé, ni en surface
+    /// fermée remplie, ni une fois rapatriée dans ce type-ci. Trois échecs
+    /// identiques pour trois géométries différentes innocentent le dessin.
+    ///
+    /// Ce qu'il restait de non partagé avec les feuilles, c'était la manière de
+    /// remplir le chemin. Les feuilles passent par `addPath(_:transform:)` à
+    /// partir d'un motif local, et elles arrivent à l'écran. Les tiges font
+    /// désormais exactement pareil : un petit quadrilatère, répété le long de
+    /// l'arc en se chevauchant, incliné sur la tangente. Aucun mécanisme neuf.
     private func addStems(to path: inout Path) {
-        let steps = 40
+        let steps = 44
+        let span = Wreath.leftStart - Wreath.leftEnd
+        // Un segment est plus long que le pas, pour que deux voisins se
+        // recouvrent et que le ruban n'ait pas de dents.
+        let pitch = Wreath.radius * (span / Double(steps)) * .pi / 180
+        let segment = CGFloat(pitch) * 1.7
+
         for onLeft in [true, false] {
             let from = onLeft ? Wreath.leftStart : Wreath.rightStart
             let to = onLeft ? Wreath.leftEnd : Wreath.rightEnd
 
-            var outer: [CGPoint] = []
-            var inner: [CGPoint] = []
             for step in 0...steps {
                 let fraction = Double(step) / Double(steps)
                 let degrees = from + (to - from) * fraction
                 let half = Self.footHalfWidth
                     + (Self.headHalfWidth - Self.footHalfWidth) * CGFloat(fraction)
-                outer.append(Wreath.point(degrees, offset: half))
-                inner.append(Wreath.point(degrees, offset: -half))
-            }
 
-            path.move(to: outer[0])
-            for point in outer.dropFirst() { path.addLine(to: point) }
-            for point in inner.reversed() { path.addLine(to: point) }
-            path.closeSubpath()
+                var brick = Path()
+                brick.addRect(CGRect(
+                    x: -segment / 2, y: -half,
+                    width: segment, height: half * 2
+                ))
+
+                let anchor = Wreath.point(degrees)
+                let placement = CGAffineTransform(translationX: anchor.x, y: anchor.y)
+                    .rotated(by: Wreath.tangent(degrees: degrees, onLeft: onLeft))
+                path.addPath(brick, transform: placement)
+            }
         }
     }
 
@@ -373,16 +395,13 @@ struct DistinctionCrest: View {
             // le dessin à 300 px sur un grand écran, l'app le tient dans 200
             // points sur un téléphone, et un filet proportionnellement identique
             // s'y évanouit.
-            // `acquired: 0` n'émet aucune feuille : il ne reste que les tiges.
-            LaurelLeaves(acquired: 0, showsAcquired: true, includesStems: true)
-                .fill(distinction.accent.opacity(0.55))
-                .frame(width: size, height: size)
-
             LaurelLeaves(acquired: acquired, showsAcquired: false)
                 .stroke(distinction.accent.opacity(0.32), lineWidth: 0.85)
                 .frame(width: size, height: size)
 
-            LaurelLeaves(acquired: acquired, showsAcquired: true)
+            // Les tiges voyagent avec les feuilles acquises : ta capture prouve
+            // que cette passe-ci arrive à l'écran.
+            LaurelLeaves(acquired: acquired, showsAcquired: true, includesStems: true)
                 .fill(distinction.accent)
                 .frame(width: size, height: size)
 
