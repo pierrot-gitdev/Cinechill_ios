@@ -111,8 +111,13 @@ struct LaurelLeaves: Shape {
     var includesStems: Bool = false
 
     /// Demi-épaisseur d'une tige au pied et à la tête, en unités du repère.
-    private static let footHalfWidth: CGFloat = 1.3
-    private static let headHalfWidth: CGFloat = 0.55
+    ///
+    /// À 1,3 et 0,55 la branche ne faisait que 2,4 pt puis 1,0 pt à l'écran,
+    /// contre 9,5 pt de large pour une feuille : quatre fois plus fine que ce
+    /// qu'elle porte, elle se perdait. Une vraie tige de laurier est de l'ordre
+    /// du tiers de la largeur de sa feuille.
+    private static let footHalfWidth: CGFloat = 2.3
+    private static let headHalfWidth: CGFloat = 1.15
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
