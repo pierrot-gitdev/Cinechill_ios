@@ -350,12 +350,15 @@ struct DistinctionCrest: View {
             // c'est l'encre.
             LaurelStems()
                 .stroke(distinction.accent.opacity(0.55), style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
+                .frame(width: size, height: size)
 
             LaurelLeaves(acquired: acquired, showsAcquired: false)
                 .stroke(distinction.accent.opacity(0.32), lineWidth: 0.85)
+                .frame(width: size, height: size)
 
             LaurelLeaves(acquired: acquired, showsAcquired: true)
                 .fill(distinction.accent)
+                .frame(width: size, height: size)
 
             DistinctionEmblem(distinction: distinction)
                 .stroke(
@@ -366,7 +369,6 @@ struct DistinctionCrest: View {
                 .offset(y: size * (Wreath.emblemCenter.y - Wreath.box / 2) / Wreath.box)
 
             badgeSeat
-                .frame(width: seatSize, height: seatSize)
                 .offset(y: size * (Wreath.center.y - Wreath.box / 2) / Wreath.box)
         }
         .frame(width: size, height: size)
@@ -393,6 +395,12 @@ struct DistinctionCrest: View {
                     .foregroundStyle(Ink.ink3)
             }
         }
+        // Le cadrage doit précéder le rognage, et non l'inverse. Posé après, il
+        // ne rogne rien : la pile prenait la taille de l'image zoomée, le
+        // disque de fond avec elle, et le badge sortait à 155 % de son siège en
+        // recouvrant le haut de l'emblème. C'est la faute qui rendait le badge
+        // énorme malgré le rééquilibrage.
+        .frame(width: seatSize, height: seatSize)
         .clipShape(Circle())
     }
 
