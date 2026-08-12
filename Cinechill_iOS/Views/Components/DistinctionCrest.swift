@@ -37,11 +37,14 @@ private enum Wreath {
     static let rightStart: Double = -60
     static let rightEnd: Double = 70
 
-    static func point(_ degrees: Double) -> CGPoint {
+    /// Un point de l'arc, éventuellement décalé radialement : `offset` sert à
+    /// épaissir les tiges vers l'extérieur ou l'intérieur.
+    static func point(_ degrees: Double, offset: CGFloat = 0) -> CGPoint {
         let a = degrees * .pi / 180
+        let r = radius + offset
         return CGPoint(
-            x: center.x + radius * cos(a),
-            y: center.y - radius * sin(a)
+            x: center.x + r * cos(a),
+            y: center.y - r * sin(a)
         )
     }
 
@@ -81,21 +84,47 @@ private enum Wreath {
 
 /// Les deux branches nues, sans leurs feuilles.
 ///
-/// Tracées par échantillonnage plutôt qu'avec un arc : le sens de rotation d'un
+/// Échantillonnées plutôt que tracées à l'arc : le sens de rotation d'un
 /// `addArc` dépend de l'orientation de l'axe vertical, et une polyligne de
-/// vingt-quatre points ne laisse aucune place au doute pour un coût nul.
+/// quarante points ne laisse aucune place au doute pour un coût nul.
+///
+/// **Fermées et remplies, jamais tracées.** Un chemin ouvert passé à `stroke`
+/// ne s'affichait pas sur l'appareil, alors que les feuilles — mêmes repères,
+/// même transformation, mais chemins fermés et remplis — apparaissaient
+/// normalement. Plutôt que de dépendre de ce comportement, chaque branche est
+/// construite comme un ruban : on longe l'arc par l'extérieur, on revient par
+/// l'intérieur, on referme. Le dessin y gagne d'ailleurs, puisqu'une tige peut
+/// alors s'affiner du pied vers la tête comme le fait une vraie.
 struct LaurelStems: Shape {
+    /// Demi-épaisseur au pied et à la tête, en unités du repère.
+    private static let footHalfWidth: CGFloat = 1.1
+    private static let headHalfWidth: CGFloat = 0.45
+
     func path(in rect: CGRect) -> Path {
         var path = Path()
+        let steps = 40
+
         for onLeft in [true, false] {
             let from = onLeft ? Wreath.leftStart : Wreath.rightStart
             let to = onLeft ? Wreath.leftEnd : Wreath.rightEnd
-            let steps = 24
+
+            // Le bord extérieur à l'aller, l'intérieur au retour : le contour
+            // se referme sur lui-même et devient une surface.
+            var outer: [CGPoint] = []
+            var inner: [CGPoint] = []
             for step in 0...steps {
-                let degrees = from + (to - from) * Double(step) / Double(steps)
-                let point = Wreath.point(degrees)
-                if step == 0 { path.move(to: point) } else { path.addLine(to: point) }
+                let fraction = Double(step) / Double(steps)
+                let degrees = from + (to - from) * fraction
+                let half = Self.footHalfWidth
+                    + (Self.headHalfWidth - Self.footHalfWidth) * CGFloat(fraction)
+                outer.append(Wreath.point(degrees, offset: half))
+                inner.append(Wreath.point(degrees, offset: -half))
             }
+
+            path.move(to: outer[0])
+            for point in outer.dropFirst() { path.addLine(to: point) }
+            for point in inner.reversed() { path.addLine(to: point) }
+            path.closeSubpath()
         }
         return path.applying(Wreath.fit(rect))
     }
@@ -340,16 +369,13 @@ struct DistinctionCrest: View {
 
     var body: some View {
         ZStack {
-            // Les tiges et les feuilles à gagner sont plus appuyées qu'elles ne
-            // le paraissent sur la planche de référence, et c'est délibéré. Le
-            // dessin y est présenté à 300 px sur un grand écran ; ici il tient
-            // dans 200 points sur un téléphone. Un filet proportionnellement
-            // identique s'y évanouit : à 42 % d'opacité sur la nuit, la teinte
-            // de la Mention tombait à un bordeaux presque noir, et les deux
-            // branches disparaissaient. Ce n'est pas la géométrie qui manquait,
-            // c'est l'encre.
+            // Les feuilles à gagner sont plus appuyées qu'elles ne le paraissent
+            // sur la planche de référence, et c'est délibéré : celle-ci présente
+            // le dessin à 300 px sur un grand écran, l'app le tient dans 200
+            // points sur un téléphone, et un filet proportionnellement identique
+            // s'y évanouit.
             LaurelStems()
-                .stroke(distinction.accent.opacity(0.55), style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
+                .fill(distinction.accent.opacity(0.55))
                 .frame(width: size, height: size)
 
             LaurelLeaves(acquired: acquired, showsAcquired: false)
