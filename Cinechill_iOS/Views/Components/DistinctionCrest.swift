@@ -80,36 +80,63 @@ private enum Wreath {
     }
 }
 
-// MARK: - Les tiges
+// MARK: - Les feuilles
 
-/// Les deux branches nues, sans leurs feuilles.
+/// La couronne entière : les tiges, et les feuilles acquises ou restant à
+/// gagner.
 ///
-/// Échantillonnées plutôt que tracées à l'arc : le sens de rotation d'un
-/// `addArc` dépend de l'orientation de l'axe vertical, et une polyligne de
-/// quarante points ne laisse aucune place au doute pour un coût nul.
-///
-/// **Fermées et remplies, jamais tracées.** Un chemin ouvert passé à `stroke`
-/// ne s'affichait pas sur l'appareil, alors que les feuilles — mêmes repères,
-/// même transformation, mais chemins fermés et remplis — apparaissaient
-/// normalement. Plutôt que de dépendre de ce comportement, chaque branche est
-/// construite comme un ruban : on longe l'arc par l'extérieur, on revient par
-/// l'intérieur, on referme. Le dessin y gagne d'ailleurs, puisqu'une tige peut
-/// alors s'affiner du pied vers la tête comme le fait une vraie.
-struct LaurelStems: Shape {
-    /// Demi-épaisseur au pied et à la tête, en unités du repère.
-    private static let footHalfWidth: CGFloat = 1.1
-    private static let headHalfWidth: CGFloat = 0.45
+/// Trois passes séparées parce qu'une `Shape` n'a qu'un seul remplissage. Les
+/// feuilles acquises sont pleines, celles qui restent sont tracées au filet, et
+/// les tiges sont posées à part pour garder leur propre valeur. C'est le
+/// remplissage, et non la teinte, qui porte la différence entre acquis et à
+/// gagner — la règle de toute l'application.
+struct LaurelLeaves: Shape {
+    /// Feuilles acquises **par branche**.
+    let acquired: Int
+    /// `true` pour les feuilles déjà posées, `false` pour celles qui restent.
+    let showsAcquired: Bool
+    /// Ajoute les deux tiges au chemin. Avec `acquired` à zéro, on obtient les
+    /// branches nues et rien d'autre.
+    var includesStems: Bool = false
+
+    /// Demi-épaisseur d'une tige au pied et à la tête, en unités du repère.
+    private static let footHalfWidth: CGFloat = 1.3
+    private static let headHalfWidth: CGFloat = 0.55
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        let steps = 40
+        let leaf = leafPath()
 
+        if includesStems { addStems(to: &path) }
+
+        for onLeft in [true, false] {
+            for index in 0..<Distinction.leavesPerBranch {
+                guard (index < acquired) == showsAcquired else { continue }
+                let degrees = Wreath.leafAngle(index: index, onLeft: onLeft)
+                let anchor = Wreath.point(degrees)
+                let placement = CGAffineTransform(translationX: anchor.x, y: anchor.y)
+                    .rotated(by: Wreath.leafRotation(degrees: degrees, onLeft: onLeft))
+                path.addPath(leaf, transform: placement)
+            }
+        }
+        return path.applying(Wreath.fit(rect))
+    }
+
+    /// Les deux branches nues, en rubans fermés qui s'affinent du pied vers la
+    /// tête comme le fait une vraie tige.
+    ///
+    /// Elles vivaient dans une `Shape` à elles, `LaurelStems`, qui ne
+    /// s'affichait pas sur l'appareil — ni en chemin ouvert tracé, ni en
+    /// surface fermée remplie, alors que ces feuilles-ci, mêmes repères et même
+    /// transformation, apparaissaient normalement. Deux géométries opposées qui
+    /// échouent de la même façon innocentent le dessin. Plutôt que de chercher
+    /// plus loin, les tiges sont entrées dans le chemin qui fonctionne.
+    private func addStems(to path: inout Path) {
+        let steps = 40
         for onLeft in [true, false] {
             let from = onLeft ? Wreath.leftStart : Wreath.rightStart
             let to = onLeft ? Wreath.leftEnd : Wreath.rightEnd
 
-            // Le bord extérieur à l'aller, l'intérieur au retour : le contour
-            // se referme sur lui-même et devient une surface.
             var outer: [CGPoint] = []
             var inner: [CGPoint] = []
             for step in 0...steps {
@@ -126,39 +153,6 @@ struct LaurelStems: Shape {
             for point in inner.reversed() { path.addLine(to: point) }
             path.closeSubpath()
         }
-        return path.applying(Wreath.fit(rect))
-    }
-}
-
-// MARK: - Les feuilles
-
-/// Les feuilles de la couronne, acquises ou restant à gagner.
-///
-/// Deux passes séparées parce qu'une `Shape` n'a qu'un seul remplissage : les
-/// acquises sont pleines, les autres sont tracées au filet. C'est le
-/// remplissage, et non la teinte, qui porte la différence — la règle de toute
-/// l'application.
-struct LaurelLeaves: Shape {
-    /// Feuilles acquises **par branche**.
-    let acquired: Int
-    /// `true` pour les feuilles déjà posées, `false` pour celles qui restent.
-    let showsAcquired: Bool
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let leaf = leafPath()
-
-        for onLeft in [true, false] {
-            for index in 0..<Distinction.leavesPerBranch {
-                guard (index < acquired) == showsAcquired else { continue }
-                let degrees = Wreath.leafAngle(index: index, onLeft: onLeft)
-                let anchor = Wreath.point(degrees)
-                let placement = CGAffineTransform(translationX: anchor.x, y: anchor.y)
-                    .rotated(by: Wreath.leafRotation(degrees: degrees, onLeft: onLeft))
-                path.addPath(leaf, transform: placement)
-            }
-        }
-        return path.applying(Wreath.fit(rect))
     }
 
     /// Une feuille pointant vers les x positifs, reprise telle quelle à chaque
@@ -379,7 +373,8 @@ struct DistinctionCrest: View {
             // le dessin à 300 px sur un grand écran, l'app le tient dans 200
             // points sur un téléphone, et un filet proportionnellement identique
             // s'y évanouit.
-            LaurelStems()
+            // `acquired: 0` n'émet aucune feuille : il ne reste que les tiges.
+            LaurelLeaves(acquired: 0, showsAcquired: true, includesStems: true)
                 .fill(distinction.accent.opacity(0.55))
                 .frame(width: size, height: size)
 
