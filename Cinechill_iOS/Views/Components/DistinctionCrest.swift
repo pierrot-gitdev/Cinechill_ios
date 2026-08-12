@@ -359,9 +359,14 @@ struct DistinctionCrest: View {
     var size: CGFloat = 200
 
     /// Le PNG d'un badge garde une marge transparente autour de sa monture,
-    /// pour laisser respirer son ombre portée. Ce zoom rogne cette marge en
-    /// cercle, pour que le badge remplisse son siège et non sa marge.
-    private static let badgeZoom: CGFloat = 1.55
+    /// pour laisser respirer son ombre portée. Ce zoom rogne cette marge, pour
+    /// que le badge remplisse son siège et non sa marge.
+    ///
+    /// La valeur est mesurée, pas choisie : sur les quinze planches, la monture
+    /// occupe entre 69 % et 75 % du carré, et c'est la plus large qui commande.
+    /// Au-delà de 1,33 le rognage mord sur la monture elle-même — l'ancien 1,55,
+    /// hérité du puits carré, amputait les quinze badges d'un bon dixième.
+    private static let badgeZoom: CGFloat = 1.33
 
     private var acquired: Int { distinction.acquiredLeaves(count: galleryCount) }
     private var seatSize: CGFloat { size * Wreath.seatDiameter / Wreath.box }
