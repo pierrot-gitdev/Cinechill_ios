@@ -18,8 +18,16 @@ import FirebaseCore
 /// Le simulateur, lui, n'a pas de Secure Enclave. Sans le fournisseur de
 /// débogage, tout le développement se ferait contre un backend qui refuse :
 /// c'est la raison de la branche `DEBUG`, et la raison pour laquelle elle ne
-/// doit jamais en sortir. Le jeton de débogage se lit dans la console Xcode au
-/// premier lancement, puis s'enregistre dans la console Firebase.
+/// doit jamais en sortir.
+///
+/// Le jeton de débogage n'est pas fixe. Il est tiré au hasard au premier
+/// lancement et vit dans les préférences de l'app : réinstaller, changer
+/// d'appareil ou d'équipe de signature en produit un nouveau, que la console
+/// Firebase ne connaît pas. Le symptôme est un 403 « App attestation failed »
+/// sur `exchangeDebugToken`, qui ressemble à une panne mais n'en est pas une.
+/// Pour ressortir le jeton courant et le réenregistrer dans la console : lancer
+/// avec l'argument `-FIRDebugEnabled`, la ligne « Firebase App Check Debug
+/// Token » revient dans Xcode.
 final class CinechillAppCheckProviderFactory: NSObject, AppCheckProviderFactory {
     func createProvider(with app: FirebaseApp) -> AppCheckProvider? {
         #if DEBUG
