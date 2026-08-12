@@ -340,11 +340,19 @@ struct DistinctionCrest: View {
 
     var body: some View {
         ZStack {
+            // Les tiges et les feuilles à gagner sont plus appuyées qu'elles ne
+            // le paraissent sur la planche de référence, et c'est délibéré. Le
+            // dessin y est présenté à 300 px sur un grand écran ; ici il tient
+            // dans 200 points sur un téléphone. Un filet proportionnellement
+            // identique s'y évanouit : à 42 % d'opacité sur la nuit, la teinte
+            // de la Mention tombait à un bordeaux presque noir, et les deux
+            // branches disparaissaient. Ce n'est pas la géométrie qui manquait,
+            // c'est l'encre.
             LaurelStems()
-                .stroke(distinction.accent.opacity(0.42), style: StrokeStyle(lineWidth: 1, lineCap: .round))
+                .stroke(distinction.accent.opacity(0.55), style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
 
             LaurelLeaves(acquired: acquired, showsAcquired: false)
-                .stroke(distinction.accent.opacity(0.26), lineWidth: 0.7)
+                .stroke(distinction.accent.opacity(0.32), lineWidth: 0.85)
 
             LaurelLeaves(acquired: acquired, showsAcquired: true)
                 .fill(distinction.accent)
@@ -352,7 +360,7 @@ struct DistinctionCrest: View {
             DistinctionEmblem(distinction: distinction)
                 .stroke(
                     distinction.accent,
-                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
+                    style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round)
                 )
                 .frame(width: emblemSize, height: emblemSize)
                 .offset(y: size * (Wreath.emblemCenter.y - Wreath.box / 2) / Wreath.box)

@@ -32,11 +32,12 @@ struct ProfileSignatureCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // La taille vient de `DistinctionCrest` : la fixer ici aussi avait
+            // laissé l'écu à 190 quand le rééquilibrage l'a porté à 200.
             DistinctionCrest(
                 distinction: distinction,
                 galleryCount: galleryCount,
-                badge: displayedBadge,
-                size: 190
+                badge: displayedBadge
             )
 
             Text(profileStore.displayName)
