@@ -1,11 +1,16 @@
 import SwiftUI
 
-/// Le profil, construit autour du badge sélectionné.
+/// Le profil, lu comme un relevé de palmarès.
 ///
-/// La carte est volontairement quasi monochrome : si elle a sa propre identité
-/// chromatique et le badge la sienne, les deux se battent. En la laissant
-/// sobre, changer de badge change réellement l'allure du profil — ce qui est
-/// tout l'intérêt de pouvoir en choisir un.
+/// L'écran suit l'ordre d'une cérémonie : la distinction et le badge couronné,
+/// les chiffres du Hall, puis la liste datée de ce qui a été décerné. Les badges
+/// ne sont plus une rangée de vignettes posée au milieu de la page ; celui qui
+/// est en vitrine se voit en grand dans l'écu, les autres sont cités.
+///
+/// L'écran reste quasi monochrome. Si la surface a sa propre identité
+/// chromatique et le badge la sienne, les deux se battent : la seule couleur
+/// admise est celle de la distinction, sur le trait de la couronne et le nom du
+/// rang.
 struct ProfileView: View {
     @Bindable var badgesModel: BadgesViewModel
 
@@ -28,7 +33,7 @@ struct ProfileView: View {
                 VStack(alignment: .leading, spacing: 30) {
                     signatureCard
                     hallRow
-                    badgesSection
+                    palmaresSection
                     dnaSection
                 }
                 .padding(.horizontal, Metrics.margin)
@@ -197,18 +202,26 @@ struct ProfileView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Badges
+    // MARK: - Palmarès
 
-    private var badgesSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
+    /// Les badges cessent d'être une rangée de vignettes à faire défiler pour
+    /// devenir la **liste datée de ce qui t'a été décerné**, et la distinction
+    /// est le rang que cette liste te vaut. Les vignettes ne manquent pas : le
+    /// badge choisi est montré en grand, couronné, au-dessus.
+    ///
+    /// La date existait déjà dans le modèle, sous `BadgeProgress.unlockedAt`, et
+    /// n'avait jamais été affichée nulle part ailleurs que sur la fiche d'un
+    /// badge.
+    private var palmaresSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Mes badges", bundle: .app)
-                    .planTitle(21)
-                    .foregroundStyle(Ink.ink)
+                Text("Palmarès", bundle: .app)
+                    .planLabel()
+                    .foregroundStyle(Ink.ink2)
                 Spacer()
                 NavigationLink(destination: BadgeGalleryView(model: badgesModel)) {
                     HStack(spacing: 7) {
-                        Text(verbatim: "\(badgesModel.unlockedCount)")
+                        Text(verbatim: "\(badgesModel.unlockedCount) / \(badgesModel.totalCount)")
                             .planLabel()
                             .monospacedDigit()
                             .foregroundStyle(Ink.ink3)
@@ -223,43 +236,58 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
             }
+            .padding(.bottom, 9)
+
+            PlanEdge()
 
             if badgesModel.showcase.isEmpty {
-                emptyBadges
+                emptyPalmares
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(badgesModel.showcase) { badge in
-                            BadgeView(badge: badge, isUnlocked: true, size: 62)
-                        }
-                    }
-                    .padding(.horizontal, 2)
-                    .padding(.vertical, 6)
+                ForEach(badgesModel.showcase.prefix(4)) { badge in
+                    citationRow(badge)
                 }
-                .scrollClipDisabled()
             }
         }
     }
 
-    private var emptyBadges: some View {
-        NavigationLink(destination: BadgeGalleryView(model: badgesModel)) {
-            HStack(spacing: 14) {
-                if let first = BadgeCatalog.all.first {
-                    BadgeView(badge: first, isUnlocked: false, size: 52)
-                }
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Quinze badges à décrocher", bundle: .app)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Ink.ink)
-                    Text("Le premier tombe dès ton premier film.", bundle: .app)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(Ink.ink2)
-                }
-                Spacer(minLength: 0)
+    private func citationRow(_ badge: Badge) -> some View {
+        HStack(spacing: 10) {
+            Rectangle()
+                .fill(badge.rarity.accent)
+                .frame(width: 5, height: 5)
+
+            Text(badge.name)
+                .font(.system(size: 12.5))
+                .foregroundStyle(Ink.ink)
+                .lineLimit(1)
+
+            Spacer(minLength: 8)
+
+            if let date = badgesModel.progress(for: badge).unlockedAt {
+                Text(verbatim: Millesime.citation(for: date))
+                    .font(.system(size: 10))
+                    .monospacedDigit()
+                    .foregroundStyle(Ink.ink3)
             }
+        }
+        .padding(.vertical, 10)
+        .overlay(alignment: .bottom) { PlanEdge() }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var emptyPalmares: some View {
+        NavigationLink(destination: BadgeGalleryView(model: badgesModel)) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Quinze distinctions à décrocher", bundle: .app)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Ink.ink)
+                Text("La première tombe dès ton premier film.", bundle: .app)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Ink.ink2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 14)
             .contentShape(Rectangle())
-            .overlay(alignment: .top) { PlanEdge() }
             .overlay(alignment: .bottom) { PlanEdge() }
         }
         .buttonStyle(.plain)
