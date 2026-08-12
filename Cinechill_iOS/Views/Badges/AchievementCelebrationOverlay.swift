@@ -5,8 +5,8 @@
 
 import SwiftUI
 
-/// La popup de félicitations — badge tout juste débloqué, ou palier tout
-/// juste franchi.
+/// La popup de félicitations : badge tout juste décroché, ou distinction tout
+/// juste décernée.
 ///
 /// Affichée par-dessus l'app entière plutôt que dans un seul onglet : la
 /// galerie grossit depuis le deck, la fiche film ou CinéMatch, et le moment
@@ -42,7 +42,7 @@ struct AchievementCelebrationOverlay: View {
     private var card: some View {
         switch celebration {
         case .badge(let badge): badgeCard(badge)
-        case .tier(let tier): tierCard(tier)
+        case .distinction(let distinction): distinctionCard(distinction)
         }
     }
 
@@ -89,41 +89,59 @@ struct AchievementCelebrationOverlay: View {
         .accessibilityLabel(String(localized: "Nouveau badge débloqué : \(badge.name), \(badge.rarity.label). \(badge.condition)", bundle: .app))
     }
 
-    // MARK: - Palier franchi
+    // MARK: - Distinction décernée
 
-    /// Le palier n'emprunte plus `seal.fill` au système : c'est le mark lui-même,
-    /// à la teinte du palier. Célébrer un palier de cinéphilie avec un sceau
-    /// générique, c'était le seul endroit de l'app où l'on avait un objet
-    /// illustratif propre et où l'on n'a pas su s'en servir.
-    private func tierCard(_ tier: CinephileTier) -> some View {
+    /// La cérémonie. C'est la version haute de la carte d'un badge, et cette
+    /// différence d'échelle est ce qui installe la hiérarchie entre une citation
+    /// et un rang : un badge se décroche, une distinction se décerne.
+    ///
+    /// L'emblème est montré seul, sans sa couronne. Au moment du franchissement
+    /// la couronne vient de se refermer et n'apprend plus rien ; ce qui est neuf,
+    /// et donc ce qu'on montre, c'est l'objet frappé au pied.
+    private func distinctionCard(_ distinction: Distinction) -> some View {
         VStack(spacing: 0) {
-            eyebrow(String(localized: "Nouveau palier", bundle: .app), color: tier.accent)
+            eyebrow(distinction.citation, color: distinction.accent)
 
-            CinechillPlanOutline(lineWidth: 1.4)
-                .foregroundStyle(tier.accent)
+            DistinctionEmblem(distinction: distinction)
+                .stroke(
+                    distinction.accent,
+                    style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round)
+                )
                 .frame(width: 116, height: 116)
                 .padding(.top, 26)
 
-            Text(String(localized: "Palier \(tier.label.capitalized)", bundle: .app))
+            Text(distinction.label)
                 .planTitle(24)
                 .foregroundStyle(Ink.ink)
                 .padding(.top, 26)
 
-            Text("Ton profil change de couleur avec toi.", bundle: .app)
+            Text(distinction.matiere)
+                .planLabel()
+                .foregroundStyle(distinction.accent)
+                .padding(.top, 9)
+
+            Text(String(localized: "Pour \(distinction.lowerBound) films portés à ton dossier.", bundle: .app))
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 12)
+                .padding(.top, 14)
+
+            Text(verbatim: Millesime.roman(Calendar.current.component(.year, from: Date())))
+                .planLabel()
+                .foregroundStyle(Ink.ink3)
+                .padding(.top, 18)
 
             PlanButton(title: String(localized: "Continuer", bundle: .app), height: Metrics.control, action: onDismiss)
-                .padding(.top, 28)
+                .padding(.top, 26)
         }
         .padding(cardPadding)
         .frame(maxWidth: 340)
-        .background(cardBackground(accent: tier.accent))
+        .background(cardBackground(accent: distinction.accent))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(String(localized: "Nouveau palier : \(tier.label.capitalized)", bundle: .app))
+        .accessibilityLabel(
+            String(localized: "\(distinction.citation) : \(distinction.label), pour \(distinction.lowerBound) films", bundle: .app)
+        )
     }
 
     // MARK: - Pièces communes

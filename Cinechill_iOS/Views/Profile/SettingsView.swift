@@ -172,8 +172,8 @@ struct SettingsView: View {
     // MARK: - Identité
 
     /// La carte de signature perd son cadre : l'identité tient en un avatar, un
-    /// nom, et la jauge de palier réduite à un filet. Le badge et le palier ont
-    /// leur écran ; ici on ne fait que se reconnaître.
+    /// nom, et la mesure de la distinction réduite à un filet. Le badge et la
+    /// distinction ont leur écran ; ici on ne fait que se reconnaître.
     private var identity: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 14) {
@@ -226,12 +226,12 @@ struct SettingsView: View {
             }
 
             HStack(spacing: 10) {
-                Text(String(localized: "Palier \(tier.label.lowercased()) · \(libraryStore.galleryItems.count) films", bundle: .app))
+                Text(String(localized: "\(distinction.label) · \(libraryStore.galleryItems.count) films", bundle: .app))
                     .planLabel()
                     .foregroundStyle(Ink.ink3)
                     .fixedSize()
 
-                PlanProgressRule(fraction: tier.progress(count: libraryStore.galleryItems.count))
+                PlanProgressRule(fraction: distinction.progress(count: libraryStore.galleryItems.count))
             }
             .padding(.top, 18)
 
@@ -243,7 +243,7 @@ struct SettingsView: View {
         }
     }
 
-    private var tier: CinephileTier { .tier(for: libraryStore.galleryItems.count) }
+    private var distinction: Distinction { .distinction(for: libraryStore.galleryItems.count) }
 
     @ViewBuilder
     private var avatar: some View {

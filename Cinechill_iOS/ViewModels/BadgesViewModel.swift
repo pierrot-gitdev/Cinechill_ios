@@ -22,16 +22,18 @@ final class BadgesViewModel {
         }
     }
 
-    /// Ce qu'il y a à célébrer : un badge tout juste débloqué, ou un palier
-    /// tout juste franchi. Deux causes distinctes, un seul mécanisme d'affichage.
+    /// Ce qu'il y a à célébrer : un badge tout juste décroché, ou une
+    /// distinction tout juste décernée. Deux causes distinctes, un seul
+    /// mécanisme d'affichage, mais deux échelles de carte : c'est cette
+    /// différence qui fait qu'un rang ne se confond pas avec une citation.
     enum Celebration: Identifiable, Equatable {
         case badge(Badge)
-        case tier(CinephileTier)
+        case distinction(Distinction)
 
         var id: String {
             switch self {
             case .badge(let badge): "badge-\(badge.id)"
-            case .tier(let tier): "tier-\(tier.rawValue)"
+            case .distinction(let distinction): "distinction-\(distinction.rawValue)"
             }
         }
     }
@@ -48,13 +50,13 @@ final class BadgesViewModel {
 
     private let client: any BadgesFetching
 
-    /// Dernière taille de galerie connue, pour détecter un franchissement de
-    /// palier. `nil` tant qu'aucune référence n'a été posée.
+    /// Dernière taille de galerie connue, pour détecter le passage d'une
+    /// distinction à la suivante. `nil` tant qu'aucune référence n'a été posée.
     private var lastKnownGalleryCount: Int?
     /// `true` après la toute première évaluation de la session — avant ça, on
     /// pose une référence, on ne célèbre rien : sans quoi le premier
     /// chargement ferait passer chaque badge déjà obtenu pour un déblocage
-    /// à l'instant, et le palier de départ pour un franchissement.
+    /// à l'instant, et la distinction de départ pour une promotion.
     private var hasEstablishedBaseline = false
 
     init(client: any BadgesFetching = BackendBadgesClient()) {
@@ -115,11 +117,11 @@ final class BadgesViewModel {
 
     /// À appeler chaque fois que la taille de la galerie change, quelle que
     /// soit la cause (swipe, fiche film, CinéMatch…) — la galerie est le seul
-    /// signal commun à tous les chemins qui peuvent débloquer un badge ou
-    /// faire franchir un palier.
+    /// signal commun à tous les chemins qui peuvent décrocher un badge ou
+    /// faire monter d'une distinction.
     func checkForNewAchievements(galleryCount: Int) async {
         let isFirstCheck = !hasEstablishedBaseline
-        let previousTier = lastKnownGalleryCount.map(CinephileTier.tier(for:))
+        let previousDistinction = lastKnownGalleryCount.map(Distinction.distinction(for:))
         let previousProgress = progressByID
 
         await refresh()
@@ -136,9 +138,9 @@ final class BadgesViewModel {
             }
         }
 
-        let newTier = CinephileTier.tier(for: galleryCount)
-        if let previousTier, newTier.rawValue > previousTier.rawValue {
-            pendingCelebrations.append(.tier(newTier))
+        let newDistinction = Distinction.distinction(for: galleryCount)
+        if let previousDistinction, newDistinction.rawValue > previousDistinction.rawValue {
+            pendingCelebrations.append(.distinction(newDistinction))
         }
     }
 

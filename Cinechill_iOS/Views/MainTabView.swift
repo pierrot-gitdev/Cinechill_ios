@@ -92,7 +92,7 @@ struct MainTabView: View {
             mountedTabs.insert(tab)
         }
         // Le seul signal commun à tout ce qui peut débloquer un badge ou
-        // faire franchir un palier — swipe, fiche film, CinéMatch — c'est la
+        // faire monter d'une distinction — swipe, fiche film, CinéMatch — c'est la
         // galerie qui grossit. `hasLoadedGalleryOnce` sert à distinguer
         // l'arrivée du tout premier chargement d'un vrai ajout : sans lui, le
         // 0 → N initial se ferait passer pour une avalanche de déblocages.

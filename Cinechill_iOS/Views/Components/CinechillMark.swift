@@ -173,7 +173,7 @@ struct CinechillBeamShape: Shape {
 // MARK: - Palette
 
 /// Les valeurs de la finition « Étain », identiques au SVG de référence et aux PNG de l'icône.
-/// L'initialiseur `Color(hex:)` vient de `CinephileTier.swift` — un seul dans le projet.
+/// L'initialiseur `Color(hex:)` vient de `Distinction.swift` — un seul dans le projet.
 enum CinechillPalette {
     static let night = Color(hex: 0x0A0F16)
     static let nightMid = Color(hex: 0x05080D)
