@@ -12,23 +12,29 @@ import SwiftUI
 /// pièce ne peut dériver par rapport aux autres.
 private enum Wreath {
     static let box: CGFloat = 220
-    static let center = CGPoint(x: 110, y: 112)
+    static let center = CGPoint(x: 110, y: 106)
     static let radius: CGFloat = 74
 
     static let leafLength: CGFloat = 17
     static let leafWidth: CGFloat = 5.2
 
-    /// Le siège du badge, au centre. Son bas s'arrête juste où commence
-    /// l'emblème : les deux se touchent sans jamais se recouvrir.
-    static let seatDiameter: CGFloat = 76
-    static let emblemBox: CGFloat = 46
+    /// Le badge et l'emblème font désormais la même taille à quatre unités
+    /// près. Le siège occupait 76 unités contre 46 à l'emblème : la couronne
+    /// semblait décerner une distinction à un badge, au lieu de présenter les
+    /// deux ensemble. Le bas du siège s'arrête où commence l'emblème.
+    static let seatDiameter: CGFloat = 64
+    static let emblemBox: CGFloat = 60
     static let emblemCenter = CGPoint(x: 110, y: 174)
 
     /// Les deux branches vont du pied vers la tête, et laissent quarante degrés
     /// d'ouverture au sommet. Une couronne fermée dirait que c'est fini.
-    static let leftStart: Double = 250
+    ///
+    /// L'ouverture du pied est passée de quarante à soixante degrés pour loger
+    /// l'emblème agrandi : les pointes des deux branches l'encadrent désormais
+    /// au lieu de le serrer.
+    static let leftStart: Double = 240
     static let leftEnd: Double = 110
-    static let rightStart: Double = -70
+    static let rightStart: Double = -60
     static let rightEnd: Double = 70
 
     static func point(_ degrees: Double) -> CGPoint {
@@ -279,7 +285,7 @@ struct DistinctionCrest: View {
     let distinction: Distinction
     let galleryCount: Int
     let badge: Badge?
-    var size: CGFloat = 190
+    var size: CGFloat = 200
 
     /// Le PNG d'un badge garde une marge transparente autour de sa monture,
     /// pour laisser respirer son ombre portée. Ce zoom rogne cette marge en
@@ -304,7 +310,7 @@ struct DistinctionCrest: View {
             DistinctionEmblem(distinction: distinction)
                 .stroke(
                     distinction.accent,
-                    style: StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round)
+                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
                 )
                 .frame(width: emblemSize, height: emblemSize)
                 .offset(y: size * (Wreath.emblemCenter.y - Wreath.box / 2) / Wreath.box)
@@ -358,7 +364,7 @@ struct DistinctionCrest: View {
                             distinction: distinction,
                             galleryCount: distinction.lowerBound + 30,
                             badge: BadgeCatalog.all.first,
-                            size: 190
+                            size: 200
                         )
                         Text(distinction.label)
                             .planLabel()
