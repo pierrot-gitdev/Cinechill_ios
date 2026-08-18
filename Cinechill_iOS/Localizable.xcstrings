@@ -1166,6 +1166,22 @@
         }
       }
     },
+    "Retirer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer"
+          }
+        }
+      }
+    },
     "À 25 et à 55 ans, on n'a pas vu les mêmes classiques." : {
       "localizations" : {
         "en" : {

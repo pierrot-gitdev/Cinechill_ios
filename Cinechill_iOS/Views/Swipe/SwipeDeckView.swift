@@ -35,6 +35,13 @@ struct SwipeDeckView: View {
     private static let deckScaleStep: CGFloat = 0.05
 
     @State private var drag: CGSize = .zero
+    /// Le doigt est posé sur la carte de tête, avant même d'avoir bougé.
+    @State private var isPressing = false
+    /// Le rappel des trois issues, joué à chaque arrivée sur l'écran.
+    @State private var showsReminder = false
+    /// Incrémenté à chaque arrivée : c'est lui qui relance le rappel, et qui
+    /// annule celui d'une arrivée précédente resté en cours.
+    @State private var arrival = 0
     /// Le doigt s'est posé sur la moitié haute de la carte — c'est ce qui
     /// détermine autour de quel bord elle pivote.
     @State private var grabbedHigh = true
@@ -107,17 +114,32 @@ struct SwipeDeckView: View {
         // qu'il faut envoyer la décision restée en main. L'aide, elle, appartient
         // à cet écran et n'a pas à attendre derrière un autre.
         .onChange(of: selectedTab) { _, tab in
-            guard tab != 2 else { return }
+            // L'arrivée sur l'onglet est le seul moment où la planche peut
+            // s'ouvrir. Le `.task` de la vue ne suffit pas : l'onglet reste
+            // monté une fois quitté, donc il ne se rejoue jamais — et c'est
+            // précisément par une arrivée que la visite guidée se termine,
+            // puisqu'elle dépose ici en se refermant.
+            guard tab != 2 else {
+                Task { await openGuideOnFirstVisit() }
+                arrival &+= 1
+                return
+            }
             closeGuide()
             Task { await model.flushPending() }
         }
-        // L'étape « Découvrir » de la prise en main écrit les trois gestes : la
-        // planche n'a plus rien à apprendre à quelqu'un qui vient de les lire,
-        // et s'ouvrir à la première venue serait une seconde leçon pour la même
-        // chose. Le « ? » reste là pour ceux qui voudront la revoir.
-        .onChange(of: tour.step) { _, step in
-            if step == .decouvrir { guideSeen = true }
+        // Au tout premier lancement, l'écran arrive avant ses cartes : la
+        // requête tourne encore, il n'y a pas de carte de tête, donc pas de
+        // boussole à montrer — et les cinq secondes s'écoulaient dans le vide.
+        // L'apparition de la première carte vaut donc arrivée, au même titre
+        // qu'un retour sur l'onglet.
+        .onChange(of: displayedCards.isEmpty) { wasEmpty, isEmpty in
+            guard wasEmpty, !isEmpty else { return }
+            arrival &+= 1
         }
+        // `.task(id:)` annule le rappel de l'arrivée précédente avant de jouer
+        // le suivant : sans ça, deux allers-retours rapides sur l'onglet
+        // laisseraient deux comptes à rebours se marcher dessus.
+        .task(id: arrival) { await playReminder() }
         .onDisappear {
             Task { await model.flushPending() }
         }
@@ -270,12 +292,26 @@ struct SwipeDeckView: View {
                     isArmed: isArmed,
                     isSynopsisOpen: isSynopsisOpen,
                     parallax: reduceMotion ? .zero : SwipeMotion.parallax(for: drag),
+                    showsCompass: (isPressing || showsReminder) && !isSynopsisOpen,
                     onTap: toggleSynopsis
                 )
                 .frame(width: size.width, height: size.height)
                 .offset(x: drag.width + returnOffset.width, y: drag.height + returnOffset.height)
                 .rotationEffect(.degrees(pivot.angle + returnAngle), anchor: pivot.anchor)
                 .gesture(dragGesture(cardHeight: size.height))
+                // Le geste de décision ne part qu'au bout de huit points : il ne
+                // sait donc rien du moment où le doigt se pose, qui est
+                // justement celui où l'on hésite. Ce second geste, à distance
+                // nulle et simultané, ne sert qu'à cet instant-là et ne décide
+                // de rien.
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { _ in
+                            guard !isPressing else { return }
+                            withAnimation(SwipeMotion.unfold) { isPressing = true }
+                        }
+                        .onEnded { _ in releasePress() }
+                )
                 .id(card.id)
                 .transition(.identity)
             }
@@ -440,6 +476,7 @@ struct SwipeDeckView: View {
                 updateArming()
             }
             .onEnded { value in
+                releasePress()
                 if let direction = resolvedDirection(
                     translation: value.translation,
                     predicted: value.predictedEndTranslation
@@ -592,16 +629,54 @@ struct SwipeDeckView: View {
     /// La courte attente laisse la bascule d'onglet se terminer — une planche qui
     /// arrive dans le même mouvement que l'écran se lit comme un raté d'animation.
     ///
-    /// Pendant la prise en main, elle ne s'ouvre pas : l'étape « Découvrir »
-    /// écrit déjà les trois gestes dans son cartouche, et une planche qui
-    /// s'ouvrirait par-dessus recouvrirait la carte qu'on est en train de
-    /// présenter.
+    /// Pendant la visite guidée, elle ne s'ouvre pas : une planche par-dessus
+    /// recouvrirait la carte qu'on est en train de présenter. Elle s'ouvre en
+    /// revanche à la fin, quand la visite dépose sur cet onglet — le cartouche
+    /// vient de nommer « Découvrir », la planche montre comment s'en servir.
+    /// Marquer la planche comme vue au passage de l'étape, ce qui se faisait
+    /// avant, revenait à ne jamais la montrer à personne.
     private func openGuideOnFirstVisit() async {
         guard !guideSeen, !tour.isRunning else { return }
         try? await Task.sleep(for: .milliseconds(280))
         guard !guideSeen, selectedTab == 2 else { return }
         guideSeen = true
         withAnimation(.easeOut(duration: 0.24)) { showGuide = true }
+    }
+
+    /// Le doigt se lève : la boussole s'efface, quelle que soit l'issue du
+    /// geste. Elle est appelée aussi bien par le relâchement simple que par la
+    /// fin d'un glissement, parce que ni l'un ni l'autre ne couvre les deux cas.
+    private func releasePress() {
+        guard isPressing else { return }
+        withAnimation(SwipeMotion.unfold) { isPressing = false }
+    }
+
+    /// Le rappel des trois issues : cinq secondes à l'arrivée, puis il s'efface.
+    ///
+    /// La planche des gestes ne s'ouvre qu'une fois dans une vie, et le
+    /// cartouche de la visite guidée non plus. Ce rappel-ci revient à chaque
+    /// visite parce qu'il ne coûte rien : il ne demande aucun geste, ne
+    /// recouvre pas la carte et part tout seul. Il tient la même place que la
+    /// boussole du contact, si bien qu'on ne lit jamais deux dispositifs pour
+    /// la même chose.
+    ///
+    /// Il se tait pendant la visite guidée et derrière la planche, qui disent
+    /// déjà les trois gestes, et il laisse la bascule d'onglet se terminer :
+    /// un rappel qui arrive dans le même mouvement que l'écran se lit comme un
+    /// raté d'animation.
+    private func playReminder() async {
+        guard !tour.isRunning else { return }
+        try? await Task.sleep(for: .milliseconds(420))
+        guard !showGuide, !tour.isRunning, selectedTab == 2 else { return }
+
+        // Sans carte de tête, la boussole n'a aucun support : mieux vaut ne
+        // rien jouer que consommer le rappel à vide.
+        guard !displayedCards.isEmpty else { return }
+
+        withAnimation(SwipeMotion.unfold) { showsReminder = true }
+        try? await Task.sleep(for: .seconds(5))
+        guard !Task.isCancelled else { return }
+        withAnimation(SwipeMotion.unfold) { showsReminder = false }
     }
 
     private func closeGuide() {

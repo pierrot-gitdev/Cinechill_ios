@@ -50,22 +50,7 @@ enum SwipeVerdict {
         }
     }
 
-    /// Le bord que le verdict épaissit — celui que la carte laisse derrière elle
-    /// en partant, du même côté que le tampon.
-    var slabAlignment: Alignment {
-        switch self {
-        case .seen: .leading
-        case .notSeen: .trailing
-        case .watchlist: .bottom
-        }
-    }
 
-    var slabIsVertical: Bool {
-        switch self {
-        case .seen, .notSeen: true
-        case .watchlist: false
-        }
-    }
 }
 
 /// La carte du deck — « la planche ».
@@ -101,24 +86,20 @@ struct SwipeCardView: View {
     var isSynopsisOpen = false
     /// Décalage de l'affiche dans son cadre pendant le geste.
     var parallax: CGSize = .zero
+    /// Le doigt est posé sur la carte : on nomme les trois issues.
+    var showsCompass = false
     var onTap: () -> Void = {}
 
     private var shape: RoundedRectangle {
         RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
     }
 
-    /// Le tampon se lit avant le seuil, sinon le geste se fait à l'aveugle : il
-    /// est pleinement opaque à un peu plus de la moitié du parcours.
-    private var stampPresence: Double {
-        min(1, verdictIntensity / 0.55)
-    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
             poster
             plate
-            verdictSlab
-            verdictStamp
+            compass
             shape.strokeBorder(Ink.rule, lineWidth: 1)
             verdictBorder
         }
@@ -288,56 +269,19 @@ struct SwipeCardView: View {
         }
     }
 
-    /// Le bord épais que la carte laisse derrière elle. Il grandit avec le geste
-    /// et prolonge le tampon : deux signes au même endroit, un seul message.
-    @ViewBuilder
-    private var verdictSlab: some View {
-        if let verdict {
-            Rectangle()
-                .fill(verdict.tint)
-                .frame(
-                    width: verdict.slabIsVertical ? 3 : nil,
-                    height: verdict.slabIsVertical ? nil : 3
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: verdict.slabAlignment)
-                .opacity(verdictIntensity * 0.9)
-        }
+
+    /// Elle cède la place dès qu'une direction est engagée : à un tiers du
+    /// parcours le tampon du verdict a pris le relais, et laisser les deux se
+    /// superposer ferait lire deux réponses à la même question.
+    private var compass: some View {
+        SwipeCompass(engaged: verdict, intensity: verdictIntensity, isArmed: isArmed)
+            // Elle reste tant qu'un verdict est en cours, même si le doigt a
+            // quitté la zone qui l'avait fait apparaître : c'est elle qui porte
+            // le retour du geste, il ne peut pas s'éteindre en cours de route.
+            .opacity(showsCompass || verdict != nil ? 1 : 0)
+            .animation(SwipeMotion.unfold, value: showsCompass)
     }
 
-    @ViewBuilder
-    private var verdictStamp: some View {
-        if let verdict {
-            HStack(spacing: 9) {
-                if verdict.isFilled {
-                    PlanLight(tint: verdict.tint)
-                } else {
-                    PlanLightOutline(tint: verdict.tint)
-                }
-                Text(verdict.label)
-                    .planLabel()
-            }
-            .foregroundStyle(verdict.tint)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                Ink.ground.opacity(0.86),
-                in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-                    .strokeBorder(verdict.tint.opacity(isArmed ? 1 : 0.45), lineWidth: 1)
-            )
-            // Le tampon se pose au seuil : il arrive à 94 % et s'enclenche à
-            // 100 % avec un ressort peu amorti. C'est un déclic, pas une
-            // apparition — le doigt le sent en même temps que la vibration.
-            .scaleEffect(isArmed ? 1 : 0.94)
-            .animation(SwipeMotion.lock, value: isArmed)
-            .padding(20)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: verdict.alignment)
-            .opacity(stampPresence)
-            .allowsHitTesting(false)
-        }
-    }
 }
 
 #Preview("La planche") {

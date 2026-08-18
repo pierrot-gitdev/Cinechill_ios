@@ -89,21 +89,30 @@ struct PosterImageView: View {
     }
 
     var body: some View {
-        ZStack {
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                placeholder
+        // `Color.clear` prend la taille proposée et la garde ; l'affiche remplit
+        // par-dessus et le débord est rogné. Sans ce sas, `scaledToFill` fait
+        // *grandir la vue* au-delà de ce qu'on lui propose : la pile qui la
+        // contient se dimensionne sur l'image, le rognage arrive sur un cadre
+        // déjà gonflé et ne retient rien. Une affiche portrait ne débordait que
+        // de quelques points en hauteur, mais une couverture paysage traversait
+        // l'écran par-dessus la mise en page.
+        Color.clear
+            .overlay {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    placeholder
+                }
             }
-        }
-        .task(id: url) {
-            guard image == nil, let url else { return }
-            let loaded = await PosterImageCache.shared.image(for: url)
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeOut(duration: 0.2)) { image = loaded }
-        }
+            .clipped()
+            .task(id: url) {
+                guard image == nil, let url else { return }
+                let loaded = await PosterImageCache.shared.image(for: url)
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: 0.2)) { image = loaded }
+            }
     }
 
     /// Le cadre vide, en attendant l'affiche. Un aplat de nuit et l'icône de la

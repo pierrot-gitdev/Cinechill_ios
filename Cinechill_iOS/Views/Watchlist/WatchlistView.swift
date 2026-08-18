@@ -24,6 +24,8 @@ struct WatchlistView: View {
 
     @State private var showProfile = false
     @State private var showPlatformSheet = false
+    /// Le film dont on veut voir la fiche, posé par un tap sur sa ligne.
+    @State private var opened: MediaItem?
 
     var body: some View {
         NavigationStack {
@@ -40,6 +42,9 @@ struct WatchlistView: View {
                 AppHeaderView(title: String(localized: "Watchlist", bundle: .app), onProfileTap: { showProfile = true })
             }
             .navigationBarHidden(true)
+            .navigationDestination(item: $opened) { item in
+                ItemDetailView(item: item)
+            }
             .fullScreenCover(isPresented: $showProfile) {
                 ProfileView(badgesModel: badgesModel)
                     .environmentObject(profileStore)
@@ -220,7 +225,34 @@ struct WatchlistView: View {
             .padding(.bottom, 8)
 
             ForEach(group.items) { item in
-                row(item, isDormant: group.kind == .dormant)
+                // Vers la gauche on l'a vu, vers la droite on n'en veut plus.
+                let carriesCross = group.kind == .dormant && model.isTriaging
+
+                PlanSwipeRow(
+                    trailing: PlanRowAction(
+                        label: String(localized: "Vu", bundle: .app),
+                        tint: Ink.ink
+                    ) {
+                        libraryStore.addToGallery(item.entry.mediaItem)
+                    },
+                    leading: PlanRowAction(
+                        label: String(localized: "Retirer", bundle: .app),
+                        tint: Ink.warn,
+                        isFilled: false
+                    ) {
+                        libraryStore.removeFromWatchlist(item.entry.mediaItem)
+                    },
+                    // La fiche s'ouvre au tap seul. Un `NavigationLink` est un
+                    // bouton : il s'armait au contact et partait même quand le
+                    // doigt avait amorcé un glissement, si bien qu'un film
+                    // qu'on hésitait à trier ouvrait sa fiche.
+                    onTap: { opened = item.entry.mediaItem },
+                    // Pendant le tri, la croix de retrait prend la main : la
+                    // surcouche du glissement la recouvrirait.
+                    isEnabled: !carriesCross
+                ) {
+                    row(item, isDormant: group.kind == .dormant)
+                }
             }
         }
     }
@@ -238,7 +270,7 @@ struct WatchlistView: View {
 
     private func row(_ item: WatchlistItem, isDormant: Bool) -> some View {
         HStack(spacing: 11) {
-            NavigationLink(destination: ItemDetailView(item: item.entry.mediaItem)) {
+            Group {
                 HStack(spacing: 11) {
                     // Sur une ligne de 30 pt, un visage se lit plus vite
                     // qu'une vignette d'affiche : l'avatar prend sa place
@@ -280,7 +312,6 @@ struct WatchlistView: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
 
             if isDormant, model.isTriaging {
                 Button {
