@@ -27,18 +27,18 @@ import SwiftUI
 /// Le voile n'est pas un ornement. C'est le seul dispositif qui rende le texte
 /// lisible sur une image dont on ne connaît pas les valeurs, et c'est le rôle
 /// documenté de `PlanScrim` dans la direction.
+///
+/// **L'encart du verdict de la veille a été retiré de cet écran** : il coupait
+/// l'entrée en deux et arrivait avant qu'on ait rien demandé. `VerdictPromptView`
+/// existe toujours et n'attend qu'un endroit qui lui aille — la conséquence à
+/// connaître est que, sans lui, plus rien ne recueille « Je l'ai adoré », le
+/// signal le plus sûr du trait et l'une des sources du coup de cœur.
 struct SessionEntryView: View {
     /// Le vivier où le mur puise ses affiches, tel quel : c'est `wallItems` qui
     /// y fait le tri. Décoratives de bout en bout — aucune n'est désignée, aucune
     /// n'est cliquable, et elles ne présagent en rien du trio.
     let posters: [MediaItem]
     @Binding var audience: Audience?
-    /// Le verdict de la veille, quand il y en a un. Il vivait sur l'écran que
-    /// celui-ci remplace ; le perdre coûterait le signal le plus fiable dont
-    /// dispose le trait, puisqu'il porte sur un film réellement regardé.
-    var verdict: PendingVerdict?
-    var onVerdict: (FilmVerdict) -> Void = { _ in }
-    var onDismissVerdict: () -> Void = {}
     let onProfileTap: () -> Void
     let onNext: () -> Void
 
@@ -160,19 +160,6 @@ struct SessionEntryView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // D'abord hier, ensuite ce soir. Rare — le lendemain d'une séance
-            // seulement — et c'est pourquoi il passe devant : quand il est là,
-            // il est la chose la plus datée de l'écran.
-            if let verdict {
-                VerdictPromptView(
-                    pending: verdict,
-                    onAnswer: onVerdict,
-                    onDismiss: onDismissVerdict
-                )
-                .padding(.bottom, 26)
-                .transition(.opacity)
-            }
-
             HStack(alignment: .firstTextBaseline, spacing: 9) {
                 PlanLight()
                 Text("Trouve ton film du soir en 60 sec avant que ton plat refroidisse", bundle: .app)
@@ -221,7 +208,6 @@ struct SessionEntryView: View {
         .padding(.horizontal, Metrics.margin)
         .padding(.bottom, Metrics.margin)
         .animation(Metrics.unfold, value: audience)
-        .animation(Metrics.shift, value: verdict?.tmdbID)
     }
 }
 
