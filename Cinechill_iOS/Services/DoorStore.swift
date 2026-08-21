@@ -34,15 +34,48 @@ final class DoorStore {
     private(set) var celebration: DoorArtifactKey?
 
     private var isRefreshing = false
+    private var isBootstrapping = false
+    private var didBootstrap = false
+
+    /// Plafond de rappels du rattrapage. Le serveur borne chaque passe dans le
+    /// temps ; une galerie ordinaire tient en une seule.
+    private static let maximumCatchUpPasses = 12
 
     init(client: any RecommendationFetching = BackendRecommendationClient()) {
         self.client = client
         self.door = DoorState.cached ?? .initial
     }
 
+    /// La mise à niveau de l'existant, une fois par ouverture de l'app.
+    ///
+    /// **L'ordre compte, et c'est tout l'objet de cette méthode.** Le rattrapage
+    /// fait remonter d'un coup les positions de la galerie et les « Je l'ai
+    /// adoré » déjà dits : sans lui d'abord, la mesure suivante lirait tout ça
+    /// comme des artéfacts tout juste gagnés et l'écran partirait en cascade
+    /// d'annonces. Ce que le rattrapage remonte est un dû, pas un exploit — on
+    /// pose donc l'état de référence **après** lui, en silence.
+    func bootstrap() async {
+        guard !didBootstrap else { return }
+        didBootstrap = true
+        isBootstrapping = true
+        defer { isBootstrapping = false }
+
+        for _ in 0 ..< Self.maximumCatchUpPasses {
+            guard let done = try? await client.backfillGallery() else { break }
+            if done { break }
+        }
+        await measure(announcing: false)
+    }
+
     /// Remesure la porte. Ne lève jamais : une porte qu'on n'a pas pu remesurer
     /// reste celle qu'on connaissait, ce qui vaut mieux qu'un écran vide.
     func refresh() async {
+        // Rien ne s'annonce tant que l'existant n'a pas fini de remonter.
+        guard !isBootstrapping else { return }
+        await measure(announcing: true)
+    }
+
+    private func measure(announcing: Bool) async {
         guard !isSimulating, !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
@@ -52,7 +85,21 @@ final class DoorStore {
         door = fresh
         DoorState.cache(fresh)
         hasMeasured = true
+
+        guard announcing else {
+            sealBaseline()
+            return
+        }
         pickCelebration()
+    }
+
+    /// Prend l'état courant pour acquis, sans rien fêter. C'est le point de
+    /// départ à partir duquel un gain devient un gain.
+    private func sealBaseline() {
+        let lit = door.artifacts.filter(\.done).compactMap(\.artifactKey)
+        UserDefaults.standard.set(
+            lit.map(\.rawValue).joined(separator: ","), forKey: Self.celebratedKey
+        )
     }
 
     /// La célébration vue, on passe à la suivante s'il y en a une : deux
@@ -61,7 +108,13 @@ final class DoorStore {
     func dismissCelebration() {
         celebration = nil
         guard !isSimulating else { return }
-        pickCelebration()
+        // Deux artéfacts gagnés du même geste s'annoncent l'un après l'autre,
+        // avec un temps entre les deux : enchaînés dans la même image, ils se
+        // lisent comme un clignotement plutôt que comme deux gains.
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(450))
+            self?.pickCelebration()
+        }
     }
 
     // MARK: - Le banc d'essai

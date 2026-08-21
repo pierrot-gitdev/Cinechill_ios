@@ -131,6 +131,12 @@ struct MainTabView: View {
             // jamais et personne ne serait jamais pris en main.
             if libraryStore.hasLoadedGalleryOnce { await startTourIfNeeded() }
         }
+        // La mise à niveau de l'existant, dès que la bibliothèque est là et
+        // avant toute annonce : ce que le rattrapage remonte est un dû.
+        .task(id: libraryStore.hasLoadedGalleryOnce) {
+            guard libraryStore.hasLoadedGalleryOnce else { return }
+            await doorStore.bootstrap()
+        }
         // La porte se remesure dès que la bibliothèque bouge — un film vu, un
         // cœur posé, une envie rangée. Le `task(id:)` annule la mesure
         // précédente à chaque changement : balayer vingt cartes d'affilée ne

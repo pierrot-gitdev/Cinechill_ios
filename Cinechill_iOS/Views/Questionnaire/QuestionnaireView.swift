@@ -96,8 +96,6 @@ struct QuestionnaireView: View {
                 .task {
                     await doorStore.refresh()
                     await viewModel.loadTasteProfile()
-                    await viewModel.catchUpGalleryIfNeeded()
-                    await doorStore.refresh()
                 }
             } else {
                 SessionEntryView(
