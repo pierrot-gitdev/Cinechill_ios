@@ -149,12 +149,12 @@ final class SwipeDeckViewModel {
 
     // MARK: - Décisions
 
-    func swipe(_ direction: SwipeDirection) {
+    func swipe(_ direction: SwipeDirection, loved: Bool = false) {
         guard let card = cards.first else { return }
         cards.removeFirst()
 
         commitHeldSwipe()
-        heldSwipe = PendingSwipe(card: card, decision: direction.decision)
+        heldSwipe = PendingSwipe(card: card, decision: direction.decision, loved: loved)
         canUndo = true
 
         if direction.decision == .seen {

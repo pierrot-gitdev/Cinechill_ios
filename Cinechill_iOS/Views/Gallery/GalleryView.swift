@@ -185,6 +185,22 @@ struct GalleryView: View {
                         // repos : zéro — c'est ce qui permet de le proposer
                         // sans encombrer « La Frise ».
                         .contextMenu {
+                            // Le coup de cœur, même logique que le raccourci de
+                            // recommandation : coût visuel au repos, zéro.
+                            Button {
+                                Haptics.impact(.light, intensity: 0.8)
+                                libraryStore.setLove(
+                                    entry.mediaItem,
+                                    loved: !libraryStore.isLoved(entry.mediaItem)
+                                )
+                            } label: {
+                                if libraryStore.isLoved(entry.mediaItem) {
+                                    Label(String(localized: "Retirer le coup de cœur", bundle: .app), systemImage: "heart.slash")
+                                } else {
+                                    Label(String(localized: "Coup de cœur", bundle: .app), systemImage: "heart")
+                                }
+                            }
+
                             Button {
                                 composerItem = entry.mediaItem
                             } label: {

@@ -90,8 +90,21 @@ nonisolated enum SwipeDecision: String, Sendable, Hashable {
 nonisolated struct PendingSwipe: Sendable, Hashable {
     let card: SwipeCard
     let decision: SwipeDecision
+    /// Le second cran du balayage droite : vu ET adoré. Un modificateur de
+    /// `seen`, jamais un quatrième verbe — le serveur garde sa liste fermée.
+    let loved: Bool
+
+    init(card: SwipeCard, decision: SwipeDecision, loved: Bool = false) {
+        self.card = card
+        self.decision = decision
+        self.loved = loved && decision == .seen
+    }
 
     var jsonPayload: [String: Any] {
-        ["decision": decision.rawValue, "item": card.jsonPayload]
+        [
+            "decision": decision.rawValue,
+            "loved": loved,
+            "item": card.jsonPayload,
+        ]
     }
 }

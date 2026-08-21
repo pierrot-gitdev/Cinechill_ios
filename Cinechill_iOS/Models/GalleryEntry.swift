@@ -11,6 +11,11 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
     let genreIds: [Int]
     let releaseDate: String?
     let addedAt: Date
+    /// Le coup de cœur, s'il a été posé. L'absence ne dit pas « pas aimé » :
+    /// elle dit « rien déclaré », et ne pénalise jamais le film.
+    let lovedAt: Date?
+
+    var isLoved: Bool { lovedAt != nil }
 
     init(
         id: String,
@@ -22,7 +27,8 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
         voteAverage: Double?,
         genreIds: [Int],
         releaseDate: String?,
-        addedAt: Date
+        addedAt: Date,
+        lovedAt: Date? = nil
     ) {
         self.id = id
         self.tmdbId = tmdbId
@@ -34,6 +40,7 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
         self.genreIds = genreIds
         self.releaseDate = releaseDate
         self.addedAt = addedAt
+        self.lovedAt = lovedAt
     }
 
     init(item: MediaItem, addedAt: Date = .now) {
@@ -47,6 +54,7 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
         self.genreIds = item.genreIds
         self.releaseDate = item.releaseDate
         self.addedAt = addedAt
+        self.lovedAt = nil
     }
 
     var mediaItem: MediaItem {

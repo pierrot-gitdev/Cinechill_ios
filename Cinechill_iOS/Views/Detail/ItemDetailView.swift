@@ -555,10 +555,12 @@ struct ItemDetailView: View {
                 decisionButton(.seen, label: String(localized: "Vu", bundle: .app))
                 decisionButton(.toWatch, label: String(localized: "À voir", bundle: .app))
 
-                // « Recommander » n'apparaît que si le film est vu : la règle
-                // « on ne recommande que ce qu'on a vu » n'est jamais énoncée,
-                // elle est simplement vraie à l'écran.
+                // Le coup de cœur et « Recommander » n'apparaissent que si le
+                // film est vu : « on n'aime et on ne recommande que ce qu'on a
+                // vu » n'est jamais énoncé, c'est simplement vrai à l'écran.
                 if currentStatus == .seen {
+                    loveButton
+
                     Button {
                         Haptics.impact(.light)
                         showComposer = true
@@ -584,6 +586,45 @@ struct ItemDetailView: View {
         .background(Ink.ground)
         .animation(Metrics.shift, value: currentStatus)
         .animation(Metrics.shift, value: waitingButton)
+    }
+
+    /// Le coup de cœur, dans le même gabarit que « Recommander ». Le cœur
+    /// tracé dit « rien déclaré », le cœur plein en cramoisi dit « adoré » :
+    /// c'est le remplissage qui porte l'état, la teinte — une couleur de
+    /// données, celle de l'artéfact du Cœur — ne fait que l'appuyer.
+    private var loveButton: some View {
+        let loved = libraryStore.isLoved(displayItem)
+        let isPending = libraryStore.pendingLoveByItemID[displayItem.id] != nil
+
+        return Button {
+            Haptics.impact(.light, intensity: loved ? 0.5 : 0.8)
+            libraryStore.setLove(displayItem, loved: !loved)
+        } label: {
+            DetailHeartShape()
+                .stroke(
+                    loved ? Color(hex: 0xC25562) : Ink.ink,
+                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
+                )
+                .background(
+                    DetailHeartShape()
+                        .fill(loved ? Color(hex: 0xC25562) : .clear)
+                )
+                .frame(width: 18, height: 16)
+                .frame(width: 48, height: Metrics.control)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                        .strokeBorder(Ink.ruleSet, lineWidth: 1)
+                )
+                .opacity(isPending ? 0.6 : 1)
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.94))
+        .transition(.opacity)
+        .animation(Metrics.shift, value: loved)
+        .accessibilityLabel(
+            loved
+                ? String(localized: "Retirer le coup de cœur", bundle: .app)
+                : String(localized: "Coup de cœur", bundle: .app)
+        )
     }
 
     /// Le bouton qui doit montrer l'attente : celui qu'on vient de toucher.
@@ -765,6 +806,29 @@ private struct DetailGlyph: Shape {
             path.addLine(to: p(8.6, 18.4))
             path.closeSubpath()
         }
+        return path
+    }
+}
+
+/// Le cœur géométrique de l'artéfact, à l'échelle d'un bouton : deux arcs et
+/// une pointe, le même tracé que l'emblème du médaillon.
+private struct DetailHeartShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width
+        let h = rect.height
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: rect.minX + x * w, y: rect.minY + y * h)
+        }
+
+        var path = Path()
+        path.move(to: p(0.5, 1))
+        path.addCurve(to: p(0, 0.32), control1: p(0.18, 0.76), control2: p(0, 0.56))
+        path.addCurve(to: p(0.27, 0), control1: p(0, 0.12), control2: p(0.12, 0))
+        path.addCurve(to: p(0.5, 0.16), control1: p(0.38, 0), control2: p(0.46, 0.06))
+        path.addCurve(to: p(0.73, 0), control1: p(0.54, 0.06), control2: p(0.62, 0))
+        path.addCurve(to: p(1, 0.32), control1: p(0.88, 0), control2: p(1, 0.12))
+        path.addCurve(to: p(0.5, 1), control1: p(1, 0.56), control2: p(0.82, 0.76))
+        path.closeSubpath()
         return path
     }
 }

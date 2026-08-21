@@ -51,6 +51,11 @@ final class LibraryStore: ObservableObject {
     /// l'indicateur s'éteindrait deux ou trois dixièmes de seconde avant que le bouton ne
     /// bascule, ce qui se lit comme un raté.
     @Published private(set) var pendingStatusByItemID: [String: MediaStatus] = [:]
+    /// Les coups de cœur en cours d'écriture, et l'état visé par chacun. Même
+    /// mécanique que le statut : rien n'est montré comme acquis avant que le
+    /// listener ne l'ait répercuté, mais l'attente reste lisible tuile par
+    /// tuile.
+    @Published private(set) var pendingLoveByItemID: [String: Bool] = [:]
     @Published private(set) var errorMessage: String?
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
@@ -146,6 +151,43 @@ final class LibraryStore: ObservableObject {
 
     func isInGallery(_ item: MediaItem) -> Bool {
         galleryItems.contains { $0.id == item.id }
+    }
+
+    /// Le coup de cœur tel que l'écran doit le montrer : ce que Firestore dit,
+    /// sauf si une écriture est en route — auquel cas c'est elle qu'on écoute,
+    /// sans quoi le cœur retomberait sous le doigt le temps de l'aller-retour.
+    func isLoved(_ item: MediaItem) -> Bool {
+        if let pending = pendingLoveByItemID[item.id] { return pending }
+        return galleryItems.first { $0.id == item.id }?.isLoved == true
+    }
+
+    /// Combien de films portent un cœur — le compte de l'artéfact du Cœur.
+    var lovedCount: Int {
+        galleryItems.filter { entry in
+            pendingLoveByItemID[entry.id] ?? entry.isLoved
+        }.count
+    }
+
+    /// Pose ou retire un coup de cœur sur un film déjà en galerie.
+    func setLove(_ item: MediaItem, loved: Bool) {
+        guard isInGallery(item) else { return }
+        pendingLoveByItemID[item.id] = loved
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await callSetGalleryLove(itemID: item.id, loved: loved)
+                // Même filet de sécurité que le statut : si le document était
+                // déjà dans l'état demandé, le listener ne repassera pas.
+                try? await Task.sleep(for: .seconds(4))
+                await MainActor.run { self.clearPendingLove(for: item.id, ifStill: loved) }
+            } catch {
+                await MainActor.run {
+                    self.clearPendingLove(for: item.id, ifStill: loved)
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
     }
 
     func isInWatchlist(_ item: MediaItem) -> Bool {
@@ -315,6 +357,41 @@ private extension LibraryStore {
         }
     }
 
+    /// Même résolution pour les cœurs : l'attente prend fin quand Firestore
+    /// raconte l'état demandé — ou quand le film a quitté la galerie, auquel
+    /// cas il n'y a plus rien à attendre.
+    private func resolvePendingLoves() {
+        guard !pendingLoveByItemID.isEmpty else { return }
+        pendingLoveByItemID = pendingLoveByItemID.filter { id, target in
+            guard let entry = galleryItems.first(where: { $0.id == id }) else { return false }
+            return entry.isLoved != target
+        }
+    }
+
+    private func clearPendingLove(for id: String, ifStill target: Bool) {
+        guard pendingLoveByItemID[id] == target else { return }
+        pendingLoveByItemID.removeValue(forKey: id)
+    }
+
+    func callSetGalleryLove(itemID: String, loved: Bool) async throws {
+        guard let url = APIEndpoints.setGalleryLove() else { return }
+        guard let user = Auth.auth().currentUser else { return }
+        let token = try await user.getIDToken()
+
+        var request = await URLRequest(backend: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "itemId": itemID, "loved": loved,
+        ])
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            throw URLError(.badServerResponse)
+        }
+    }
+
     /// `ifStill` protège du cas où l'utilisateur a retouché le bouton entre-temps : le filet
     /// de sécurité de l'action précédente ne doit pas éteindre l'attente de la suivante.
     private func clearPendingStatus(for id: String, ifStill target: MediaStatus) {
@@ -375,6 +452,13 @@ private extension LibraryStore {
                 self.hasLoadedGalleryOnce = false
                 self.hasLoadedPreferencesOnce = false
                 self.pendingStatusByItemID = [:]
+                self.pendingLoveByItemID = [:]
+                // La porte de CinéMatch est un état de compte, pas d'appareil :
+                // changer d'utilisateur ne doit léguer ni la porte en cache, ni
+                // le seuil déjà franchi, ni l'historique des célébrations.
+                for key in ["cinematch.door", "cinematch.doorOpened", "cinematch.doorCelebratedKeys"] {
+                    UserDefaults.standard.removeObject(forKey: key)
+                }
 
                 guard let uid = user?.uid else { return }
                 self.startGalleryListener(uid: uid)
@@ -401,6 +485,7 @@ private extension LibraryStore {
                         .sorted(by: { $0.addedAt > $1.addedAt })
                     self.hasLoadedGalleryOnce = true
                     self.resolvePendingStatuses()
+                    self.resolvePendingLoves()
                 }
             }
     }
@@ -509,7 +594,8 @@ private extension LibraryStore {
             voteAverage: data["voteAverage"] as? Double,
             genreIds: data["genreIds"] as? [Int] ?? [],
             releaseDate: data["releaseDate"] as? String,
-            addedAt: addedAt
+            addedAt: addedAt,
+            lovedAt: (data["lovedAt"] as? Timestamp)?.dateValue()
         )
     }
 

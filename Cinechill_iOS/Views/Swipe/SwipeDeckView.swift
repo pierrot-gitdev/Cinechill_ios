@@ -22,6 +22,10 @@ struct SwipeDeckView: View {
     /// Distance à parcourir pour valider un verdict.
     private static let sideThreshold: CGFloat = 105
     private static let upThreshold: CGFloat = 130
+    /// Le second cran du balayage droite : « vu ET adoré ». Mesuré sur la
+    /// translation **réelle**, jamais sur la projection — un lancer rapide
+    /// reste « vu », seul un tirage long et voulu vaut coup de cœur.
+    private static let loveThreshold: CGFloat = 190
     private static let deckHorizontalInset: CGFloat = 26
     private static let deckVerticalInset: CGFloat = 12
     /// Débord vers le bas des deux cartes empilées sous celle du dessus.
@@ -47,6 +51,8 @@ struct SwipeDeckView: View {
     @State private var grabbedHigh = true
     /// Le seuil est franchi : lever le doigt tranche.
     @State private var isArmed = false
+    /// Le second cran est franchi : lever le doigt vaut « vu et adoré ».
+    @State private var isLoveArmed = false
     @State private var departing: [DepartingCard] = []
     /// L'accusé de réception du dernier classement. Un seul à la fois : le
     /// suivant remplace le précédent plutôt que de s'empiler, sinon swiper vite
@@ -232,6 +238,9 @@ struct SwipeDeckView: View {
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
+            // Le repère du Cœur vit au bord de l'écran, pas sur la carte : il
+            // doit rester lisible pendant que la carte s'en va vers lui.
+            .overlay(alignment: .trailing) { loveCrest }
             // Le toast est posé sur le haut du **deck**, et non sur le haut de
             // l'écran : le bandeau au-dessus porte l'annulation, et la masquer
             // pendant la seconde et demie qui suit un classement serait la
@@ -415,6 +424,55 @@ struct SwipeDeckView: View {
         }
     }
 
+    /// Le repère du second cran : l'écusson du Cœur, le même artéfact que sur
+    /// la porte de CinéMatch — le geste et ce qu'il déverrouille partagent le
+    /// même signe, il n'y a donc rien à expliquer.
+    ///
+    /// Il naît en pierre au franchissement du premier seuil, à l'instant exact
+    /// où le second devient atteignable, et s'embrase quand on l'atteint.
+    /// Jamais au repos : une légende permanente sous le deck a déjà été
+    /// essayée, et retirée.
+    @ViewBuilder
+    private var loveCrest: some View {
+        if currentVerdict?.verdict == .seen {
+            VStack(spacing: 9) {
+                Image("ArtefactCoeur")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 56, height: 56)
+                    // La grammaire des badges : éteint = la même silhouette,
+                    // désaturée et assombrie ; allumé = pleine couleur et halo.
+                    .saturation(isLoveArmed ? 1 : 0)
+                    .brightness(isLoveArmed ? 0 : -0.42)
+                    .shadow(
+                        color: Color(hex: 0xFF6B7E).opacity(isLoveArmed ? 0.55 : 0),
+                        radius: 11
+                    )
+                    .scaleEffect(isLoveArmed ? 1.08 : 1)
+
+                // Le mot du verdict, à l'identique : une seule formulation
+                // pour une seule idée, où qu'elle apparaisse.
+                Text("Je l'ai adoré", bundle: .app)
+                    .planLabel()
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(isLoveArmed ? Color(hex: 0xF0B3BC) : Ink.ink3)
+            }
+            .frame(width: 96)
+            .padding(.vertical, 24)
+            .background(
+                LinearGradient(
+                    colors: [Ink.ground.opacity(0), Ink.ground.opacity(0.9)],
+                    startPoint: .leading, endPoint: .trailing
+                )
+            )
+            .opacity(isArmed ? 1 : 0)
+            .animation(SwipeMotion.unfold, value: isArmed)
+            .animation(SwipeMotion.lock, value: isLoveArmed)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+
     @ViewBuilder
     private var milestoneOverlay: some View {
         if let milestone = model.celebratedMilestone {
@@ -473,7 +531,7 @@ struct SwipeDeckView: View {
                     width: SwipeMotion.resisted(value.translation.width, threshold: Self.sideThreshold),
                     height: SwipeMotion.resisted(value.translation.height, threshold: Self.upThreshold)
                 )
-                updateArming()
+                updateArming(rawRight: value.translation.width)
             }
             .onEnded { value in
                 releasePress()
@@ -483,6 +541,10 @@ struct SwipeDeckView: View {
                 ) {
                     commit(
                         direction,
+                        // La translation réelle seulement : la projection d'un
+                        // flick ne doit jamais poser un cœur toute seule.
+                        loved: direction == .right &&
+                            value.translation.width >= Self.loveThreshold,
                         velocity: CGSize(
                             width: value.predictedEndTranslation.width - value.translation.width,
                             height: value.predictedEndTranslation.height - value.translation.height
@@ -490,6 +552,7 @@ struct SwipeDeckView: View {
                     )
                 } else {
                     isArmed = false
+                    isLoveArmed = false
                     withAnimation(SwipeMotion.recenter) { drag = .zero }
                 }
             }
@@ -499,13 +562,31 @@ struct SwipeDeckView: View {
     /// autre, plus léger, quand on revient en arrière. Le tampon s'enclenche au
     /// même instant — c'est ce qui rend la limite négociable au doigt, sans
     /// jamais l'écrire.
-    private func updateArming() {
+    private func updateArming(rawRight: CGFloat) {
         let armed = (dragProgress >= 1)
-        guard armed != isArmed else { return }
-        isArmed = armed
-        if armed {
-            Haptics.impact(.light, intensity: 0.85)
-        } else {
+        let firstCranChanged = armed != isArmed
+        if firstCranChanged {
+            isArmed = armed
+            if armed {
+                Haptics.impact(.light, intensity: 0.85)
+            } else {
+                Haptics.selection()
+            }
+        }
+
+        // Le second cran, sur la course réelle du doigt : la carte, elle,
+        // résiste déjà, et c'est précisément cet effort en plus qui dit
+        // qu'aimer n'est pas le même geste que voir.
+        let loveArmed = armed && currentVerdict?.verdict == .seen &&
+            rawRight >= Self.loveThreshold
+        guard loveArmed != isLoveArmed else { return }
+        withAnimation(SwipeMotion.lock) { isLoveArmed = loveArmed }
+        if loveArmed {
+            Haptics.impact(.medium, intensity: 0.9)
+        } else if !firstCranChanged {
+            // Quand les deux crans tombent dans la même passe, une seule
+            // vibration de retour : deux « selection » collées se lisent comme
+            // un raté.
             Haptics.selection()
         }
     }
@@ -525,7 +606,7 @@ struct SwipeDeckView: View {
         return nil
     }
 
-    private func commit(_ direction: SwipeDirection, velocity: CGSize) {
+    private func commit(_ direction: SwipeDirection, loved: Bool = false, velocity: CGSize) {
         guard let card = model.topCard else { return }
 
         Haptics.impact(.medium)
@@ -547,8 +628,9 @@ struct SwipeDeckView: View {
         lastCommitted = direction
         drag = .zero
         isArmed = false
+        isLoveArmed = false
         isSynopsisOpen = false
-        model.swipe(direction)
+        model.swipe(direction, loved: loved)
 
         // Après `swipe`, parce que c'est lui qui sait si un palier vient d'être
         // franchi : la célébration plein écran dit déjà que le film est rangé, et
@@ -556,7 +638,11 @@ struct SwipeDeckView: View {
         if let confirmation = direction.confirmation, model.celebratedMilestone == nil {
             toast = ToastMark(
                 title: card.title,
-                destination: confirmation,
+                // Le cœur s'ajoute à la destination, il ne la remplace pas :
+                // le film est bien rangé en galerie, et le toast doit le dire.
+                destination: loved
+                    ? String(localized: "Ajouté à ta galerie · Coup de cœur", bundle: .app)
+                    : confirmation,
                 isAcquired: direction.verdict.isFilled
             )
         }
