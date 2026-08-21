@@ -23,6 +23,9 @@ enum RecommendationClientError: LocalizedError {
         if body.contains("no_candidates_in_requested_origins") {
             return String(localized: "Aucun film de ces pays ne correspond au reste de tes critères. Essaie d'ajouter un pays, ou de changer de genre.", bundle: .app)
         }
+        if body.contains("no_candidates_within_runtime") {
+            return String(localized: "Aucun film ne tient dans ta soirée avec ces critères. Allonge la soirée ou change un critère.", bundle: .app)
+        }
         if body.contains("no_candidates") {
             return String(localized: "Aucun film ne correspond à ces critères pour le moment.", bundle: .app)
         }
@@ -85,6 +88,14 @@ protocol RecommendationFetching: Sendable {
     /// « Aucun des trois ne me tente » — l'échec du trio devient un signal
     /// au lieu de s'évaporer avec la séance.
     func recordRejection(tmdbIDs: [Int]) async throws
+    /// « Ce n'est pas lui » — le refus du verdict, à la granularité du film.
+    func recordPass(tmdbID: Int) async throws
+    /// Les films de la Galerie, positionnés : la matière des duels entre
+    /// films vus. Ne lève jamais pour une galerie pauvre — elle est courte.
+    func fetchGalleryAxes() async throws -> [CandidateRow]
+    /// Un duel tranché entre deux films vus : il s'écrit dans le graphe de
+    /// préférence persistant, côté serveur.
+    func recordFilmDuel(winnerID: Int, loserID: Int) async throws
 }
 
 nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable {
@@ -134,6 +145,24 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
     func recordRejection(tmdbIDs: [Int]) async throws {
         _ = try await post(to: APIEndpoints.sessionOutcome(), body: [
             "kind": "rejection", "tmdbIds": tmdbIDs,
+        ])
+    }
+
+    func recordPass(tmdbID: Int) async throws {
+        _ = try await post(to: APIEndpoints.sessionOutcome(), body: [
+            "kind": "pass", "tmdbId": tmdbID,
+        ])
+    }
+
+    func fetchGalleryAxes() async throws -> [CandidateRow] {
+        let data = try await post(to: APIEndpoints.galleryAxes(), body: [:])
+        let decoded = try decode(GalleryAxesResponseDTO.self, from: data)
+        return decoded.candidates
+    }
+
+    func recordFilmDuel(winnerID: Int, loserID: Int) async throws {
+        _ = try await post(to: APIEndpoints.filmDuel(), body: [
+            "winnerTmdbId": winnerID, "loserTmdbId": loserID,
         ])
     }
 
@@ -253,6 +282,10 @@ private struct EnrichCandidatesResponseDTO: Decodable, Sendable {
     let candidates: [EnrichedCandidateRow]
 }
 
+private struct GalleryAxesResponseDTO: Decodable, Sendable {
+    let candidates: [CandidateRow]
+}
+
 private struct TasteProfileDTO: Decodable, Sendable {
     let mu: [String: Double]
     let tau: [String: Double]
@@ -261,9 +294,10 @@ private struct TasteProfileDTO: Decodable, Sendable {
     let correctedAxes: [String]
     let verdictCount: Int?
     let pendingVerdict: PendingVerdictDTO?
+    let door: DoorState?
 
     enum CodingKeys: String, CodingKey {
-        case mu, tau
+        case mu, tau, door
         case galleryCount = "gallery_count"
         case watchlistCount = "watchlist_count"
         case correctedAxes = "corrected_axes"
@@ -285,7 +319,8 @@ private struct TasteProfileDTO: Decodable, Sendable {
             verdictCount: verdictCount ?? 0,
             pendingVerdict: pendingVerdict.map {
                 PendingVerdict(tmdbID: $0.tmdbId, title: $0.title)
-            }
+            },
+            door: door
         )
     }
 }

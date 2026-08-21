@@ -40,6 +40,11 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "setmediastatus", queryItems: [])
     }
 
+    static func setGalleryLove() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "setgallerylove", queryItems: [])
+    }
+
     static func candidatePool() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "getcandidatepool", queryItems: [])
@@ -68,6 +73,16 @@ enum APIEndpoints {
     static func sessionOutcome() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "recordsessionoutcome", queryItems: [])
+    }
+
+    static func galleryAxes() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getgalleryaxes", queryItems: [])
+    }
+
+    static func filmDuel() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "recordfilmduel", queryItems: [])
     }
 
     static func swipeFeed() -> URL? {
