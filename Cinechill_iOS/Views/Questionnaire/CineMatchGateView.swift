@@ -110,7 +110,11 @@ struct CineMatchGateView: View {
 
     /// La course des battants. Assez lente pour qu'on la regarde : c'est le
     /// seul moment de cérémonie de l'application, il ne se rejoue pas.
-    private static let openingDuration: Double = 2.4
+    private static let openingDuration: Double = 4
+    /// Le temps que la porte close, gagnée, se laisse regarder avant de céder.
+    private static let openingLeadIn: Double = 1.5
+    /// Le flottement, grande ouverte, avant que le seuil ne se propose.
+    private static let openingHold: Double = 1.5
 
     /// Ce qui peut relancer la séquence : la porte qui se gagne, ou la planche
     /// de célébration qui se retire.
@@ -140,14 +144,15 @@ struct CineMatchGateView: View {
         }
 
         isOpening = true
-        // Un temps avant : la porte close, gagnée, se laisse regarder une
-        // seconde. Sans lui l'ouverture démarre dans le même souffle que
-        // l'annonce qui la précède, et les deux se mangent.
-        try? await Task.sleep(for: .milliseconds(900))
+        // Un temps avant : la porte close, gagnée, se laisse regarder. Sans
+        // lui l'ouverture démarre dans le même souffle que l'annonce qui la
+        // précède, et les deux se mangent.
+        try? await Task.sleep(for: .seconds(Self.openingLeadIn))
         guard !Task.isCancelled else { return }
         Haptics.success()
         withAnimation(.easeInOut(duration: Self.openingDuration)) { openProgress = 1 }
-        try? await Task.sleep(for: .seconds(Self.openingDuration + 0.6))
+        // Puis le flottement, grande ouverte, avant de rendre la main.
+        try? await Task.sleep(for: .seconds(Self.openingDuration + Self.openingHold))
         guard !Task.isCancelled else { return }
         withAnimation(.easeOut(duration: 0.4)) { isOpening = false }
     }
