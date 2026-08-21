@@ -92,6 +92,7 @@ struct QuestionnaireView: View {
                 )
                 .task {
                     await viewModel.loadTasteProfile()
+                    await viewModel.catchUpGalleryIfNeeded()
                 }
             } else {
                 SessionEntryView(

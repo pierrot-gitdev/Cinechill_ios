@@ -80,6 +80,11 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "getgalleryaxes", queryItems: [])
     }
 
+    static func backfillGallery() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "backfillgallery", queryItems: [])
+    }
+
     static func filmDuel() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "recordfilmduel", queryItems: [])

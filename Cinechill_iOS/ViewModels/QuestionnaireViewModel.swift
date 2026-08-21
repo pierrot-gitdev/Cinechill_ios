@@ -93,6 +93,12 @@ final class QuestionnaireViewModel {
     private(set) var duelSourceIsGallery = false
     var answers = QuestionnaireAnswers()
 
+    /// La passe de rattrapage n'est lancée qu'une fois par ouverture de l'app.
+    private var didCatchUp = false
+    /// Plafond de rappels. Le serveur borne chaque passe dans le temps ; une
+    /// galerie ordinaire tient en une seule, ce plafond n'est qu'un garde-fou.
+    private static let maximumCatchUpPasses = 12
+
     /// Les films de la Galerie, positionnés par le serveur (C1) : la matière
     /// des duels entre films vus (C2). Chargés au début de séance, jamais
     /// requis — sans eux, les duels retombent sur le vivier, comme avant.
@@ -250,6 +256,24 @@ final class QuestionnaireViewModel {
             door = fresh
             DoorState.cache(fresh)
         }
+    }
+
+    /// Le rattrapage de l'existant, lancé une fois par ouverture.
+    ///
+    /// Sans lui, ce que la V3 apporte ne vaudrait que pour les films à venir :
+    /// les positions se rattrapaient dix par ouverture d'onglet, soit trente
+    /// visites pour une galerie de trois cents films. Le serveur travaille par
+    /// tranches bornées dans le temps et dit s'il en reste ; on le rappelle
+    /// jusqu'à ce qu'il ait fini. Rien ne bloque l'écran : la porte se peint
+    /// sur ce qu'on sait déjà, et se corrige quand le profil revient.
+    func catchUpGalleryIfNeeded() async {
+        guard !didCatchUp else { return }
+        didCatchUp = true
+        for _ in 0 ..< Self.maximumCatchUpPasses {
+            guard let done = try? await recommendationClient.backfillGallery() else { return }
+            if done { break }
+        }
+        await loadTasteProfile()
     }
 
     /// Une correction posée sur la Fiche. On relit le profil derrière plutôt que de

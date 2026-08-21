@@ -96,6 +96,10 @@ protocol RecommendationFetching: Sendable {
     /// Un duel tranché entre deux films vus : il s'écrit dans le graphe de
     /// préférence persistant, côté serveur.
     func recordFilmDuel(winnerID: Int, loserID: Int) async throws
+    /// La passe de rattrapage : elle positionne les films déjà en galerie et
+    /// transforme les « Je l'ai adoré » passés en coups de cœur. Rend `true`
+    /// quand il ne reste plus rien à traiter.
+    func backfillGallery() async throws -> Bool
 }
 
 nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable {
@@ -164,6 +168,11 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
         _ = try await post(to: APIEndpoints.filmDuel(), body: [
             "winnerTmdbId": winnerID, "loserTmdbId": loserID,
         ])
+    }
+
+    func backfillGallery() async throws -> Bool {
+        let data = try await post(to: APIEndpoints.backfillGallery(), body: [:])
+        return (try? decode(BackfillResponseDTO.self, from: data))?.done ?? true
     }
 
     /// Le partage du calcul : le client envoie ce qu'il croit savoir de la personne,
@@ -284,6 +293,10 @@ private struct EnrichCandidatesResponseDTO: Decodable, Sendable {
 
 private struct GalleryAxesResponseDTO: Decodable, Sendable {
     let candidates: [CandidateRow]
+}
+
+private struct BackfillResponseDTO: Decodable, Sendable {
+    let done: Bool
 }
 
 private struct TasteProfileDTO: Decodable, Sendable {
