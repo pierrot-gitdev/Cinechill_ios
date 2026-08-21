@@ -221,7 +221,11 @@ struct MainTabView: View {
         case 0:
             HomeView(homeModel: homeModel)
         case 1:
-            QuestionnaireView(viewModel: questionnaireModel, homeModel: homeModel)
+            QuestionnaireView(
+                viewModel: questionnaireModel,
+                homeModel: homeModel,
+                selectedTab: $selectedTab
+            )
         case 2:
             SwipeDeckView(model: swipeModel, selectedTab: $selectedTab)
         case 3:
