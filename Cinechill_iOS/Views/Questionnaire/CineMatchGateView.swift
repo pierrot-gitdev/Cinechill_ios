@@ -112,7 +112,7 @@ struct CineMatchGateView: View {
     /// seul moment de cérémonie de l'application, il ne se rejoue pas.
     private static let openingDuration: Double = 4
     /// Le temps que la porte close, gagnée, se laisse regarder avant de céder.
-    private static let openingLeadIn: Double = 1.5
+    private static let openingLeadIn: Double = 0.6
     /// Le flottement, grande ouverte, avant que le seuil ne se propose.
     private static let openingHold: Double = 1.5
 
