@@ -90,7 +90,8 @@ struct QuestionnaireView: View {
                     onEnter: {
                         withAnimation(.easeOut(duration: 0.3)) { doorOpened = true }
                     },
-                    isCelebrating: doorStore.celebration != nil
+                    isCelebrating: doorStore.celebration != nil,
+                    onDebugAdvance: { doorStore.debugAdvance() }
                 )
                 .task {
                     await doorStore.refresh()

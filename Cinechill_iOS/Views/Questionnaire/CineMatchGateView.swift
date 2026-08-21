@@ -48,6 +48,10 @@ struct CineMatchGateView: View {
     /// Une célébration d'artéfact occupe l'écran : la porte attend son tour
     /// plutôt que de jouer son ouverture derrière une planche.
     var isCelebrating = false
+    /// Le raccourci d'essai, branché sur le banc du `DoorStore`. Un appui long
+    /// sur le sur-titre allume un artéfact de plus ; au sixième on revient au
+    /// réel. Sans effet en production, où le banc est vide.
+    var onDebugAdvance: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var detailArtifact: DoorArtifactKey?
@@ -186,6 +190,14 @@ struct CineMatchGateView: View {
             Text("Le cercle des cinéphiles", bundle: .app)
                 .planLabel()
                 .foregroundStyle(Ink.ink2)
+                // Le raccourci d'essai. Invisible et sans conséquence pour qui
+                // ne le cherche pas : un sur-titre ne se presse pas longuement
+                // par accident.
+                .contentShape(Rectangle())
+                .onLongPressGesture(minimumDuration: 1.2) {
+                    Haptics.impact(.medium)
+                    onDebugAdvance?()
+                }
 
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(verbatim: "\(door.litCount)")

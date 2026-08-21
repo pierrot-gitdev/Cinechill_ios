@@ -43,7 +43,7 @@ final class DoorStore {
     /// Remesure la porte. Ne lève jamais : une porte qu'on n'a pas pu remesurer
     /// reste celle qu'on connaissait, ce qui vaut mieux qu'un écran vide.
     func refresh() async {
-        guard !isRefreshing else { return }
+        guard !isSimulating, !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
 
@@ -60,7 +60,75 @@ final class DoorStore {
     /// ensemble.
     func dismissCelebration() {
         celebration = nil
+        guard !isSimulating else { return }
         pickCelebration()
+    }
+
+    // MARK: - Le banc d'essai
+
+    /// La porte affichée est simulée : les mesures du serveur ne doivent plus
+    /// l'écraser tant qu'on n'est pas revenu au réel.
+    private var isSimulating = false
+    private var simulationTask: Task<Void, Never>?
+
+    /// Déroule la séquence complète sans toucher à la vraie bibliothèque.
+    ///
+    /// Chaque appel allume un artéfact de plus et annonce le gain ; au
+    /// cinquième la porte s'ouvre pour de bon, et l'appel suivant rend la main
+    /// au serveur. Le corps n'existe qu'en `DEBUG` : en production le geste qui
+    /// l'appelle ne fait rien, ce qui vaut mieux qu'un chemin de test livré.
+    ///
+    /// L'annonce est différée de quelques secondes, exprès : c'est ce qui
+    /// permet de changer d'onglet entre-temps et de vérifier qu'elle tombe bien
+    /// **là où l'on est**, ce qui est tout l'intérêt de l'avoir mise à la
+    /// racine.
+    func debugAdvance() {
+        #if DEBUG
+        let keys = DoorArtifactKey.allCases
+        let lit = door.artifacts.filter(\.done).count
+
+        guard !(isSimulating && lit >= keys.count) else {
+            debugReset()
+            return
+        }
+
+        let next = min(keys.count, lit + 1)
+        isSimulating = true
+        door = DoorState(
+            unlocked: next >= keys.count,
+            artifacts: keys.enumerated().map { index, key in
+                let target = door.artifact(key)?.target ?? 1
+                return DoorArtifact(
+                    key: key.rawValue,
+                    done: index < next,
+                    current: index < next ? target : (door.artifact(key)?.current ?? 0),
+                    target: target
+                )
+            },
+            horizons: door.horizons
+        )
+
+        simulationTask?.cancel()
+        simulationTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2.5))
+            guard !Task.isCancelled else { return }
+            self?.celebration = keys[next - 1]
+        }
+        #endif
+    }
+
+    /// Rend la main au serveur : la porte simulée s'efface, le seuil se
+    /// referme, et la prochaine mesure fait foi.
+    func debugReset() {
+        #if DEBUG
+        simulationTask?.cancel()
+        simulationTask = nil
+        isSimulating = false
+        celebration = nil
+        UserDefaults.standard.removeObject(forKey: "cinematch.doorOpened")
+        door = .initial
+        Task { await refresh() }
+        #endif
     }
 
     /// Le premier artéfact allumé qu'on n'a pas encore fêté.
