@@ -5,32 +5,74 @@
 
 import SwiftUI
 
+/// Le verdict — un seul film assumé, pas trois.
+///
+/// La feature prétend trouver le film parfait ; trois propositions disaient le
+/// contraire. L'écran montre un seul titre, sans score affiché — l'assurance se
+/// montre, elle ne se chiffre pas. « Ce n'est pas lui » révèle le n°2, puis le
+/// n°3 : le backend prépare toujours un classement complet, seul le client
+/// change ce qu'il révèle. Et chaque refus est un signal de goût **par film**,
+/// daté — la granularité que le refus d'un trio moyennait sur trois.
 struct ResultView: View {
     let results: [RecommendationResult]
     let onRestart: () -> Void
-    /// Ouvre la Fiche. C'est la réponse au « pourquoi ces trois ? » : plutôt que
+    /// Ouvre la Fiche. C'est la réponse au « pourquoi ce film ? » : plutôt que
     /// d'expliquer une formule, on montre ce qu'on croit savoir de la personne.
     var onExplain: (() -> Void)?
     /// Signale qu'on est parti voir ce film — le geste qui ouvre la boucle.
     var onLaunch: ((Int) -> Void)?
-    /// « Aucun des trois ne me tente » : la sortie honnête au moment où la
-    /// confiance se joue — et le signal d'erreur dont la boucle a besoin.
+    /// « Ce n'est pas lui » — le refus du film révélé, avant d'ouvrir le
+    /// suivant.
+    var onPass: ((Int) -> Void)?
+    /// Plus rien à révéler et rien ne tente : la sortie honnête, qui recompose
+    /// une sélection ailleurs dans le vivier.
     var onReject: (() -> Void)?
+
+    /// L'index du film révélé. Les refusés ne restent pas à l'écran : le
+    /// verdict est un face-à-face, pas une liste qui s'allonge.
+    @State private var revealedIndex = 0
+
+    private var current: RecommendationResult? {
+        revealedIndex < results.count ? results[revealedIndex] : results.last
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header
 
-                ForEach(Array(results.enumerated()), id: \.element.id) { index, result in
+                if let current {
                     PlanEdge()
-                    ResultRowView(rank: index + 1, result: result, onLaunch: onLaunch)
-                        .padding(.vertical, 20)
+                    ResultRowView(
+                        rankLabel: rankLabel,
+                        isVerdict: revealedIndex == 0,
+                        result: current,
+                        onLaunch: onLaunch
+                    )
+                    .id(current.id)
+                    .transition(.opacity)
+                    .padding(.vertical, 20)
                 }
 
                 PlanEdge()
 
-                if let onReject {
+                if revealedIndex < results.count - 1 {
+                    // En contour, jamais concurrent des actions du film : le
+                    // refus est une sortie, pas une invitation.
+                    Button {
+                        guard let current else { return }
+                        onPass?(current.item.tmdbId)
+                        withAnimation(Metrics.unfold) { revealedIndex += 1 }
+                    } label: {
+                        Text("Ce n'est pas lui", bundle: .app)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Ink.ink2)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                    }
+                    .buttonStyle(.plain)
+                    PlanEdge()
+                } else if let onReject {
                     Button(action: onReject) {
                         Text("Aucun ne me tente, propose-m'en d'autres", bundle: .app)
                             .font(.system(size: 13, weight: .medium))
@@ -44,7 +86,7 @@ struct ResultView: View {
 
                 if let onExplain {
                     Button(action: onExplain) {
-                        Text("Pourquoi ces films ?", bundle: .app)
+                        Text("Pourquoi ce film ?", bundle: .app)
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(Ink.ink2)
                             .frame(maxWidth: .infinity)
@@ -66,32 +108,49 @@ struct ResultView: View {
             .padding(.horizontal, Metrics.margin)
             .padding(.bottom, Metrics.margin)
         }
+        // Un second trio recomposé (« Aucun ne me tente ») repart du verdict :
+        // l'identité du premier film dit que la sélection a changé.
+        .task(id: results.first?.id) { revealedIndex = 0 }
+    }
+
+    private var rankLabel: String {
+        switch revealedIndex {
+        case 0: String(localized: "Le verdict", bundle: .app)
+        default: String(localized: "N°\(revealedIndex + 1)", bundle: .app)
+        }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Tes résultats", bundle: .app)
-                .planLabel()
-                .foregroundStyle(Ink.ink3)
+            Group {
+                switch revealedIndex {
+                case 0: Text("Ton film de ce soir", bundle: .app)
+                case 1: Text("Deuxième proposition", bundle: .app)
+                default: Text("Dernière proposition", bundle: .app)
+                }
+            }
+            .planTitle(26)
+            .foregroundStyle(Ink.ink)
 
-            Text("Trois films pour ce soir", bundle: .app)
-                .planTitle(26)
-                .foregroundStyle(Ink.ink)
-
-            Text("Classés du plus proche au moins proche de ce que tu cherches ce soir.", bundle: .app)
-                .font(.system(size: 13))
-                .foregroundStyle(Ink.ink2)
-                .fixedSize(horizontal: false, vertical: true)
+            if revealedIndex == 0 {
+                Text("Un seul film, choisi pour toi. S'il ne te tente pas, on en a d'autres.", bundle: .app)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Ink.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(.top, 28)
         .padding(.bottom, 26)
     }
 }
 
-/// Une proposition : son rang, l'affiche, et surtout **pourquoi** — les motifs
-/// renvoyés par le backend étaient jusqu'ici calculés puis jetés à l'affichage.
+/// Une proposition : l'affiche, et surtout **pourquoi** — les motifs renvoyés
+/// par le backend étaient jusqu'ici calculés puis jetés à l'affichage. Le rang
+/// est un libellé (« Le verdict », « N°2 ») : l'écran n'affiche plus qu'un
+/// film à la fois.
 private struct ResultRowView: View {
-    let rank: Int
+    let rankLabel: String
+    let isVerdict: Bool
     let result: RecommendationResult
     var onLaunch: ((Int) -> Void)?
 
@@ -107,11 +166,11 @@ private struct ResultRowView: View {
 
                     VStack(alignment: .leading, spacing: 7) {
                         HStack(spacing: 7) {
-                            Text(String(localized: "N°\(rank)", bundle: .app))
+                            Text(rankLabel)
                                 .planLabel()
                                 .foregroundStyle(Ink.ink3)
                                 .monospacedDigit()
-                            if rank == 1 {
+                            if isVerdict {
                                 PlanLight()
                             }
                         }

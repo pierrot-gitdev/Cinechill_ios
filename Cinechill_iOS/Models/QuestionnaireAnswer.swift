@@ -370,6 +370,10 @@ nonisolated struct QuestionnaireAnswers: Equatable, Sendable {
     var platformIDs: Set<String> = []
     var audience: Audience?
     var mood: Mood?
+    /// L'ambiance a reçu une réponse — y compris « peu importe », qui laisse
+    /// `mood` à nil. Jamais sérialisé : le backend lit l'absence d'ambiance
+    /// dans `mood` lui-même, et le prior du trait fait alors le travail seul.
+    var moodDecided = false
     var origin: OriginPreference = .any
     var mindset: Mindset?
     var dealbreaker: Dealbreaker?

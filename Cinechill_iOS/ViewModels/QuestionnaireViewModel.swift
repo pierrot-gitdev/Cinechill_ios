@@ -88,7 +88,16 @@ final class QuestionnaireViewModel {
     private(set) var currentDimension: AdaptiveDimension?
     private(set) var pairwiseOptions: (CandidateRow, CandidateRow)?
     private(set) var eliminationOptions: [CandidateRow]?
+    /// La question par affiches en cours oppose des films **vus** : le titre
+    /// change (« Tu as vu les deux… ») et la réponse s'écrit dans le graphe.
+    private(set) var duelSourceIsGallery = false
     var answers = QuestionnaireAnswers()
+
+    /// Les films de la Galerie, positionnés par le serveur (C1) : la matière
+    /// des duels entre films vus (C2). Chargés au début de séance, jamais
+    /// requis — sans eux, les duels retombent sur le vivier, comme avant.
+    private(set) var galleryRows: [CandidateRow] = []
+    private var galleryIDs: Set<Int> = []
 
     /// La lecture : une ligne, affichée après une réponse qui apprend quelque chose
     /// de nommable. `nil` le reste du temps — mieux vaut se taire que commenter
@@ -102,6 +111,13 @@ final class QuestionnaireViewModel {
     /// cadran est validé, il est là depuis longtemps. S'il ne l'était pas, la séance
     /// démarrerait simplement sur un profil plat — jamais bloquée par son absence.
     private(set) var taste: TasteProfile = .empty
+
+    /// La porte de CinéMatch. Ouverte sur la dernière réponse du serveur, gardée
+    /// d'un lancement à l'autre : l'onglet se peint tout de suite sur un état
+    /// plausible, et la réponse réseau ne fait que le rafraîchir. Un compte que
+    /// le serveur n'a jamais raconté part porte close, tout éteint — c'est
+    /// l'état honnête d'un profil inconnu.
+    private(set) var door: DoorState = DoorState.cached ?? .initial
 
     /// Ce qu'on croit savoir de la personne. C'est la seule chose que le serveur
     /// recevra en plus des candidats : lui positionne les films, elle dit qui regarde.
@@ -133,6 +149,22 @@ final class QuestionnaireViewModel {
         pool.filter { !shownPosterIDs.contains($0.id) }
     }
 
+    /// La matière des questions par affiches (C2) : les films **vus**, dès
+    /// qu'il en reste assez à montrer. Entre deux affiches inconnues, on
+    /// choisit la plus jolie ; entre deux souvenirs, on choisit son goût.
+    /// Le vivier reste le repli — un duel de découverte plutôt qu'aucun duel.
+    private static let galleryDuelFloor = 6
+    private var duelPool: [CandidateRow] {
+        let seen = galleryRows.filter { !shownPosterIDs.contains($0.id) }
+        return seen.count >= Self.galleryDuelFloor ? seen : posterPool
+    }
+
+    /// Le duel courant se joue-t-il entre films vus ?
+    private var duelPoolIsGallery: Bool {
+        galleryRows.filter { !shownPosterIDs.contains($0.id) }.count >=
+            Self.galleryDuelFloor
+    }
+
     /// Un instantané complet de l'état, capturé juste avant que chaque question adaptative ne soit
     /// répondue — revenir en arrière restaure l'instantané tel quel plutôt que d'essayer d'annuler
     /// chaque mutation individuellement (croyance, vivier, dimensions déjà posées…).
@@ -140,6 +172,7 @@ final class QuestionnaireViewModel {
         let dimension: AdaptiveDimension?
         let pairwiseOptions: (CandidateRow, CandidateRow)?
         let eliminationOptions: [CandidateRow]?
+        let duelSourceIsGallery: Bool
         let answers: QuestionnaireAnswers
         let belief: BeliefState
         let pool: [CandidateRow]
@@ -213,6 +246,10 @@ final class QuestionnaireViewModel {
     func loadTasteProfile() async {
         guard let profile = try? await recommendationClient.fetchTasteProfile() else { return }
         taste = profile
+        if let fresh = profile.door {
+            door = fresh
+            DoorState.cache(fresh)
+        }
     }
 
     /// Une correction posée sur la Fiche. On relit le profil derrière plutôt que de
@@ -247,6 +284,19 @@ final class QuestionnaireViewModel {
     /// écrire. Le serveur la reproposera tant qu'elle n'a pas expiré.
     func dismissVerdict() {
         taste.pendingVerdict = nil
+    }
+
+    /// « Ce n'est pas lui » — le refus du verdict, à la granularité du film.
+    ///
+    /// Le client ne recompose rien : le classement complet est déjà là, il ne
+    /// fait que révéler le suivant. Le refus, lui, part au serveur (le trait
+    /// s'en souviendra, par film et daté) et infléchit la croyance locale —
+    /// utile si la séance repart sur « Aucun ne me tente ».
+    func passFilm(tmdbID: Int) {
+        Task { try? await recommendationClient.recordPass(tmdbID: tmdbID) }
+        if let row = pool.first(where: { $0.id == tmdbID }) {
+            belief.observe(AnswerObservations.fromRejectedTrio([row]))
+        }
     }
 
     /// « Aucun des trois ne me tente » — le geste qui manquait à la boucle.
@@ -361,20 +411,41 @@ final class QuestionnaireViewModel {
             || answers.originCountries.count < QuestionnaireAnswers.maxOriginCountries
     }
 
-    /// Seule l'ambiance est obligatoire. Le genre reste facultatif : quelqu'un
-    /// d'ouvert à tout ne doit pas être forcé de restreindre sa recherche pour
-    /// pouvoir avancer.
-    var canConfirmFilmChoice: Bool { answers.mood != nil }
+    /// L'ambiance demande une réponse — mais « peu importe » en est une (C3) :
+    /// le prior du trait fait alors le travail seul, ce que le moteur bayésien
+    /// sait déjà faire. Le genre reste facultatif : quelqu'un d'ouvert à tout
+    /// ne doit pas être forcé de restreindre sa recherche pour avancer.
+    var canConfirmFilmChoice: Bool { answers.mood != nil || answers.moodDecided }
+
+    /// L'ambiance choisie. Passer par ici et non par le binding : c'est ce qui
+    /// permet de distinguer « pas encore répondu » de « peu importe ».
+    func pickMood(_ mood: Mood) {
+        answers.mood = mood
+        answers.moodDecided = true
+    }
+
+    /// « Peu importe » sur l'ambiance : une réponse qu'on choisit, pas
+    /// seulement un champ qu'on laisse vide.
+    func pickMoodAny() {
+        answers.mood = nil
+        answers.moodDecided = true
+    }
+
+    var isMoodAny: Bool { answers.mood == nil && answers.moodDecided }
 
     /// La lecture, dès que l'ambiance est choisie et avant même de valider — pour
     /// que le choix ait une réponse immédiate.
-    var ambianceReading: String? { answers.mood?.reading }
+    var ambianceReading: String? {
+        if let mood = answers.mood { return mood.reading }
+        guard answers.moodDecided else { return nil }
+        return String(localized: "On partira de ce que ta galerie raconte, sans contrainte d'ambiance.", bundle: .app)
+    }
 
     /// Ouvre la croyance avec ce que les deux écrans ont appris, puis lance la
     /// recherche. C'est ici, et seulement ici, que l'ambiance entre dans le
     /// modèle : ensuite ce sont les questions et les affiches qui la corrigent.
     func confirmFilmChoice() {
-        guard let mood = answers.mood else { return }
+        guard canConfirmFilmChoice else { return }
 
         // On repart de ce qu'on savait déjà, élargi — puis le cadre et l'ambiance
         // viennent par-dessus. C'est ici, et nulle part ailleurs, que les « régimes »
@@ -384,9 +455,11 @@ final class QuestionnaireViewModel {
         belief = BeliefState(prior: taste)
         belief.observe(AnswerObservations.fromBudget(answers.runtime))
         belief.observe(AnswerObservations.fromAudience(answers.audience))
-        belief.observe(AnswerObservations.fromAmbiance(mood))
+        if let mood = answers.mood {
+            belief.observe(AnswerObservations.fromAmbiance(mood))
+        }
 
-        reading = mood.reading
+        reading = answers.mood?.reading
         Task { await beginSession() }
     }
 
@@ -437,6 +510,19 @@ final class QuestionnaireViewModel {
         // perdant reste dans le vivier — lui préférer un autre film n'est pas
         // le refuser, et il peut très bien finir dans le trio.
         shownPosterIDs.formUnion([winner.id, loser.id])
+
+        // Un duel entre deux films vus fait double emploi : l'observation du
+        // soir ci-dessus, et une écriture durable dans le graphe de
+        // préférence (C2). Perdre n'est pas un rejet — c'est la répétition,
+        // duel après duel, qui fera signal.
+        if galleryIDs.contains(winner.id), galleryIDs.contains(loser.id) {
+            Task {
+                try? await recommendationClient.recordFilmDuel(
+                    winnerID: winner.id, loserID: loser.id
+                )
+            }
+        }
+
         pairwiseOptions = nil
         reading = Self.reading(winner: winner, loser: loser)
         advance()
@@ -448,6 +534,11 @@ final class QuestionnaireViewModel {
         let others = shown.filter { $0.id != loser.id }
         record(.elimination, observations: AnswerObservations.fromElimination(loser: loser, others: others))
 
+        // L'élimination n'écrit rien dans le graphe de préférence, même entre
+        // films vus, et c'est un choix : écarter « pour ce soir » n'est pas
+        // perdre un duel de goût, et un geste ne doit produire qu'une
+        // écriture durable au plus. Le duel, lui, pose la question du goût.
+        //
         // Le film écarté sort du vivier, définitivement. Le laisser dedans le
         // rendait reproposable dans la question suivante, et jusque dans le trio
         // final — on demandait à quelqu'un d'écarter un film pour le lui remontrer
@@ -482,6 +573,7 @@ final class QuestionnaireViewModel {
         currentDimension = snapshot.dimension
         pairwiseOptions = snapshot.pairwiseOptions
         eliminationOptions = snapshot.eliminationOptions
+        duelSourceIsGallery = snapshot.duelSourceIsGallery
         answers = snapshot.answers
         belief = snapshot.belief
         pool = snapshot.pool
@@ -500,6 +592,7 @@ final class QuestionnaireViewModel {
             dimension: currentDimension,
             pairwiseOptions: pairwiseOptions,
             eliminationOptions: eliminationOptions,
+            duelSourceIsGallery: duelSourceIsGallery,
             answers: answers,
             belief: belief,
             pool: pool,
@@ -531,9 +624,12 @@ final class QuestionnaireViewModel {
         currentDimension = nil
         pairwiseOptions = nil
         eliminationOptions = nil
+        duelSourceIsGallery = false
         excludedIDs = []
         shownPosterIDs = []
         reading = nil
+        // `galleryRows` reste : la Galerie ne change pas d'une séance à
+        // l'autre, et la recharger ferait attendre pour rien.
     }
 
     func retrySubmit() {
@@ -546,12 +642,25 @@ final class QuestionnaireViewModel {
     private func beginSession() async {
         phase = .poolLoading
         do {
+            // Les positions de la Galerie se chargent en même temps que le
+            // vivier, et ne le retardent jamais : sans elles, les duels
+            // retombent sur le vivier, comme avant.
+            let galleryTask = Task { [recommendationClient] in
+                try? await recommendationClient.fetchGalleryAxes()
+            }
+            // Toute sortie anticipée — vivier vide, erreur réseau — libère la
+            // tâche ; l'annuler après coup est sans effet.
+            defer { galleryTask.cancel() }
             let response = try await recommendationClient.fetchCandidatePool(trunk: answers)
             guard !response.candidates.isEmpty else {
                 phase = .error(String(localized: "Aucun film ne correspond à ces critères pour le moment.", bundle: .app))
                 return
             }
             pool = response.candidates
+            if let rows = await galleryTask.value {
+                galleryRows = rows
+                galleryIDs = Set(rows.map(\.id))
+            }
             advance()
         } catch {
             fail(error, retry: { [weak self] in await self?.beginSession() })
@@ -567,8 +676,8 @@ final class QuestionnaireViewModel {
             belief: belief,
             asked: askedDimensions,
             recentFormats: recentFormats,
-            posterOptionsProvider: { [posterPool, belief] dimension in
-                QuestionEngine.posterOutcomes(for: dimension, pool: posterPool, belief: belief)
+            posterOptionsProvider: { [duelPool, belief] dimension in
+                QuestionEngine.posterOutcomes(for: dimension, pool: duelPool, belief: belief)
             }
         )
 
@@ -599,21 +708,38 @@ final class QuestionnaireViewModel {
     private func present(_ dimension: AdaptiveDimension) {
         switch dimension {
         case .posterDuel:
-            guard let options = QuestionEngine.pickDuel(from: posterPool, belief: belief) else {
+            var options = QuestionEngine.pickDuel(from: duelPool, belief: belief)
+            var fromGallery = duelPoolIsGallery
+            if options == nil, fromGallery {
+                // Une galerie trop homogène n'offre pas de paire contrastée :
+                // le vivier reprend la main plutôt que de classer la question
+                // la plus informative du parcours.
+                options = QuestionEngine.pickDuel(from: posterPool, belief: belief)
+                fromGallery = false
+            }
+            guard let options else {
                 // Plus assez de films jamais montrés pour opposer deux affiches —
                 // on classe la question plutôt que de boucler dessus.
                 askedDimensions.insert(.posterDuel)
                 advance()
                 return
             }
+            duelSourceIsGallery = fromGallery
             pairwiseOptions = options
             eliminationOptions = nil
         case .elimination:
-            guard let options = QuestionEngine.pickElimination(from: posterPool, belief: belief) else {
+            var options = QuestionEngine.pickElimination(from: duelPool, belief: belief)
+            var fromGallery = duelPoolIsGallery
+            if options == nil, fromGallery {
+                options = QuestionEngine.pickElimination(from: posterPool, belief: belief)
+                fromGallery = false
+            }
+            guard let options else {
                 askedDimensions.insert(.elimination)
                 advance()
                 return
             }
+            duelSourceIsGallery = fromGallery
             eliminationOptions = options
             pairwiseOptions = nil
         default:

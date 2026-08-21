@@ -18,7 +18,13 @@ struct FilmChoiceView: View {
     /// En lecture seule : toute écriture passe par `onToggleGenre`, qui seul
     /// tient le plafond de deux genres.
     let selectedGenres: Set<Genre>
-    @Binding var mood: Mood?
+    /// L'ambiance passe par des fermetures et non par un binding : c'est ce
+    /// qui permet au modèle de distinguer « pas encore répondu » de « peu
+    /// importe » — deux états que `nil` seul ne sait pas raconter.
+    let selectedMood: Mood?
+    let isMoodAny: Bool
+    let onPickMood: (Mood) -> Void
+    let onMoodAny: () -> Void
     let maxGenres: Int
     /// Faux quand la limite de genres est atteinte et que la puce n'est pas déjà
     /// cochée — on grise plutôt que d'ignorer silencieusement le tap.
@@ -63,10 +69,18 @@ struct FilmChoiceView: View {
 
             group(String(localized: "Quelle ambiance ?", bundle: .app), note: nil) {
                 ForEach(Mood.allCases, id: \.self) { value in
-                    PlanChip(title: value.label, isOn: mood == value) {
-                        mood = value
+                    PlanChip(title: value.label, isOn: selectedMood == value) {
+                        onPickMood(value)
                     }
                 }
+                // « Peu importe » est une réponse qu'on choisit, pas un champ
+                // qu'on laisse vide (C3) : le cœur de cible, c'est justement
+                // la personne qui ne sait pas quoi regarder.
+                PlanChip(
+                    title: String(localized: "Peu importe, surprends-moi", bundle: .app),
+                    isOn: isMoodAny,
+                    action: onMoodAny
+                )
             }
         }
     }
@@ -109,6 +123,7 @@ struct FilmChoiceView: View {
         @State private var genres: Set<Genre> = [.thriller]
         @State private var origins: Set<OriginCountry> = [.france, .japan]
         @State private var mood: Mood? = .intense
+        @State private var moodAny = false
 
         var body: some View {
             ZStack {
@@ -117,7 +132,10 @@ struct FilmChoiceView: View {
                     FilmChoiceView(
                         availableGenres: Genre.allCases.filter { $0 != .animation },
                         selectedGenres: genres,
-                        mood: $mood,
+                        selectedMood: mood,
+                        isMoodAny: moodAny,
+                        onPickMood: { mood = $0; moodAny = false },
+                        onMoodAny: { mood = nil; moodAny = true },
                         maxGenres: 2,
                         isGenreSelectable: { genres.contains($0) || genres.count < 2 },
                         onToggleGenre: { genre in

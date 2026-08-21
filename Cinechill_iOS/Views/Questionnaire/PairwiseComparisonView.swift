@@ -14,17 +14,22 @@ import SwiftUI
 struct PairwiseComparisonView: View {
     let optionA: CandidateRow
     let optionB: CandidateRow
+    /// Le titre change quand le duel oppose deux films **vus** (C2) : la
+    /// question parle alors de souvenirs, plus de paris. Sans valeur, le
+    /// titre du duel de découverte reste celui de toujours.
+    var title: String?
+    var subtitle: String?
     let onPick: (_ winner: CandidateRow, _ loser: CandidateRow) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(QuestionStep.posterDuel.title)
+                Text(title ?? QuestionStep.posterDuel.title)
                     .planTitle()
                     .foregroundStyle(Ink.ink)
                     .fixedSize(horizontal: false, vertical: true)
 
-                if let subtitle = QuestionStep.posterDuel.subtitle {
+                if let subtitle = subtitle ?? QuestionStep.posterDuel.subtitle {
                     Text(subtitle)
                         .font(.system(size: 12.5))
                         .foregroundStyle(Ink.ink3)

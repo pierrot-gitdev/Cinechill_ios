@@ -11,6 +11,9 @@ struct QuestionnaireView: View {
     /// l'accueil, préchargé pendant l'ouverture de l'app. L'entrée y puise ses
     /// affiches, ce qui lui évite la moindre requête.
     let homeModel: HomeViewModel
+    /// L'onglet courant : la porte envoie vers Découvrir, là où la galerie se
+    /// remplit.
+    @Binding var selectedTab: Int
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
@@ -18,6 +21,10 @@ struct QuestionnaireView: View {
     @Environment(BadgesViewModel.self) private var badgesModel
     @State private var showProfile = false
     @State private var showTasteSheet = false
+    @State private var showLovePicker = false
+    /// Le seuil a été franchi une fois : la porte ouverte ne se remontre plus,
+    /// sauf si le serveur la referme.
+    @AppStorage("cinematch.doorOpened") private var doorOpened = false
 
     var body: some View {
         NavigationStack {
@@ -42,6 +49,25 @@ struct QuestionnaireView: View {
                     await viewModel.correctTaste(axis: axis, value: value)
                 }
             }
+            .sheet(isPresented: $showLovePicker) {
+                LovePickerView(
+                    target: viewModel.door.artifact(.coeur)?.target ?? 12,
+                    onClose: { showLovePicker = false }
+                )
+                .environmentObject(libraryStore)
+            }
+        }
+        // Chaque retour sur l'onglet remesure la porte : la galerie a pu se
+        // remplir depuis Découvrir, et la jauge doit le raconter sans attendre.
+        .onChange(of: selectedTab) { _, tab in
+            guard tab == 1 else { return }
+            Task { await viewModel.loadTasteProfile() }
+        }
+        // La planche refermée, on remesure aussi : c'est peut-être elle qui
+        // vient d'allumer le Cœur.
+        .onChange(of: showLovePicker) { _, isOpen in
+            guard !isOpen else { return }
+            Task { await viewModel.loadTasteProfile() }
         }
     }
 
@@ -49,24 +75,44 @@ struct QuestionnaireView: View {
     private var content: some View {
         switch viewModel.phase {
         case .intro:
-            SessionEntryView(
-                posters: homeModel.popularItems,
-                audience: $viewModel.answers.audience,
-                verdict: viewModel.taste.pendingVerdict,
-                onVerdict: { viewModel.answerVerdict($0) },
-                onDismissVerdict: { viewModel.dismissVerdict() },
-                onProfileTap: { showProfile = true },
-                onNext: {
-                    viewModel.start(
-                        preferredPlatformIDs: libraryStore.preferredPlatformIDs,
-                        bannedGenreIDs: libraryStore.bannedGenreIDs,
-                        audience: viewModel.answers.audience
-                    )
+            // La porte garde l'onglet tant que le profil n'est pas prêt, et
+            // reste une dernière fois pour l'ouverture : le seuil ne se
+            // franchit qu'en la voyant céder.
+            if !viewModel.door.unlocked || !doorOpened {
+                CineMatchGateView(
+                    door: viewModel.door,
+                    isMeasured: viewModel.taste.door != nil,
+                    lovedCount: libraryStore.lovedCount,
+                    onProfileTap: { showProfile = true },
+                    onDiscover: { selectedTab = 2 },
+                    onLovePicker: { showLovePicker = true },
+                    onEnter: {
+                        withAnimation(.easeOut(duration: 0.3)) { doorOpened = true }
+                    }
+                )
+                .task {
+                    await viewModel.loadTasteProfile()
                 }
-            )
-            .task {
-                await viewModel.loadPlatformsIfNeeded()
-                await viewModel.loadTasteProfile()
+            } else {
+                SessionEntryView(
+                    posters: homeModel.popularItems,
+                    audience: $viewModel.answers.audience,
+                    verdict: viewModel.taste.pendingVerdict,
+                    onVerdict: { viewModel.answerVerdict($0) },
+                    onDismissVerdict: { viewModel.dismissVerdict() },
+                    onProfileTap: { showProfile = true },
+                    onNext: {
+                        viewModel.start(
+                            preferredPlatformIDs: libraryStore.preferredPlatformIDs,
+                            bannedGenreIDs: libraryStore.bannedGenreIDs,
+                            audience: viewModel.answers.audience
+                        )
+                    }
+                )
+                .task {
+                    await viewModel.loadPlatformsIfNeeded()
+                    await viewModel.loadTasteProfile()
+                }
             }
         case .frame:
             frameFlow
@@ -79,13 +125,14 @@ struct QuestionnaireView: View {
         case .enriching:
             SessionLoadingView(message: String(localized: "On regarde les meilleurs de plus près…", bundle: .app))
         case .finalizing:
-            SessionLoadingView(message: String(localized: "On choisit tes trois films…", bundle: .app))
+            SessionLoadingView(message: String(localized: "On choisit ton film…", bundle: .app))
         case .results:
             ResultView(
                 results: viewModel.results,
                 onRestart: { viewModel.restart() },
                 onExplain: { showTasteSheet = true },
                 onLaunch: { viewModel.recordLaunch(tmdbID: $0) },
+                onPass: { viewModel.passFilm(tmdbID: $0) },
                 onReject: { viewModel.rejectTrio() }
             )
         case .error(let message):
@@ -159,7 +206,10 @@ struct QuestionnaireView: View {
                     FilmChoiceView(
                         availableGenres: viewModel.availableGenres,
                         selectedGenres: viewModel.answers.genres,
-                        mood: $viewModel.answers.mood,
+                        selectedMood: viewModel.answers.mood,
+                        isMoodAny: viewModel.isMoodAny,
+                        onPickMood: { viewModel.pickMood($0) },
+                        onMoodAny: { viewModel.pickMoodAny() },
                         maxGenres: viewModel.maxGenres,
                         isGenreSelectable: { viewModel.isGenreSelectable($0) },
                         onToggleGenre: { viewModel.toggleGenre($0) },
@@ -211,11 +261,25 @@ struct QuestionnaireView: View {
 
                     Group {
                         if let options = viewModel.pairwiseOptions {
-                            PairwiseComparisonView(optionA: options.0, optionB: options.1) { winner, loser in
+                            PairwiseComparisonView(
+                                optionA: options.0,
+                                optionB: options.1,
+                                title: viewModel.duelSourceIsGallery
+                                    ? String(localized: "Tu as vu les deux. Lequel tu relancerais ce soir ?", bundle: .app)
+                                    : nil,
+                                subtitle: viewModel.duelSourceIsGallery
+                                    ? String(localized: "Choisir entre deux souvenirs nous dit ton goût mieux que n'importe quelle question.", bundle: .app)
+                                    : nil
+                            ) { winner, loser in
                                 viewModel.recordPairwiseChoice(winner: winner, loser: loser)
                             }
                         } else if let options = viewModel.eliminationOptions {
-                            EliminationView(options: options) { loser in
+                            EliminationView(
+                                options: options,
+                                title: viewModel.duelSourceIsGallery
+                                    ? String(localized: "Parmi ces films que tu as vus, écarte celui qui ne colle pas à ce soir", bundle: .app)
+                                    : nil
+                            ) { loser in
                                 viewModel.recordElimination(loser: loser)
                             }
                         } else if let dimension = viewModel.currentDimension {

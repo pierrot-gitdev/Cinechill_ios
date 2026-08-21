@@ -12,6 +12,10 @@ import SwiftUI
 /// plus sûrement que l'adhésion.
 struct EliminationView: View {
     let options: [CandidateRow]
+    /// Le titre change quand les quatre films sont **vus** (C2) : on écarte
+    /// un souvenir qui ne colle pas à ce soir, pas un pari.
+    var title: String?
+    var subtitle: String?
     let onEliminate: (_ loser: CandidateRow) -> Void
 
     private let columns = [
@@ -22,12 +26,12 @@ struct EliminationView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(QuestionStep.elimination.title)
+                Text(title ?? QuestionStep.elimination.title)
                     .planTitle()
                     .foregroundStyle(Ink.ink)
                     .fixedSize(horizontal: false, vertical: true)
 
-                if let subtitle = QuestionStep.elimination.subtitle {
+                if let subtitle = subtitle ?? QuestionStep.elimination.subtitle {
                     Text(subtitle)
                         .font(.system(size: 12.5))
                         .foregroundStyle(Ink.ink3)
