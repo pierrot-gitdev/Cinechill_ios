@@ -118,13 +118,6 @@ final class QuestionnaireViewModel {
     /// démarrerait simplement sur un profil plat — jamais bloquée par son absence.
     private(set) var taste: TasteProfile = .empty
 
-    /// La porte de CinéMatch. Ouverte sur la dernière réponse du serveur, gardée
-    /// d'un lancement à l'autre : l'onglet se peint tout de suite sur un état
-    /// plausible, et la réponse réseau ne fait que le rafraîchir. Un compte que
-    /// le serveur n'a jamais raconté part porte close, tout éteint — c'est
-    /// l'état honnête d'un profil inconnu.
-    private(set) var door: DoorState = DoorState.cached ?? .initial
-
     /// Ce qu'on croit savoir de la personne. C'est la seule chose que le serveur
     /// recevra en plus des candidats : lui positionne les films, elle dit qui regarde.
     private(set) var belief = BeliefState()
@@ -252,10 +245,8 @@ final class QuestionnaireViewModel {
     func loadTasteProfile() async {
         guard let profile = try? await recommendationClient.fetchTasteProfile() else { return }
         taste = profile
-        if let fresh = profile.door {
-            door = fresh
-            DoorState.cache(fresh)
-        }
+        // La porte n'est pas relue ici : `DoorStore` en est le seul
+        // propriétaire, et c'est lui qui décide de ce qui se fête.
     }
 
     /// Le rattrapage de l'existant, lancé une fois par ouverture.

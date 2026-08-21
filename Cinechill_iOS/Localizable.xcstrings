@@ -100,6 +100,22 @@
         }
       }
     },
+    "%@ s'allume. %lld artéfacts sur 5." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ lights up. %2$lld artifacts of 5."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ s'allume. %lld artéfacts sur 5."
+          }
+        }
+      }
+    },
     "%lld décennies, %lld pays" : {
       "localizations" : {
         "en" : {
@@ -176,6 +192,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld sur %lld · %lld sur %lld"
+          }
+        }
+      }
+    },
+    "%lld sur 5" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of 5"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sur 5"
           }
         }
       }
@@ -1690,6 +1722,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La porte de CinéMatch, %lld artéfacts sur 5"
+          }
+        }
+      }
+    },
+    "La porte s'ouvre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The door is opening"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La porte s'ouvre"
           }
         }
       }

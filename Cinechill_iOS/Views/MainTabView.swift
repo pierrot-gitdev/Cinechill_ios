@@ -21,6 +21,9 @@ struct MainTabView: View {
     @State private var galleryModel = GalleryViewModel()
     @State private var watchlistModel = WatchlistViewModel()
     @State private var badgesModel = BadgesViewModel()
+    /// L'état de la porte pour toute l'application : un artéfact se gagne
+    /// ailleurs que dans l'onglet CinéMatch, et doit s'annoncer là où l'on est.
+    @State private var doorStore = DoorStore()
     @State private var selectedTab = 0
     /// Onglets déjà ouverts au moins une fois. Ils restent montés pour garder
     /// leur état — position de scroll, pile de navigation, réponses en cours —
@@ -87,7 +90,9 @@ struct MainTabView: View {
         }
         .environment(catalog)
         .environment(badgesModel)
+        .environment(doorStore)
         .overlay { celebrationOverlay }
+        .overlay { doorOverlay }
         .onChange(of: selectedTab) { _, tab in
             mountedTabs.insert(tab)
         }
@@ -126,6 +131,23 @@ struct MainTabView: View {
             // jamais et personne ne serait jamais pris en main.
             if libraryStore.hasLoadedGalleryOnce { await startTourIfNeeded() }
         }
+        // La porte se remesure dès que la bibliothèque bouge — un film vu, un
+        // cœur posé, une envie rangée. Le `task(id:)` annule la mesure
+        // précédente à chaque changement : balayer vingt cartes d'affilée ne
+        // déclenche qu'un seul appel, celui qui suit la dernière.
+        .task(id: doorSignature) {
+            guard libraryStore.hasLoadedGalleryOnce else { return }
+            try? await Task.sleep(for: .milliseconds(1200))
+            guard !Task.isCancelled else { return }
+            await doorStore.refresh()
+        }
+    }
+
+    /// Ce qui, dans la bibliothèque, peut faire bouger un artéfact.
+    private var doorSignature: String {
+        let gallery = libraryStore.galleryItems.count
+        let watchlist = libraryStore.watchlistItems.count
+        return "\(gallery)-\(libraryStore.lovedCount)-\(watchlist)"
     }
 
     // MARK: - La prise en main
@@ -206,6 +228,29 @@ struct MainTabView: View {
             .id(celebration.id)
             .transition(.opacity)
             .zIndex(10)
+        }
+    }
+
+    /// L'artéfact gagné, annoncé où que l'on soit.
+    ///
+    /// Il attend qu'un éventuel badge ait fini de se montrer : deux planches
+    /// l'une sur l'autre ne se lisent pas, et la galerie qui grossit peut très
+    /// bien déclencher les deux d'un même geste.
+    @ViewBuilder
+    private var doorOverlay: some View {
+        if let key = doorStore.celebration, badgesModel.currentCelebration == nil {
+            DoorCelebrationOverlay(
+                door: doorStore.door,
+                unlocked: key,
+                onDismiss: {
+                    withAnimation(.easeOut(duration: 0.22)) {
+                        doorStore.dismissCelebration()
+                    }
+                }
+            )
+            .id(key)
+            .transition(.opacity)
+            .zIndex(11)
         }
     }
 

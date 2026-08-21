@@ -19,6 +19,7 @@ struct QuestionnaireView: View {
     @EnvironmentObject private var profileStore: UserProfileStore
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
+    @Environment(DoorStore.self) private var doorStore
     @State private var showProfile = false
     @State private var showTasteSheet = false
     @State private var showLovePicker = false
@@ -51,7 +52,7 @@ struct QuestionnaireView: View {
             }
             .sheet(isPresented: $showLovePicker) {
                 LovePickerView(
-                    target: viewModel.door.artifact(.coeur)?.target ?? 12,
+                    target: doorStore.door.artifact(.coeur)?.target ?? 12,
                     onClose: { showLovePicker = false }
                 )
                 .environmentObject(libraryStore)
@@ -61,13 +62,13 @@ struct QuestionnaireView: View {
         // remplir depuis Découvrir, et la jauge doit le raconter sans attendre.
         .onChange(of: selectedTab) { _, tab in
             guard tab == 1 else { return }
-            Task { await viewModel.loadTasteProfile() }
+            Task { await doorStore.refresh() }
         }
         // La planche refermée, on remesure aussi : c'est peut-être elle qui
         // vient d'allumer le Cœur.
         .onChange(of: showLovePicker) { _, isOpen in
             guard !isOpen else { return }
-            Task { await viewModel.loadTasteProfile() }
+            Task { await doorStore.refresh() }
         }
     }
 
@@ -78,29 +79,29 @@ struct QuestionnaireView: View {
             // La porte garde l'onglet tant que le profil n'est pas prêt, et
             // reste une dernière fois pour l'ouverture : le seuil ne se
             // franchit qu'en la voyant céder.
-            if !viewModel.door.unlocked || !doorOpened {
+            if !doorStore.door.unlocked || !doorOpened {
                 CineMatchGateView(
-                    door: viewModel.door,
-                    isMeasured: viewModel.taste.door != nil,
+                    door: doorStore.door,
+                    isMeasured: doorStore.hasMeasured,
                     lovedCount: libraryStore.lovedCount,
                     onProfileTap: { showProfile = true },
                     onDiscover: { selectedTab = 2 },
                     onLovePicker: { showLovePicker = true },
                     onEnter: {
                         withAnimation(.easeOut(duration: 0.3)) { doorOpened = true }
-                    }
+                    },
+                    isCelebrating: doorStore.celebration != nil
                 )
                 .task {
+                    await doorStore.refresh()
                     await viewModel.loadTasteProfile()
                     await viewModel.catchUpGalleryIfNeeded()
+                    await doorStore.refresh()
                 }
             } else {
                 SessionEntryView(
                     posters: homeModel.popularItems,
                     audience: $viewModel.answers.audience,
-                    verdict: viewModel.taste.pendingVerdict,
-                    onVerdict: { viewModel.answerVerdict($0) },
-                    onDismissVerdict: { viewModel.dismissVerdict() },
                     onProfileTap: { showProfile = true },
                     onNext: {
                         viewModel.start(
