@@ -108,6 +108,10 @@ struct CineMatchGateView: View {
 
     // MARK: - L'ouverture
 
+    /// La course des battants. Assez lente pour qu'on la regarde : c'est le
+    /// seul moment de cérémonie de l'application, il ne se rejoue pas.
+    private static let openingDuration: Double = 2.4
+
     /// Ce qui peut relancer la séquence : la porte qui se gagne, ou la planche
     /// de célébration qui se retire.
     private var openingTrigger: String {
@@ -136,13 +140,16 @@ struct CineMatchGateView: View {
         }
 
         isOpening = true
-        try? await Task.sleep(for: .milliseconds(380))
+        // Un temps avant : la porte close, gagnée, se laisse regarder une
+        // seconde. Sans lui l'ouverture démarre dans le même souffle que
+        // l'annonce qui la précède, et les deux se mangent.
+        try? await Task.sleep(for: .milliseconds(900))
         guard !Task.isCancelled else { return }
         Haptics.success()
-        withAnimation(.easeInOut(duration: 1.7)) { openProgress = 1 }
-        try? await Task.sleep(for: .milliseconds(1800))
+        withAnimation(.easeInOut(duration: Self.openingDuration)) { openProgress = 1 }
+        try? await Task.sleep(for: .seconds(Self.openingDuration + 0.6))
         guard !Task.isCancelled else { return }
-        withAnimation(.easeOut(duration: 0.35)) { isOpening = false }
+        withAnimation(.easeOut(duration: 0.4)) { isOpening = false }
     }
 
     // MARK: - La porte
@@ -374,10 +381,24 @@ private struct DoorSceneView: View {
 
 /// Le trait de la porte, hors médaillons : tout ce qui ne change qu'avec la
 /// jauge est dessiné d'un seul tenant.
-private struct DoorCanvas: View {
+private struct DoorCanvas: View, Animatable {
     let door: DoorState
     let isOpen: Bool
-    let openProgress: Double
+    /// L'avancement de l'ouverture, **interpolé image par image**.
+    ///
+    /// C'est la raison d'être de la conformité à `Animatable` : un `Canvas` ne
+    /// s'anime pas tout seul. SwiftUI interpole les modificateurs animables —
+    /// opacité, décalage, échelle — mais jamais la lecture d'une variable dans
+    /// un corps de vue : le dessin se referait une seule fois, à l'arrivée, et
+    /// la porte sauterait ouverte sans qu'on voie rien. Déclarer la valeur
+    /// animable fait rejouer le corps à chaque image, avec la valeur
+    /// intermédiaire — et les battants tournent pour de bon.
+    var openProgress: Double
+
+    var animatableData: Double {
+        get { openProgress }
+        set { openProgress = newValue }
+    }
 
     /// Le segment sous chaque médaillon suit **son** artéfact, la couronne ne
     /// vient qu'avec l'ouverture : la lumière du conduit raconte exactement ce
