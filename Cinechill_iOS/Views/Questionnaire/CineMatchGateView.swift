@@ -266,6 +266,7 @@ struct CineMatchGateView: View {
         }
         .accessibilityHidden(true)
     }
+}
 
 // MARK: - La scène
 
