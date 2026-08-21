@@ -14,6 +14,12 @@ import SwiftUI
 /// crans. Le cinquième posé, la clé de voûte — le C de la Salle — s'embrase et
 /// la porte s'ouvre.
 ///
+/// **La cérémonie se rejoue à chaque lancement de l'application**, et elle
+/// rend la main d'elle-même : les battants finissent leur course et l'entrée
+/// de séance prend la place. Pas de bouton pour confirmer — on ne demande pas
+/// à quelqu'un de valider qu'il veut franchir une porte qu'il vient de voir
+/// s'ouvrir.
+///
 /// **La DA rompt ici avec « Le Plan », volontairement.** La porte reprend la
 /// grammaire des badges du profil : montures d'or biseautées, champs émaillés,
 /// halos, état éteint dérivé en désaturant comme un badge verrouillé. C'est la
@@ -43,15 +49,13 @@ struct CineMatchGateView: View {
     let onDiscover: () -> Void
     /// Vers la planche des coups de cœur.
     let onLovePicker: () -> Void
-    /// La porte est ouverte et le seuil franchi : l'entrée peut prendre place.
+    /// Les battants sont grands ouverts : la place est à l'entrée de séance.
+    /// Appelé par la cérémonie elle-même — on ne demande pas à quelqu'un de
+    /// confirmer qu'il veut franchir une porte qu'il vient de voir s'ouvrir.
     let onEnter: () -> Void
     /// Une célébration d'artéfact occupe l'écran : la porte attend son tour
     /// plutôt que de jouer son ouverture derrière une planche.
     var isCelebrating = false
-    /// Le raccourci d'essai, branché sur le banc du `DoorStore`. Un appui long
-    /// sur le sur-titre allume un artéfact de plus ; au sixième on revient au
-    /// réel. Sans effet en production, où le banc est vide.
-    var onDebugAdvance: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var detailArtifact: DoorArtifactKey?
@@ -65,6 +69,9 @@ struct CineMatchGateView: View {
     /// tait. On ne franchit un seuil qu'une fois, autant le regarder.
     @State private var isOpening = false
     @State private var hasPlayedOpening = false
+    /// Le travelling avant, une fois les battants écartés : la scène grandit
+    /// et le seuil passe hors champ, comme si on entrait dans la salle.
+    @State private var zoom: Double = 1
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -72,7 +79,9 @@ struct CineMatchGateView: View {
 
             doorLayer
             veil
-            content
+            // Porte gagnée, il n'y a plus rien à dire : la cérémonie parle, et
+            // le seuil se franchit de lui-même.
+            if !door.unlocked { content }
         }
         .overlay(alignment: .top) {
             AppHeaderView(
@@ -110,11 +119,14 @@ struct CineMatchGateView: View {
 
     /// La course des battants. Assez lente pour qu'on la regarde : c'est le
     /// seul moment de cérémonie de l'application, il ne se rejoue pas.
-    private static let openingDuration: Double = 4
+    private static let openingDuration: Double = 3
     /// Le temps que la porte close, gagnée, se laisse regarder avant de céder.
-    private static let openingLeadIn: Double = 0.6
-    /// Le flottement, grande ouverte, avant que le seuil ne se propose.
-    private static let openingHold: Double = 1.5
+    private static let openingLeadIn: Double = 0.3
+    /// Le travelling avant. En accélération : on hésite, puis on entre.
+    private static let entryDuration: Double = 1.2
+    /// L'agrandissement au terme du travelling. Assez pour que le chambranle
+    /// sorte du cadre — tant qu'on le voit, on est encore devant la porte.
+    private static let entryZoom: Double = 3.6
 
     /// Ce qui peut relancer la séquence : la porte qui se gagne, ou la planche
     /// de célébration qui se retire.
@@ -131,6 +143,7 @@ struct CineMatchGateView: View {
             // Le serveur a refermé la porte — un film retiré de la galerie
             // suffit. L'écran le suit sans discuter.
             openProgress = 0
+            zoom = 1
             isOpening = false
             hasPlayedOpening = false
             return
@@ -140,6 +153,15 @@ struct CineMatchGateView: View {
 
         guard !reduceMotion else {
             openProgress = 1
+            // Pas de travelling : c'est précisément le mouvement de caméra
+            // que « Réduire les animations » demande d'éviter.
+            zoom = 1
+            // Même sans mouvement, la porte ouverte se laisse voir un instant :
+            // basculer dans la même image donnerait l'impression d'un écran
+            // sauté plutôt que d'un seuil franchi.
+            try? await Task.sleep(for: .milliseconds(700))
+            guard !Task.isCancelled else { return }
+            onEnter()
             return
         }
 
@@ -151,13 +173,27 @@ struct CineMatchGateView: View {
         guard !Task.isCancelled else { return }
         Haptics.success()
         withAnimation(.easeInOut(duration: Self.openingDuration)) { openProgress = 1 }
-        // Puis le flottement, grande ouverte, avant de rendre la main.
-        try? await Task.sleep(for: .seconds(Self.openingDuration + Self.openingHold))
+        try? await Task.sleep(for: .seconds(Self.openingDuration))
         guard !Task.isCancelled else { return }
-        withAnimation(.easeOut(duration: 0.4)) { isOpening = false }
+
+        // On entre dans la foulée, sans temps mort : les battants finissent
+        // leur course et le pas est déjà engagé. L'accélération fait tout le
+        // travail — un travelling linéaire se lit comme un zoom d'image, une
+        // entrée commence lentement et finit vite.
+        withAnimation(.easeIn(duration: Self.entryDuration)) { zoom = Self.entryZoom }
+        try? await Task.sleep(for: .seconds(Self.entryDuration))
+        guard !Task.isCancelled else { return }
+        isOpening = false
+        onEnter()
     }
 
     // MARK: - La porte
+
+    /// Le point de fuite de la Salle : là où l'allée converge, un peu au-dessus
+    /// du centre, à hauteur de l'écran. C'est vers lui qu'on avance — viser le
+    /// centre géométrique du cadre donnerait un agrandissement d'image, pas une
+    /// entrée.
+    private static let vanishingPoint = UnitPoint(x: 0.5, y: 0.384)
 
     private var doorLayer: some View {
         VStack(spacing: 0) {
@@ -172,6 +208,9 @@ struct CineMatchGateView: View {
             )
             .aspectRatio(390 / 404, contentMode: .fit)
             .frame(maxWidth: .infinity)
+            // `scaleEffect` ne change pas la mise en page : la scène déborde
+            // du cadre en grandissant, ce qui est exactement l'effet cherché.
+            .scaleEffect(zoom, anchor: Self.vanishingPoint)
             .padding(.top, 104)
 
             Spacer(minLength: 0)
@@ -202,14 +241,6 @@ struct CineMatchGateView: View {
             Text("Le cercle des cinéphiles", bundle: .app)
                 .planLabel()
                 .foregroundStyle(Ink.ink2)
-                // Le raccourci d'essai. Invisible et sans conséquence pour qui
-                // ne le cherche pas : un sur-titre ne se presse pas longuement
-                // par accident.
-                .contentShape(Rectangle())
-                .onLongPressGesture(minimumDuration: 1.2) {
-                    Haptics.impact(.medium)
-                    onDebugAdvance?()
-                }
 
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(verbatim: "\(door.litCount)")
@@ -233,22 +264,14 @@ struct CineMatchGateView: View {
             gauge
                 .padding(.top, 8)
 
-            Group {
-                if door.unlocked {
-                    Text("La porte s'ouvre.", bundle: .app)
-                } else {
-                    Text("CinéMatch se mérite.", bundle: .app)
-                }
-            }
-            .planTitle(26)
-            .foregroundStyle(Ink.ink)
-            .padding(.top, 16)
+            Text("CinéMatch se mérite.", bundle: .app)
+                .planTitle(26)
+                .foregroundStyle(Ink.ink)
+                .padding(.top, 16)
 
             PlanButton(
-                title: door.unlocked
-                    ? String(localized: "Entrer dans CinéMatch", bundle: .app)
-                    : String(localized: "Compléter ma galerie", bundle: .app),
-                action: door.unlocked ? onEnter : onDiscover
+                title: String(localized: "Compléter ma galerie", bundle: .app),
+                action: onDiscover
             )
             .padding(.top, 20)
         }

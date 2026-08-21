@@ -455,8 +455,8 @@ private extension LibraryStore {
                 self.pendingLoveByItemID = [:]
                 // La porte de CinéMatch est un état de compte, pas d'appareil :
                 // changer d'utilisateur ne doit léguer ni la porte en cache, ni
-                // le seuil déjà franchi, ni l'historique des célébrations.
-                for key in ["cinematch.door", "cinematch.doorOpened", "cinematch.doorCelebratedKeys"] {
+                // l'historique des célébrations.
+                for key in ["cinematch.door", "cinematch.doorCelebratedKeys"] {
                     UserDefaults.standard.removeObject(forKey: key)
                 }
 

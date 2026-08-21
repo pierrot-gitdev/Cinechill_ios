@@ -23,9 +23,10 @@ struct QuestionnaireView: View {
     @State private var showProfile = false
     @State private var showTasteSheet = false
     @State private var showLovePicker = false
-    /// Le seuil a été franchi une fois : la porte ouverte ne se remontre plus,
-    /// sauf si le serveur la referme.
-    @AppStorage("cinematch.doorOpened") private var doorOpened = false
+    /// Le seuil a été franchi **dans cette ouverture de l'app**. Volontairement
+    /// un état de session et non une préférence gardée : la cérémonie se rejoue
+    /// à chaque lancement, elle ne se consomme pas une fois pour toutes.
+    @State private var hasCrossedThreshold = false
 
     var body: some View {
         NavigationStack {
@@ -79,7 +80,7 @@ struct QuestionnaireView: View {
             // La porte garde l'onglet tant que le profil n'est pas prêt, et
             // reste une dernière fois pour l'ouverture : le seuil ne se
             // franchit qu'en la voyant céder.
-            if !doorStore.door.unlocked || !doorOpened {
+            if !doorStore.door.unlocked || !hasCrossedThreshold {
                 CineMatchGateView(
                     door: doorStore.door,
                     isMeasured: doorStore.hasMeasured,
@@ -88,11 +89,14 @@ struct QuestionnaireView: View {
                     onDiscover: { selectedTab = 2 },
                     onLovePicker: { showLovePicker = true },
                     onEnter: {
-                        withAnimation(.easeOut(duration: 0.3)) { doorOpened = true }
+                        withAnimation(.easeOut(duration: 0.45)) { hasCrossedThreshold = true }
                     },
-                    isCelebrating: doorStore.celebration != nil,
-                    onDebugAdvance: { doorStore.debugAdvance() }
+                    isCelebrating: doorStore.celebration != nil
                 )
+                // Le raccord : le travelling finit dans l'entrée de séance au
+                // lieu de la laisser apparaître d'un coup. Sans transition
+                // explicite, l'échange des deux branches se ferait sec.
+                .transition(.opacity)
                 .task {
                     await doorStore.refresh()
                     await viewModel.loadTasteProfile()
@@ -110,6 +114,7 @@ struct QuestionnaireView: View {
                         )
                     }
                 )
+                .transition(.opacity)
                 .task {
                     await viewModel.loadPlatformsIfNeeded()
                     await viewModel.loadTasteProfile()
