@@ -81,10 +81,16 @@ private actor InFlightURLs {
 /// pour éviter tout clignotement au changement de carte.
 struct PosterImageView: View {
     private let url: URL?
+    /// `fill` remplit le cadre et rogne le débord : c'est ce que veulent les
+    /// grilles et les vignettes, dont la maille est réglée d'avance. `fit`
+    /// montre l'affiche entière, à ses proportions, et laisse le fond paraître
+    /// autour : c'est ce que veut une affiche qu'on regarde pour elle-même.
+    private let contentMode: ContentMode
     @State private var image: UIImage?
 
-    init(url: URL?) {
+    init(url: URL?, contentMode: ContentMode = .fill) {
         self.url = url
+        self.contentMode = contentMode
         _image = State(initialValue: PosterImageCache.shared.cached(url))
     }
 
@@ -101,7 +107,7 @@ struct PosterImageView: View {
                 if let image {
                     Image(uiImage: image)
                         .resizable()
-                        .scaledToFill()
+                        .aspectRatio(contentMode: contentMode)
                 } else {
                     placeholder
                 }

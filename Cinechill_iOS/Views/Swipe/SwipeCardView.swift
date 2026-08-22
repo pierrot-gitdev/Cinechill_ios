@@ -96,13 +96,18 @@ struct SwipeCardView: View {
 
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        // L'affiche et la plaque se partagent la hauteur au lieu de se
+        // superposer : la plaque prend ce que son texte demande, l'affiche
+        // occupe tout le reste. C'est cette séparation qui permet de la montrer
+        // entière — empilées, il fallait la faire déborder sous la plaque, donc
+        // la rogner.
+        VStack(spacing: 0) {
             poster
             plate
-            compass
-            shape.strokeBorder(Ink.rule, lineWidth: 1)
-            verdictBorder
         }
+        .overlay(compass)
+        .overlay(shape.strokeBorder(Ink.rule, lineWidth: 1))
+        .overlay(verdictBorder)
         .background(Ink.ground)
         .clipShape(shape)
         // Le dépliage s'anime ici, au plus près de ce qui bouge : le déplacement
@@ -119,12 +124,22 @@ struct SwipeCardView: View {
 
     // MARK: - L'affiche
 
+    /// L'affiche, entière et à ses proportions.
+    ///
+    /// Elle remplissait le cadre : une affiche est en 2:3, la carte est plus
+    /// étroite que ça une fois la plaque posée, et remplir revenait à couper les
+    /// bords de presque toutes les images — un visage décentré, un titre gravé
+    /// en bas de l'affiche, la moitié de la composition. Elle tient maintenant
+    /// dans la place qui lui reste sans être coupée ; le fond de la carte paraît
+    /// de part et d'autre, comme une affiche montée sur un carton.
     private var poster: some View {
-        PosterImageView(url: card.posterURL)
+        PosterImageView(url: card.posterURL, contentMode: .fit)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // Le débord donne au décalage de quoi puiser : sans lui, l'affiche
-            // découvrirait un bord du cadre au premier point de parallaxe.
-            .scaleEffect(1.06)
+            // Le jeu vertical que la parallaxe réclame : neuf points au plus de
+            // chaque côté, exactement ce que le décalage peut consommer. Sans
+            // lui l'affiche sortirait de son cadre par le haut au premier point
+            // de geste, et se ferait couper là où l'on vient de la décoiffer.
+            .padding(.vertical, 9)
             .offset(parallax)
             // Le synopsis ouvert, l'affiche recule d'un cran : le texte a la
             // valeur haute, l'image devient le fond dont elle parle.
@@ -134,48 +149,40 @@ struct SwipeCardView: View {
     // MARK: - La plaque
 
     private var plate: some View {
+        // Le voile qui éteignait l'affiche avant le filet est parti avec le
+        // recouvrement : il adoucissait un bord franc tombant au milieu de
+        // l'image, et il n'y a plus de bord au milieu de rien. Le filet suffit,
+        // et l'affiche récupère les quarante-six points qu'il prenait.
         VStack(spacing: 0) {
-            // Le voile éteint l'affiche avant le filet : c'est lui, et non un
-            // bord franc au milieu de l'image, qui amène la plaque. Il reste
-            // hors de l'aplat, sinon il n'éteindrait rien.
-            LinearGradient(
-                colors: [Ink.ground.opacity(0), Ink.ground.opacity(0.72)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 46)
+            PlanEdge(tint: Ink.ruleSet)
 
-            VStack(spacing: 0) {
-                PlanEdge(tint: Ink.ruleSet)
+            VStack(alignment: .leading, spacing: 0) {
+                eyebrow
+                titleRow
+                    .padding(.top, 9)
 
-                VStack(alignment: .leading, spacing: 0) {
-                    eyebrow
-                    titleRow
-                        .padding(.top, 9)
-
-                    if isSynopsisOpen, let overview = card.overview, !overview.isEmpty {
-                        Text(overview)
-                            .font(.system(size: 13.5))
-                            .foregroundStyle(Ink.ink2)
-                            .lineSpacing(3.5)
-                            .lineLimit(7)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.top, 15)
-                            .transition(.opacity)
-                    }
-                }
-                .padding(.horizontal, 18)
-                .padding(.top, 15)
-                .padding(.bottom, hasOverview ? 15 : 18)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                if hasOverview {
-                    PlanEdge(tint: Ink.rule)
-                    synopsisHandle
+                if isSynopsisOpen, let overview = card.overview, !overview.isEmpty {
+                    Text(overview)
+                        .font(.system(size: 13.5))
+                        .foregroundStyle(Ink.ink2)
+                        .lineSpacing(3.5)
+                        .lineLimit(7)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 15)
+                        .transition(.opacity)
                 }
             }
-            .background(Ink.ground)
+            .padding(.horizontal, 18)
+            .padding(.top, 15)
+            .padding(.bottom, hasOverview ? 15 : 18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if hasOverview {
+                PlanEdge(tint: Ink.rule)
+                synopsisHandle
+            }
         }
+        .background(Ink.ground)
     }
 
     private var hasOverview: Bool {

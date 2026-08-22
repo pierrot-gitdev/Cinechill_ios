@@ -30,9 +30,11 @@ struct SwipeDeckView: View {
     private static let deckVerticalInset: CGFloat = 12
     /// Débord vers le bas des deux cartes empilées sous celle du dessus.
     private static let backingCardsOverhang: CGFloat = 24
-    /// La proportion de la carte. Plus haute que l'affiche seule : la plaque de
-    /// légende occupe le bas, et c'est ce qui rend à l'affiche une hauteur
-    /// proche de la sienne au lieu de la rogner de moitié.
+    /// La proportion de la carte. Plus haute qu'une affiche, qui est en 2:3 :
+    /// la plaque de légende prend le bas, l'affiche tient dans ce qui reste à
+    /// ses propres proportions. Resserrer la carte sur l'affiche ne la
+    /// grandirait pas : le titre se replierait sur plus de lignes, la plaque
+    /// monterait d'autant, et l'affiche perdrait plus qu'elle ne gagne.
     private static let cardRatio: CGFloat = 1.62
     /// L'écart de position et d'échelle d'un cran de pile à l'autre.
     private static let deckStep: CGFloat = 12
