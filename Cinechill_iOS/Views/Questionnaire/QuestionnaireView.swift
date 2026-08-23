@@ -7,10 +7,6 @@ import SwiftUI
 
 struct QuestionnaireView: View {
     @State var viewModel: QuestionnaireViewModel
-    /// Prêté par `MainTabView`, qui l'a reçu de `RootView` : c'est le catalogue de
-    /// l'accueil, préchargé pendant l'ouverture de l'app. L'entrée y puise ses
-    /// affiches, ce qui lui évite la moindre requête.
-    let homeModel: HomeViewModel
     /// L'onglet courant : la porte envoie vers Découvrir, là où la galerie se
     /// remplit.
     @Binding var selectedTab: Int
@@ -21,7 +17,6 @@ struct QuestionnaireView: View {
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(DoorStore.self) private var doorStore
     @State private var showProfile = false
-    @State private var showTasteSheet = false
     @State private var showLovePicker = false
     /// Le seuil a été franchi **dans cette ouverture de l'app**. Volontairement
     /// un état de session et non une préférence gardée : la cérémonie se rejoue
@@ -32,12 +27,25 @@ struct QuestionnaireView: View {
         NavigationStack {
             ZStack {
                 Ink.ground.ignoresSafeArea()
+
+                // La Salle, posée ici et nulle part ailleurs : c'est parce
+                // qu'elle survit au changement de phase que sa lumière peut
+                // descendre au lieu de sauter. Chaque écran ne fournit ensuite
+                // que ce qu'il projette et ce qu'il demande.
+                SalleBackdrop(
+                    light: viewModel.salleLight,
+                    showsScreen: viewModel.phase != .results,
+                    showsAisleLights: viewModel.phase != .results
+                )
+                .ignoresSafeArea()
+                    .animation(.easeInOut(duration: 0.7), value: viewModel.salleLight)
+
                 content
             }
             // Pas de `safeAreaInset` pour l'en-tête de l'entrée : il réserverait
-            // sa hauteur et couperait le mur sous lui. `SessionEntryView` le pose
-            // elle-même en surcouche, ce que le voile en dégradé d'`AppHeaderView`
-            // prévoit depuis toujours.
+            // sa hauteur et couperait la salle sous lui. `SessionEntryView` le
+            // pose elle-même en surcouche, ce que le voile en dégradé
+            // d'`AppHeaderView` prévoit depuis toujours.
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showProfile) {
                 ProfileView(badgesModel: badgesModel)
@@ -45,11 +53,6 @@ struct QuestionnaireView: View {
                     .environmentObject(libraryStore)
                     .environmentObject(authService)
                     .environmentObject(socialStore)
-            }
-            .sheet(isPresented: $showTasteSheet) {
-                TasteSheetView(profile: viewModel.taste) { axis, value in
-                    await viewModel.correctTaste(axis: axis, value: value)
-                }
             }
             .sheet(isPresented: $showLovePicker) {
                 LovePickerView(
@@ -103,7 +106,6 @@ struct QuestionnaireView: View {
                 }
             } else {
                 SessionEntryView(
-                    posters: homeModel.popularItems,
                     audience: $viewModel.answers.audience,
                     onProfileTap: { showProfile = true },
                     onNext: {
@@ -122,21 +124,24 @@ struct QuestionnaireView: View {
             }
         case .frame:
             frameFlow
-        case .filmChoice:
-            filmChoiceFlow
+        case .filmGenre:
+            genreFlow
+        case .filmOrigin:
+            originFlow
+        case .filmMood:
+            moodFlow
         case .poolLoading:
-            SessionLoadingView(message: String(localized: "On cherche des films qui te correspondent…", bundle: .app))
+            waiting(String(localized: "On cherche des films qui te correspondent…", bundle: .app))
         case .asking:
             adaptiveFlow
         case .enriching:
-            SessionLoadingView(message: String(localized: "On regarde les meilleurs de plus près…", bundle: .app))
+            waiting(String(localized: "On regarde les meilleurs de plus près…", bundle: .app))
         case .finalizing:
-            SessionLoadingView(message: String(localized: "On choisit ton film…", bundle: .app))
+            waiting(String(localized: "On choisit ton film…", bundle: .app))
         case .results:
             ResultView(
                 results: viewModel.results,
                 onRestart: { viewModel.restart() },
-                onExplain: { showTasteSheet = true },
                 onLaunch: { viewModel.recordLaunch(tmdbID: $0) },
                 onPass: { viewModel.passFilm(tmdbID: $0) },
                 onReject: { viewModel.rejectTrio() }
@@ -148,168 +153,211 @@ struct QuestionnaireView: View {
 
     // MARK: - Ta soirée
 
+    /// La durée. La question est projetée sur la toile ; l'écran ne porte plus
+    /// que ses réponses. Le titre d'écran et son sous-titre ont disparu avec
+    /// elle : les réécrire sous la projection les dédoublerait.
     private var frameFlow: some View {
-        VStack(spacing: 0) {
-            sessionHeader(step: String(localized: "Étape 1 sur 2", bundle: .app), onBack: { viewModel.restart() }, isFirst: true)
+        SalleStage(
+            question: String(localized: "Durée du film", bundle: .app),
+            eyebrow: nil
+        ) {
+            VStack(spacing: 0) {
+                sessionHeader(onBack: { viewModel.restart() }, isFirst: true)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 26) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Ta soirée", bundle: .app)
-                            .planTitle()
-                            .foregroundStyle(Ink.ink)
-
-                        Text("Deux réglages pour éliminer d'emblée ce qui ne convient pas.", bundle: .app)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Ink.ink2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
+                SalleAnswers {
                     SessionFrameView(
-                        budget: $viewModel.answers.runtime,
-                        contentFormat: $viewModel.answers.contentFormat,
+                        // Passer par le modèle plutôt que par le champ : c'est
+                        // ainsi qu'on distingue une durée choisie d'une durée
+                        // présélectionnée par l'heure.
+                        budget: Binding(
+                            get: { viewModel.answers.runtime },
+                            set: { viewModel.pickRuntime($0) }
+                        ),
                         lateHourNote: viewModel.lateHourNote
                     )
+                    .padding(.horizontal, Metrics.margin)
+                    .padding(.bottom, 24)
+                }
+
+                PlanButton(
+                    title: String(localized: "Continuer", bundle: .app),
+                    isEnabled: viewModel.canAdvanceFrame,
+                    height: Metrics.control
+                ) {
+                    viewModel.goNextFrame()
                 }
                 .padding(.horizontal, Metrics.margin)
-                .padding(.top, 26)
-                .padding(.bottom, 32)
+                .padding(.bottom, Metrics.margin)
             }
-
-            PlanButton(
-                title: String(localized: "Continuer", bundle: .app),
-                isEnabled: viewModel.canAdvanceFrame,
-                height: Metrics.control
-            ) {
-                viewModel.goNextFrame()
-            }
-            .padding(.horizontal, Metrics.margin)
-            .padding(.bottom, Metrics.margin)
         }
     }
 
     // MARK: - Quel film ce soir
 
-    /// L'écran du film cherché : genre et ambiance, deux listes d'options.
-    private var filmChoiceFlow: some View {
-        VStack(spacing: 0) {
-            sessionHeader(step: String(localized: "Étape 2 sur 2", bundle: .app), onBack: { viewModel.goBackToFrame() }, isFirst: false)
+    /// Le genre, et la forme du contenu qui pose la même question sur le même
+    /// objet. C'est le seul écran du parcours qui en porte deux, et elles n'en
+    /// font qu'une : de quelle sorte de film on parle.
+    private var genreFlow: some View {
+        SalleStage(question: String(localized: "Quel genre de film ?", bundle: .app)) {
+            VStack(spacing: 0) {
+                sessionHeader(onBack: { viewModel.goBackToFrame() }, isFirst: false)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 26) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Quel film ce soir ?", bundle: .app)
-                            .planTitle()
-                            .foregroundStyle(Ink.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Text("C'est ce qui nous permet de resserrer la recherche. Les questions suivantes affineront.", bundle: .app)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Ink.ink2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    FilmChoiceView(
+                SalleAnswers {
+                    GenreChoiceView(
                         availableGenres: viewModel.availableGenres,
                         selectedGenres: viewModel.answers.genres,
-                        selectedMood: viewModel.answers.mood,
-                        isMoodAny: viewModel.isMoodAny,
-                        onPickMood: { viewModel.pickMood($0) },
-                        onMoodAny: { viewModel.pickMoodAny() },
-                        maxGenres: viewModel.maxGenres,
                         isGenreSelectable: { viewModel.isGenreSelectable($0) },
                         onToggleGenre: { viewModel.toggleGenre($0) },
+                        contentFormat: $viewModel.answers.contentFormat
+                    )
+                    .padding(.horizontal, Metrics.margin)
+                    .padding(.bottom, 24)
+                }
+
+                PlanButton(
+                    title: String(localized: "Continuer", bundle: .app),
+                    isEnabled: viewModel.canAdvanceGenre,
+                    height: Metrics.control
+                ) {
+                    viewModel.goNextGenre()
+                }
+                .padding(.horizontal, Metrics.margin)
+                .padding(.bottom, Metrics.margin)
+            }
+        }
+    }
+
+    /// L'origine, seule sur son écran. Facultative : laisser vide n'exclut rien.
+    private var originFlow: some View {
+        SalleStage(question: String(localized: "D'où vient le film ?", bundle: .app)) {
+            VStack(spacing: 0) {
+                sessionHeader(onBack: { viewModel.goBackToGenre() }, isFirst: false)
+
+                SalleAnswers {
+                    OriginChoiceView(
                         selectedOrigins: viewModel.answers.originCountries,
-                        maxOrigins: viewModel.maxOriginCountries,
                         isOriginSelectable: { viewModel.isOriginCountrySelectable($0) },
                         onToggleOrigin: { viewModel.toggleOriginCountry($0) }
                     )
+                    .padding(.horizontal, Metrics.margin)
+                    .padding(.bottom, 24)
+                }
 
-                    if let reading = viewModel.ambianceReading {
-                        readingLine(reading)
-                    }
+                PlanButton(
+                    title: String(localized: "Continuer", bundle: .app),
+                    isEnabled: true,
+                    height: Metrics.control
+                ) {
+                    viewModel.goNextOrigin()
                 }
                 .padding(.horizontal, Metrics.margin)
-                .padding(.top, 26)
-                .padding(.bottom, 32)
+                .padding(.bottom, Metrics.margin)
             }
+        }
+    }
 
-            // Le bouton inactif dit ce qui manque plutôt que de rester muet.
-            PlanButton(
-                title: viewModel.canConfirmFilmChoice
-                    ? String(localized: "Trouver mes films", bundle: .app)
-                    : String(localized: "Choisis une ambiance", bundle: .app),
-                isEnabled: viewModel.canConfirmFilmChoice,
-                height: Metrics.control
-            ) {
-                viewModel.confirmFilmChoice()
+    /// L'ambiance, seule sur son écran : c'est la seule des deux qui demande
+    /// une réponse pour avancer.
+    private var moodFlow: some View {
+        SalleStage(
+            question: String(localized: "Quelle ambiance ?", bundle: .app),
+            eyebrow: nil
+        ) {
+            VStack(spacing: 0) {
+                sessionHeader(onBack: { viewModel.goBackToOrigin() }, isFirst: false)
+
+                SalleAnswers {
+                    MoodChoiceView(
+                        selectedMood: viewModel.answers.mood,
+                        isMoodAny: viewModel.isMoodAny,
+                        onPickMood: { viewModel.pickMood($0) },
+                        onMoodAny: { viewModel.pickMoodAny() }
+                    )
+                    .padding(.horizontal, Metrics.margin)
+                    .padding(.bottom, 24)
+                }
+
+                // Le bouton inactif dit ce qui manque plutôt que de rester muet.
+                PlanButton(
+                    title: viewModel.canConfirmFilmChoice
+                        ? String(localized: "Trouver mes films", bundle: .app)
+                        : String(localized: "Choisis une ambiance", bundle: .app),
+                    isEnabled: viewModel.canConfirmFilmChoice,
+                    height: Metrics.control
+                ) {
+                    viewModel.confirmFilmChoice()
+                }
+                .padding(.horizontal, Metrics.margin)
+                .padding(.bottom, Metrics.margin)
             }
-            .padding(.horizontal, Metrics.margin)
-            .padding(.bottom, Metrics.margin)
         }
     }
 
     // MARK: - Les questions
 
     private var adaptiveFlow: some View {
-        VStack(spacing: 0) {
-            sessionHeader(
-                step: String(localized: "Question \(viewModel.questionNumber)", bundle: .app),
-                onBack: { viewModel.goBackAdaptive() },
-                isFirst: false
-            )
+        SalleStage(
+            question: adaptiveQuestion,
+            eyebrow: String(localized: "Question \(viewModel.questionNumber)", bundle: .app)
+        ) {
+            VStack(spacing: 0) {
+                sessionHeader(onBack: { viewModel.goBackAdaptive() }, isFirst: false)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    if let reading = viewModel.reading {
-                        readingLine(reading)
-                    }
-
-                    Group {
-                        if let options = viewModel.pairwiseOptions {
-                            PairwiseComparisonView(
-                                optionA: options.0,
-                                optionB: options.1,
-                                title: viewModel.duelSourceIsGallery
-                                    ? String(localized: "Tu as vu les deux. Lequel tu relancerais ce soir ?", bundle: .app)
-                                    : nil,
-                                subtitle: viewModel.duelSourceIsGallery
-                                    ? String(localized: "Choisir entre deux souvenirs nous dit ton goût mieux que n'importe quelle question.", bundle: .app)
-                                    : nil
-                            ) { winner, loser in
-                                viewModel.recordPairwiseChoice(winner: winner, loser: loser)
-                            }
+                SalleAnswers {
+                    VStack(alignment: .leading, spacing: 22) {
+                        Group {
+                            if let options = viewModel.pairwiseOptions {
+                                PairwiseComparisonView(
+                                    optionA: options.0,
+                                    optionB: options.1
+                                ) { winner, loser in
+                                    viewModel.recordPairwiseChoice(winner: winner, loser: loser)
+                                }
                         } else if let options = viewModel.eliminationOptions {
-                            EliminationView(
-                                options: options,
-                                title: viewModel.duelSourceIsGallery
-                                    ? String(localized: "Parmi ces films que tu as vus, écarte celui qui ne colle pas à ce soir", bundle: .app)
-                                    : nil
-                            ) { loser in
+                            EliminationView(options: options) { loser in
                                 viewModel.recordElimination(loser: loser)
                             }
                         } else if let dimension = viewModel.currentDimension {
-                            adaptiveQuestionCard(for: dimension)
+                                adaptiveQuestionCard(for: dimension)
+                            }
                         }
+                        .id(viewModel.currentDimension)
+                        .transition(.opacity)
                     }
-                    .id(viewModel.currentDimension)
-                    .transition(.opacity)
+                    .padding(.horizontal, Metrics.margin)
+                    .padding(.bottom, 24)
                 }
-                .padding(.horizontal, Metrics.margin)
-                .padding(.top, 26)
-                .padding(.bottom, 32)
-            }
 
-            adaptiveFooter
+                adaptiveFooter
+            }
         }
         .animation(Metrics.unfold, value: viewModel.currentDimension)
     }
 
-    /// « Suivant » n'existe que pour les puces : les affiches valident au tap. La sortie
-    /// manuelle, elle, reste accessible à chaque instant — c'est elle qui porte le
-    /// compromis « plus de questions, plus de précision, mais vous décidez ».
+    /// La question projetée sur la toile. Les affiches ont la leur, qui change
+    /// selon qu'on oppose des films vus ou des paris (C2).
+    private var adaptiveQuestion: String? {
+        if viewModel.pairwiseOptions != nil {
+            return viewModel.duelSourceIsGallery
+                ? String(localized: "Ce soir tu es plutôt…", bundle: .app)
+                : QuestionStep.posterDuel.title
+        }
+        if viewModel.eliminationOptions != nil {
+            return viewModel.duelSourceIsGallery
+                ? String(localized: "Parmi ces films que tu as vus, écarte celui qui ne colle pas à ce soir", bundle: .app)
+                : QuestionStep.elimination.title
+        }
+        return viewModel.currentDimension?.questionStep.title
+    }
+
+    /// « Suivant » n'existe que pour les puces : les affiches valident au tap.
+    ///
+    /// **La sortie manuelle a disparu.** Elle portait le compromis « plus de
+    /// questions, plus de précision, mais vous décidez » ; la Salle le porte
+    /// autrement, en éteignant ses lumières à mesure qu'on avance. On va
+    /// désormais au bout du questionnaire.
     private var adaptiveFooter: some View {
-        VStack(spacing: 12) {
+        Group {
             if viewModel.pairwiseOptions == nil && viewModel.eliminationOptions == nil {
                 PlanButton(
                     title: String(localized: "Suivant", bundle: .app),
@@ -318,25 +366,10 @@ struct QuestionnaireView: View {
                 ) {
                     viewModel.goNextAdaptive()
                 }
+                .padding(.horizontal, Metrics.margin)
+                .padding(.bottom, Metrics.margin)
             }
-
-            Button {
-                viewModel.finishNow()
-            } label: {
-                Text("Passer les questions et voir mes films", bundle: .app)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Ink.ink2)
-                    .overlay(alignment: .bottom) {
-                        Rectangle()
-                            .fill(Ink.ruleSet)
-                            .frame(height: 1)
-                            .offset(y: 2)
-                    }
-            }
-            .buttonStyle(.plain)
         }
-        .padding(.horizontal, Metrics.margin)
-        .padding(.bottom, Metrics.margin)
     }
 
     @ViewBuilder
@@ -362,6 +395,10 @@ struct QuestionnaireView: View {
         case .cast:
             singleSelectCard(step: step, options: CastPreference.chipOptions, current: viewModel.answers.cast) { id in
                 if let value = CastPreference(rawValue: id) { viewModel.select(value, in: \.cast) }
+            }
+        case .paceWish:
+            singleSelectCard(step: step, options: PaceWish.chipOptions, current: viewModel.answers.paceWish) { id in
+                if let value = PaceWish(rawValue: id) { viewModel.select(value, in: \.paceWish) }
             }
         case .horrorFlavor:
             singleSelectCard(step: step, options: HorrorFlavor.chipOptions, current: viewModel.answers.horrorFlavor) { id in
@@ -416,7 +453,10 @@ struct QuestionnaireView: View {
 
     // MARK: - Chrome commun
 
-    private func sessionHeader(step: String, onBack: @escaping () -> Void, isFirst: Bool) -> some View {
+    /// L'en-tête ne porte plus que le retour. Le rang de l'étape est projeté
+    /// sur la toile, avec la question : l'écrire ici aussi le dédoublerait, et
+    /// le filet du bas coupait la salle en deux.
+    private func sessionHeader(onBack: @escaping () -> Void, isFirst: Bool) -> some View {
         VStack(spacing: 0) {
             HStack {
                 Button(action: onBack) {
@@ -432,101 +472,46 @@ struct QuestionnaireView: View {
                                     : String(localized: "Revenir à l'écran précédent", bundle: .app))
 
                 Spacer()
-
-                Text(step)
-                    .planLabel()
-                    .foregroundStyle(Ink.ink3)
-                    .monospacedDigit()
             }
             .padding(.horizontal, Metrics.margin - 8)
-            .padding(.bottom, 12)
-
-            PlanRail()
+            .padding(.top, 4)
         }
     }
 
-    /// Ce que la réponse change pour la sélection, en une ligne. Le filet à
-    /// gauche la détache du contenu sans en faire un encart — c'est une voix, pas
-    /// un panneau.
-    private func readingLine(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Rectangle()
-                .fill(Ink.light)
-                .frame(width: 1)
-            Text(text)
-                .font(.system(size: 12.5))
-                .foregroundStyle(Ink.ink2)
-                .fixedSize(horizontal: false, vertical: true)
+    /// L'attente, dans la salle : le décor continue de s'éteindre pendant qu'on
+    /// cherche, et le message est projeté sur la toile plutôt que posé sur les
+    /// fauteuils. C'est ce qui fait que la recherche appartient à la séance au
+    /// lieu d'être une parenthèse posée dessus.
+    private func waiting(_ message: String) -> some View {
+        SalleStage(projected: { SalleLeader(message: message) }) {
+            // La toile n'est pas lisible par VoiceOver : le message y est un
+            // dessin. Il est redit ici, où il sera annoncé.
+            Color.clear
+                .accessibilityElement()
+                .accessibilityLabel(message)
+                .accessibilityAddTraits(.updatesFrequently)
         }
-        .fixedSize(horizontal: false, vertical: true)
-        .transition(.opacity)
-        .animation(Metrics.shift, value: text)
-        .accessibilityLabel(String(localized: "Ce que ça change : \(text)", bundle: .app))
     }
+
 
     // MARK: - Erreur
 
     private func errorView(_ message: String) -> some View {
-        PlanEmptyState(
-            icon: .salle,
-            title: String(localized: "La recherche s'est interrompue", bundle: .app),
-            message: message,
-            actionTitle: String(localized: "Réessayer", bundle: .app),
-            action: { viewModel.retrySubmit() },
-            secondaryTitle: String(localized: "Recommencer du début", bundle: .app),
-            secondaryAction: { viewModel.restart() }
-        )
-        .frame(maxHeight: .infinity)
-        .padding(Metrics.margin)
-    }
-}
-
-/// L'attente, dans la langue du système : rien ne tourne, rien ne rebondit. Un filet
-/// parcourt le bord bas du bloc — le même dispositif que le chargement de `PlanButton`,
-/// pour que l'application ne change pas de vocabulaire selon l'écran.
-private struct SessionLoadingView: View {
-    let message: String
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var travel: CGFloat = -0.4
-
-    var body: some View {
-        VStack(spacing: 18) {
-            Text(message)
-                .font(.system(size: 14))
-                .foregroundStyle(Ink.ink2)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Rectangle()
-                        .fill(Ink.rule)
-                        .frame(height: 1)
-                    if reduceMotion {
-                        Rectangle()
-                            .fill(Ink.ink3)
-                            .frame(width: proxy.size.width * 0.4, height: 1)
-                    } else {
-                        Rectangle()
-                            .fill(Ink.ink)
-                            .frame(width: proxy.size.width * 0.4, height: 1)
-                            .offset(x: travel * proxy.size.width)
-                            .onAppear {
-                                withAnimation(.easeInOut(duration: 1.15).repeatForever(autoreverses: false)) {
-                                    travel = 1
-                                }
-                            }
-                    }
-                }
-                .frame(height: 1)
-            }
-            .frame(width: 160, height: 1)
-            .clipped()
+        // Dans la salle comme le reste : une panne ne sort pas du décor, sinon
+        // elle se lit comme un autre écran de l'application.
+        SalleStage {
+            PlanEmptyState(
+                icon: .salle,
+                title: String(localized: "La recherche s'est interrompue", bundle: .app),
+                message: message,
+                actionTitle: String(localized: "Réessayer", bundle: .app),
+                action: { viewModel.retrySubmit() },
+                secondaryTitle: String(localized: "Recommencer du début", bundle: .app),
+                secondaryAction: { viewModel.restart() }
+            )
+            .frame(maxHeight: .infinity)
+            .padding(Metrics.margin)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(Metrics.margin)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(message)
     }
 }
+

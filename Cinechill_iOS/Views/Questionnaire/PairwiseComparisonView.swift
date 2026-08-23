@@ -14,33 +14,18 @@ import SwiftUI
 struct PairwiseComparisonView: View {
     let optionA: CandidateRow
     let optionB: CandidateRow
-    /// Le titre change quand le duel oppose deux films **vus** (C2) : la
-    /// question parle alors de souvenirs, plus de paris. Sans valeur, le
-    /// titre du duel de découverte reste celui de toujours.
-    var title: String?
-    var subtitle: String?
+    /// Le titre est projeté sur la toile par `SalleStage` et ne figure plus
+    /// ici : c'est la salle qui interroge. Le sous-titre a suivi — il
+    /// commentait le geste au lieu de le nommer.
     let onPick: (_ winner: CandidateRow, _ loser: CandidateRow) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(title ?? QuestionStep.posterDuel.title)
-                    .planTitle()
-                    .foregroundStyle(Ink.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let subtitle = subtitle ?? QuestionStep.posterDuel.subtitle {
-                    Text(subtitle)
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(Ink.ink3)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-
+        VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top, spacing: Metrics.gutter) {
                 posterChoice(optionA, opponent: optionB)
                 posterChoice(optionB, opponent: optionA)
             }
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -69,6 +54,10 @@ struct PairwiseComparisonView: View {
 /// et une réserve lisible quand TMDB n'a pas d'image.
 struct CandidatePosterView: View {
     let candidate: CandidateRow
+    /// Sans plafond, une affiche en 2:3 sur la moitié de la largeur fait 250
+    /// points de haut : la paire débordait du parterre et se mettait à défiler
+    /// par-dessus les fauteuils. La hauteur est bornée, la largeur suit.
+    var maxHeight: CGFloat = 175
 
     var body: some View {
         Group {
@@ -85,8 +74,8 @@ struct CandidatePosterView: View {
                 placeholder
             }
         }
-        .aspectRatio(2 / 3, contentMode: .fill)
-        .frame(maxWidth: .infinity)
+        .aspectRatio(2 / 3, contentMode: .fit)
+        .frame(maxWidth: .infinity, maxHeight: maxHeight)
         .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)

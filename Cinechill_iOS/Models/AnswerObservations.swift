@@ -52,14 +52,28 @@ nonisolated enum AnswerObservations {
 
     // MARK: - Le cadre
 
-    /// Le budget de la soirée. Une contrainte, donc l'indice le plus fort du
-    /// parcours — et la raison pour laquelle la question de la durée ne sera
-    /// jamais reposée ensuite.
-    static func fromBudget(_ budget: RuntimePreference) -> [AxisObservation] {
+    /// Ce qu'une supposition vaut : moins qu'une réponse, plus que rien.
+    static let presumed = 0.8
+
+    /// Le budget de la soirée. Une contrainte annoncée, donc l'indice le plus
+    /// fort du parcours — et la raison pour laquelle la question de la durée ne
+    /// sera jamais reposée ensuite.
+    ///
+    /// Sauf que ce n'est une contrainte que si quelqu'un l'a posée. Passé une
+    /// certaine heure, la durée est **présélectionnée** d'après l'horloge, et
+    /// beaucoup de gens continuent sans y toucher. Lui laisser la précision
+    /// maximale revenait alors à tenir pour acquise, et sur l'indice le plus
+    /// fort du parcours, une chose que personne n'avait dite — sur l'axe que
+    /// les films connaissent le plus mal avant l'enrichissement, en plus.
+    /// Non confirmée, elle pèse comme une déclaration.
+    static func fromBudget(
+        _ budget: RuntimePreference, confirmed: Bool
+    ) -> [AxisObservation] {
+        let force = confirmed ? constraint : presumed
         switch budget {
-        case .short: [AxisObservation(.investissement, -0.85, precision: constraint)]
-        case .medium: [AxisObservation(.investissement, 0, precision: constraint)]
-        case .long: [AxisObservation(.investissement, 0.8, precision: constraint)]
+        case .short: [AxisObservation(.investissement, -0.85, precision: force)]
+        case .medium: [AxisObservation(.investissement, 0, precision: force)]
+        case .long: [AxisObservation(.investissement, 0.8, precision: force)]
         case .any: []
         }
     }
@@ -111,14 +125,21 @@ nonisolated enum AnswerObservations {
                 (PopularityPreference.mainstream.rawValue, [.init(.familiarite, -0.8, precision: declared)]),
                 (PopularityPreference.wellRatedKnown.rawValue, [.init(.familiarite, -0.4, precision: declared)]),
                 (PopularityPreference.hiddenGem.rawValue, [.init(.familiarite, 0.8, precision: declared)]),
-                (PopularityPreference.any.rawValue, []),
             ]
 
         case .cast:
             [
                 (CastPreference.familiarFaces.rawValue, [.init(.familiarite, -0.6, precision: declared)]),
                 (CastPreference.discovery.rawValue, [.init(.familiarite, 0.6, precision: declared)]),
-                (CastPreference.any.rawValue, []),
+            ]
+
+        case .paceWish:
+            // Le seul accès direct au rythme. Franc des deux côtés : c'est un
+            // arbitrage, et un arbitrage qui rendrait du milieu ne servirait à
+            // rien.
+            [
+                (PaceWish.takeItsTime.rawValue, [.init(.rythme, -0.8, precision: declared)]),
+                (PaceWish.neverLetsGo.rawValue, [.init(.rythme, 0.8, precision: declared)]),
             ]
 
         case .cognitiveMode:
@@ -221,8 +242,9 @@ nonisolated enum AnswerObservations {
         switch dimension {
         case .mindset: answers.mindset?.rawValue
         case .dealbreaker: answers.dealbreaker?.rawValue
-        case .popularity: answers.popularity.rawValue
-        case .cast: answers.cast.rawValue
+        case .popularity: answers.popularity?.rawValue
+        case .cast: answers.cast?.rawValue
+        case .paceWish: answers.paceWish?.rawValue
         case .cognitiveMode: answers.cognitiveMode?.rawValue
         case .horrorFlavor: answers.horrorFlavor?.rawValue
         case .comedyFlavor: answers.comedyFlavor?.rawValue

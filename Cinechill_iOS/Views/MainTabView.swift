@@ -274,7 +274,6 @@ struct MainTabView: View {
         case 1:
             QuestionnaireView(
                 viewModel: questionnaireModel,
-                homeModel: homeModel,
                 selectedTab: $selectedTab
             )
         case 2:

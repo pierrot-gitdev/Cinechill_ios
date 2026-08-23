@@ -7,7 +7,7 @@ import Foundation
 
 /// Ce que la watchlist a besoin du backend : le lot enrichi, rien d'autre.
 protocol CandidateEnriching: Sendable {
-    func enrichCandidates(_ candidates: [CandidateRow]) async throws -> [EnrichedCandidateRow]
+    func enrichCandidates(_ candidates: [CandidateRow], audience: Audience?) async throws -> [EnrichedCandidateRow]
 }
 
 extension BackendRecommendationClient: CandidateEnriching {}
@@ -110,7 +110,7 @@ final class WatchlistViewModel {
         defer { isEnriching = false }
 
         for chunk in uncached.chunked(into: Self.enrichBatchSize) {
-            guard let rows = try? await client.enrichCandidates(chunk.map(\.candidateRow)) else {
+            guard let rows = try? await client.enrichCandidates(chunk.map(\.candidateRow), audience: nil) else {
                 continue
             }
             for row in rows {

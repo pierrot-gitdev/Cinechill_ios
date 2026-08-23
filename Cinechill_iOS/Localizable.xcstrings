@@ -1070,22 +1070,6 @@
         }
       }
     },
-    "5 dernières années" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Last five years"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "5 dernières années"
-          }
-        }
-      }
-    },
     "7 jours d'affilée à enrichir ta galerie." : {
       "localizations" : {
         "en" : {
@@ -1470,6 +1454,22 @@
         }
       }
     },
+    "Ce soir, tu veux un film…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tonight, you want a film that…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce soir, tu veux un film…"
+          }
+        }
+      }
+    },
     "Choisir entre deux souvenirs nous dit ton goût mieux que n'importe quelle question." : {
       "localizations" : {
         "en" : {
@@ -1594,6 +1594,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Encore %lld et l'artéfact s'allume."
+          }
+        }
+      }
+    },
+    "Qu'il ne te lâche pas une seconde" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never lets you go"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qu'il ne te lâche pas une seconde"
+          }
+        }
+      }
+    },
+    "Qu'il prenne son temps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takes its time"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qu'il prenne son temps"
+          }
+        }
+      }
+    },
+    "À genre égal, c'est le rythme qui décide de la soirée." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Two films of the same genre, and the pace decides the evening."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À genre égal, c'est le rythme qui décide de la soirée."
           }
         }
       }
@@ -3611,22 +3659,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "CinéMatch (HTTP %lld) : %@"
-          }
-        }
-      }
-    },
-    "Classique culte" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cult classic"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Classique culte"
           }
         }
       }
@@ -6177,22 +6209,6 @@
         }
       }
     },
-    "International" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "International"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "International"
-          }
-        }
-      }
-    },
     "Interstellar" : {
       "localizations" : {
         "en" : {
@@ -8610,22 +8626,6 @@
         }
       }
     },
-    "Peu importe l'époque" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Any era"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Peu importe l'époque"
-          }
-        }
-      }
-    },
     "Pierre" : {
       "localizations" : {
         "en" : {
@@ -10390,22 +10390,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Son ADN cinéphile"
-          }
-        }
-      }
-    },
-    "Sorti cette année" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Out this year"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sorti cette année"
           }
         }
       }

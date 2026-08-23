@@ -11,7 +11,7 @@ import Foundation
 /// sur un écran (`SessionFrameView`), le genre et l'ambiance sur le suivant
 /// (`FilmChoiceView`), et les plateformes viennent des réglages.
 enum QuestionStep: Int, CaseIterable, Hashable {
-    case posterDuel, mindset, dealbreaker, popularity, cast
+    case posterDuel, mindset, dealbreaker, popularity, cast, paceWish
     case horrorFlavor, comedyFlavor, dramaFlavor, cognitiveMode
     case storyOrigin, attachment, creditsMoment, lastingTrace
     case elimination, surpriseIntensity
@@ -23,6 +23,7 @@ enum QuestionStep: Int, CaseIterable, Hashable {
         case .dealbreaker: String(localized: "Qu'est-ce qui te ferait arrêter un film en cours de route ?", bundle: .app)
         case .popularity: String(localized: "Tu préfères un film connu ou une découverte ?", bundle: .app)
         case .cast: String(localized: "Et côté acteurs ?", bundle: .app)
+        case .paceWish: String(localized: "Ce soir, tu veux un film…", bundle: .app)
         case .horrorFlavor: String(localized: "Dans un film qui fait peur, tu préfères…", bundle: .app)
         case .comedyFlavor: String(localized: "Quel genre de comédie te fait rire ?", bundle: .app)
         case .dramaFlavor: String(localized: "Quelle histoire te touche le plus ?", bundle: .app)
@@ -46,6 +47,7 @@ enum QuestionStep: Int, CaseIterable, Hashable {
         case .dealbreaker: String(localized: "On évitera les films qui risquent de te faire ça.", bundle: .app)
         case .popularity: String(localized: "Pour savoir jusqu'où aller chercher.", bundle: .app)
         case .cast: nil
+        case .paceWish: String(localized: "À genre égal, c'est le rythme qui décide de la soirée.", bundle: .app)
         case .horrorFlavor: String(localized: "Il y a plusieurs façons de faire peur.", bundle: .app)
         case .comedyFlavor: nil
         case .dramaFlavor: nil
@@ -67,8 +69,12 @@ final class QuestionnaireViewModel {
         case intro
         /// Le cadre : avec qui, combien de temps, sous quelle forme. Un écran.
         case frame
-        /// Le film cherché : genre et ambiance. Deux listes d'options.
-        case filmChoice
+        /// Le film cherché, en deux écrans. La salle projette une question à
+        /// la fois : demander le genre et l'ambiance sur la même toile revenait
+        /// à en écrire deux, ce qui ne se lit pas.
+        case filmGenre
+        case filmOrigin
+        case filmMood
         case poolLoading
         /// Le cœur adaptatif. Une seule phase — la découpe tier 1 / tier 2 a disparu
         /// avec le critère qui la rendait nécessaire (voir `AdaptiveDimension`).
@@ -83,6 +89,24 @@ final class QuestionnaireViewModel {
     private let metadataClient: any HomeMetadataFetching
 
     private(set) var phase: Phase = .intro
+
+    /// L'éclairage de la Salle pour la phase en cours. La séance n'a pas de
+    /// barre de progression : elle a une salle qui s'éteint. Voir `SalleLight`.
+    var salleLight: Double {
+        switch phase {
+        case .intro: SalleLight.entry
+        case .frame: SalleLight.frame
+        case .filmGenre: SalleLight.genre
+        case .filmOrigin: SalleLight.origin
+        case .filmMood: SalleLight.mood
+        case .poolLoading: SalleLight.searching
+        case .asking: SalleLight.asking(question: questionNumber)
+        case .enriching: SalleLight.enriching
+        case .finalizing: SalleLight.finalizing
+        case .results: SalleLight.verdict
+        case .error: SalleLight.searching
+        }
+    }
     private(set) var availablePlatforms: [StreamingPlatform] = []
     private(set) var results: [RecommendationResult] = []
     private(set) var currentDimension: AdaptiveDimension?
@@ -102,7 +126,6 @@ final class QuestionnaireViewModel {
     /// La lecture : une ligne, affichée après une réponse qui apprend quelque chose
     /// de nommable. `nil` le reste du temps — mieux vaut se taire que commenter
     /// pour commenter.
-    private(set) var reading: String?
 
     /// Renseignée quand le budget a été présélectionné d'après l'heure.
     private(set) var lateHourNote: String?
@@ -121,9 +144,40 @@ final class QuestionnaireViewModel {
     private var pool: [CandidateRow] = []
     private var enrichedPool: [EnrichedCandidateRow] = []
     private var hasEnriched = false
-    private var askedDimensions: Set<AdaptiveDimension> = []
+    /// Combien de fois chaque question a été posée. Les questions par affiches
+    /// sont répétables (voir `AdaptiveDimension.askLimit`) : un simple ensemble
+    /// ne suffisait plus à dire ce qui reste posable.
+    private var askedCounts: [AdaptiveDimension: Int] = [:]
+    /// Les questions retirées de la banque sans avoir été posées : celles dont
+    /// le vivier n'offre pas la matière (aucune paire d'affiches assez
+    /// contrastée, par exemple). Elles ne comptent pas comme des questions —
+    /// les compter revenait à facturer à la séance un écran qu'elle n'a jamais
+    /// montré, et à écourter d'autant les questions restantes.
+    private var retiredDimensions: Set<AdaptiveDimension> = []
+    /// Les duels de départage déjà posés. Comptés à part du budget d'affiches :
+    /// le départage arrive après lui, quand la barre est franchie mais que les
+    /// deux têtes sont à égalité.
+    private var tiebreakCount = 0
+    /// Combien de départages au plus. Trancher trente-cinq candidats par
+    /// dichotomie en demande cinq ; trois suffisent à départager deux têtes,
+    /// et au-delà on ferait payer à la personne une hésitation qui n'est plus
+    /// la sienne mais celle du modèle.
+    private static let tiebreakLimit = 3
+    /// La question affichée est-elle un départage ? Elle emprunte le format du
+    /// duel entre films vus, mais ne se compte pas dans le même budget.
+    private var currentIsTiebreak = false
+    /// Le vivier a-t-il déjà été rouvert ? Une fois par séance, pas deux : si
+    /// un vivier élargi sur la croyance du soir ne donne toujours rien, en
+    /// redemander un troisième ne ferait qu'ajouter de l'attente à un échec.
+    private var hasReopenedPool = false
     private var recentFormats: [QuestionFormat] = []
     private var lastFailedAction: (() async -> Void)?
+
+    /// Le nombre de questions réellement posées, départage compris. C'est lui
+    /// que le plafond de fatigue mesure.
+    private var questionsAsked: Int {
+        askedCounts.values.reduce(0, +) + tiebreakCount
+    }
 
     /// Les films explicitement écartés. Ils quittent le vivier pour de bon :
     /// reproposer dans la question suivante un film qu'on vient de refuser est la
@@ -166,14 +220,17 @@ final class QuestionnaireViewModel {
         let pairwiseOptions: (CandidateRow, CandidateRow)?
         let eliminationOptions: [CandidateRow]?
         let duelSourceIsGallery: Bool
+        let currentIsTiebreak: Bool
         let answers: QuestionnaireAnswers
         let belief: BeliefState
         let pool: [CandidateRow]
         let enrichedPool: [EnrichedCandidateRow]
         let hasEnriched: Bool
-        let askedDimensions: Set<AdaptiveDimension>
+        let askedCounts: [AdaptiveDimension: Int]
+        let retiredDimensions: Set<AdaptiveDimension>
+        let tiebreakCount: Int
+        let hasReopenedPool: Bool
         let recentFormats: [QuestionFormat]
-        let reading: String?
         let excludedIDs: Set<Int>
         let shownPosterIDs: Set<Int>
     }
@@ -190,13 +247,18 @@ final class QuestionnaireViewModel {
     /// réellement posées : afficher « Question 3 » sur la première question
     /// visible — parce que le cadre et l'humeur comptaient dans le total —
     /// donnait l'impression d'avoir raté deux écrans.
-    var questionNumber: Int { askedDimensions.count + 1 }
+    var questionNumber: Int { questionsAsked + 1 }
 
     // MARK: - Le cadre
 
-    var canAdvanceFrame: Bool {
-        answers.audience != nil && answers.contentFormat != nil
-    }
+    /// Le cadre ne demande plus que la durée : la forme du contenu (film ou
+    /// dessin animé) a rejoint l'écran des genres, qui est la même question
+    /// posée sur le même objet.
+    var canAdvanceFrame: Bool { answers.audience != nil }
+
+    /// Les genres restent facultatifs ; la forme, elle, est un filtre dur et
+    /// doit être tranchée avant de partir chercher.
+    var canAdvanceGenre: Bool { answers.contentFormat != nil }
 
     /// - Parameters:
     ///   - preferredPlatformIDs: plateformes déclarées dans les réglages. Elles ne sont
@@ -219,7 +281,11 @@ final class QuestionnaireViewModel {
         pool = []
         enrichedPool = []
         hasEnriched = false
-        askedDimensions = []
+        askedCounts = [:]
+        retiredDimensions = []
+        tiebreakCount = 0
+        currentIsTiebreak = false
+        hasReopenedPool = false
         recentFormats = []
         adaptiveHistory = []
         currentDimension = nil
@@ -227,7 +293,6 @@ final class QuestionnaireViewModel {
         eliminationOptions = nil
         excludedIDs = []
         shownPosterIDs = []
-        reading = nil
         results = []
         phase = .frame
         Task { await loadPlatformsIfNeeded() }
@@ -333,6 +398,13 @@ final class QuestionnaireViewModel {
         lateHourNote = String(localized: "Il est \(formatted) : on a présélectionné un format court pour que tu puisses le finir ce soir.", bundle: .app)
     }
 
+    /// La durée choisie à la main. C'est ce geste, et lui seul, qui transforme
+    /// la présélection horaire en réponse — voir `AnswerObservations.fromBudget`.
+    func pickRuntime(_ runtime: RuntimePreference) {
+        answers.runtime = runtime
+        answers.runtimeDecided = true
+    }
+
     func loadPlatformsIfNeeded() async {
         guard availablePlatforms.isEmpty else { return }
         guard let providers = try? await metadataClient.movieProviders() else { return }
@@ -346,25 +418,25 @@ final class QuestionnaireViewModel {
         // genre qu'on ne propose plus.
         let allowed = Set(availableGenres)
         answers.genres.formIntersection(allowed)
-        phase = .filmChoice
+        phase = .filmGenre
     }
 
     // MARK: - Le film cherché
 
     /// Les genres proposés.
     ///
-    /// Trois retraits. Les genres bannis dans les réglages, d'abord : les proposer
+    /// Deux retraits. Les genres bannis dans les réglages, d'abord : les proposer
     /// reviendrait à demander de reconfirmer un refus déjà exprimé, et le backend
     /// n'en fait qu'un malus de score — c'est donc ici, et nulle part ailleurs,
-    /// qu'un genre banni cesse d'être demandé à TMDB. L'animation ensuite, déjà
-    /// tranchée à l'écran précédent : la proposer une seconde fois créerait deux
-    /// réponses qui peuvent se contredire. L'horreur enfin, quand on regarde avec
-    /// des enfants : le serveur l'exclut de toute façon dans ce cas, et la
-    /// proposer quand même mènerait à une recherche sans résultat que personne ne
-    /// saurait s'expliquer.
+    /// qu'un genre banni cesse d'être demandé à TMDB. L'horreur ensuite, quand on
+    /// regarde avec des enfants : le serveur l'exclut de toute façon dans ce cas,
+    /// et la proposer quand même mènerait à une recherche sans résultat que
+    /// personne ne saurait s'expliquer.
+    ///
+    /// L'animation ne figure plus dans `Genre` : elle est tranchée par
+    /// `ContentFormat`, à l'écran précédent.
     var availableGenres: [Genre] {
         Genre.allCases.filter { genre in
-            guard genre != .animation else { return false }
             guard genre != .horror || answers.audience != .family else { return false }
             return genre.tmdbIDs.isDisjoint(with: answers.avoidedGenreIDs)
         }
@@ -424,14 +496,6 @@ final class QuestionnaireViewModel {
 
     var isMoodAny: Bool { answers.mood == nil && answers.moodDecided }
 
-    /// La lecture, dès que l'ambiance est choisie et avant même de valider — pour
-    /// que le choix ait une réponse immédiate.
-    var ambianceReading: String? {
-        if let mood = answers.mood { return mood.reading }
-        guard answers.moodDecided else { return nil }
-        return String(localized: "On partira de ce que ta galerie raconte, sans contrainte d'ambiance.", bundle: .app)
-    }
-
     /// Ouvre la croyance avec ce que les deux écrans ont appris, puis lance la
     /// recherche. C'est ici, et seulement ici, que l'ambiance entre dans le
     /// modèle : ensuite ce sont les questions et les affiches qui la corrigent.
@@ -439,23 +503,42 @@ final class QuestionnaireViewModel {
         guard canConfirmFilmChoice else { return }
 
         // On repart de ce qu'on savait déjà, élargi — puis le cadre et l'ambiance
-        // viennent par-dessus. C'est ici, et nulle part ailleurs, que les « régimes »
-        // se décident : plus le trait est établi, plus les σ sont bas dès le départ,
-        // plus vite la valeur de décision s'effondre, moins il y a de questions.
-        // Aucun compteur de films n'intervient dans ce raisonnement.
+        // viennent par-dessus. Plus le trait est établi, plus les σ sont bas dès
+        // le départ, plus vite la valeur de décision s'effondre : c'est ce qui
+        // raccourcit une séance, et rien d'autre. Aucun compteur de films
+        // n'intervient dans ce raisonnement, et plus aucun plancher non plus.
         belief = BeliefState(prior: taste)
-        belief.observe(AnswerObservations.fromBudget(answers.runtime))
+        belief.observe(AnswerObservations.fromBudget(
+            answers.runtime, confirmed: answers.runtimeDecided
+        ))
         belief.observe(AnswerObservations.fromAudience(answers.audience))
         if let mood = answers.mood {
             belief.observe(AnswerObservations.fromAmbiance(mood))
         }
 
-        reading = answers.mood?.reading
         Task { await beginSession() }
     }
 
     func goBackToFrame() {
         phase = .frame
+    }
+
+    func goNextGenre() {
+        guard canAdvanceGenre else { return }
+        phase = .filmOrigin
+    }
+
+    func goBackToGenre() {
+        phase = .filmGenre
+    }
+
+    /// L'origine est facultative : laisser vide n'exclut rien.
+    func goNextOrigin() {
+        phase = .filmMood
+    }
+
+    func goBackToOrigin() {
+        phase = .filmOrigin
     }
 
     func select<T: QuestionOption>(_ value: T, in keyPath: WritableKeyPath<QuestionnaireAnswers, T>) {
@@ -468,10 +551,19 @@ final class QuestionnaireViewModel {
 
     // MARK: - Le cœur adaptatif
 
+    /// Une question à puces ne se valide qu'une fois répondue.
+    ///
+    /// `popularity` et `cast` figurent enfin dans cette liste : elles tombaient
+    /// dans le `default`, avec une valeur par défaut qui ne déposait aucun
+    /// indice. On pouvait donc appuyer sur « Suivant » sans les lire, et la
+    /// séance perdait une question sur les deux à six qu'elle a.
     var canAdvanceAdaptive: Bool {
         switch currentDimension {
         case .mindset: answers.mindset != nil
         case .dealbreaker: answers.dealbreaker != nil
+        case .popularity: answers.popularity != nil
+        case .cast: answers.cast != nil
+        case .paceWish: answers.paceWish != nil
         case .horrorFlavor: answers.horrorFlavor != nil
         case .comedyFlavor: answers.comedyFlavor != nil
         case .dramaFlavor: answers.dramaFlavor != nil
@@ -490,13 +582,17 @@ final class QuestionnaireViewModel {
         guard let dimension = currentDimension, canAdvanceAdaptive else { return }
         pushAdaptiveSnapshot()
         record(dimension, observations: AnswerObservations.from(dimension, answers: answers))
-        reading = Self.reading(for: dimension, answers: answers)
         advance()
     }
 
     func recordPairwiseChoice(winner: CandidateRow, loser: CandidateRow) {
         pushAdaptiveSnapshot()
-        record(.posterDuel, observations: AnswerObservations.fromDuel(winner: winner, loser: loser))
+        record(
+            .posterDuel,
+            observations: AnswerObservations.fromDuel(winner: winner, loser: loser),
+            asTiebreak: currentIsTiebreak
+        )
+        currentIsTiebreak = false
         // Les deux affiches ont été vues : elles n'apprendront plus rien. Le
         // perdant reste dans le vivier — lui préférer un autre film n'est pas
         // le refuser, et il peut très bien finir dans le trio.
@@ -515,7 +611,6 @@ final class QuestionnaireViewModel {
         }
 
         pairwiseOptions = nil
-        reading = Self.reading(winner: winner, loser: loser)
         advance()
     }
 
@@ -540,12 +635,19 @@ final class QuestionnaireViewModel {
         shownPosterIDs.formUnion(shown.map(\.id))
 
         eliminationOptions = nil
-        reading = String(localized: "Noté : on s'éloignera de ce genre de film.", bundle: .app)
         advance()
     }
 
-    private func record(_ dimension: AdaptiveDimension, observations: [AxisObservation]) {
-        askedDimensions.insert(dimension)
+    private func record(
+        _ dimension: AdaptiveDimension,
+        observations: [AxisObservation],
+        asTiebreak: Bool = false
+    ) {
+        if asTiebreak {
+            tiebreakCount += 1
+        } else {
+            askedCounts[dimension, default: 0] += 1
+        }
         recentFormats.append(dimension.format)
         belief.observe(observations)
     }
@@ -557,22 +659,24 @@ final class QuestionnaireViewModel {
 
     func goBackAdaptive() {
         guard let snapshot = adaptiveHistory.popLast() else {
-            phase = .filmChoice
-            reading = nil
+            phase = .filmMood
             return
         }
         currentDimension = snapshot.dimension
         pairwiseOptions = snapshot.pairwiseOptions
         eliminationOptions = snapshot.eliminationOptions
         duelSourceIsGallery = snapshot.duelSourceIsGallery
+        currentIsTiebreak = snapshot.currentIsTiebreak
         answers = snapshot.answers
         belief = snapshot.belief
         pool = snapshot.pool
         enrichedPool = snapshot.enrichedPool
         hasEnriched = snapshot.hasEnriched
-        askedDimensions = snapshot.askedDimensions
+        askedCounts = snapshot.askedCounts
+        retiredDimensions = snapshot.retiredDimensions
+        tiebreakCount = snapshot.tiebreakCount
+        hasReopenedPool = snapshot.hasReopenedPool
         recentFormats = snapshot.recentFormats
-        reading = snapshot.reading
         excludedIDs = snapshot.excludedIDs
         shownPosterIDs = snapshot.shownPosterIDs
         phase = .asking
@@ -584,22 +688,20 @@ final class QuestionnaireViewModel {
             pairwiseOptions: pairwiseOptions,
             eliminationOptions: eliminationOptions,
             duelSourceIsGallery: duelSourceIsGallery,
+            currentIsTiebreak: currentIsTiebreak,
             answers: answers,
             belief: belief,
             pool: pool,
             enrichedPool: enrichedPool,
             hasEnriched: hasEnriched,
-            askedDimensions: askedDimensions,
+            askedCounts: askedCounts,
+            retiredDimensions: retiredDimensions,
+            tiebreakCount: tiebreakCount,
+            hasReopenedPool: hasReopenedPool,
             recentFormats: recentFormats,
-            reading: reading,
             excludedIDs: excludedIDs,
             shownPosterIDs: shownPosterIDs
         ))
-    }
-
-    /// La porte de sortie manuelle, disponible à tout instant.
-    func finishNow() {
-        Task { await finish() }
     }
 
     func restart() {
@@ -609,7 +711,11 @@ final class QuestionnaireViewModel {
         pool = []
         enrichedPool = []
         hasEnriched = false
-        askedDimensions = []
+        askedCounts = [:]
+        retiredDimensions = []
+        tiebreakCount = 0
+        currentIsTiebreak = false
+        hasReopenedPool = false
         recentFormats = []
         adaptiveHistory = []
         currentDimension = nil
@@ -618,7 +724,6 @@ final class QuestionnaireViewModel {
         duelSourceIsGallery = false
         excludedIDs = []
         shownPosterIDs = []
-        reading = nil
         // `galleryRows` reste : la Galerie ne change pas d'une séance à
         // l'autre, et la recharger ferait attendre pour rien.
     }
@@ -661,42 +766,134 @@ final class QuestionnaireViewModel {
     /// Pose la question la plus décisive, ou conclut. C'est la seule boucle du moteur :
     /// il n'y a plus de phases de questions, seulement un critère et son seuil.
     private func advance() {
-        let asked = askedDimensions.count
         let best = QuestionEngine.nextDimension(
             pool: pool,
             belief: belief,
-            asked: askedDimensions,
+            asked: askedCounts,
+            retired: retiredDimensions,
             recentFormats: recentFormats,
             posterOptionsProvider: { [duelPool, belief] dimension in
                 QuestionEngine.posterOutcomes(for: dimension, pool: duelPool, belief: belief)
             }
         )
+        let bestScore = QuestionEngine.bestScore(pool: pool, belief: belief)
 
-        if QuestionEngine.shouldStop(
+        let stop = QuestionEngine.shouldStop(
             bestValue: best?.value,
-            questionsAsked: asked,
-            establishedAxes: taste.establishedAxisCount
-        ) {
-            // Plus rien à demander sur les données grossières — mais l'enrichissement
-            // apporte la durée, le budget et la franchise, donc de nouveaux écarts
-            // entre les films, donc peut-être de nouvelles questions qui valent la
-            // peine. On enrichit avant de conclure, jamais l'inverse.
-            if !hasEnriched && asked < QuestionEngine.maximumQuestions {
-                Task { await beginEnrichment() }
-            } else {
-                Task { await finish() }
-            }
-            return
-        }
-
-        guard let best else {
-            Task { await finish() }
+            questionsAsked: questionsAsked,
+            bestScore: bestScore
+        )
+        // Sans question posable, la boucle s'arrête même si la barre n'est pas
+        // franchie : c'est alors à la cascade de trouver autre chose à faire
+        // que d'interroger.
+        guard !stop, let best else {
+            concludeOrRefine(bestScore: bestScore)
             return
         }
         present(best.dimension)
     }
 
+    /// La sortie de la boucle, en cascade. Chaque étape ne se justifie que si
+    /// la précédente n'a rien donné, et chacune répond à un manque différent :
+    /// l'incertitude sur les films, la pauvreté du vivier, l'égalité entre les
+    /// deux têtes.
+    private func concludeOrRefine(bestScore: Double) {
+        // L'enrichissement d'abord, toujours : il resserre l'incertitude des
+        // films — la durée, le budget, la franchise — donc relève la note de
+        // ceux qui sont réellement ajustés. C'est le seul levier qui fait
+        // monter un score sans rien demander de plus.
+        if !hasEnriched && questionsAsked < QuestionEngine.maximumQuestions {
+            Task { await beginEnrichment() }
+            return
+        }
+
+        // La barre toujours pas franchie : le vivier ne contient rien pour ce
+        // soir, et le questionner davantage ne l'y mettra pas. On va en
+        // chercher d'autres, avec ce qu'on vient d'apprendre.
+        if bestScore < QuestionEngine.eligibilityFloor && !hasReopenedPool {
+            Task { await reopenPool() }
+            return
+        }
+
+        // Le départage : le n°1 tient sa note, mais son dauphin la tient
+        // aussi. Une question de plus, et une seule chose à trancher.
+        if let duel = pendingTiebreak(bestScore: bestScore) {
+            presentTiebreak(duel)
+            return
+        }
+
+        Task { await finish() }
+    }
+
+    /// Le duel de départage à poser, s'il y a lieu.
+    ///
+    /// Trois conditions, dans cet ordre : qu'il reste du budget, que la tête du
+    /// classement soit vraiment disputée, et que la galerie sache incarner les
+    /// deux prétendants. La dernière est la plus fragile — une galerie trop
+    /// homogène ne représente qu'un seul des deux — et c'est pour ça qu'elle ne
+    /// bloque rien : sans ancres, on conclut, on ne s'entête pas.
+    private func pendingTiebreak(bestScore: Double) -> (CandidateRow, CandidateRow)? {
+        guard tiebreakCount < Self.tiebreakLimit else { return nil }
+        guard questionsAsked < QuestionEngine.maximumQuestions else { return nil }
+        // Départager deux films qui ne passent pas la barre reviendrait à
+        // demander lequel des deux on préfère ne pas regarder.
+        guard bestScore >= QuestionEngine.eligibilityFloor else { return nil }
+        guard let leaders = QuestionEngine.leaders(pool, belief: belief),
+              leaders.gap < QuestionEngine.separationGap else { return nil }
+
+        let seen = galleryRows.filter { !shownPosterIDs.contains($0.id) }
+        return QuestionEngine.pickAnchorDuel(
+            between: leaders.first,
+            and: leaders.second,
+            gallery: seen,
+            belief: belief
+        )
+    }
+
+    private func presentTiebreak(_ duel: (CandidateRow, CandidateRow)) {
+        currentIsTiebreak = true
+        duelSourceIsGallery = true
+        pairwiseOptions = duel
+        eliminationOptions = nil
+        currentDimension = .posterDuel
+        phase = .asking
+    }
+
+    /// La réouverture du vivier (Phase A').
+    ///
+    /// Elle n'arrive qu'une fois, et seulement quand tout le reste a échoué :
+    /// les questions sont épuisées, les films sont enrichis, et le meilleur
+    /// d'entre eux reste sous la barre. On repart alors chercher chez TMDB avec
+    /// la croyance du soir en main — ce que la première requête ne pouvait pas
+    /// faire, puisqu'elle partait avant la première question.
+    ///
+    /// Un échec ne coûte pas la séance : on conclut avec ce qu'on avait.
+    private func reopenPool() async {
+        hasReopenedPool = true
+        phase = .poolLoading
+        let known = Set(pool.map(\.id)).union(excludedIDs)
+        do {
+            let response = try await recommendationClient.reopenCandidatePool(
+                trunk: answers, belief: belief, excluding: Array(known)
+            )
+            let fresh = response.candidates.filter { !known.contains($0.id) }
+            guard !fresh.isEmpty else {
+                await finish()
+                return
+            }
+            pool.append(contentsOf: fresh)
+            // Les nouveaux venus n'ont que des axes grossiers : sans repasser
+            // par l'enrichissement, ils seraient jugés plus flous que les
+            // autres, et leur note ne serait pas comparable.
+            hasEnriched = false
+            advance()
+        } catch {
+            await finish()
+        }
+    }
+
     private func present(_ dimension: AdaptiveDimension) {
+        currentIsTiebreak = false
         switch dimension {
         case .posterDuel:
             var options = QuestionEngine.pickDuel(from: duelPool, belief: belief)
@@ -709,9 +906,11 @@ final class QuestionnaireViewModel {
                 fromGallery = false
             }
             guard let options else {
-                // Plus assez de films jamais montrés pour opposer deux affiches —
-                // on classe la question plutôt que de boucler dessus.
-                askedDimensions.insert(.posterDuel)
+                // Plus assez de films jamais montrés pour opposer deux
+                // affiches. La question sort de la banque sans être comptée :
+                // la facturer reviendrait à retirer une question au parcours
+                // pour un écran que personne n'a vu.
+                retiredDimensions.insert(.posterDuel)
                 advance()
                 return
             }
@@ -726,7 +925,7 @@ final class QuestionnaireViewModel {
                 fromGallery = false
             }
             guard let options else {
-                askedDimensions.insert(.elimination)
+                retiredDimensions.insert(.elimination)
                 advance()
                 return
             }
@@ -745,7 +944,7 @@ final class QuestionnaireViewModel {
         phase = .enriching
         do {
             let toEnrich = QuestionEngine.candidatesForEnrichment(pool: pool, belief: belief)
-            enrichedPool = try await recommendationClient.enrichCandidates(toEnrich)
+            enrichedPool = try await recommendationClient.enrichCandidates(toEnrich, audience: answers.audience)
             hasEnriched = true
             guard !enrichedPool.isEmpty else {
                 Task { await finish() }
@@ -765,7 +964,7 @@ final class QuestionnaireViewModel {
             var finalCandidates: [EnrichedCandidateRow]
             if enrichedPool.isEmpty {
                 let toEnrich = QuestionEngine.candidatesForEnrichment(pool: pool, belief: belief)
-                finalCandidates = try await recommendationClient.enrichCandidates(toEnrich)
+                finalCandidates = try await recommendationClient.enrichCandidates(toEnrich, audience: answers.audience)
             } else {
                 finalCandidates = enrichedPool
             }
@@ -796,48 +995,4 @@ final class QuestionnaireViewModel {
         phase = .error(message)
     }
 
-    // MARK: - Les lectures
-
-    /// Ce que la réponse change concrètement pour la sélection, en une ligne.
-    ///
-    /// Elle dit toujours une conséquence (« on écartera… », « on ira chercher… »)
-    /// et jamais un constat sur la personne : c'est ce qui rend le questionnaire
-    /// lisible comme une recherche en cours plutôt que comme un test de
-    /// personnalité. Rien n'est produit quand la réponse ne se résume pas
-    /// honnêtement — une ligne creuse coûte plus cher que pas de ligne du tout.
-    private static func reading(for dimension: AdaptiveDimension, answers: QuestionnaireAnswers) -> String? {
-        switch dimension {
-        case .dealbreaker:
-            switch answers.dealbreaker {
-            case .slowPace: String(localized: "On écartera les films qui traînent en longueur.", bundle: .app)
-            case .heavyMood: String(localized: "On écartera les films trop lourds.", bundle: .app)
-            case .tooLong: String(localized: "On surveillera la durée.", bundle: .app)
-            case .predictablePlot: String(localized: "On cherchera une histoire qui surprend.", bundle: .app)
-            case nil: nil
-            }
-        case .popularity:
-            switch answers.popularity {
-            case .hiddenGem: String(localized: "On ira chercher au-delà des films les plus vus.", bundle: .app)
-            case .mainstream: String(localized: "On restera sur des films largement appréciés.", bundle: .app)
-            default: nil
-            }
-        case .cognitiveMode:
-            answers.cognitiveMode == .understand
-                ? String(localized: "On privilégiera les films qui donnent à réfléchir.", bundle: .app)
-                : String(localized: "On privilégiera les films qui font d'abord ressentir.", bundle: .app)
-        default:
-            nil
-        }
-    }
-
-    /// Après un duel d'affiches. On ne commente que si l'écart de notoriété entre
-    /// les deux films est net — sinon le choix a tranché autre chose, qu'on ne
-    /// saurait pas nommer sans inventer.
-    private static func reading(winner: CandidateRow, loser: CandidateRow) -> String? {
-        let gap = winner.axes[.familiarite] - loser.axes[.familiarite]
-        guard abs(gap) > 0.4 else { return nil }
-        return gap < 0
-            ? String(localized: "Tu vas vers les films connus : on en tient compte.", bundle: .app)
-            : String(localized: "Tu vas vers les films moins connus : on en tient compte.", bundle: .app)
-    }
 }

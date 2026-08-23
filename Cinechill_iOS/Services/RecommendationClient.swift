@@ -71,7 +71,16 @@ nonisolated struct CandidatePoolResponse: Sendable {
 /// entre chaque appel sans repayer un aller-retour réseau par question.
 protocol RecommendationFetching: Sendable {
     func fetchCandidatePool(trunk: QuestionnaireAnswers) async throws -> CandidatePoolResponse
-    func enrichCandidates(_ candidates: [CandidateRow]) async throws -> [EnrichedCandidateRow]
+    /// La réouverture du vivier, quand aucun candidat n'atteint la note
+    /// minimale. Mêmes filtres durs que la première recherche — un genre
+    /// demandé reste un genre demandé — mais la requête est cette fois guidée
+    /// par la croyance du soir, que la première ne pouvait pas connaître.
+    /// `excluding` porte ce qu'on a déjà : le serveur n'a pas à repayer les
+    /// films qui sont déjà dans le vivier.
+    func reopenCandidatePool(
+        trunk: QuestionnaireAnswers, belief: BeliefState, excluding: [Int]
+    ) async throws -> CandidatePoolResponse
+    func enrichCandidates(_ candidates: [CandidateRow], audience: Audience?) async throws -> [EnrichedCandidateRow]
     func finalizeRecommendations(
         answers: QuestionnaireAnswers, belief: BeliefState, candidates: [EnrichedCandidateRow]
     ) async throws -> [RecommendationResult]
@@ -112,11 +121,28 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
         )
     }
 
-    func enrichCandidates(_ candidates: [CandidateRow]) async throws -> [EnrichedCandidateRow] {
+    func reopenCandidatePool(
+        trunk: QuestionnaireAnswers, belief: BeliefState, excluding: [Int]
+    ) async throws -> CandidatePoolResponse {
+        var body = Self.requestBody(for: trunk)
+        body["reopen"] = true
+        body["belief"] = belief.jsonPayload
+        body["excludeTmdbIds"] = excluding
+        let data = try await post(to: APIEndpoints.candidatePool(), body: body)
+        let decoded = try decode(CandidatePoolResponseDTO.self, from: data)
+        return CandidatePoolResponse(
+            candidates: decoded.candidates,
+            notice: decoded.notice
+        )
+    }
+
+    func enrichCandidates(_ candidates: [CandidateRow], audience: Audience?) async throws -> [EnrichedCandidateRow] {
         guard !candidates.isEmpty else { return [] }
-        let data = try await post(to: APIEndpoints.enrichCandidates(), body: [
-            "candidates": candidates.map(\.jsonPayload),
-        ])
+        var body: [String: Any] = ["candidates": candidates.map(\.jsonPayload)]
+        // Renseigné seulement quand il change quelque chose : le serveur
+        // n'écarte les films interdits aux mineurs que pour la famille.
+        if let audience { body["audience"] = audience.rawValue }
+        let data = try await post(to: APIEndpoints.enrichCandidates(), body: body)
         let decoded = try decode(EnrichCandidatesResponseDTO.self, from: data)
         return decoded.candidates
     }
@@ -253,15 +279,12 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
             "watchRegion": "FR",
             "audience": answers.audience?.rawValue as Any,
             "mood": answers.mood?.rawValue as Any,
-            "origin": answers.origin.rawValue,
             "mindset": answers.mindset?.rawValue as Any,
             "dealbreaker": answers.dealbreaker?.rawValue as Any,
-            "popularity": answers.popularity.rawValue,
-            "cast": answers.cast.rawValue,
+            "popularity": answers.popularity?.rawValue as Any,
+            "cast": answers.cast?.rawValue as Any,
             "runtime": answers.runtime.rawValue,
-            "era": answers.era.rawValue,
             "surpriseIntensity": answers.surpriseIntensity,
-            "preferredGenreIds": Array(answers.preferredGenreIDs),
             "avoidedGenreIds": Array(answers.avoidedGenreIDs),
             // Les réponses de goût durable. Elles ne pèsent pas dans le score
             // du soir — la croyance les porte déjà — mais le serveur les range

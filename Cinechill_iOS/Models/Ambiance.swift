@@ -34,16 +34,4 @@ nonisolated extension Mood {
         }
     }
 
-    /// Ce qu'on va chercher, dit en une ligne juste après le choix. C'est la
-    /// première fois du parcours que l'application répond quelque chose.
-    var reading: String {
-        switch self {
-        case .lightFun: String(localized: "On cherchera un film léger, qui fait passer un bon moment.", bundle: .app)
-        case .intense: String(localized: "On cherchera un film tendu, avec du rythme.", bundle: .app)
-        case .emotional: String(localized: "On cherchera un film qui touche.", bundle: .app)
-        case .scary: String(localized: "On cherchera un film qui fait peur.", bundle: .app)
-        case .escapist: String(localized: "On cherchera un film spectaculaire, qui fait voyager.", bundle: .app)
-        case .thoughtful: String(localized: "On cherchera un film qui donne à réfléchir.", bundle: .app)
-        }
-    }
 }

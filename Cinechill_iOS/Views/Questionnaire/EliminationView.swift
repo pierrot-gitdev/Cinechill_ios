@@ -12,10 +12,9 @@ import SwiftUI
 /// plus sûrement que l'adhésion.
 struct EliminationView: View {
     let options: [CandidateRow]
-    /// Le titre change quand les quatre films sont **vus** (C2) : on écarte
-    /// un souvenir qui ne colle pas à ce soir, pas un pari.
-    var title: String?
-    var subtitle: String?
+    /// Le titre est projeté sur la toile par `SalleStage` et ne figure plus
+    /// ici : c'est la salle qui interroge. Le sous-titre a suivi — il
+    /// commentait le geste au lieu de le nommer.
     let onEliminate: (_ loser: CandidateRow) -> Void
 
     private let columns = [
@@ -24,34 +23,21 @@ struct EliminationView: View {
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(title ?? QuestionStep.elimination.title)
-                    .planTitle()
-                    .foregroundStyle(Ink.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let subtitle = subtitle ?? QuestionStep.elimination.subtitle {
-                    Text(subtitle)
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(Ink.ink3)
-                }
-            }
-
+        VStack(alignment: .leading, spacing: 18) {
             LazyVGrid(columns: columns, spacing: 16) {
                 ForEach(options) { candidate in
-                    posterChoice(candidate)
+                    posterChoice(candidate, maxHeight: 118)
                 }
             }
         }
     }
 
-    private func posterChoice(_ candidate: CandidateRow) -> some View {
+    private func posterChoice(_ candidate: CandidateRow, maxHeight: CGFloat) -> some View {
         Button {
             onEliminate(candidate)
         } label: {
             VStack(spacing: 10) {
-                CandidatePosterView(candidate: candidate)
+                CandidatePosterView(candidate: candidate, maxHeight: maxHeight)
                     .overlay(alignment: .topTrailing) {
                         Image(systemName: "xmark")
                             .font(.system(size: 9, weight: .bold))

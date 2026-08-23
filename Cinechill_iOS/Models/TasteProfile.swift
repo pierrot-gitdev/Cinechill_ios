@@ -67,12 +67,11 @@ nonisolated struct TasteProfile: Equatable, Sendable {
 
     var isEmpty: Bool { galleryCount == 0 && watchlistCount == 0 && correctedAxes.isEmpty }
 
-    /// Combien d'axes le trait éclaire déjà. C'est ce nombre, et non le compte de
-    /// films, qui détermine la longueur d'une séance — d'où les « régimes » qui
-    /// émergent sans être codés nulle part.
-    var establishedAxisCount: Int {
-        Axis.allCases.filter { evidence($0) > 0.5 }.count
-    }
+    // Il y avait ici un `establishedAxisCount` — le nombre d'axes que le trait
+    // éclaire — qui fixait le plancher de questions d'une séance. Il ne fixe
+    // plus rien : la Porte garantit un profil fourni avant le premier écran,
+    // donc ce compte est toujours au maximum et le plancher toujours au
+    // minimum. Voir `QuestionEngine.minimumQuestions`.
 }
 
 nonisolated extension BeliefState {

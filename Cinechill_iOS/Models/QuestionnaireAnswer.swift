@@ -51,19 +51,34 @@ nonisolated enum ContentFormat: String, QuestionOption {
 // MARK: - Q2 · Genres (filtre)
 
 nonisolated enum Genre: String, QuestionOption {
-    case action, comedy, drama, thriller, scifiFantasy, horror, romance, animation, documentary
+    /// L'ordre est celui des puces à l'écran, et il suit le volume de films
+    /// réellement disponibles chez TMDB : on met devant ce qui a le plus de
+    /// chances d'aboutir. `animation` et `documentary` n'y figurent plus.
+    /// L'animation est déjà tranchée par `ContentFormat` à l'écran précédent ;
+    /// le documentaire pesait 688 films au-dessus de cent votes, moins que
+    /// n'importe quel genre resté dehors.
+    ///
+    /// `scifiFantasy` a été coupé en deux : la science-fiction et le
+    /// fantastique répondent à des envies différentes, et les confondre
+    /// obligeait à accepter l'un pour obtenir l'autre.
+    case drama, comedy, thriller, action, romance, horror, crime, adventure, scifi, fantasy, family
 
     var label: String {
         switch self {
-        case .action: String(localized: "Action", bundle: .app)
-        case .comedy: String(localized: "Comédie", bundle: .app)
         case .drama: String(localized: "Drame", bundle: .app)
+        case .comedy: String(localized: "Comédie", bundle: .app)
         case .thriller: String(localized: "Thriller", bundle: .app)
-        case .scifiFantasy: String(localized: "SF / Fantastique", bundle: .app)
-        case .horror: String(localized: "Horreur", bundle: .app)
+        case .action: String(localized: "Action", bundle: .app)
         case .romance: String(localized: "Romance", bundle: .app)
-        case .animation: String(localized: "Animation", bundle: .app)
-        case .documentary: String(localized: "Documentaire", bundle: .app)
+        case .horror: String(localized: "Horreur", bundle: .app)
+        // TMDB nomme ce genre « Crime » en français ; l'application dit
+        // « Policier », qui est le mot que les gens emploient. Le backend
+        // écrit déjà la même chose dans les raisons du verdict.
+        case .crime: String(localized: "Policier", bundle: .app)
+        case .adventure: String(localized: "Aventure", bundle: .app)
+        case .scifi: String(localized: "Science-fiction", bundle: .app)
+        case .fantasy: String(localized: "Fantastique", bundle: .app)
+        case .family: String(localized: "Familial", bundle: .app)
         }
     }
 
@@ -74,15 +89,17 @@ nonisolated enum Genre: String, QuestionOption {
     /// réglages. Si la table backend change, garder celle-ci synchronisée.
     var tmdbIDs: Set<Int> {
         switch self {
-        case .action: [28]
-        case .comedy: [35]
         case .drama: [18]
+        case .comedy: [35]
         case .thriller: [53]
-        case .scifiFantasy: [878, 14]
-        case .horror: [27]
+        case .action: [28]
         case .romance: [10749]
-        case .animation: [16]
-        case .documentary: [99]
+        case .horror: [27]
+        case .crime: [80]
+        case .adventure: [12]
+        case .scifi: [878]
+        case .fantasy: [14]
+        case .family: [10751]
         }
     }
 }
@@ -115,20 +132,6 @@ nonisolated enum Mood: String, QuestionOption {
         case .scary: String(localized: "Qui fait peur", bundle: .app)
         case .escapist: String(localized: "Spectaculaire, qui fait voyager", bundle: .app)
         case .thoughtful: String(localized: "Qui fait réfléchir", bundle: .app)
-        }
-    }
-}
-
-// MARK: - Q6 · Origine (score)
-
-nonisolated enum OriginPreference: String, QuestionOption {
-    case french, international, any
-
-    var label: String {
-        switch self {
-        case .french: String(localized: "Français", bundle: .app)
-        case .international: String(localized: "International", bundle: .app)
-        case .any: String(localized: "Peu importe", bundle: .app)
         }
     }
 }
@@ -189,15 +192,21 @@ nonisolated enum Dealbreaker: String, QuestionOption {
 
 // MARK: - Q9 · Blockbuster ou pépite (score)
 
+/// Le « peu importe » a été retiré de ces deux questions, et c'est le même
+/// raisonnement que pour les arbitrages forcés plus bas : une option qui ne
+/// dépose aucun indice fait payer un écran pour rien. Elle était pire encore
+/// ici, où elle était la valeur par défaut — la puce apparaissait déjà cochée,
+/// et « Suivant » suffisait à brûler la question sans y répondre. Ces deux-là
+/// ne sont posées que si elles valent la peine de l'être ; alors autant
+/// qu'elles rapportent.
 nonisolated enum PopularityPreference: String, QuestionOption {
-    case mainstream, wellRatedKnown, hiddenGem, any
+    case mainstream, wellRatedKnown, hiddenGem
 
     var label: String {
         switch self {
         case .mainstream: String(localized: "Un grand succès", bundle: .app)
         case .wellRatedKnown: String(localized: "Un film reconnu", bundle: .app)
         case .hiddenGem: String(localized: "Un film peu connu", bundle: .app)
-        case .any: String(localized: "Peu importe", bundle: .app)
         }
     }
 }
@@ -205,12 +214,11 @@ nonisolated enum PopularityPreference: String, QuestionOption {
 // MARK: - Q10 · Casting (score)
 
 nonisolated enum CastPreference: String, QuestionOption {
-    case familiarFaces, any, discovery
+    case familiarFaces, discovery
 
     var label: String {
         switch self {
         case .familiarFaces: String(localized: "Des acteurs que je connais", bundle: .app)
-        case .any: String(localized: "Peu importe", bundle: .app)
         case .discovery: String(localized: "Des visages nouveaux", bundle: .app)
         }
     }
@@ -227,21 +235,6 @@ nonisolated enum RuntimePreference: String, QuestionOption {
         case .medium: String(localized: "1h30 – 2h", bundle: .app)
         case .long: String(localized: "2h +", bundle: .app)
         case .any: String(localized: "Peu importe", bundle: .app)
-        }
-    }
-}
-
-// MARK: - Q12 · Récent ou vintage (score)
-
-nonisolated enum EraPreference: String, QuestionOption {
-    case thisYear, lastFiveYears, any, cultClassic
-
-    var label: String {
-        switch self {
-        case .thisYear: String(localized: "Sorti cette année", bundle: .app)
-        case .lastFiveYears: String(localized: "5 dernières années", bundle: .app)
-        case .any: String(localized: "Peu importe l'époque", bundle: .app)
-        case .cultClassic: String(localized: "Classique culte", bundle: .app)
         }
     }
 }
@@ -277,6 +270,30 @@ nonisolated enum DramaFlavor: String, QuestionOption {
         switch self {
         case .social: String(localized: "Une grande histoire, sur fond d'époque ou de société", bundle: .app)
         case .intimate: String(localized: "L'histoire de quelques personnes", bundle: .app)
+        }
+    }
+}
+
+// MARK: - Le rythme (score)
+
+/// Le rythme était le seul des huit axes qu'aucune question ne visait
+/// directement : il ne se lisait qu'en creux, dans un décrocheur (« rythme trop
+/// lent ») et dans une nuance d'horreur. L'ambiance l'observe, mais faiblement,
+/// et deux personnes qui demandent la même ambiance n'attendent pas la même
+/// allure.
+///
+/// Les autres axes pauvres de la table n'ont pas eu droit au même traitement,
+/// et c'est délibéré : l'ampleur est déjà tranchée par `AttachmentMode` (un
+/// personnage ou un monde), le réalisme par `StoryOrigin` (une histoire vraie
+/// ou inventée). Leur ajouter une question de plus aurait reposé la même
+/// question deux fois.
+nonisolated enum PaceWish: String, QuestionOption {
+    case takeItsTime, neverLetsGo
+
+    var label: String {
+        switch self {
+        case .takeItsTime: String(localized: "Qu'il prenne son temps", bundle: .app)
+        case .neverLetsGo: String(localized: "Qu'il ne te lâche pas une seconde", bundle: .app)
         }
     }
 }
@@ -374,13 +391,17 @@ nonisolated struct QuestionnaireAnswers: Equatable, Sendable {
     /// `mood` à nil. Jamais sérialisé : le backend lit l'absence d'ambiance
     /// dans `mood` lui-même, et le prior du trait fait alors le travail seul.
     var moodDecided = false
-    var origin: OriginPreference = .any
     var mindset: Mindset?
     var dealbreaker: Dealbreaker?
-    var popularity: PopularityPreference = .any
-    var cast: CastPreference = .any
+    var popularity: PopularityPreference?
+    var cast: CastPreference?
     var runtime: RuntimePreference = .any
-    var era: EraPreference = .any
+    /// La durée a-t-elle été choisie, ou seulement présélectionnée d'après
+    /// l'heure ? Une présélection est une supposition : elle vaut moins qu'une
+    /// réponse, et c'est `AnswerObservations.fromBudget` qui en tire les
+    /// conséquences.
+    var runtimeDecided = false
+    var paceWish: PaceWish?
     var horrorFlavor: HorrorFlavor?
     var comedyFlavor: ComedyFlavor?
     var dramaFlavor: DramaFlavor?
@@ -394,10 +415,14 @@ nonisolated struct QuestionnaireAnswers: Equatable, Sendable {
     /// `IntensitySliderView` — pour capturer une intensité plutôt qu'une catégorie.
     var surpriseIntensity: Double = 0.5
 
-    /// Alimentés par les comparaisons directes entre affiches (voir `PairwiseComparisonView`) et
-    /// par l'élimination (voir `EliminationView`) — les genres des films choisis/écartés, agrégés
-    /// au fil du quiz. Contribue un léger boost/malus au score final côté backend, en plus (pas en
-    /// remplacement) de `mood`.
-    var preferredGenreIDs: Set<Int> = []
+    /// Les genres exclus dans les réglages. Ils ne sont jamais demandés à TMDB
+    /// (voir `availableGenres`) et le backend leur applique un malus.
+    ///
+    /// Il y avait ici un `preferredGenreIDs` jumeau, documenté comme alimenté
+    /// par les duels et les éliminations. Il ne l'était nulle part, et son seul
+    /// lecteur côté serveur était la formule de score de repli — celle qui ne
+    /// s'exécute que si le client n'envoie pas de croyance, ce qu'il fait
+    /// toujours. Le remplir aurait été décoratif ; il est parti, avec `origin`
+    /// et `era` qui vivaient la même vie.
     var avoidedGenreIDs: Set<Int> = []
 }

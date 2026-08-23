@@ -9,6 +9,10 @@ import SwiftUI
 /// utilisé pour les grilles de chips (questionnaire, plateformes…) dont le nombre d'items varie.
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
+    /// Le fer des rangées. À gauche partout dans l'application, centré dans la
+    /// Salle : là, les puces flottent sur un parterre vide et un bord droit en
+    /// dents de scie se lit comme un défaut d'alignement.
+    var alignment: HorizontalAlignment = .leading
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.width ?? .infinity
@@ -22,6 +26,11 @@ struct FlowLayout: Layout {
         var y = bounds.minY
         for row in rows {
             var x = bounds.minX
+            if alignment == .center {
+                x += max(0, (bounds.width - row.width) / 2)
+            } else if alignment == .trailing {
+                x += max(0, bounds.width - row.width)
+            }
             for item in row.items {
                 item.subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(item.size))
                 x += item.size.width + spacing
