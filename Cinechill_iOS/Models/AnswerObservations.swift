@@ -71,10 +71,10 @@ nonisolated enum AnswerObservations {
     ) -> [AxisObservation] {
         let force = confirmed ? constraint : presumed
         switch budget {
-        case .short: [AxisObservation(.investissement, -0.85, precision: force)]
-        case .medium: [AxisObservation(.investissement, 0, precision: force)]
-        case .long: [AxisObservation(.investissement, 0.8, precision: force)]
-        case .any: []
+        case .short: return [AxisObservation(.investissement, -0.85, precision: force)]
+        case .medium: return [AxisObservation(.investissement, 0, precision: force)]
+        case .long: return [AxisObservation(.investissement, 0.8, precision: force)]
+        case .any: return []
         }
     }
 
