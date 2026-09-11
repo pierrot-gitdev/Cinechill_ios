@@ -3744,18 +3744,18 @@
         }
       }
     },
-    "Démarrer la séance" : {
+    "Démarrer le film" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Start the screening"
+            "value" : "Start the movie"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Démarrer la séance"
+            "value" : "Démarrer le film"
           }
         }
       }

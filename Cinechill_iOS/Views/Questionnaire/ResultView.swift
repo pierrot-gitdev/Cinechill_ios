@@ -148,7 +148,7 @@ struct ResultView: View {
                 .foregroundStyle(Ink.ink3)
                 .padding(.top, 6)
 
-            PlanButton(title: String(localized: "Démarrer la séance", bundle: .app)) {
+            PlanButton(title: String(localized: "Démarrer le film", bundle: .app)) {
                 start(result)
             }
             .padding(.top, 20)
