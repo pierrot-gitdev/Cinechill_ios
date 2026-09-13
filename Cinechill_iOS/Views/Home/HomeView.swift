@@ -225,7 +225,7 @@ struct HomeView: View {
             if homeModel.popularItems.isEmpty, !homeModel.loading {
                 Text(emptyPopularMessage)
                     .font(.system(size: 12.5))
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
             }
         }
     }
@@ -239,7 +239,7 @@ struct HomeView: View {
                  ? String(localized: "Toutes plateformes", bundle: .app)
                  : String(localized: "Chez toi", bundle: .app))
                 .planLabel()
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
 
             if !selectedPlatforms.isEmpty {
                 HStack(spacing: 5) {
@@ -250,7 +250,7 @@ struct HomeView: View {
                         Text(verbatim: "+\(selectedPlatforms.count - 4)")
                             .font(.system(size: 10))
                             .monospacedDigit()
-                            .foregroundStyle(Ink.ink3)
+                            .foregroundStyle(Ink.ink2)
                     }
                 }
             }

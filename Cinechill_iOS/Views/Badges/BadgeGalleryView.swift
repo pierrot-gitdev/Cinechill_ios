@@ -103,7 +103,7 @@ struct BadgeGalleryView: View {
                          : "\(state.current.formatted()) / \(state.target.formatted())")
                         .planLabel()
                         .monospacedDigit()
-                        .foregroundStyle(Ink.ink3)
+                        .foregroundStyle(Ink.ink2)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -173,7 +173,7 @@ struct BadgeDetailView: View {
                         } else if let detail = progress.detail {
                             Text(detail)
                                 .font(.system(size: 12.5))
-                                .foregroundStyle(Ink.ink3)
+                                .foregroundStyle(Ink.ink2)
                                 .multilineTextAlignment(.center)
                                 .padding(.top, 14)
                         }
@@ -202,7 +202,7 @@ struct BadgeDetailView: View {
 
                 Text(remainingText)
                     .planLabel()
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
 
                 Spacer(minLength: 0)
             }
@@ -226,7 +226,7 @@ struct BadgeDetailView: View {
         if let date = progress.unlockedAt {
             Text(String(localized: "Obtenu le \(date.formatted(date: .abbreviated, time: .omitted))", bundle: .app))
                 .planLabel()
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
                 .padding(.top, 26)
         }
     }

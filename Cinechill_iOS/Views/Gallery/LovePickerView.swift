@@ -94,7 +94,7 @@ struct LovePickerView: View {
                 Text(String(localized: "\(min(lovedCount, target)) sur \(target)", bundle: .app))
                     .planLabel()
                     .monospacedDigit()
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
                     .contentTransition(.numericText())
             }
             .padding(.top, 16)

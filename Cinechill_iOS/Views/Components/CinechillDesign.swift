@@ -212,8 +212,11 @@ extension View {
 /// Le libellé d'une section, avec sa note de service optionnelle.
 ///
 /// La note dit la **conséquence**, jamais le mécanisme : « ce qui n'est pas chez
-/// vous ne vous sera pas proposé » plutôt que la liste des écrans qui consomment
+/// toi ne te sera pas proposé » plutôt que la liste des écrans qui consomment
 /// le réglage.
+///
+/// Elle est en `ink2` et non en `ink3` : à 12 pt, l'encre la plus basse tombe
+/// sous le seuil de lisibilité que la littérature mesure en polarité négative.
 struct PlanSectionLabel: View {
     let title: String
     var note: String?
@@ -227,7 +230,7 @@ struct PlanSectionLabel: View {
             if let note, !note.isEmpty {
                 Text(note)
                     .font(.system(size: 12))
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -531,7 +534,7 @@ struct LibraryMark: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .firstTextBaseline, spacing: 7) {
                         Text("214", bundle: .app).planTitle(26).foregroundStyle(Ink.ink).monospacedDigit()
-                        Text("sur 250 · il en reste 36", bundle: .app).planLabel().foregroundStyle(Ink.ink3)
+                        Text("sur 250 · il en reste 36", bundle: .app).planLabel().foregroundStyle(Ink.ink2)
                     }
                     PlanProgressRule(fraction: 0.86)
                 }

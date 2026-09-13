@@ -132,7 +132,7 @@ struct ResultView: View {
             HStack(spacing: 7) {
                 Text(rankLabel)
                     .planLabel()
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
                     .monospacedDigit()
                 if revealedIndex == 0 { PlanLight() }
             }
@@ -145,7 +145,7 @@ struct ResultView: View {
 
             Text(verbatim: "\(result.item.mediaType.singularLabel) · \(result.item.displayYear)")
                 .font(.system(size: 12.5))
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
                 .padding(.top, 6)
 
             PlanButton(title: String(localized: "Démarrer le film", bundle: .app)) {

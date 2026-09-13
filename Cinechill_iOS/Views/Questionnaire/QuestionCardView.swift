@@ -23,7 +23,7 @@ struct QuestionCardView: View {
             if let subtitle = step.subtitle {
                 Text(subtitle)
                     .font(.system(size: 12.5))
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }

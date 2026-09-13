@@ -68,7 +68,7 @@ struct ProfileSignatureCard: View {
                 Text(remaining)
                     .font(.system(size: 11))
                     .monospacedDigit()
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
                     .padding(.top, 5)
             }
         }

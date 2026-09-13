@@ -127,7 +127,7 @@ struct TasteSheetView: View {
             if !open.isEmpty {
                 Text(openLine(open))
                     .font(.system(size: 12))
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -174,7 +174,7 @@ struct TasteSheetView: View {
 
             Text(Self.phrase(for: axis, value: value, known: known))
                 .font(.system(size: 12.5))
-                .foregroundStyle(known ? Ink.ink2 : Ink.ink3)
+                .foregroundStyle(known ? Ink.ink : Ink.ink2)
                 .fixedSize(horizontal: false, vertical: true)
 
             Slider(
@@ -202,7 +202,7 @@ struct TasteSheetView: View {
                 Text(Self.poles(for: axis).1)
             }
             .planLabel()
-            .foregroundStyle(Ink.ink3)
+            .foregroundStyle(Ink.ink2)
         }
     }
 

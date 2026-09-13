@@ -344,7 +344,7 @@ struct PlanHeaderCount: View {
         Text(value)
             .planLabel()
             .monospacedDigit()
-            .foregroundStyle(Ink.ink3)
+            .foregroundStyle(Ink.ink2)
     }
 }
 

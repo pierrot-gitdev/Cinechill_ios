@@ -228,7 +228,7 @@ struct SettingsView: View {
             HStack(spacing: 10) {
                 Text(String(localized: "\(distinction.label) · \(libraryStore.galleryItems.count) films", bundle: .app))
                     .planLabel()
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
                     .fixedSize()
 
                 PlanProgressRule(fraction: distinction.progress(count: libraryStore.galleryItems.count))
@@ -322,7 +322,7 @@ struct SettingsView: View {
         if catalog.genreNames.isEmpty {
             Text("Chargement des genres…", bundle: .app)
                 .font(.system(size: 12.5))
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
         } else {
             FlowLayout(spacing: 7) {
                 ForEach(sortedGenres, id: \.id) { genre in
@@ -401,7 +401,7 @@ struct SettingsView: View {
 
             Text(appVersion)
                 .font(.system(size: 11))
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
                 .padding(.top, 16)
         }
     }
@@ -466,7 +466,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .planLabel()
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
             Text(value)
                 .font(.system(size: 14))
                 .foregroundStyle(Ink.ink2)
@@ -491,7 +491,7 @@ struct SettingsView: View {
                 if let note {
                     Text(note)
                         .font(.system(size: 11.5))
-                        .foregroundStyle(Ink.ink3)
+                        .foregroundStyle(Ink.ink2)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

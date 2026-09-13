@@ -126,7 +126,7 @@ struct PlanField<Value: Hashable>: View {
                 Button(title, action: perform)
                     .buttonStyle(.plain)
                     .planLabel()
-                    .foregroundStyle(AuthInk.ink3)
+                    .foregroundStyle(AuthInk.ink2)
                     // La cible déborde le texte : 10 pt de haut ne se touchent
                     // pas. Le débord reste modeste — au-delà, il mordrait sur
                     // la fin du champ, juste en dessous.

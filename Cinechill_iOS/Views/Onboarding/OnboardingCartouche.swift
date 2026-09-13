@@ -83,7 +83,7 @@ struct OnboardingCartouche: View {
             Text(counter)
                 .planLabel()
                 .monospacedDigit()
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
 
             Spacer(minLength: 12)
 
@@ -93,7 +93,7 @@ struct OnboardingCartouche: View {
                 Button(action: onSkip) {
                     Text("Passer", bundle: .app)
                         .planLabel()
-                        .foregroundStyle(Ink.ink3)
+                        .foregroundStyle(Ink.ink2)
                         .contentShape(Rectangle().inset(by: -12))
                 }
                 .buttonStyle(.plain)

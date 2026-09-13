@@ -105,7 +105,7 @@ struct PlatformPickerSheet: View {
                         } label: {
                             Text("Tout décocher", bundle: .app)
                                 .planLabel()
-                                .foregroundStyle(Ink.ink3)
+                                .foregroundStyle(Ink.ink2)
                                 .contentShape(Rectangle().inset(by: -10))
                         }
                         .buttonStyle(.plain)
@@ -116,7 +116,7 @@ struct PlatformPickerSheet: View {
                     VStack(alignment: .leading, spacing: 20) {
                         Text("Ce qui n'est pas chez toi ne te sera pas proposé. Ne rien cocher, c'est ne pas filtrer.", bundle: .app)
                             .font(.system(size: 12.5))
-                            .foregroundStyle(Ink.ink3)
+                            .foregroundStyle(Ink.ink2)
                             .fixedSize(horizontal: false, vertical: true)
 
                         if catalog.platforms.isEmpty {

@@ -55,7 +55,7 @@ struct DoorCelebrationOverlay: View {
 
                 Text(remainingText)
                     .planLabel()
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
                     .padding(.top, 10)
 
                 Button(action: onDismiss) {

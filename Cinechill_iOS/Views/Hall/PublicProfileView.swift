@@ -130,7 +130,7 @@ struct PublicProfileView: View {
                 .contentTransition(.numericText())
             Text(label)
                 .planLabel()
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
         }

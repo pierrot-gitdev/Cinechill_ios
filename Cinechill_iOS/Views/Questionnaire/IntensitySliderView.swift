@@ -23,7 +23,7 @@ struct IntensitySliderView: View {
                 if let subtitle = QuestionStep.surpriseIntensity.subtitle {
                     Text(subtitle)
                         .font(.system(size: 12.5))
-                        .foregroundStyle(Ink.ink3)
+                        .foregroundStyle(Ink.ink2)
                 }
             }
 
@@ -37,7 +37,7 @@ struct IntensitySliderView: View {
                     Text(highLabel)
                 }
                 .planLabel()
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
             }
         }
         .accessibilityElement(children: .combine)

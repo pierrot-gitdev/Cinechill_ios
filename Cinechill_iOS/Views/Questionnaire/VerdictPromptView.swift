@@ -26,7 +26,7 @@ struct VerdictPromptView: View {
                 PlanLightOutline()
                 Text("Ton dernier film", bundle: .app)
                     .planLabel()
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
             }
 
             Text(question)
@@ -63,7 +63,7 @@ struct VerdictPromptView: View {
             Button(action: onDismiss) {
                 Text("Une autre fois", bundle: .app)
                     .font(.system(size: 12.5))
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
             }

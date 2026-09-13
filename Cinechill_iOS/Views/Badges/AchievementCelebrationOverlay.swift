@@ -129,7 +129,7 @@ struct AchievementCelebrationOverlay: View {
 
             Text(verbatim: Millesime.roman(Calendar.current.component(.year, from: Date())))
                 .planLabel()
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
                 .padding(.top, 18)
 
             PlanButton(title: String(localized: "Continuer", bundle: .app), height: Metrics.control, action: onDismiss)

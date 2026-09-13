@@ -257,7 +257,7 @@ struct CineMatchGateView: View {
                     }
                 }
                 .planLabel()
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
             }
             .padding(.top, 8)
 
@@ -815,7 +815,7 @@ private struct DoorArtifactSheet: View {
                 Text(progressText)
                     .planLabel()
                     .monospacedDigit()
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
             }
             .padding(.top, 12)
 

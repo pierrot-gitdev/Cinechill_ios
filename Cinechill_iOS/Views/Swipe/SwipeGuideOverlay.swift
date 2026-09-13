@@ -215,13 +215,13 @@ struct SwipeGuideOverlay: View {
 
             Text(move.direction.destination)
                 .planLabel()
-                .foregroundStyle(isLit ? Ink.ink : Ink.ink3)
+                .foregroundStyle(isLit ? Ink.ink : Ink.ink2)
 
             Spacer(minLength: 10)
 
             Text(move.outcome)
                 .font(.system(size: 12))
-                .foregroundStyle(isLit ? Ink.ink2 : Ink.ink3)
+                .foregroundStyle(isLit ? Ink.ink : Ink.ink2)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
         }

@@ -155,7 +155,7 @@ struct GalleryView: View {
                     if let subtitle = band.subtitle {
                         Text(subtitle)
                             .planLabel()
-                            .foregroundStyle(Ink.ink3)
+                            .foregroundStyle(Ink.ink2)
                     }
 
                     Spacer(minLength: 0)
@@ -163,7 +163,7 @@ struct GalleryView: View {
                     Text(verbatim: "\(band.count)")
                         .planLabel()
                         .monospacedDigit()
-                        .foregroundStyle(Ink.ink3)
+                        .foregroundStyle(Ink.ink2)
                 }
                 .contentShape(Rectangle())
             }

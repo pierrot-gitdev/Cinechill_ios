@@ -80,7 +80,7 @@ struct NotificationsPanel: View {
                 .foregroundStyle(Ink.ink2)
             Text("Les films qu'on te recommande arriveront ici.", bundle: .app)
                 .font(.system(size: 11.5))
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)

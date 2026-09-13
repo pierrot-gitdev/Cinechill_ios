@@ -281,7 +281,7 @@ struct AuthView: View {
             doors
             Text("En créant un compte, tu acceptes les conditions et la politique de confidentialité.", bundle: .app)
                 .font(.system(size: 11))
-                .foregroundStyle(AuthInk.ink3)
+                .foregroundStyle(AuthInk.ink2)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 8)
         }

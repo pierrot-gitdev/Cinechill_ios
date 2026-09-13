@@ -51,7 +51,7 @@ struct TonightCardView: View {
 
                     Text(pick.reason)
                         .font(.system(size: 11.5))
-                        .foregroundStyle(Ink.ink3)
+                        .foregroundStyle(Ink.ink2)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 3)
                 }

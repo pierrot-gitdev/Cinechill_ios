@@ -457,7 +457,7 @@ struct SwipeDeckView: View {
                 Text("Je l'ai adoré", bundle: .app)
                     .planLabel()
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(isLoveArmed ? Color(hex: 0xF0B3BC) : Ink.ink3)
+                    .foregroundStyle(isLoveArmed ? Color(hex: 0xF0B3BC) : Ink.ink2)
             }
             .frame(width: 96)
             .padding(.vertical, 24)

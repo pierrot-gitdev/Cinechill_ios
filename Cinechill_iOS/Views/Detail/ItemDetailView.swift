@@ -274,7 +274,7 @@ struct ItemDetailView: View {
 
                     Text(voteText)
                         .font(.system(size: 11))
-                        .foregroundStyle(Ink.ink3)
+                        .foregroundStyle(Ink.ink2)
                 }
 
                 Spacer(minLength: 0)
@@ -519,7 +519,7 @@ struct ItemDetailView: View {
                                 if let character = member.character, !character.isEmpty {
                                     Text(character)
                                         .font(.system(size: 9.5))
-                                        .foregroundStyle(Ink.ink3)
+                                        .foregroundStyle(Ink.ink2)
                                         .multilineTextAlignment(.center)
                                         .lineLimit(2)
                                 }

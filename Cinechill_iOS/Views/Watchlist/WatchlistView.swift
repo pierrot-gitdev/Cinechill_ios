@@ -217,7 +217,7 @@ struct WatchlistView: View {
                     Text(verbatim: "\(group.items.count)")
                         .planLabel()
                         .monospacedDigit()
-                        .foregroundStyle(Ink.ink3)
+                        .foregroundStyle(Ink.ink2)
                 }
             }
             .padding(.horizontal, Metrics.margin)
@@ -305,7 +305,7 @@ struct WatchlistView: View {
                         Text(runtime)
                             .font(.system(size: 10.5))
                             .monospacedDigit()
-                            .foregroundStyle(Ink.ink3)
+                            .foregroundStyle(Ink.ink2)
                     }
 
                     platformBadge(for: item)
@@ -341,7 +341,7 @@ struct WatchlistView: View {
         } else if item.providerIDs.isEmpty {
             Text(verbatim: "—")
                 .font(.system(size: 11))
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
                 .frame(width: 20, height: 20)
         } else {
             // Disponible, mais pas chez vous : le point creux du vocabulaire

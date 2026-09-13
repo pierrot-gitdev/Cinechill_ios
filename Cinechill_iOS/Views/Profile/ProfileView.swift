@@ -154,7 +154,7 @@ struct ProfileView: View {
                 .foregroundStyle(Ink.ink)
             Text(label)
                 .planLabel()
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
         }
@@ -217,7 +217,7 @@ struct ProfileView: View {
                         Text(verbatim: "\(badgesModel.unlockedCount)")
                             .planLabel()
                             .monospacedDigit()
-                            .foregroundStyle(Ink.ink3)
+                            .foregroundStyle(Ink.ink2)
                         Text("Tout voir", bundle: .app)
                             .font(.system(size: 12))
                             .foregroundStyle(Ink.ink2)

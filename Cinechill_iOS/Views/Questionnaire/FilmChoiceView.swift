@@ -42,7 +42,7 @@ struct GenreChoiceView: View {
             VStack(spacing: 14) {
                 Text(genreNote)
                     .font(.system(size: 12.5))
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -96,7 +96,7 @@ struct OriginChoiceView: View {
         VStack(spacing: 14) {
             Text(originNote)
                 .font(.system(size: 12.5))
-                .foregroundStyle(Ink.ink3)
+                .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 

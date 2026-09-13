@@ -74,7 +74,7 @@ struct SessionEntryView: View {
             if audience == .family {
                 Text("On écartera l'horreur et les films interdits aux moins de 18 ans.", bundle: .app)
                     .font(.system(size: 12.5))
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 12)
                     .transition(.opacity)
