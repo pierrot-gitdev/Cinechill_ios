@@ -122,6 +122,12 @@ struct ResultView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+        // La seule ombre portée de l'application, et elle n'était pas possible
+        // avant : sur un fond à 4 de clarté perçue, aucune ombre ne se voit.
+        // C'est la raison que Material donne à son #121212 plutôt qu'au noir.
+        // Ici elle fait son travail — détacher l'objet que l'écran vient de
+        // trouver — sans rien ajouter que l'œil lise comme un effet.
+        .shadow(color: CinechillPalette.nightDeep.opacity(0.55), radius: 12, y: 6)
         .accessibilityHidden(true)
     }
 

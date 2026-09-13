@@ -69,24 +69,32 @@ enum SalleGeometry {
 /// Une seule règle : ça ne remonte jamais. Un écran plus sombre que le
 /// précédent dit qu'on a avancé, et c'est le seul indicateur d'avancement de
 /// toute la séance.
+///
+/// **L'échelle ne descend plus jusqu'au noir.** Elle allait de 1 à 0, si bien
+/// que l'écran le plus engageant du parcours demandait de relire ses propres
+/// réponses sur du noir pur : précisément la combinaison que toutes les
+/// recommandations de mode sombre écartent, et celle où une ombre cesse d'être
+/// visible. Le plancher est à 0,25. La course est plus courte, chaque palier
+/// reste distinct du précédent, et la règle est intacte.
 enum SalleLight {
     /// On entre. Salle éclairée.
     static let entry: Double = 1
     /// La durée de la soirée.
-    static let frame: Double = 0.82
-    static let genre: Double = 0.66
-    static let origin: Double = 0.54
-    static let mood: Double = 0.42
-    static let searching: Double = 0.34
+    static let frame: Double = 0.86
+    static let genre: Double = 0.76
+    static let origin: Double = 0.68
+    static let mood: Double = 0.60
+    static let searching: Double = 0.54
     /// Les questions, qui éteignent la salle une à une. Le plancher évite que
-    /// le décor disparaisse avant le verdict, qui doit rester le seul noir.
+    /// le décor disparaisse avant le verdict, qui reste le plus sombre des
+    /// paliers sans être un noir.
     static func asking(question: Int) -> Double {
-        max(0.12, 0.30 - 0.025 * Double(max(0, question - 1)))
+        max(0.34, 0.50 - 0.03 * Double(max(0, question - 1)))
     }
-    static let enriching: Double = 0.08
-    static let finalizing: Double = 0.04
-    /// Noir complet. Le film est projeté.
-    static let verdict: Double = 0
+    static let enriching: Double = 0.30
+    static let finalizing: Double = 0.27
+    /// Le palier le plus bas. Le film est projeté, la salle n'est pas éteinte.
+    static let verdict: Double = 0.25
 }
 
 // MARK: - Le décor
