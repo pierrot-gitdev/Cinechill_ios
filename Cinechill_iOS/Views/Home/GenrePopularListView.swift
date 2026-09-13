@@ -152,7 +152,7 @@ struct GenrePopularListView: View {
                     .font(.system(size: 8, weight: .semibold))
                     .foregroundStyle(Ink.ink2)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(hex: 0x151B23))
+                    .background(Ink.ground3)
             }
         }
         .frame(width: 20, height: 20)

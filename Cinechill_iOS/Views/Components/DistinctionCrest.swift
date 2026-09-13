@@ -431,7 +431,7 @@ struct DistinctionCrest: View {
     private var badgeSeat: some View {
         ZStack {
             Circle()
-                .fill(Color(hex: 0x101720))
+                .fill(Ink.ground2)
                 .overlay(Circle().strokeBorder(Ink.rule, lineWidth: 1))
 
             if let badge {

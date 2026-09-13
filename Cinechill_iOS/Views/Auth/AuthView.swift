@@ -115,7 +115,7 @@ struct AuthView: View {
     /// la taille de ce qu'il habille et ne peut jamais la changer.
     private var plan: some View {
         CinechillPlanOutline()
-            .foregroundStyle(Color(hex: 0xC6D3DF).opacity(0.11))
+            .foregroundStyle(Ink.ink.opacity(0.10))
             .frame(width: 552, height: 552)
             .offset(x: 224, y: -186)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)

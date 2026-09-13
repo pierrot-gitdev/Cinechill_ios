@@ -175,9 +175,30 @@ struct CinechillBeamShape: Shape {
 /// Les valeurs de la finition « Étain », identiques au SVG de référence et aux PNG de l'icône.
 /// L'initialiseur `Color(hex:)` vient de `Distinction.swift` — un seul dans le projet.
 enum CinechillPalette {
-    static let night = Color(hex: 0x0A0F16)
-    static let nightMid = Color(hex: 0x05080D)
-    static let nightDeep = Color(hex: 0x010306)
+    /// La nuit de l'application, et le sol de la salle du logo.
+    ///
+    /// Chaude, et c'est un choix mesuré : l'ancienne nuit `#0A0F16` était à
+    /// **4,2 de clarté perçue** (L\* CIE), soit visuellement du noir, sur une
+    /// teinte de 215° que onze applications de cinéma sur treize occupent déjà.
+    /// Celle-ci est à **9,3**, pour un point d'APCA perdu sur cent six. Deux
+    /// conséquences qu'on ne lit pas dans un ratio de contraste : une ombre
+    /// redevient visible — sur L\* 4 aucune ne l'est, c'est la raison que
+    /// Material donne à son `#121212` — et un neutre chaud laisse ressortir les
+    /// couleurs froides d'une affiche, ce qui est le motif de l'échelle chaude
+    /// de Pinterest et du virage publié par Linear en mars 2026.
+    ///
+    /// La lumière de la cabine reste froide : une salle est chaude, sa
+    /// projection ne l'est pas. C'est l'écart entre les deux qui fait le logo.
+    static let night = Color(hex: 0x1C1A15)
+    /// Ce qui est posé sur la nuit : une carte, un champ de saisie, un plancher
+    /// de décision. Ce niveau n'existait pas, et son absence obligeait chaque
+    /// écran à tout dire avec des filets.
+    static let nightRaised = Color(hex: 0x232017)
+    /// Le seul niveau flottant : l'affiche qui n'a pas encore chargé, la feuille
+    /// qui recouvre. Au-delà, on empilerait des valeurs qu'on ne distingue plus.
+    static let nightFloat = Color(hex: 0x2A261C)
+    static let nightMid = Color(hex: 0x13110D)
+    static let nightDeep = Color(hex: 0x0A0906)
 
     static let wallHigh = Color(hex: 0xC6D3DF)
     static let wallMid = Color(hex: 0x93A2B1)
@@ -193,15 +214,15 @@ enum CinechillPalette {
     static let rimLow = Color(hex: 0x8CC4E4)
     static let rimDeep = Color(hex: 0x79B6DC)
 
-    static let floor = Color(hex: 0x070C13)
-    static let floorDeep = Color(hex: 0x010306)
+    static let floor = Color(hex: 0x17150F)
+    static let floorDeep = Color(hex: 0x0A0906)
 
     static let screen = Color(hex: 0xF4FDFF)
     static let light = Color(hex: 0x7FE3FF)
     static let lightPale = Color(hex: 0xE8FAFF)
     static let lightMid = Color(hex: 0x9EEBFF)
 
-    static let seat = Color(hex: 0x02060B)
+    static let seat = Color(hex: 0x0D0B08)
     static let seatRim = Color(hex: 0xBFF1FF)
     static let boothLight = Color(hex: 0xF2FCFF)
 }

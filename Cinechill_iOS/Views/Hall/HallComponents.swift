@@ -52,7 +52,7 @@ struct HallAvatar: View {
             )
             Text(initial)
                 .font(.system(size: size * 0.40, weight: .semibold))
-                .foregroundStyle(Color(hex: 0x06101A))
+                .foregroundStyle(Ink.ground)
         }
     }
 
@@ -127,8 +127,10 @@ struct HallFollowButton: View {
                     RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
                         .strokeBorder(Ink.ruleSet, lineWidth: 1)
                 } else {
+                    // Suivre est l'action de l'écran, pas un état : elle prend le
+                    // papier, comme tout aplat d'action principale.
                     RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-                        .fill(Ink.ink)
+                        .fill(Ink.paper)
                 }
             }
         }

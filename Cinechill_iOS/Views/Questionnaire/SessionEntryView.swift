@@ -159,7 +159,7 @@ private struct SeatChoice: View {
             ForEach(0 ..< seats.total, id: \.self) { index in
                 let isSmall = index >= seats.total - seats.small
                 RoundedRectangle(cornerRadius: isSmall ? 4 : 6, style: .continuous)
-                    .fill(isOn ? Ink.ink : Color(hex: 0x2A3644))
+                    .fill(isOn ? Ink.ink : Ink.ground3)
                     .frame(width: isSmall ? 14 : 17, height: isSmall ? 10 : 18)
             }
         }

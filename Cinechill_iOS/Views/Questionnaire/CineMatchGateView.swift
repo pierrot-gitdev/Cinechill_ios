@@ -294,7 +294,7 @@ struct CineMatchGateView: View {
                     .fill(
                         door.artifact(key)?.done == true
                             ? Color(hex: key.hue)
-                            : Color(hex: 0xC6D3DF).opacity(0.13)
+                            : Ink.rule
                     )
                     .frame(height: 3)
             }
@@ -833,7 +833,7 @@ private struct DoorArtifactSheet: View {
         .padding(.horizontal, Metrics.margin)
         .padding(.top, 22)
         .padding(.bottom, Metrics.margin)
-        .presentationBackground(Color(hex: 0x0D141D))
+        .presentationBackground(Ink.ground)
     }
 
     /// La jauge tracée de l'app, dans la teinte de l'artéfact : la mesure se

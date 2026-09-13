@@ -201,7 +201,7 @@ struct SalleBackdrop: View, Animatable {
             context.fill(
                 quad(p(-60, 700), p(78, 320), p(312, 320), p(450, 700)),
                 with: .linearGradient(
-                    Gradient(colors: [floorHigh, Color(hex: 0x05080D)]),
+                    Gradient(colors: [floorHigh, CinechillPalette.nightMid]),
                     startPoint: p(0, 320), endPoint: p(0, 700)
                 )
             )

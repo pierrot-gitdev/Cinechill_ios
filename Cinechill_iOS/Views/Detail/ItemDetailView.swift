@@ -435,7 +435,7 @@ struct ItemDetailView: View {
                         .font(.system(size: 9, weight: .semibold))
                         .foregroundStyle(Ink.ink2)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(hex: 0x151B23))
+                        .background(Ink.ground3)
                 }
             }
             .frame(width: 42, height: 42)
@@ -502,7 +502,7 @@ struct ItemDetailView: View {
                                 if let url = member.profileURL {
                                     PosterImageView(url: url)
                                 } else {
-                                    Color(hex: 0x151B23)
+                                    Ink.ground3
                                 }
                             }
                             .frame(width: 56, height: 56)

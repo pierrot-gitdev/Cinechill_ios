@@ -100,12 +100,12 @@ struct SwipeCompass: View {
         Ink.ground.ignoresSafeArea()
         HStack(spacing: 20) {
             RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-                .fill(Color(hex: 0x141C26))
+                .fill(Ink.ground2)
                 .overlay(SwipeCompass())
                 .frame(width: 250, height: 400)
 
             RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-                .fill(Color(hex: 0x141C26))
+                .fill(Ink.ground2)
                 .overlay(SwipeCompass(engaged: .seen, intensity: 1, isArmed: true))
                 .frame(width: 250, height: 400)
         }

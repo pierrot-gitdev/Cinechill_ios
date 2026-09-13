@@ -112,7 +112,7 @@ struct ResultView: View {
                 image.resizable().scaledToFit()
             default:
                 ZStack {
-                    Rectangle().fill(Color(hex: 0x141C26))
+                    Rectangle().fill(Ink.ground3)
                     CinechillHallIconView(.salle)
                         .frame(width: 26, height: 26)
                         .foregroundStyle(Ink.ink3)

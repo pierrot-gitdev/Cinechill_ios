@@ -7,32 +7,71 @@ import SwiftUI
 
 // MARK: - Les encres
 
-/// Les six valeurs de l'application — direction « Le Plan ».
+/// Les neuf valeurs de l'application — direction « Le Plan », nuit chaude.
 ///
-/// Trois gris, deux états, un fond. En régime courant un écran n'en emploie que
-/// quatre : l'accent et l'écart ne servent qu'à dire quelque chose. Toutes sont
-/// dérivées de `CinechillPalette`, à plat — aucun dégradé, aucune lueur.
+/// Trois nuits, un papier, trois encres, deux signaux. En régime courant un
+/// écran n'en emploie que quatre : l'accent et l'écart ne servent qu'à dire
+/// quelque chose. Toutes sont à plat — aucun dégradé, aucune lueur.
+///
+/// **L'ordre de clarté est la règle du jeu**, et il est univoque : papier 94,8,
+/// encre 86,4, lumière 85,3, encre 2 74,3, écart 72,9, encre 3 55,9 (L\* CIE).
+/// L'objet le plus clair d'un écran est donc toujours son action principale.
+/// Ce n'était pas le cas : l'ancienne encre de texte (#EDF1F5, L\* 95) était
+/// *plus claire* que l'accent (L\* 85,3), si bien que le cyan ne pouvait pas
+/// sortir du texte au milieu duquel il était posé. Une singleton de couleur ne
+/// capture l'attention que si elle est plus saillante que le reste (Theeuwes
+/// 1992), et le contraste de teinte ne compense pas un déficit de luminance
+/// (Buchner & Baumgartner 2007).
 ///
 /// Ces valeurs ont d'abord vécu dans `AuthComponents` sous le nom `AuthInk`,
 /// parce que l'authentification est le premier écran à avoir été dessiné dans
 /// cette direction. Elles n'ont jamais été propres à l'authentification :
 /// `AuthInk` n'est plus qu'un renvoi vers ce jeu-ci.
 enum Ink {
-    static let ground = CinechillPalette.night          // #0A0F16
-    static let ink = Color(hex: 0xEDF1F5)
-    static let ink2 = Color(hex: 0x8D9AA8)              // étain
-    static let ink3 = Color(hex: 0x59636E)              // ardoise
+    static let ground = CinechillPalette.night          // #1C1A15
+    /// Ce qui est posé sur le fond. Voir `CinechillPalette.nightRaised`.
+    static let ground2 = CinechillPalette.nightRaised   // #232017
+    /// Le seul niveau flottant. Voir `CinechillPalette.nightFloat`.
+    static let ground3 = CinechillPalette.nightFloat    // #2A261C
 
-    static let rule = Color(hex: 0xC6D3DF).opacity(0.13)
-    static let ruleSet = Color(hex: 0xC6D3DF).opacity(0.26)
+    /// **Le seul aplat clair de l'interface, et donc l'action principale.**
+    /// Rien d'autre ne le porte : une sélection se dit à l'encre, un cran plus
+    /// bas, pour que la hiérarchie tienne sans qu'on l'explique.
+    static let paper = Color(hex: 0xF3F0E8)
+
+    static let ink = Color(hex: 0xDCD8CD)
+    static let ink2 = Color(hex: 0xBCB7A4)
+    /// **Jamais de texte sous 13 pt.** Compteurs, états désactivés, glyphes.
+    ///
+    /// L'ancienne valeur (#59636E) affichait 3,14:1 sur le fond, sous le seuil
+    /// AA, et servait pourtant à 11 et 12 pt : c'est exactement le cas que
+    /// Zlokazova & Burmistrov (2017, N = 63) isolent comme le pire, faible
+    /// contraste *en polarité négative*, où les scores de lisibilité
+    /// s'effondrent plus de trois fois plus vite que sur fond clair. Celle-ci
+    /// tient 4,77:1. Ce qui portait une note de section passe à `ink2`.
+    static let ink3 = Color(hex: 0x8A8678)
+
+    /// Les filets restent translucides : un plafond de bloc se pose parfois sur
+    /// une affiche, dont on ne connaît pas la valeur. Sur le fond, ils tombent
+    /// sur #383630 et #54514B, contre 1,19:1 et 1,55:1 auparavant.
+    static let rule = Color(hex: 0xDCD8CD).opacity(0.14)
+    static let ruleSet = Color(hex: 0xDCD8CD).opacity(0.28)
 
     /// Le point de lumière de la famille d'icônes. **Deux occurrences par écran
     /// au maximum**, et jamais autrement que sous la forme d'un carré de 5 pt.
     /// Un sens unique dans toute l'app : *acquis, vérifié, non lu*.
+    ///
+    /// Gardé à saturation pleine : c'est la saturation qui porte l'effet
+    /// d'activation (Wilms & Oberfeld 2018, η²p = .693), et la teinte n'agit
+    /// qu'aux saturations élevées. Material conseille de désaturer les accents
+    /// en mode sombre ; ce conseil vise le texte coloré en petit corps, pas une
+    /// pastille, et on ne le suit pas. Sur la nuit chaude, ce cyan n'est plus
+    /// une variation dans une famille bleue : c'est un complémentaire.
     static let light = CinechillPalette.light           // #7FE3FF
-    /// L'écart. Seule teinte chaude de l'application — elle remplace partout le
-    /// rouge et l'orange du système.
-    static let warn = Color(hex: 0xE5A276)
+    /// L'écart. Remonté de 68 à 84 % de saturation : sur un fond bleu, une
+    /// teinte chaude était un événement par sa seule présence ; sur une nuit
+    /// chaude à 14 %, il lui faut de la chroma pour rester un événement.
+    static let warn = Color(hex: 0xF2A06A)
 }
 
 // MARK: - Les mesures
@@ -112,7 +151,7 @@ struct PlanEdge: View {
 /// `AppTabBar`. Il sépare sans jamais fermer, et c'est son égalité d'un écran à
 /// l'autre qui fait lire l'application comme un seul volume.
 struct PlanRail: View {
-    var tint: Color = CinechillPalette.rimMid.opacity(0.20)
+    var tint: Color = Ink.ink.opacity(0.22)
 
     var body: some View {
         LinearGradient(
@@ -227,7 +266,7 @@ struct PlanButton: View {
                 .foregroundStyle(Ink.ground)
                 .frame(maxWidth: .infinity)
                 .frame(height: height)
-                .background(Ink.ink)
+                .background(Ink.paper)
                 .overlay(alignment: .bottomLeading) { progress }
                 .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
                 .opacity(isEnabled && !isLoading ? 1 : 0.6)

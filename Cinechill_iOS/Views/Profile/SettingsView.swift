@@ -259,7 +259,7 @@ struct SettingsView: View {
                     .frame(width: 24, height: 24)
                     .foregroundStyle(Ink.ink3)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(hex: 0x151B23))
+                    .background(Ink.ground3)
             }
         }
         .frame(width: 56, height: 56)

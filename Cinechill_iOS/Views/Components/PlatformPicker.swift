@@ -51,7 +51,7 @@ struct PlatformGrid: View {
                         .minimumScaleFactor(0.7)
                         .padding(4)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(hex: 0x151B23))
+                        .background(Ink.ground3)
                 }
             }
             .aspectRatio(1, contentMode: .fit)

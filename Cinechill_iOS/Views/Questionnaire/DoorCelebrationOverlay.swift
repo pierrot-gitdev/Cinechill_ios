@@ -136,7 +136,7 @@ struct DoorCelebrationOverlay: View {
             ForEach(DoorArtifactKey.allCases, id: \.self) { key in
                 let lit = (door.artifact(key)?.done == true) && (key != unlocked || revealed)
                 Rectangle()
-                    .fill(lit ? Color(hex: key.hue) : Color(hex: 0xC6D3DF).opacity(0.13))
+                    .fill(lit ? Color(hex: key.hue) : Ink.rule)
                     .frame(height: 3)
             }
         }

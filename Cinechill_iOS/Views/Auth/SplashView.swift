@@ -172,7 +172,7 @@ struct SplashView: View {
             // bouillie ; le tracé, lui, a été dessiné pour cette taille. Même géométrie de
             // part et d'autre, donc aucun décalage au passage.
             CinechillMarkOutline(lineWidth: 1.4)
-                .foregroundStyle(Color(hex: 0xEDF1F5))
+                .foregroundStyle(Ink.ink)
                 .frame(width: outlineSize, height: outlineSize)
                 .rotationEffect(.degrees(10))
                 .opacity(handedOver ? 1 : 0)
@@ -188,7 +188,7 @@ struct SplashView: View {
             ForEach(Array(Self.rest.enumerated()), id: \.offset) { index, character in
                 Text(verbatim: String(character))
                     .font(.system(size: nameSize, weight: .ultraLight))
-                    .foregroundStyle(Color(hex: 0xEDF1F5))
+                    .foregroundStyle(Ink.ink)
                     .opacity(lettersIn[index] ? 0.94 : 0)
                     .offset(x: lettersIn[index] ? 0 : -14)
                     .blur(radius: lettersIn[index] ? 0 : 4)

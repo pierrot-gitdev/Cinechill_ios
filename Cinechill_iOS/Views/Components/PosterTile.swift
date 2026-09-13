@@ -79,10 +79,10 @@ private struct PosterSurface: View {
         GeometryReader { geo in
             let side = min(geo.size.width, geo.size.height)
             ZStack {
-                Color(hex: 0x151B23)
+                Ink.ground3
                 Text(title)
                     .font(.system(size: max(8, side * 0.11), weight: .medium))
-                    .foregroundStyle(Ink.ink3)
+                    .foregroundStyle(Ink.ink2)
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
                     .padding(side * 0.12)

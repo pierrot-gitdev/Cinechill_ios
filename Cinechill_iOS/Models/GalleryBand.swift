@@ -84,14 +84,14 @@ nonisolated enum GalleryPalette {
     private static let colors: [Color] = [
         Color(hex: 0x7FE3FF),   // la lumière — le genre dominant
         Color(hex: 0xBEE0F5),   // liseré
-        Color(hex: 0x8D9AA8),   // étain
+        Color(hex: 0xBCB7A4),   // étain
         Color(hex: 0xE0B24A),   // or des badges
         Color(hex: 0xA98CE8),   // améthyste des badges
     ]
 
     /// L'index hors palette est celui de l'agrégat « autres ».
     static func color(at index: Int) -> Color {
-        guard index >= 0, index < colors.count else { return Color(hex: 0x3A434E) }
+        guard index >= 0, index < colors.count else { return Color(hex: 0x4A4639) }
         return colors[index]
     }
 }
