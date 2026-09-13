@@ -1374,6 +1374,22 @@
         }
       }
     },
+    "à trouver" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "to go"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "à trouver"
+          }
+        }
+      }
+    },
     "À voir" : {
       "localizations" : {
         "en" : {
@@ -10104,34 +10120,18 @@
         }
       }
     },
-    "sur %lld" : {
+    "sur %lld · complet" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "of %lld"
+            "value" : "of %lld · complete"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "sur %lld"
-          }
-        }
-      }
-    },
-    "sur %lld · il en reste %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "of %1$lld · %2$lld to go"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sur %lld · il en reste %lld"
+            "value" : "sur %lld · complet"
           }
         }
       }
@@ -11076,6 +11076,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu dois être connecté(e) pour voir tes suggestions."
+          }
+        }
+      }
+    },
+    "Tu en as déjà %1$lld sur %2$lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You already have %1$lld of %2$lld."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu en as déjà %1$lld sur %2$lld."
           }
         }
       }

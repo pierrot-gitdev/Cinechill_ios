@@ -540,12 +540,17 @@ struct LibraryMark: View {
                     PlanChip(title: "Drame", isOn: true) {}
                 }
 
+                // Le chiffre qui domine est ce qui reste, et le cumul passe en
+                // second : c'est la forme que prend tout compteur de l'app.
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .firstTextBaseline, spacing: 7) {
-                        Text("214", bundle: .app).planTitle(26).foregroundStyle(Ink.ink).monospacedDigit()
-                        Text("sur 250 · il en reste 36", bundle: .app).planLabel().foregroundStyle(Ink.ink2)
+                        Text(verbatim: "36").planTitle(26).foregroundStyle(Ink.ink).monospacedDigit()
+                        Text(verbatim: "À TROUVER").planLabel().foregroundStyle(Ink.ink2)
                     }
                     PlanProgressRule(fraction: 0.86)
+                    Text(verbatim: "Tu en as déjà 214 sur 250.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Ink.ink2)
                 }
 
                 PlanEdge()

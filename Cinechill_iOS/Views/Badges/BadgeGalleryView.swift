@@ -192,15 +192,31 @@ struct BadgeDetailView: View {
 
     /// La progression dit ce qui **reste**, pas seulement où l'on en est : c'est
     /// le chiffre manquant qui met en mouvement, et il n'était affiché nulle part.
+    /// Le chiffre qui domine est **ce qui reste**, pas ce qui est acquis.
+    ///
+    /// L'ordre n'est pas cosmétique. Kivetz, Urminsky & Zheng (2006) montrent
+    /// sur le terrain que l'effort est fonction de la proportion de distance
+    /// *initiale restante*, et non du chemin parcouru : 20 % d'accélération vers
+    /// le but, 16 % de temps gagné sur la complétion. Le cumul reste affiché
+    /// parce qu'il est l'objet de l'attachement, mais en second.
+    ///
+    /// Et la ligne de crédit existe pour une autre raison mesurée : Nunes &
+    /// Drèze (2006) obtiennent **34 % de complétion contre 19 %** en présentant
+    /// un objectif comme déjà entamé, à travail identique. Ici le crédit n'est
+    /// pas fabriqué, il dit ce que la galerie contient déjà.
     private var progressBlock: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let missing = max(0, progress.target - progress.current)
+
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(verbatim: "\(progress.current)")
+                Text(verbatim: "\(missing > 0 ? missing : progress.current)")
                     .planTitle(26)
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink)
 
-                Text(remainingText)
+                Text(missing > 0
+                     ? String(localized: "à trouver", bundle: .app)
+                     : String(localized: "sur \(progress.target) · complet", bundle: .app))
                     .planLabel()
                     .foregroundStyle(Ink.ink2)
 
@@ -208,17 +224,17 @@ struct BadgeDetailView: View {
             }
 
             PlanProgressRule(fraction: progress.fraction)
+
+            if missing > 0, progress.current > 0 {
+                Text(String(localized: "Tu en as déjà \(progress.current) sur \(progress.target).", bundle: .app))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Ink.ink2)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 34)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(String(localized: "\(progress.current) sur \(progress.target)", bundle: .app))
-    }
-
-    private var remainingText: String {
-        let missing = max(0, progress.target - progress.current)
-        guard missing > 0 else { return String(localized: "sur \(progress.target)", bundle: .app) }
-        return String(localized: "sur \(progress.target) · il en reste \(missing)", bundle: .app)
     }
 
     @ViewBuilder
