@@ -302,6 +302,11 @@ struct HallSearchField: View {
                 }
             }
             .frame(height: Metrics.field)
+            // Même raison que dans `PlanField` : 32 pt ne font que 5,0 mm, et la
+            // croix d'effacement garde sa propre cible puisqu'un bouton enfant
+            // consomme ses taps avant le geste posé sur la rangée.
+            .contentShape(Rectangle().inset(by: -8))
+            .onTapGesture { isFocused = true }
 
             // L'état ne s'exprime que par la valeur du filet — comme dans
             // `PlanField`. Pas de fond qui s'allume, pas de bordure qui apparaît.

@@ -371,7 +371,16 @@ struct PlanChip: View {
                             .strokeBorder(isExcluded ? Ink.warn.opacity(0.5) : Ink.ruleSet, lineWidth: 1)
                     }
                 }
-                .contentShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+                // La boîte dessinée fait 31 pt, soit 4,9 mm : moitié de l'aire
+                // que Parhi et al. (2006) recommandent au pouce, et les 44 pt
+                // d'Apple sont eux-mêmes un plancher et non une cible. On ajoute
+                // la place qui manque, on la reprend en mise en page, et c'est
+                // la forme de frappe qui la garde. Verticalement seulement : sur
+                // les quatre côtés, deux puces voisines de la même rangée se
+                // disputeraient les taps de l'intervalle.
+                .padding(.vertical, 7)
+                .contentShape(Rectangle())
+                .padding(.vertical, -7)
         }
         .buttonStyle(PressableScaleStyle(scale: 0.96))
         .accessibilityAddTraits(isOn ? [.isSelected] : [])

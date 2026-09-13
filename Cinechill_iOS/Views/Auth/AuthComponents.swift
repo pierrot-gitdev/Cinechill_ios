@@ -168,6 +168,12 @@ struct PlanField<Value: Hashable>: View {
             .onSubmit(onSubmit)
         }
         .frame(height: AuthMetrics.field)
+        // 32 pt font 5,0 mm, soit 54 % de l'aire recommandée au pouce. Le filet
+        // reste où il est, la cible descend de 8 pt de part et d'autre. Et le tap
+        // donne le focus lui-même : un `contentShape` élargi ne fait pas entrer
+        // un `TextField` en édition, il n'élargit que la zone touchable.
+        .contentShape(Rectangle().inset(by: -8))
+        .onTapGesture { focus.wrappedValue = field }
     }
 
     @ViewBuilder
@@ -175,7 +181,7 @@ struct PlanField<Value: Hashable>: View {
         if let message = error, !message.isEmpty {
             noteText(message, tint: AuthInk.warn)
         } else if let note, !note.isEmpty {
-            noteText(note, tint: AuthInk.ink3)
+            noteText(note, tint: AuthInk.ink2)
         }
     }
 
