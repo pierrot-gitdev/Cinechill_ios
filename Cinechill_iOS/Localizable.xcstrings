@@ -3119,6 +3119,22 @@
         }
       }
     },
+    "CinéMatch se débloque" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CinéMatch needs unlocking"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CinéMatch se débloque"
+          }
+        }
+      }
+    },
     "CinéMatch verrouillé, %lld étapes sur 5 validées" : {
       "localizations" : {
         "en" : {
@@ -3135,18 +3151,34 @@
         }
       }
     },
-    "Commence par ajouter les films que tu as vus : Cinechill pourra te proposer des films qui te plaisent." : {
+    "Coche celles que tu as : on ne te proposera que des films disponibles dessus." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Start by adding the movies you've watched, so Cinechill can suggest movies you'll like."
+            "value" : "Tick the ones you have: we'll only suggest movies available on them."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Commence par ajouter les films que tu as vus : Cinechill pourra te proposer des films qui te plaisent."
+            "value" : "Coche celles que tu as : on ne te proposera que des films disponibles dessus."
+          }
+        }
+      }
+    },
+    "Commence par ajouter les films que tu as vus : c'est la première étape pour débloquer CinéMatch." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start by adding the movies you've watched: it's the first step to unlock CinéMatch."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commence par ajouter les films que tu as vus : c'est la première étape pour débloquer CinéMatch."
           }
         }
       }
@@ -5713,38 +5745,6 @@
         }
       }
     },
-    "Il part en watchlist" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "It goes to your watchlist"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il part en watchlist"
-          }
-        }
-      }
-    },
-    "Il rejoint ta galerie" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "It joins your gallery"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il rejoint ta galerie"
-          }
-        }
-      }
-    },
     "Il reviendra plus tard" : {
       "localizations" : {
         "en" : {
@@ -5757,6 +5757,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il reviendra plus tard"
+          }
+        }
+      }
+    },
+    "Il s'ouvre quand tu remplis quelques critères, comme ajouter des films vus à ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It opens once you meet a few criteria, like adding movies you've watched to your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il s'ouvre quand tu remplis quelques critères, comme ajouter des films vus à ta galerie."
           }
         }
       }
@@ -6125,6 +6141,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Je le regarde"
+          }
+        }
+      }
+    },
+    "Je n'ai aucune plateforme" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I don't have any platforms"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'ai aucune plateforme"
           }
         }
       }
@@ -7453,22 +7485,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Né dans les années %@"
-          }
-        }
-      }
-    },
-    "Ne laisse plus ton plat refroidir pendant que tu choisis un film, en 60 sec Cinechill te propose la pépite que tu cherches." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stop letting your dinner go cold while you pick a movie. In 60 seconds Cinechill finds the gem you're after."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ne laisse plus ton plat refroidir pendant que tu choisis un film, en 60 sec Cinechill te propose la pépite que tu cherches."
           }
         }
       }
@@ -9121,6 +9137,22 @@
         }
       }
     },
+    "Quelles plateformes as-tu ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which platforms do you have?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelles plateformes as-tu ?"
+          }
+        }
+      }
+    },
     "Quelque chose de doux" : {
       "localizations" : {
         "en" : {
@@ -9669,6 +9701,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Replié"
+          }
+        }
+      }
+    },
+    "Réponds à deux questions, compare quelques films que tu as vus, et CinéMatch te propose cinq films pour ce soir." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Answer two questions, compare a few movies you've watched, and CinéMatch suggests five movies for tonight."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réponds à deux questions, compare quelques films que tu as vus, et CinéMatch te propose cinq films pour ce soir."
           }
         }
       }
@@ -10761,6 +10809,22 @@
         }
       }
     },
+    "Swipe pour remplir ta galerie de films" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe to fill your gallery with movies"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe pour remplir ta galerie de films"
+          }
+        }
+      }
+    },
     "Synopsis" : {
       "localizations" : {
         "en" : {
@@ -11397,22 +11461,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tranquille, sans tension, qui finit bien"
-          }
-        }
-      }
-    },
-    "Trie les films en les faisant glisser" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sort movies with a swipe"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trie les films en les faisant glisser"
           }
         }
       }

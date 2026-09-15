@@ -54,11 +54,32 @@ final class WatchlistViewModel {
 
     // MARK: - Entrées
 
+    /// - Parameter enrich: `false` pendant la prise en main. Les films
+    ///   d'exemple sont rangés tout de suite et ne vont pas chercher leurs
+    ///   durées : une réponse du serveur arrivant pendant l'étape réordonnait la
+    ///   liste sous les yeux.
     func update(
         entries: [WatchlistEntry],
         preferredPlatformIDs: Set<String>,
-        platforms: [StreamingPlatform]
+        platforms: [StreamingPlatform],
+        enrich: Bool = true
     ) async {
+        guard prepare(entries: entries, preferredPlatformIDs: preferredPlatformIDs, platforms: platforms),
+              enrich else { return }
+        await enrichMissing()
+    }
+
+    /// La partie immédiate de `update` : ranger ce qu'on sait déjà. Appelée
+    /// aussi à l'apparition de la vue, pour que la première image soit déjà la
+    /// liste rangée et non une liste vide qui se remplit.
+    ///
+    /// - Returns: `false` si rien n'a changé.
+    @discardableResult
+    func prepare(
+        entries: [WatchlistEntry],
+        preferredPlatformIDs: Set<String>,
+        platforms: [StreamingPlatform]
+    ) -> Bool {
         // Les identifiants de plateformes préférées sont déjà les identifiants
         // TMDB, stockés en chaînes (voir `StreamingPlatform.curated`).
         let preferred = Set(preferredPlatformIDs.compactMap(Int.init))
@@ -70,13 +91,13 @@ final class WatchlistViewModel {
         let unchanged = entries == self.entries
             && preferred == preferredProviderIDs
             && names == platformNames
-        guard !unchanged else { return }
+        guard !unchanged else { return false }
 
         self.entries = entries
         self.preferredProviderIDs = preferred
         self.platformNames = names
         rebuild()
-        await enrichMissing()
+        return true
     }
 
     /// Écarte la proposition courante et en calcule une autre. Le film écarté

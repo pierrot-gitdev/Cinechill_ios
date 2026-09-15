@@ -88,6 +88,10 @@ struct SwipeCardView: View {
     var parallax: CGSize = .zero
     /// Le doigt est posé sur la carte : on nomme les trois issues.
     var showsCompass = false
+    /// `false` pendant la démonstration de la prise en main : la carte y porte
+    /// le tampon du verdict, et les repères de destination feraient lire deux
+    /// réponses à la même question.
+    var compassEnabled = true
     var onTap: () -> Void = {}
 
     private var shape: RoundedRectangle {
@@ -285,7 +289,7 @@ struct SwipeCardView: View {
             // Elle reste tant qu'un verdict est en cours, même si le doigt a
             // quitté la zone qui l'avait fait apparaître : c'est elle qui porte
             // le retour du geste, il ne peut pas s'éteindre en cours de route.
-            .opacity(showsCompass || verdict != nil ? 1 : 0)
+            .opacity(compassEnabled && (showsCompass || verdict != nil) ? 1 : 0)
             .animation(SwipeMotion.unfold, value: showsCompass)
     }
 

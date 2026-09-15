@@ -148,6 +148,8 @@ struct SwipeDeckView: View {
         // le suivant : sans ça, deux allers-retours rapides sur l'onglet
         // laisseraient deux comptes à rebours se marcher dessus.
         .task(id: arrival) { await playReminder() }
+        // La prise en main montre les trois gestes sur la carte elle-même.
+        .task(id: isShowingTourDemo) { await playTourDemo() }
         .onDisappear {
             Task { await model.flushPending() }
         }
@@ -304,9 +306,11 @@ struct SwipeDeckView: View {
                     isSynopsisOpen: isSynopsisOpen,
                     parallax: reduceMotion ? .zero : SwipeMotion.parallax(for: drag),
                     showsCompass: (isPressing || showsReminder) && !isSynopsisOpen,
+                    compassEnabled: !isShowingTourDemo,
                     onTap: toggleSynopsis
                 )
                 .frame(width: size.width, height: size.height)
+                .overlay { if isShowingTourDemo { tourStamp } }
                 .offset(x: drag.width + returnOffset.width, y: drag.height + returnOffset.height)
                 .rotationEffect(.degrees(pivot.angle + returnAngle), anchor: pivot.anchor)
                 .gesture(dragGesture(cardHeight: size.height))
@@ -500,6 +504,126 @@ struct SwipeDeckView: View {
     /// Avancement du geste en cours vers son seuil, entre 0 et 1.
     private var dragProgress: CGFloat {
         currentVerdict.map { CGFloat($0.intensity) } ?? 0
+    }
+
+    // MARK: - La démonstration de la prise en main
+
+    /// L'étape « Découvrir » de la visite est à l'écran.
+    private var isShowingTourDemo: Bool {
+        tour.step == .decouvrir && selectedTab == 2
+    }
+
+    /// Les trois gestes, joués sur la carte du dessus au lieu d'être écrits.
+    ///
+    /// La carte penche vers chaque direction jusqu'au seuil, le tampon
+    /// s'allume, puis elle revient au centre. Vers la droite, elle marque un
+    /// second temps jusqu'au cran du coup de cœur. **Elle ne part jamais** : rien
+    /// n'est classé, et `commit` n'est jamais appelé. Le mouvement passe par
+    /// `drag`, la même valeur que le doigt : inclinaison, parallaxe et tampon
+    /// sont exactement ceux du vrai geste. Aucune vibration, elles ne partent
+    /// que du geste réel.
+    ///
+    /// Sans danger ici, alors que `SwipeGuideOverlay` a renoncé à animer la
+    /// vraie carte : pendant la visite l'application est inerte, réduite en
+    /// vignette, et la carte est un film d'exemple.
+    private func playTourDemo() async {
+        guard isShowingTourDemo, !reduceMotion else { return }
+        grabbedHigh = true
+        try? await Task.sleep(for: .milliseconds(600))
+
+        while !Task.isCancelled {
+            for direction in [SwipeDirection.right, .left, .up] {
+                let target: CGSize = switch direction {
+                case .right: CGSize(width: Self.sideThreshold + 16, height: 0)
+                case .left: CGSize(width: -(Self.sideThreshold + 16), height: 0)
+                case .up: CGSize(width: 0, height: -(Self.upThreshold + 12))
+                }
+                withAnimation(.easeInOut(duration: 0.55)) { drag = target }
+                try? await Task.sleep(for: .milliseconds(550))
+                guard !Task.isCancelled else { break }
+
+                withAnimation(SwipeMotion.lock) { isArmed = true }
+                try? await Task.sleep(for: .milliseconds(750))
+                guard !Task.isCancelled else { break }
+
+                if direction == .right {
+                    // Le second temps : la carte continue jusqu'au cran du coup
+                    // de cœur, et l'écusson s'allume. Sa course est celle que
+                    // prend la carte sous un doigt tiré jusqu'à `loveThreshold`,
+                    // résistance comprise, sinon la démonstration irait plus
+                    // loin que le vrai geste.
+                    let loveTravel = SwipeMotion.resisted(Self.loveThreshold + 8, threshold: Self.sideThreshold)
+                    withAnimation(.easeInOut(duration: 0.5)) { drag = CGSize(width: loveTravel, height: 0) }
+                    try? await Task.sleep(for: .milliseconds(500))
+                    guard !Task.isCancelled else { break }
+
+                    withAnimation(SwipeMotion.lock) { isLoveArmed = true }
+                    try? await Task.sleep(for: .milliseconds(900))
+                    guard !Task.isCancelled else { break }
+                    withAnimation(SwipeMotion.lock) { isLoveArmed = false }
+                }
+
+                isArmed = false
+                withAnimation(SwipeMotion.recenter) { drag = .zero }
+                try? await Task.sleep(for: .milliseconds(600))
+                guard !Task.isCancelled else { break }
+            }
+            try? await Task.sleep(for: .milliseconds(400))
+        }
+
+        // L'étape a changé en plein mouvement : la carte revient au centre.
+        isArmed = false
+        isLoveArmed = false
+        withAnimation(SwipeMotion.recenter) { drag = .zero }
+    }
+
+    /// Le tampon de la démonstration : les mots « VU », « PAS VU », « À VOIR »,
+    /// posés sur la carte du côté d'où elle part.
+    ///
+    /// Le dessin est celui de `SwipeGuideOverlay` (point plein pour l'acquis,
+    /// creux pour le prévu, liseré à la teinte du verdict), en plus grand : la
+    /// carte est réduite dans la vignette, et les repères de 10 pt de la boussole
+    /// ne s'y lisaient plus.
+    @ViewBuilder
+    private var tourStamp: some View {
+        if let current = currentVerdict {
+            let verdict = current.verdict
+            HStack(spacing: 8) {
+                if verdict.isFilled {
+                    PlanLight(tint: verdict.tint)
+                } else {
+                    PlanLightOutline(tint: verdict.tint)
+                }
+                Text(verdict.label)
+                    .font(.system(size: 17, weight: .semibold))
+                    .tracking(2)
+            }
+            .foregroundStyle(verdict.tint)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(
+                Ink.ground.opacity(0.92),
+                in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                    .strokeBorder(verdict.tint.opacity(isArmed ? 1 : 0.7), lineWidth: isArmed ? 1.5 : 1)
+            )
+            .scaleEffect(isArmed ? 1.06 : 1)
+            .padding(18)
+            // « À VOIR » au milieu de la carte, pas en haut : la carte monte, et
+            // son bord haut passe sous l'en-tête de la vignette avec le tampon.
+            // Les deux autres partent de côté, leurs coins hauts restent visibles.
+            .frame(
+                maxWidth: .infinity,
+                maxHeight: .infinity,
+                alignment: verdict == .watchlist ? .center : verdict.alignment
+            )
+            .opacity(min(1, current.intensity * 1.4))
+            .animation(SwipeMotion.lock, value: isArmed)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
     }
 
     private var currentVerdict: (verdict: SwipeVerdict, intensity: Double)? {

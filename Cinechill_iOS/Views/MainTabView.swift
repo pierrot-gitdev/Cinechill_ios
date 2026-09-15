@@ -38,6 +38,8 @@ struct MainTabView: View {
     /// la position imposée de la lampe pendant qu'elle les parcourt.
     @State private var litTabs: Set<Int> = []
     @State private var closingLamp: Int?
+    /// La hauteur du cartouche, mesurée : la vignette prend ce qui reste.
+    @State private var cartoucheHeight: CGFloat = 240
 
     private static let tabCount = 5
 
@@ -67,22 +69,51 @@ struct MainTabView: View {
         // l'occultation devient structurellement impossible.
         VStack(spacing: 0) {
             GeometryReader { proxy in
-                ZStack {
-                    ForEach(0 ..< Self.tabCount, id: \.self) { tab in
-                        if visibleTabs.contains(tab) {
-                            content(for: tab)
-                                .frame(width: proxy.size.width, height: proxy.size.height)
-                                .opacity(selectedTab == tab ? 1 : 0)
-                                .allowsHitTesting(selectedTab == tab && !tour.isRunning)
-                                .accessibilityHidden(selectedTab != tab)
-                                .zIndex(selectedTab == tab ? 1 : 0)
+                let scale = tourScale(in: proxy.size)
+
+                ZStack(alignment: .bottom) {
+                    ZStack {
+                        ForEach(0 ..< Self.tabCount, id: \.self) { tab in
+                            if visibleTabs.contains(tab) {
+                                content(for: tab)
+                                    .frame(width: proxy.size.width, height: proxy.size.height)
+                                    .opacity(selectedTab == tab ? 1 : 0)
+                                    .allowsHitTesting(selectedTab == tab && !tour.isRunning)
+                                    .accessibilityHidden(selectedTab != tab)
+                                    .zIndex(selectedTab == tab ? 1 : 0)
+                            }
                         }
                     }
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    // Pendant la prise en main, l'application devient une
+                    // vignette : réduite, cernée d'un filet, posée au-dessus du
+                    // cartouche. Le texte ne recouvre plus l'écran qu'il
+                    // présente, et l'écart entre les deux fait la rupture sans
+                    // voile ni ombre. Chaque modificateur reste en place hors
+                    // visite, à sa valeur neutre : en poser ou en retirer un
+                    // changerait l'identité des onglets, qui se remonteraient.
+                    .overlay {
+                        if tour.isRunning {
+                            Rectangle()
+                                .strokeBorder(Ink.ruleSet, lineWidth: 1 / scale)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .clipShape(TourWindowClip(isActive: tour.isRunning))
+                    .scaleEffect(scale, anchor: .top)
+                    .offset(y: tour.isRunning ? Self.tourWindowTop : 0)
+                    .animation(reduceMotion ? nil : Self.tourMotion, value: scale)
+
+                    cartouche
+                        .onGeometryChange(for: CGFloat.self) { geometry in
+                            geometry.size.height
+                        } action: { height in
+                            cartoucheHeight = height
+                        }
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
-                .overlay { if tour.isRunning { OnboardingVeil().transition(.opacity) } }
-                .overlay(alignment: .bottom) { cartouche }
             }
+            .background(Ink.ground)
 
             // La barre reste **visible** de bout en bout — c'est elle qui montre
             // où l'on est, et sa lampe est tout ce que la visite a à enseigner
@@ -96,6 +127,16 @@ struct MainTabView: View {
         .environment(doorStore)
         .overlay { celebrationOverlay }
         .overlay { doorOverlay }
+        // Le préambule de la prise en main : un compte neuf dit d'abord quelles
+        // plateformes il a. La visite part quand la feuille a fini de se retirer.
+        .sheet(
+            isPresented: Binding(get: { tour.asksPlatforms }, set: { _ in }),
+            onDismiss: { tour.platformsSheetDidDismiss() }
+        ) {
+            OnboardingPlatformsSheet(onContinue: { tour.answerPlatforms() })
+                .environmentObject(libraryStore)
+                .environment(catalog)
+        }
         .onChange(of: selectedTab) { _, tab in
             mountedTabs.insert(tab)
         }
@@ -166,6 +207,24 @@ struct MainTabView: View {
             galleryCount: libraryStore.galleryItems.count,
             watchlistCount: libraryStore.watchlistItems.count
         )
+    }
+
+    /// L'écart entre le haut de l'écran et la vignette, et entre la vignette et
+    /// le cartouche.
+    private static let tourWindowTop: CGFloat = 12
+    private static let tourWindowGap: CGFloat = 14
+    /// Au-delà, la vignette ne se distingue plus assez de l'application en
+    /// service ; en deçà de la valeur basse, elle ne se lit plus.
+    private static let tourWindowMaxScale: CGFloat = 0.78
+    private static let tourWindowMinScale: CGFloat = 0.45
+    private static var tourMotion: Animation { .easeInOut(duration: 0.32) }
+
+    /// L'échelle de la vignette : la hauteur laissée par le cartouche, bornée.
+    /// Elle suit la hauteur du cartouche d'une étape à l'autre, en douceur.
+    private func tourScale(in size: CGSize) -> CGFloat {
+        guard tour.isRunning, size.height > 0 else { return 1 }
+        let room = size.height - cartoucheHeight - Self.tourWindowTop - Self.tourWindowGap
+        return min(Self.tourWindowMaxScale, max(Self.tourWindowMinScale, room / size.height))
     }
 
     @ViewBuilder
@@ -286,5 +345,16 @@ struct MainTabView: View {
         default:
             WatchlistView(model: watchlistModel, selectedTab: $selectedTab)
         }
+    }
+}
+
+/// Le cadre de la vignette. Inactif, il ne rogne rien : un `clipped()` qu'on
+/// poserait seulement pendant la visite changerait la structure de la vue, et
+/// les cinq onglets perdraient leur état en entrant et en sortant.
+private struct TourWindowClip: Shape {
+    var isActive: Bool
+
+    func path(in rect: CGRect) -> Path {
+        Path(isActive ? rect : rect.insetBy(dx: -4000, dy: -4000))
     }
 }

@@ -58,6 +58,13 @@ struct WatchlistView: View {
                     .environment(catalog)
             }
         }
+        .onAppear {
+            model.prepare(
+                entries: displayedEntries,
+                preferredPlatformIDs: libraryStore.preferredPlatformIDs,
+                platforms: catalog.platforms
+            )
+        }
         .task {
             await catalog.loadIfNeeded()
             await syncModel()
@@ -79,7 +86,8 @@ struct WatchlistView: View {
         await model.update(
             entries: displayedEntries,
             preferredPlatformIDs: libraryStore.preferredPlatformIDs,
-            platforms: catalog.platforms
+            platforms: catalog.platforms,
+            enrich: !tour.isRunning
         )
     }
 

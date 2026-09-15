@@ -28,6 +28,7 @@ struct CineMatchView: View {
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(DoorStore.self) private var doorStore
     @Environment(MediaCatalog.self) private var catalog
+    @Environment(OnboardingTour.self) private var tour
 
     @State private var showProfile = false
     @State private var showLovePicker = false
@@ -94,6 +95,39 @@ struct CineMatchView: View {
 
     @ViewBuilder
     private var content: some View {
+        // Pendant la prise en main, l'onglet se montre au lieu de servir : le
+        // salon d'abord, même verrouillé, puis la porte telle qu'un compte neuf
+        // la trouve. Tout reste inerte : la visite montre, elle ne sert pas.
+        switch tour.step {
+        case .cinematch?:
+            CineMatchHomeView(viewModel: viewModel, onProfileTap: {}, showsScenario: false)
+                .transition(.opacity)
+        case .porte?:
+            CineMatchGateView(
+                door: tourDoor,
+                isMeasured: false,
+                lovedCount: libraryStore.lovedCount,
+                onProfileTap: {},
+                onDiscover: {},
+                onLovePicker: {},
+                onCompare: {},
+                onEnter: {}
+            )
+            .transition(.opacity)
+        default:
+            servingContent
+        }
+    }
+
+    /// La porte montrée par la visite. Elle ne peut pas être ouverte : une
+    /// porte gagnée jouerait sa cérémonie sous le cartouche, et la visite ne
+    /// présente que des comptes à la bibliothèque vide.
+    private var tourDoor: DoorState {
+        doorStore.door.unlocked ? .initial : doorStore.door
+    }
+
+    @ViewBuilder
+    private var servingContent: some View {
         // La porte garde l'onglet tant que le profil n'est pas prêt, et reste
         // une dernière fois pour l'ouverture : le seuil ne se franchit qu'en la
         // voyant céder. Elle ne peut s'interposer qu'à l'accueil, jamais au

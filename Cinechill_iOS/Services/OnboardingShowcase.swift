@@ -74,7 +74,7 @@ enum OnboardingShowcase {
              posterPath: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg", year: "2014-11-05",
              genreIDs: [878, 12, 18], voteAverage: 8.4, voteCount: 35_000, overview: nil),
         Film(tmdbID: 27205, title: String(localized: "Inception", bundle: .app),
-             posterPath: "/9gk7adGmEUnbnP4mvWJTnj2G4jI.jpg", year: "2010-07-16",
+             posterPath: "/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg", year: "2010-07-16",
              genreIDs: [28, 878, 12], voteAverage: 8.4, voteCount: 36_000, overview: nil),
         Film(tmdbID: 120, title: String(localized: "Le Seigneur des anneaux : La Communauté de l'anneau", bundle: .app),
              posterPath: "/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg", year: "2001-12-19",

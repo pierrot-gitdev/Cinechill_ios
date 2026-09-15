@@ -22,24 +22,30 @@ import FirebaseFirestore
 ///
 /// Trois décisions structurent cet objet :
 ///
-/// - **Une étape, un écran, une idée.** Six étapes dans l'ordre de la barre
+/// - **Une étape, un écran, une idée.** Sept étapes dans l'ordre de la barre
 ///   d'onglets, de gauche à droite : apprendre le parcours, c'est déjà apprendre
 ///   où sont les choses. La lampe du Seuil s'en charge sans qu'on l'écrive.
+///   CinéMatch en occupe deux, parce qu'il en porte deux depuis sa refonte :
+///   ce qu'il fait (le salon), et comment on le débloque (la porte).
 /// - **Rien ne s'avance tout seul.** Aucun minuteur. On ne lit pas tous à la
 ///   même vitesse, et se faire déplacer en cours de lecture est la pire chose
 ///   qu'une visite guidée puisse faire.
 /// - **Deux boutons en tout.** « Suivant » et « Passer ». Pas de retour
-///   arrière : six explications de deux lignes ne se relisent pas, et un
+///   arrière : sept explications de deux lignes ne se relisent pas, et un
 ///   troisième objet coûterait plus qu'il ne rendrait.
 @Observable
 @MainActor
 final class OnboardingTour {
 
-    // MARK: - Les six étapes
+    // MARK: - Les sept étapes
 
     enum Step: Int, CaseIterable {
         case accueil = 0
+        /// Le salon de CinéMatch, déverrouillé pour la visite : ce qu'on obtient.
         case cinematch
+        /// La porte, telle qu'un compte neuf la trouve : ce qu'il faut pour
+        /// l'obtenir. Même onglet que l'étape précédente.
+        case porte
         case decouvrir
         case galerie
         case watchlist
@@ -51,7 +57,7 @@ final class OnboardingTour {
         var tab: Int {
             switch self {
             case .accueil, .sortie: 0
-            case .cinematch: 1
+            case .cinematch, .porte: 1
             case .decouvrir: 2
             case .galerie: 3
             case .watchlist: 4
@@ -64,7 +70,8 @@ final class OnboardingTour {
             switch self {
             case .accueil: String(localized: "L'accueil", bundle: .app)
             case .cinematch: String(localized: "Marre de perdre 30 min à trouver un film ?", bundle: .app)
-            case .decouvrir: String(localized: "Trie les films en les faisant glisser", bundle: .app)
+            case .porte: String(localized: "CinéMatch se débloque", bundle: .app)
+            case .decouvrir: String(localized: "Swipe pour remplir ta galerie de films", bundle: .app)
             case .galerie: String(localized: "Tous les films que tu as vus", bundle: .app)
             case .watchlist: String(localized: "La liste des films à regarder", bundle: .app)
             case .sortie: String(localized: "À toi de jouer", bundle: .app)
@@ -78,7 +85,9 @@ final class OnboardingTour {
             case .accueil:
                 String(localized: "Découvre ici les films actuellement au cinéma, les plus populaires du moment ainsi que les suggestions Cinechill basées sur tes goûts.", bundle: .app)
             case .cinematch:
-                String(localized: "Ne laisse plus ton plat refroidir pendant que tu choisis un film, en 60 sec Cinechill te propose la pépite que tu cherches.", bundle: .app)
+                String(localized: "Réponds à deux questions, compare quelques films que tu as vus, et CinéMatch te propose cinq films pour ce soir.", bundle: .app)
+            case .porte:
+                String(localized: "Il s'ouvre quand tu remplis quelques critères, comme ajouter des films vus à ta galerie.", bundle: .app)
             case .decouvrir:
                 String(localized: "Indique les films que tu as vus et ajoute ceux que tu veux voir.", bundle: .app)
             case .galerie:
@@ -86,15 +95,9 @@ final class OnboardingTour {
             case .watchlist:
                 String(localized: "Plus besoin de noter quelque part les films à voir : ils sont tous ici.", bundle: .app)
             case .sortie:
-                String(localized: "Commence par ajouter les films que tu as vus : Cinechill pourra te proposer des films qui te plaisent.", bundle: .app)
+                String(localized: "Commence par ajouter les films que tu as vus : c'est la première étape pour débloquer CinéMatch.", bundle: .app)
             }
         }
-
-        /// Les trois directions du deck, écrites. C'est la seule étape à porter
-        /// plus que son titre et son explication, et pour une raison précise :
-        /// c'est la seule chose de l'application que rien à l'écran ne laisse
-        /// deviner.
-        var showsGestures: Bool { self == .decouvrir }
 
         var isLast: Bool { self == .sortie }
     }
@@ -105,6 +108,14 @@ final class OnboardingTour {
     private(set) var step: Step?
 
     var isRunning: Bool { step != nil }
+
+    /// Le préambule : la feuille des plateformes, demandée à un compte neuf avant
+    /// la première étape. Rien n'est enregistré de la visite tant qu'elle est
+    /// ouverte ; fermer l'app à ce moment la redemande au lancement suivant.
+    private(set) var asksPlatforms = false
+    /// La feuille a reçu sa réponse : la visite part quand elle a fini de se
+    /// retirer, pas pendant, pour que les deux mouvements ne se superposent pas.
+    private var platformsAnswered = false
     /// La dernière étape occupe la barre entière : les cinq onglets s'allument
     /// et la lampe les parcourt une dernière fois.
     var isClosing: Bool { step == .sortie }
@@ -144,7 +155,8 @@ final class OnboardingTour {
     /// mettrait à présenter ses écrans à quelqu'un qui les utilise depuis six
     /// mois.
     func startIfNeeded(galleryCount: Int, watchlistCount: Int) async {
-        guard step == nil, let uid = Auth.auth().currentUser?.uid else { return }
+        guard step == nil, !asksPlatforms, let uid = Auth.auth().currentUser?.uid else { return }
+
         self.uid = uid
 
         // Le local d'abord, et sans attendre : c'est le cas courant — une
@@ -173,11 +185,36 @@ final class OnboardingTour {
             return
         }
 
+        // Compte neuf : les plateformes d'abord, la visite ensuite. Une visite
+        // reprise en cours de route, elle, a déjà eu sa réponse.
+        askPlatforms()
+    }
+
+    private func askPlatforms() {
+        platformsAnswered = false
+        asksPlatforms = true
+    }
+
+    /// « Continuer » ou « Je n'ai aucune plateforme » : la feuille se retire.
+    /// Les plateformes sont déjà enregistrées, à chaque toucher.
+    func answerPlatforms() {
+        guard asksPlatforms else { return }
+        Haptics.selection()
+        platformsAnswered = true
+        asksPlatforms = false
+    }
+
+    /// La feuille a fini de se retirer : la visite commence.
+    func platformsSheetDidDismiss() {
+        guard platformsAnswered, step == nil else { return }
+        platformsAnswered = false
         resume(at: .accueil)
     }
 
     private func resume(at step: Step) {
-        self.step = step
+        // L'application se réduit en vignette : le mouvement dit qu'on entre
+        // en présentation, là où un saut ferait croire à un écran changé.
+        withAnimation(.easeInOut(duration: 0.32)) { self.step = step }
         persist()
         requestTab(step.tab)
     }

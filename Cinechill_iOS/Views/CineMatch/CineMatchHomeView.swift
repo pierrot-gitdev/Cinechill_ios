@@ -21,6 +21,9 @@ import SwiftUI
 struct CineMatchHomeView: View {
     let viewModel: CineMatchViewModel
     let onProfileTap: () -> Void
+    /// `false` dans la vignette de la prise en main : réduit, le bandeau ne se
+    /// lit plus et encombre le haut de la pièce. La télé monte à sa place.
+    var showsScenario = true
 
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(MediaCatalog.self) private var catalog
@@ -46,21 +49,27 @@ struct CineMatchHomeView: View {
     @State private var showSituation = false
     /// Mesurés plutôt que supposés : la télé se cale sous eux.
     ///
-    /// Le bas de l'en-tête se lit dans l'espace global, et non comme la zone
-    /// sûre plus la hauteur de l'en-tête : sous `ignoresSafeArea`, le
+    /// Le bas de l'en-tête se lit dans le repère de l'accueil, et non comme la
+    /// zone sûre plus la hauteur de l'en-tête : sous `ignoresSafeArea`, le
     /// `GeometryReader` voit une zone sûre haute de zéro, et le bandeau
     /// remontait sous l'en-tête de toute la hauteur de la barre d'état.
+    ///
+    /// Pas l'espace global non plus : il tient compte des transformations des
+    /// parents. Dans la vignette de la prise en main, l'app est réduite, l'écart
+    /// mesuré l'était d'autant, et le bandeau repassait sous l'en-tête.
     @State private var headerBottom: CGFloat = SalonGeometry.typicalChromeBottom
     @State private var stripHeight: CGFloat = SalonGeometry.typicalStripHeight
 
+    private static let space = "cinematch.salon"
+
     var body: some View {
         GeometryReader { proxy in
-            let chromeBottom = max(0, headerBottom - proxy.frame(in: .global).minY)
+            let chromeBottom = max(0, headerBottom - proxy.frame(in: .named(Self.space)).minY)
             let room = SalonGeometry(
                 width: proxy.size.width,
                 height: proxy.size.height,
                 chromeBottom: chromeBottom,
-                stripHeight: stripHeight
+                stripHeight: showsScenario ? stripHeight : 0
             )
             let stripWidth = max(0, proxy.size.width - 2 * Metrics.margin)
 
@@ -69,14 +78,16 @@ struct CineMatchHomeView: View {
                     .frame(width: proxy.size.width, height: proxy.size.height)
                     .accessibilityHidden(true)
 
-                scenarioStrip(width: stripWidth)
-                    .frame(width: stripWidth)
-                    .onGeometryChange(for: CGFloat.self) { geometry in
-                        geometry.size.height
-                    } action: { height in
-                        stripHeight = height
-                    }
-                    .offset(x: Metrics.margin, y: chromeBottom + 6)
+                if showsScenario {
+                    scenarioStrip(width: stripWidth)
+                        .frame(width: stripWidth)
+                        .onGeometryChange(for: CGFloat.self) { geometry in
+                            geometry.size.height
+                        } action: { height in
+                            stripHeight = height
+                        }
+                        .offset(x: Metrics.margin, y: chromeBottom + 6)
+                }
 
                 tvScreen(room)
                     .frame(width: room.screenWidth, height: room.screenHeight)
@@ -94,11 +105,14 @@ struct CineMatchHomeView: View {
                 onProfileTap: onProfileTap
             )
             .onGeometryChange(for: CGFloat.self) { geometry in
-                geometry.frame(in: .global).maxY
+                geometry.frame(in: .named(Self.space)).maxY
             } action: { bottom in
                 headerBottom = bottom
             }
         }
+        // Le repère commun à la pièce et à l'en-tête : il part du haut de
+        // l'écran, et aucune transformation d'un parent ne le déforme.
+        .coordinateSpace(.named(Self.space))
         .sheet(isPresented: $showSituation) {
             CineMatchSituationSheet(viewModel: viewModel, onClose: { showSituation = false })
                 .environmentObject(libraryStore)
