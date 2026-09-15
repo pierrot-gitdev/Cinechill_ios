@@ -121,7 +121,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld loved films in your gallery"
+            "value" : "%lld loved movies in your gallery"
           }
         },
         "fr" : {
@@ -137,7 +137,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld skipped films"
+            "value" : "%lld skipped movies"
           }
         },
         "fr" : {
@@ -153,7 +153,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld films can be suggested to you again."
+            "value" : "%lld movies can be suggested to you again."
           }
         },
         "fr" : {
@@ -169,7 +169,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your %lldth film of that genre and decade in the gallery."
+            "value" : "Your %lldth movie of that genre and decade in the gallery."
           }
         },
         "fr" : {
@@ -249,7 +249,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@: %@, for %lld films"
+            "value" : "%@: %@, for %lld movies"
           }
         },
         "fr" : {
@@ -281,7 +281,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ · %lld films"
+            "value" : "%@ · %lld movies"
           }
         },
         "fr" : {
@@ -329,7 +329,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ in %2$lld film"
+            "value" : "%1$@ in %2$lld movie"
           }
         },
         "fr" : {
@@ -345,7 +345,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ in %2$lld films"
+            "value" : "%1$@ in %2$lld movies"
           }
         },
         "fr" : {
@@ -441,7 +441,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@, %@, %lld films"
+            "value" : "%@, %@, %lld movies"
           }
         },
         "fr" : {
@@ -473,7 +473,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@, %lld films"
+            "value" : "%@, %lld movies"
           }
         },
         "fr" : {
@@ -571,7 +571,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld comparisons between films you've watched"
+            "value" : "%lld comparisons between movies you've watched"
           }
         },
         "fr" : {
@@ -587,7 +587,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$lld film is over %2$@ · See all"
+            "value" : "%1$lld movie is over %2$@ · See all"
           }
         },
         "fr" : {
@@ -603,7 +603,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld films added to your gallery"
+            "value" : "%lld movies added to your gallery"
           }
         },
         "fr" : {
@@ -619,7 +619,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld films in your gallery"
+            "value" : "%lld movies in your gallery"
           }
         },
         "fr" : {
@@ -635,7 +635,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld films in your watchlist"
+            "value" : "%lld movies in your watchlist"
           }
         },
         "fr" : {
@@ -654,13 +654,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld film from your watchlist"
+                  "value" : "%lld movie from your watchlist"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld films from your watchlist"
+                  "value" : "%lld movies from your watchlist"
                 }
               }
             }
@@ -691,7 +691,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$lld films are over %2$@ · See all"
+            "value" : "%1$lld movies are over %2$@ · See all"
           }
         },
         "fr" : {
@@ -710,13 +710,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld film you've watched"
+                  "value" : "%lld movie you've watched"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld films you've watched"
+                  "value" : "%lld movies you've watched"
                 }
               }
             }
@@ -747,7 +747,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$lld films watched, %2$lld of them this month"
+            "value" : "%1$lld movies watched, %2$lld of them this month"
           }
         },
         "fr" : {
@@ -932,7 +932,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "500 films in your gallery."
+            "value" : "500 movies in your gallery."
           }
         },
         "fr" : {
@@ -948,7 +948,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "500 films sorted in Discover."
+            "value" : "500 movies sorted in Discover."
           }
         },
         "fr" : {
@@ -1108,7 +1108,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "8 films by the same director."
+            "value" : "8 movies by the same director."
           }
         },
         "fr" : {
@@ -1140,7 +1140,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "15 films logged between 2 and 5 in the morning."
+            "value" : "15 movies logged between 2 and 5 in the morning."
           }
         },
         "fr" : {
@@ -1156,7 +1156,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "25 films released before 1970."
+            "value" : "25 movies released before 1970."
           }
         },
         "fr" : {
@@ -1172,7 +1172,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "40 horror films."
+            "value" : "40 horror movies."
           }
         },
         "fr" : {
@@ -1188,7 +1188,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "75 action films."
+            "value" : "75 action movies."
           }
         },
         "fr" : {
@@ -1204,7 +1204,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "100 films in the gallery."
+            "value" : "100 movies in the gallery."
           }
         },
         "fr" : {
@@ -1236,7 +1236,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Has already seen this film"
+            "value" : "Has already seen this movie"
           }
         },
         "fr" : {
@@ -1268,7 +1268,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Two films of the same genre, and the pace decides the evening."
+            "value" : "Two movies of the same genre, and the pace decides the evening."
           }
         },
         "fr" : {
@@ -1556,7 +1556,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add %lld films to your gallery first to be able to compare."
+            "value" : "Add %lld movies to your gallery first to be able to compare."
           }
         },
         "fr" : {
@@ -1588,7 +1588,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add films 60 days in a row."
+            "value" : "Add movies 60 days in a row."
           }
         },
         "fr" : {
@@ -1604,7 +1604,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add films 7 days in a row."
+            "value" : "Add movies 7 days in a row."
           }
         },
         "fr" : {
@@ -1780,7 +1780,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "At least 10 films in 8 different genres."
+            "value" : "At least 10 movies in 8 different genres."
           }
         },
         "fr" : {
@@ -1796,7 +1796,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "At least one film from 8 different decades."
+            "value" : "At least one movie from 8 different decades."
           }
         },
         "fr" : {
@@ -1876,7 +1876,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No film in that genre matches the rest of your criteria. Try another genre, or allow more time."
+            "value" : "No movie in that genre matches the rest of your criteria. Try another genre, or allow more time."
           }
         },
         "fr" : {
@@ -1892,7 +1892,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No film from those countries matches the rest of your criteria. Try adding a country, or changing genre."
+            "value" : "No movie from those countries matches the rest of your criteria. Try adding a country, or changing genre."
           }
         },
         "fr" : {
@@ -1908,7 +1908,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No film in this category is available on your platforms right now."
+            "value" : "No movie in this category is available on your platforms right now."
           }
         },
         "fr" : {
@@ -1924,7 +1924,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No film available on your platforms right now."
+            "value" : "No movie available on your platforms right now."
           }
         },
         "fr" : {
@@ -1940,7 +1940,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No film matches these criteria right now."
+            "value" : "No movie matches these criteria right now."
           }
         },
         "fr" : {
@@ -1956,7 +1956,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No film matches right now. Change your settings for tonight."
+            "value" : "No movie matches right now. Change your settings for tonight."
           }
         },
         "fr" : {
@@ -1972,7 +1972,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No film fits your evening with these filters. Extend the evening or change a filter."
+            "value" : "No movie fits your evening with these filters. Extend the evening or change a filter."
           }
         },
         "fr" : {
@@ -1988,7 +1988,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No skipped films"
+            "value" : "No skipped movies"
           }
         },
         "fr" : {
@@ -2260,7 +2260,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enjoy the film!"
+            "value" : "Enjoy the movie!"
           }
         },
         "fr" : {
@@ -2356,7 +2356,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "It helps us suggest films from your generation."
+            "value" : "It helps us suggest movies from your generation."
           }
         },
         "fr" : {
@@ -2548,7 +2548,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tonight, you want a film that…"
+            "value" : "Tonight, you want a movie that…"
           }
         },
         "fr" : {
@@ -2628,7 +2628,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This person has already seen this film."
+            "value" : "This person has already seen this movie."
           }
         },
         "fr" : {
@@ -2900,7 +2900,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose this film: this is the one that tempts you most"
+            "value" : "Choose this movie: this is the one that tempts you most"
           }
         },
         "fr" : {
@@ -2932,7 +2932,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pick my loved films"
+            "value" : "Pick my loved movies"
           }
         },
         "fr" : {
@@ -3140,7 +3140,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Start by adding the films you've watched, so Cinechill can suggest films you'll like."
+            "value" : "Start by adding the movies you've watched, so Cinechill can suggest movies you'll like."
           }
         },
         "fr" : {
@@ -3172,7 +3172,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Loved films"
+            "value" : "Loved movies"
           }
         },
         "fr" : {
@@ -3300,7 +3300,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Compare my films"
+            "value" : "Compare my movies"
           }
         },
         "fr" : {
@@ -3654,7 +3654,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Where is the film from?"
+            "value" : "Where is the movie from?"
           }
         },
         "fr" : {
@@ -3670,7 +3670,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In Discover, swipe a film up to add it to your watchlist."
+            "value" : "In Discover, swipe a movie up to add it to your watchlist."
           }
         },
         "fr" : {
@@ -3734,7 +3734,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In a scary film, you prefer…"
+            "value" : "In a scary movie, you prefer…"
           }
         },
         "fr" : {
@@ -3926,7 +3926,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Films from %lld different genres"
+            "value" : "Movies from %lld different genres"
           }
         },
         "fr" : {
@@ -3942,7 +3942,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Easy-to-follow films, mostly safe bets"
+            "value" : "Easy-to-follow movies, mostly safe bets"
           }
         },
         "fr" : {
@@ -3958,7 +3958,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unexpected films"
+            "value" : "Unexpected movies"
           }
         },
         "fr" : {
@@ -3974,7 +3974,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "More gripping films, and some discoveries"
+            "value" : "More gripping movies, and some discoveries"
           }
         },
         "fr" : {
@@ -3990,7 +3990,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Safe films"
+            "value" : "Safe movies"
           }
         },
         "fr" : {
@@ -4118,7 +4118,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Film length"
+            "value" : "Movie length"
           }
         },
         "fr" : {
@@ -4150,7 +4150,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rule out this film: this is the one that tempts you least"
+            "value" : "Rule out this movie: this is the one that tempts you least"
           }
         },
         "fr" : {
@@ -4166,7 +4166,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ruling a film out teaches us as much as choosing one."
+            "value" : "Ruling a movie out teaches us as much as choosing one."
           }
         },
         "fr" : {
@@ -4278,7 +4278,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "By comparing films you've watched, you show us what you prefer."
+            "value" : "By comparing movies you've watched, you show us what you prefer."
           }
         },
         "fr" : {
@@ -5094,7 +5094,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Film"
+            "value" : "Movie"
           }
         },
         "fr" : {
@@ -5110,7 +5110,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Previous film"
+            "value" : "Previous movie"
           }
         },
         "fr" : {
@@ -5126,7 +5126,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Untitled film"
+            "value" : "Untitled movie"
           }
         },
         "fr" : {
@@ -5142,7 +5142,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Next film"
+            "value" : "Next movie"
           }
         },
         "fr" : {
@@ -5158,7 +5158,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Film too long"
+            "value" : "Movie too long"
           }
         },
         "fr" : {
@@ -5174,7 +5174,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "film watched"
+            "value" : "movie watched"
           }
         },
         "fr" : {
@@ -5190,7 +5190,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Films"
+            "value" : "Movies"
           }
         },
         "fr" : {
@@ -5206,7 +5206,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "films added"
+            "value" : "movies added"
           }
         },
         "fr" : {
@@ -5222,7 +5222,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "well-known films"
+            "value" : "well-known movies"
           }
         },
         "fr" : {
@@ -5238,7 +5238,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "short films"
+            "value" : "short movies"
           }
         },
         "fr" : {
@@ -5254,7 +5254,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "long films"
+            "value" : "long movies"
           }
         },
         "fr" : {
@@ -5270,7 +5270,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "rare films"
+            "value" : "rare movies"
           }
         },
         "fr" : {
@@ -5286,7 +5286,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "films watched"
+            "value" : "movies watched"
           }
         },
         "fr" : {
@@ -5302,7 +5302,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Films watched"
+            "value" : "Movies watched"
           }
         },
         "fr" : {
@@ -5686,7 +5686,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "There were no skipped films."
+            "value" : "There were no skipped movies."
           }
         },
         "fr" : {
@@ -5766,7 +5766,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You need films that move fast."
+            "value" : "You need movies that move fast."
           }
         },
         "fr" : {
@@ -5862,7 +5862,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't load the films"
+            "value" : "Couldn't load the movies"
           }
         },
         "fr" : {
@@ -5990,7 +5990,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mark the films you've watched and add the ones you want to see."
+            "value" : "Mark the movies you've watched and add the ones you want to see."
           }
         },
         "fr" : {
@@ -6294,7 +6294,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your list of films to watch"
+            "value" : "Your list of movies to watch"
           }
         },
         "fr" : {
@@ -6454,7 +6454,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The detail backend only supports films."
+            "value" : "The detail backend only supports movies."
           }
         },
         "fr" : {
@@ -6470,7 +6470,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The popular backend only supports films."
+            "value" : "The popular backend only supports movies."
           }
         },
         "fr" : {
@@ -6534,7 +6534,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The film wasn't added. Try again."
+            "value" : "The movie wasn't added. Try again."
           }
         },
         "fr" : {
@@ -6550,7 +6550,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The film ends. At best, you…"
+            "value" : "The movie ends. At best, you…"
           }
         },
         "fr" : {
@@ -6934,7 +6934,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Films people recommend to you land here. Start with someone whose taste you like."
+            "value" : "Movies people recommend to you land here. Start with someone whose taste you like."
           }
         },
         "fr" : {
@@ -6950,7 +6950,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Films people recommend to you will land here."
+            "value" : "Movies people recommend to you will land here."
           }
         },
         "fr" : {
@@ -6966,7 +6966,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Films you swiped away will be offered to you again."
+            "value" : "Movies you swiped away will be offered to you again."
           }
         },
         "fr" : {
@@ -6982,7 +6982,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The films you skipped will come back later."
+            "value" : "The movies you skipped will come back later."
           }
         },
         "fr" : {
@@ -6998,7 +6998,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The films you've watched show up here. The more there are, the better we know your taste."
+            "value" : "The movies you've watched show up here. The more there are, the better we know your taste."
           }
         },
         "fr" : {
@@ -7014,7 +7014,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dark films don't bother you."
+            "value" : "Dark movies don't bother you."
           }
         },
         "fr" : {
@@ -7110,7 +7110,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tired of losing 30 minutes just picking a film?"
+            "value" : "Tired of losing 30 minutes just picking a movie?"
           }
         },
         "fr" : {
@@ -7462,7 +7462,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stop letting your dinner go cold while you pick a film. In 60 seconds Cinechill finds the gem you're after."
+            "value" : "Stop letting your dinner go cold while you pick a movie. In 60 seconds Cinechill finds the gem you're after."
           }
         },
         "fr" : {
@@ -7718,7 +7718,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We added films from other platforms"
+            "value" : "We added movies from other platforms"
           }
         },
         "fr" : {
@@ -7750,7 +7750,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Looking for films that fit you…"
+            "value" : "Looking for movies that fit you…"
           }
         },
         "fr" : {
@@ -7766,7 +7766,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finding your five films…"
+            "value" : "Finding your five movies…"
           }
         },
         "fr" : {
@@ -7782,7 +7782,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choosing your film…"
+            "value" : "Choosing your movie…"
           }
         },
         "fr" : {
@@ -7798,7 +7798,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We'll leave out horror and adults-only films."
+            "value" : "We'll leave out horror and adults-only movies."
           }
         },
         "fr" : {
@@ -7814,7 +7814,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We'll avoid films likely to do that to you."
+            "value" : "We'll avoid movies likely to do that to you."
           }
         },
         "fr" : {
@@ -7830,7 +7830,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We have no other films to offer with these criteria. Start a new search to widen it."
+            "value" : "We have no other movies to offer with these criteria. Start a new search to widen it."
           }
         },
         "fr" : {
@@ -7846,7 +7846,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We don't know anything about you yet. With every film you mark as watched and every search, this page fills in, and there are fewer and fewer questions to ask you."
+            "value" : "We don't know anything about you yet. With every movie you mark as watched and every search, this page fills in, and there are fewer and fewer questions to ask you."
           }
         },
         "fr" : {
@@ -7878,7 +7878,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We'll only suggest films available on your platforms."
+            "value" : "We'll only suggest movies available on your platforms."
           }
         },
         "fr" : {
@@ -7894,7 +7894,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We'll only suggest films available on your platforms. If you tick nothing, we suggest everything."
+            "value" : "We'll only suggest movies available on your platforms. If you tick nothing, we suggest everything."
           }
         },
         "fr" : {
@@ -7910,7 +7910,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We can also suggest films from your watchlist."
+            "value" : "We can also suggest movies from your watchlist."
           }
         },
         "fr" : {
@@ -8134,7 +8134,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Among these films you've seen, set aside the one that doesn't fit tonight"
+            "value" : "Among these movies you've seen, set aside the one that doesn't fit tonight"
           }
         },
         "fr" : {
@@ -8150,7 +8150,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Not enough films watched"
+            "value" : "Not enough movies watched"
           }
         },
         "fr" : {
@@ -8294,7 +8294,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Think of the last film that stayed with you. It left you with…"
+            "value" : "Think of the last movie that stayed with you. It left you with…"
           }
         },
         "fr" : {
@@ -8486,7 +8486,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No need to jot down films to watch somewhere: they're all here."
+            "value" : "No need to jot down movies to watch somewhere: they're all here."
           }
         },
         "fr" : {
@@ -8502,7 +8502,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No more films for now"
+            "value" : "No more movies for now"
           }
         },
         "fr" : {
@@ -8550,7 +8550,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The more films you've watched you add, the better we know your taste."
+            "value" : "The more movies you've watched you add, the better we know your taste."
           }
         },
         "fr" : {
@@ -8582,7 +8582,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Warm-hearted films, mostly."
+            "value" : "Warm-hearted movies, mostly."
           }
         },
         "fr" : {
@@ -8598,7 +8598,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Calm films, mostly."
+            "value" : "Calm movies, mostly."
           }
         },
         "fr" : {
@@ -8614,7 +8614,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Well-known films, mostly."
+            "value" : "Well-known movies, mostly."
           }
         },
         "fr" : {
@@ -8630,7 +8630,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Short films, mostly."
+            "value" : "Short movies, mostly."
           }
         },
         "fr" : {
@@ -8646,7 +8646,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Easy-to-follow films, mostly."
+            "value" : "Easy-to-follow movies, mostly."
           }
         },
         "fr" : {
@@ -8662,7 +8662,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Light films, mostly."
+            "value" : "Light movies, mostly."
           }
         },
         "fr" : {
@@ -8678,7 +8678,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unsparing films, mostly."
+            "value" : "Unsparing movies, mostly."
           }
         },
         "fr" : {
@@ -8774,7 +8774,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "For %lld films in your gallery."
+            "value" : "For %lld movies in your gallery."
           }
         },
         "fr" : {
@@ -8806,7 +8806,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "So people can find you and recommend films to you."
+            "value" : "So people can find you and recommend movies to you."
           }
         },
         "fr" : {
@@ -8870,7 +8870,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "To aim at the right kind of film, not just the right genre."
+            "value" : "To aim at the right kind of movie, not just the right genre."
           }
         },
         "fr" : {
@@ -8982,7 +8982,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What hooks you most in a film?"
+            "value" : "What hooks you most in a movie?"
           }
         },
         "fr" : {
@@ -8998,7 +8998,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What would make you stop a film halfway?"
+            "value" : "What would make you stop a movie halfway?"
           }
         },
         "fr" : {
@@ -9062,7 +9062,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What kind of film?"
+            "value" : "What kind of movie?"
           }
         },
         "fr" : {
@@ -9094,7 +9094,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "How long should the film be?"
+            "value" : "How long should the movie be?"
           }
         },
         "fr" : {
@@ -9158,7 +9158,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Which films did you love?"
+            "value" : "Which movies did you love?"
           }
         },
         "fr" : {
@@ -9598,7 +9598,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reset the films you passed on"
+            "value" : "Reset the movies you passed on"
           }
         },
         "fr" : {
@@ -9614,7 +9614,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bring back skipped films"
+            "value" : "Bring back skipped movies"
           }
         },
         "fr" : {
@@ -10062,7 +10062,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "If you had to choose between these two films…"
+            "value" : "If you had to choose between these two movies…"
           }
         },
         "fr" : {
@@ -10510,7 +10510,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Follow someone to be able to recommend a film to them."
+            "value" : "Follow someone to be able to recommend a movie to them."
           }
         },
         "fr" : {
@@ -10958,7 +10958,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your loved films help us find films you'll enjoy."
+            "value" : "Your loved movies help us find movies you'll enjoy."
           }
         },
         "fr" : {
@@ -11118,7 +11118,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your last film"
+            "value" : "Your last movie"
           }
         },
         "fr" : {
@@ -11166,7 +11166,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your first film added."
+            "value" : "Your first movie added."
           }
         },
         "fr" : {
@@ -11230,7 +11230,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap a film to mark it as loved."
+            "value" : "Tap a movie to mark it as loved."
           }
         },
         "fr" : {
@@ -11294,7 +11294,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Every film in a saga."
+            "value" : "Every movie in a saga."
           }
         },
         "fr" : {
@@ -11310,7 +11310,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Every film you've watched"
+            "value" : "Every movie you've watched"
           }
         },
         "fr" : {
@@ -11406,7 +11406,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sort films with a swipe"
+            "value" : "Sort movies with a swipe"
           }
         },
         "fr" : {
@@ -11438,7 +11438,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find films"
+            "value" : "Find movies"
           }
         },
         "fr" : {
@@ -11454,7 +11454,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find my films"
+            "value" : "Find my movies"
           }
         },
         "fr" : {
@@ -11470,7 +11470,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find my film"
+            "value" : "Find my movie"
           }
         },
         "fr" : {
@@ -11486,7 +11486,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You're happy with long films."
+            "value" : "You're happy with long movies."
           }
         },
         "fr" : {
@@ -11502,7 +11502,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You like discovering films nobody talks about."
+            "value" : "You like discovering movies nobody talks about."
           }
         },
         "fr" : {
@@ -11518,7 +11518,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You like films that demand attention."
+            "value" : "You like movies that demand attention."
           }
         },
         "fr" : {
@@ -11534,7 +11534,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You like films that do you good."
+            "value" : "You like movies that do you good."
           }
         },
         "fr" : {
@@ -11550,7 +11550,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You like films that take their time."
+            "value" : "You like movies that take their time."
           }
         },
         "fr" : {
@@ -11566,7 +11566,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You like films that shake you up."
+            "value" : "You like movies that shake you up."
           }
         },
         "fr" : {
@@ -11598,7 +11598,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You like a film to take you to another world."
+            "value" : "You like a movie to take you to another world."
           }
         },
         "fr" : {
@@ -11646,7 +11646,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Did you like the film we suggested?"
+            "value" : "Did you like the movie we suggested?"
           }
         },
         "fr" : {
@@ -11662,7 +11662,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You already have %lld films of this genre in your gallery."
+            "value" : "You already have %lld movies of this genre in your gallery."
           }
         },
         "fr" : {
@@ -11742,7 +11742,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You need to be signed in to discover films."
+            "value" : "You need to be signed in to discover movies."
           }
         },
         "fr" : {
@@ -11865,7 +11865,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You earn the first one with your first film."
+            "value" : "You earn the first one with your first movie."
           }
         },
         "fr" : {
@@ -11897,7 +11897,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You've already recommended this film to them."
+            "value" : "You've already recommended this movie to them."
           }
         },
         "fr" : {
@@ -11913,7 +11913,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You can only recommend a film you've seen."
+            "value" : "You can only recommend a movie you've seen."
           }
         },
         "fr" : {
@@ -11977,7 +11977,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You prefer films you've already heard of."
+            "value" : "You prefer movies you've already heard of."
           }
         },
         "fr" : {
@@ -11993,7 +11993,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You prefer films that stay light."
+            "value" : "You prefer movies that stay light."
           }
         },
         "fr" : {
@@ -12041,7 +12041,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Do you prefer a well-known film or a discovery?"
+            "value" : "Do you prefer a well-known movie or a discovery?"
           }
         },
         "fr" : {
@@ -12089,7 +12089,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You want films that are easy to follow."
+            "value" : "You want movies that are easy to follow."
           }
         },
         "fr" : {
@@ -12153,7 +12153,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A good film, for you, is more like…"
+            "value" : "A good movie, for you, is more like…"
           }
         },
         "fr" : {
@@ -12185,7 +12185,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A film over two hours doesn't scare you."
+            "value" : "A movie over two hours doesn't scare you."
           }
         },
         "fr" : {
@@ -12201,7 +12201,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A little-known film"
+            "value" : "A little-known movie"
           }
         },
         "fr" : {
@@ -12217,7 +12217,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A feel-good film"
+            "value" : "A feel-good movie"
           }
         },
         "fr" : {
@@ -12233,7 +12233,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A film that makes you think"
+            "value" : "A movie that makes you think"
           }
         },
         "fr" : {
@@ -12249,7 +12249,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A film that stays with you"
+            "value" : "A movie that stays with you"
           }
         },
         "fr" : {
@@ -12265,7 +12265,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A film that makes me think"
+            "value" : "A movie that makes me think"
           }
         },
         "fr" : {
@@ -12281,7 +12281,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A film that makes me feel"
+            "value" : "A movie that makes me feel"
           }
         },
         "fr" : {
@@ -12297,7 +12297,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A film everyone will enjoy"
+            "value" : "A movie everyone will enjoy"
           }
         },
         "fr" : {
@@ -12313,7 +12313,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A film that keeps you on the edge of your seat"
+            "value" : "A movie that keeps you on the edge of your seat"
           }
         },
         "fr" : {
@@ -12329,7 +12329,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A well-regarded film"
+            "value" : "A well-regarded movie"
           }
         },
         "fr" : {
@@ -12345,7 +12345,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A slightly demanding film doesn't scare you."
+            "value" : "A slightly demanding movie doesn't scare you."
           }
         },
         "fr" : {
@@ -12697,7 +12697,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Empty a watchlist of at least 15 films."
+            "value" : "Empty a watchlist of at least 15 movies."
           }
         },
         "fr" : {
