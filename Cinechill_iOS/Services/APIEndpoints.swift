@@ -90,6 +90,28 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "recordfilmduel", queryItems: [])
     }
 
+    // MARK: - CinéMatch v2
+
+    static func cineMatchComparison() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getcinematchcomparison", queryItems: [])
+    }
+
+    static func cineMatchFive() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getcinematchfive", queryItems: [])
+    }
+
+    static func cineMatchDaily() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getcinematchdaily", queryItems: [])
+    }
+
+    static func cineMatchExposure() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "recordcinematchexposure", queryItems: [])
+    }
+
     static func swipeFeed() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "getswipefeed", queryItems: [])

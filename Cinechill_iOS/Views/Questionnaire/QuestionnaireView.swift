@@ -91,6 +91,9 @@ struct QuestionnaireView: View {
                     onProfileTap: { showProfile = true },
                     onDiscover: { selectedTab = 2 },
                     onLovePicker: { showLovePicker = true },
+                    // L'ancien parcours n'est plus monté par l'onglet : les
+                    // comparaisons de la porte vivent dans `CineMatchView`.
+                    onCompare: {},
                     onEnter: {
                         withAnimation(.easeOut(duration: 0.45)) { hasCrossedThreshold = true }
                     },

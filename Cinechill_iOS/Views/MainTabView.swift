@@ -16,7 +16,10 @@ struct MainTabView: View {
     private let catalog: MediaCatalog
     private let homeModel: HomeViewModel
 
+    /// L'ancien moteur reste construit tant qu'il n'est pas retiré du projet,
+    /// mais l'onglet CinéMatch ne le monte plus.
     @State private var questionnaireModel: QuestionnaireViewModel
+    @State private var cineMatchModel = CineMatchViewModel()
     @State private var swipeModel = SwipeDeckViewModel()
     @State private var galleryModel = GalleryViewModel()
     @State private var watchlistModel = WatchlistViewModel()
@@ -272,8 +275,8 @@ struct MainTabView: View {
         case 0:
             HomeView(homeModel: homeModel)
         case 1:
-            QuestionnaireView(
-                viewModel: questionnaireModel,
+            CineMatchView(
+                viewModel: cineMatchModel,
                 selectedTab: $selectedTab
             )
         case 2:

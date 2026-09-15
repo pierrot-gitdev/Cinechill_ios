@@ -49,6 +49,8 @@ struct CineMatchGateView: View {
     let onDiscover: () -> Void
     /// Vers la planche des coups de cœur.
     let onLovePicker: () -> Void
+    /// Vers les douze comparaisons de « Tes préférences ».
+    let onCompare: () -> Void
     /// Les battants sont grands ouverts : la place est à l'entrée de séance.
     /// Appelé par la cérémonie elle-même — on ne demande pas à quelqu'un de
     /// confirmer qu'il veut franchir une porte qu'il vient de voir s'ouvrir.
@@ -94,7 +96,11 @@ struct CineMatchGateView: View {
             onDismiss: {
                 guard let key = pendingDetailAction else { return }
                 pendingDetailAction = nil
-                if key == .coeur { onLovePicker() } else { onDiscover() }
+                switch key {
+                case .coeur: onLovePicker()
+                case .horizons: onCompare()
+                default: onDiscover()
+                }
             }
         ) { key in
             DoorArtifactSheet(
@@ -864,14 +870,7 @@ private struct DoorArtifactSheet: View {
     }
 
     private var progressText: String {
-        if artifactKey == .horizons {
-            let h = door.horizons
-            return String(
-                localized: "\(min(h.decades, h.decadesTarget)) sur \(h.decadesTarget) · \(min(h.countries, h.countriesTarget)) sur \(h.countriesTarget)",
-                bundle: .app
-            )
-        }
-        return String(localized: "\(min(current, target)) sur \(target)", bundle: .app)
+        String(localized: "\(min(current, target)) sur \(target)", bundle: .app)
     }
 }
 
@@ -885,7 +884,7 @@ extension DoorArtifactKey: Identifiable {
         case .memoire: String(localized: "La Mémoire", bundle: .app)
         case .eventail: String(localized: "L'Éventail", bundle: .app)
         case .coeur: String(localized: "Le Cœur", bundle: .app)
-        case .horizons: String(localized: "Les Horizons", bundle: .app)
+        case .horizons: String(localized: "Tes préférences", bundle: .app)
         case .promesse: String(localized: "La Promesse", bundle: .app)
         }
     }
@@ -901,10 +900,7 @@ extension DoorArtifactKey: Identifiable {
         case .coeur:
             return String(localized: "Aimer \(target) films de ta galerie", bundle: .app)
         case .horizons:
-            return String(
-                localized: "\(door.horizons.decadesTarget) décennies, \(door.horizons.countriesTarget) pays",
-                bundle: .app
-            )
+            return String(localized: "\(target) comparaisons entre des films que tu as vus", bundle: .app)
         case .promesse:
             return String(localized: "\(target) films dans ta watchlist", bundle: .app)
         }
@@ -920,7 +916,7 @@ extension DoorArtifactKey: Identifiable {
         case .coeur:
             String(localized: "Tes films aimés nous disent ce que tu veux revivre, pas seulement ce que tu as vu. C'est par eux qu'on choisira des films qui te ressemblent.", bundle: .app)
         case .horizons:
-            String(localized: "Un profil qui a voyagé nous permet d'oser au-delà du récent et d'Hollywood.", bundle: .app)
+            String(localized: "Douze comparaisons entre des films que tu as vus, et on saura déjà quelles soirées tu préfères.", bundle: .app)
         case .promesse:
             String(localized: "Tes envies comptent : ta watchlist devient candidate, en priorité quand on s'en approche.", bundle: .app)
         }
@@ -930,6 +926,7 @@ extension DoorArtifactKey: Identifiable {
     var actionTitle: String {
         switch self {
         case .coeur: String(localized: "Aimer des films de ma galerie", bundle: .app)
+        case .horizons: String(localized: "Comparer mes films", bundle: .app)
         default: String(localized: "Ouvrir Découvrir", bundle: .app)
         }
     }
@@ -945,6 +942,7 @@ extension DoorArtifactKey: Identifiable {
             onProfileTap: {},
             onDiscover: {},
             onLovePicker: {},
+            onCompare: {},
             onEnter: {}
         )
     }

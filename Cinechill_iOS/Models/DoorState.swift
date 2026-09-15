@@ -62,9 +62,10 @@ nonisolated struct DoorArtifact: Codable, Equatable, Sendable {
     var artifactKey: DoorArtifactKey? { DoorArtifactKey(rawValue: key) }
 }
 
-/// Le détail des Horizons : deux mesures sous un seul médaillon. La jauge de
-/// l'artéfact additionne les deux ; la feuille de détail garde les vrais
-/// comptes.
+/// L'ancien détail des Horizons : décennies et pays. L'artéfact de clé
+/// `horizons` est devenu « Tes préférences » et se mesure en comparaisons ;
+/// le serveur renvoie encore cet objet pour ne pas casser les anciennes
+/// versions de l'app, mais il n'entre plus dans la porte.
 nonisolated struct DoorHorizons: Codable, Equatable, Sendable {
     let decades: Int
     let decadesTarget: Int
@@ -88,21 +89,30 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
     /// La porte d'un compte que le serveur n'a pas encore raconté : tout à
     /// zéro, tout éteint. C'est l'état honnête d'un profil inconnu, et il
     /// évite de faire clignoter l'entrée avant de la refermer.
+    ///
+    /// Les seuils sont ceux du serveur : la Mémoire à 20 films (vingt films
+    /// suffisent à situer quelqu'un), et l'artéfact de clé `horizons`, devenu
+    /// « Tes préférences », à 12 comparaisons entre des films vus.
     static let initial = DoorState(
         unlocked: false,
         artifacts: DoorArtifactKey.allCases.map { key in
-            DoorArtifact(
-                key: key.rawValue,
-                done: false,
-                current: 0,
-                target: key == .coeur ? 12 : key == .promesse ? 10 :
-                    key == .eventail ? 6 : key == .horizons ? 7 : 30
-            )
+            DoorArtifact(key: key.rawValue, done: false, current: 0, target: initialTarget(key))
         },
         horizons: DoorHorizons(
             decades: 0, decadesTarget: 4, countries: 0, countriesTarget: 3
         )
     )
+
+    /// Le seuil de chaque artéfact tant que le serveur ne l'a pas donné.
+    private static func initialTarget(_ key: DoorArtifactKey) -> Int {
+        switch key {
+        case .memoire: 20
+        case .eventail: 6
+        case .coeur: 12
+        case .horizons: 12
+        case .promesse: 10
+        }
+    }
 
     // MARK: - La mémoire locale
 
