@@ -84,38 +84,6 @@
         }
       }
     },
-    "%@, écarté" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, set aside"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, écarté"
-          }
-        }
-      }
-    },
-    "%lld comparaisons entre des films que tu as vus" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld comparisons between films you've watched"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld comparaisons entre des films que tu as vus"
-          }
-        }
-      }
-    },
     ", dans ta watchlist" : {
       "localizations" : {
         "en" : {
@@ -452,6 +420,22 @@
         }
       }
     },
+    "%@, écarté" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, set aside"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, écarté"
+          }
+        }
+      }
+    },
     "%@. %@" : {
       "localizations" : {
         "fr" : {
@@ -514,6 +498,22 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "%lld comparaisons entre des films que tu as vus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld comparisons between films you've watched"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld comparaisons entre des films que tu as vus"
           }
         }
       }
@@ -879,6 +879,7 @@
       }
     },
     "%lld sur %lld · %lld sur %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3310,38 +3311,6 @@
         }
       }
     },
-    "Comparaison %lld sur %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comparison %lld of %lld"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comparaison %lld sur %lld"
-          }
-        }
-      }
-    },
-    "Comparer mes films" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compare my films"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comparer mes films"
-          }
-        }
-      }
-    },
     "Cœur d'Acier" : {
       "localizations" : {
         "en" : {
@@ -3450,6 +3419,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Commun"
+          }
+        }
+      }
+    },
+    "Comparaison %lld sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comparison %lld of %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comparaison %lld sur %lld"
+          }
+        }
+      }
+    },
+    "Comparer mes films" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare my films"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comparer mes films"
           }
         }
       }
@@ -11993,6 +11994,7 @@
       }
     },
     "Tu en as déjà %1$lld sur %2$lld." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12003,6 +12005,16 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Tu en as déjà %1$lld sur %2$lld."
+          }
+        }
+      }
+    },
+    "Tu en as déjà %lld sur %lld." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
             "value" : "Tu en as déjà %1$lld sur %2$lld."
           }
         }
