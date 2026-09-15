@@ -62,12 +62,12 @@ final class OnboardingTour {
         /// écrit dans le plafond, juste au-dessus.
         var title: String {
             switch self {
-            case .accueil: String(localized: "Le hall d'entrée", bundle: .app)
+            case .accueil: String(localized: "L'accueil", bundle: .app)
             case .cinematch: String(localized: "Marre de perdre 30 min à trouver un film ?", bundle: .app)
-            case .decouvrir: String(localized: "Tu swipes ou tu swipes pas ?", bundle: .app)
+            case .decouvrir: String(localized: "Trie les films en les faisant glisser", bundle: .app)
             case .galerie: String(localized: "Tous les films que tu as vus", bundle: .app)
             case .watchlist: String(localized: "La liste des films à regarder", bundle: .app)
-            case .sortie: String(localized: "À toi de jouer désormais", bundle: .app)
+            case .sortie: String(localized: "À toi de jouer", bundle: .app)
             }
         }
 
@@ -80,13 +80,13 @@ final class OnboardingTour {
             case .cinematch:
                 String(localized: "Ne laisse plus ton plat refroidir pendant que tu choisis un film, en 60 sec Cinechill te propose la pépite que tu cherches.", bundle: .app)
             case .decouvrir:
-                String(localized: "Construis la galerie des films que tu as vus et ajoute ceux que tu souhaites voir.", bundle: .app)
+                String(localized: "Indique les films que tu as vus et ajoute ceux que tu veux voir.", bundle: .app)
             case .galerie:
-                String(localized: "Es-tu vraiment le cinéphile que tu penses être ?", bundle: .app)
+                String(localized: "Plus tu en ajoutes, mieux Cinechill connaît tes goûts.", bundle: .app)
             case .watchlist:
-                String(localized: "Finis les films ajoutés dans une note que l'on ne retrouve jamais, Cinechill te garde tout bien au chaud.", bundle: .app)
+                String(localized: "Plus besoin de noter quelque part les films à voir : ils sont tous ici.", bundle: .app)
             case .sortie:
-                String(localized: "Commence par construire ta galerie, Cinechill pourra ainsi mieux déterminer ton profil et te proposer les meilleurs films pour toi.", bundle: .app)
+                String(localized: "Commence par ajouter les films que tu as vus : Cinechill pourra te proposer des films qui te plaisent.", bundle: .app)
             }
         }
 

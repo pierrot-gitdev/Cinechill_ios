@@ -25,7 +25,7 @@ struct SwipeMilestoneOverlay: View {
                 .foregroundStyle(Ink.light)
                 .padding(.top, 10)
 
-            Text("Ta galerie s'étoffe, et tes suggestions avec elle.", bundle: .app)
+            Text("Plus ta galerie grandit, plus les suggestions sont justes.", bundle: .app)
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)

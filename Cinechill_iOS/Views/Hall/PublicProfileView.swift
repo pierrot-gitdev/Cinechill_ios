@@ -167,7 +167,7 @@ struct PublicProfileView: View {
     private var dnaSection: some View {
         if let genres = detail?.genres, !genres.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                sectionTitle(String(localized: "Son ADN cinéphile", bundle: .app))
+                sectionTitle(String(localized: "Ses goûts", bundle: .app))
 
                 GeometryReader { proxy in
                     HStack(spacing: 1.5) {

@@ -28,14 +28,14 @@ struct DoorCelebrationOverlay: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                Text("Artéfact gagné", bundle: .app)
+                Text("Étape validée", bundle: .app)
                     .planLabel()
                     .foregroundStyle(Color(hex: unlocked.hue))
 
                 row
                     .padding(.top, 22)
 
-                Text("\(unlocked.displayName) s'allume.", bundle: .app)
+                Text("\(unlocked.displayName) : c'est fait.", bundle: .app)
                     .planTitle(24)
                     .foregroundStyle(Ink.ink)
                     .multilineTextAlignment(.center)
@@ -93,7 +93,7 @@ struct DoorCelebrationOverlay: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "\(unlocked.displayName) s'allume. \(door.litCount) artéfacts sur 5.", bundle: .app))
+        .accessibilityLabel(String(localized: "\(unlocked.displayName) : c'est fait. \(door.litCount) étapes sur 5.", bundle: .app))
     }
 
     // MARK: - La rangée
@@ -146,7 +146,7 @@ struct DoorCelebrationOverlay: View {
     private var remainingText: String {
         let left = max(0, 5 - door.litCount)
         if left == 0 {
-            return String(localized: "La porte s'ouvre", bundle: .app)
+            return String(localized: "CinéMatch est débloqué", bundle: .app)
         }
         return String(localized: "\(door.litCount) sur 5", bundle: .app)
     }

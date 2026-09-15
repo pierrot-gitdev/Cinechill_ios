@@ -169,10 +169,10 @@ struct WatchlistView: View {
                 PlanLight().padding(.top, 6)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Déclare tes plateformes", bundle: .app)
+                    Text("Choisis tes plateformes", bundle: .app)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Ink.ink)
-                    Text("Pour savoir ce que tu peux lancer tout de suite.", bundle: .app)
+                    Text("Pour savoir ce que tu peux regarder tout de suite.", bundle: .app)
                         .font(.system(size: 11.5))
                         .foregroundStyle(Ink.ink2)
                         .multilineTextAlignment(.leading)
@@ -397,7 +397,7 @@ struct WatchlistView: View {
         PlanEmptyState(
             icon: .salle,
             title: String(localized: "Rien en attente", bundle: .app),
-            message: String(localized: "Balaie un film vers le haut depuis le deck pour le mettre de côté. On te dira quoi en regarder, et quand.", bundle: .app),
+            message: String(localized: "Dans Découvrir, fais glisser un film vers le haut pour l'ajouter à ta watchlist.", bundle: .app),
             actionTitle: String(localized: "Trouver des films", bundle: .app),
             action: { selectedTab = 2 }
         )

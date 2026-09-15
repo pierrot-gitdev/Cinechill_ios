@@ -351,7 +351,7 @@ struct ItemDetailView: View {
                 if let genreName {
                     return String(localized: "\(rank)ᵉ \(genreName) des années \(decade) dans ta galerie.", bundle: .app)
                 }
-                return String(localized: "\(rank)ᵉ films du même genre sur cette décennie dans ta galerie.", bundle: .app)
+                return String(localized: "\(rank)ᵉ film de ce genre et de cette décennie dans ta galerie.", bundle: .app)
             }
         }
 

@@ -16,7 +16,7 @@ nonisolated enum CineMatchClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noCandidates:
-            return String(localized: "Aucun film ne correspond à ce scénario pour le moment. Modifie le scénario de la soirée.", bundle: .app)
+            return String(localized: "Aucun film ne correspond pour l'instant. Change tes réglages pour ce soir.", bundle: .app)
         }
     }
 }

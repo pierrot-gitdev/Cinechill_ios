@@ -212,7 +212,7 @@ struct SwipeDeckView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(PressableScaleStyle(scale: 0.9))
-        .accessibilityLabel(String(localized: "Revoir les gestes", bundle: .app))
+        .accessibilityLabel(String(localized: "Revoir comment ça marche", bundle: .app))
         // Le tracé n'occupe pas toute sa grille : il laisse 4 pt de vide à sa
         // droite. Sans ce retrait, le « ? » s'alignerait sur son cadre et non sur
         // son encre, et rentrerait de 4 pt par rapport à tout le reste de l'écran.
@@ -381,8 +381,8 @@ struct SwipeDeckView: View {
             } else if model.isExhausted {
                 PlanEmptyState(
                     icon: .hall,
-                    title: String(localized: "Tu as fait le tour", bundle: .app),
-                    message: String(localized: "Les films écartés reviendront plus tard. En attendant, ta galerie a de quoi faire.", bundle: .app),
+                    title: String(localized: "Plus de films pour l'instant", bundle: .app),
+                    message: String(localized: "Les films que tu as passés reviendront plus tard.", bundle: .app),
                     actionTitle: String(localized: "Voir ma galerie", bundle: .app),
                     action: { selectedTab = 3 },
                     secondaryTitle: String(localized: "Chercher encore", bundle: .app),

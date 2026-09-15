@@ -248,7 +248,7 @@ final class WatchlistViewModel {
         if let runtime = item.runtimeMinutes,
            let shortest = pool.compactMap(\.runtimeMinutes).min(),
            runtime == shortest, pool.count > 2 {
-            return String(localized: "Le plus court de ce qui rentre dans ta soirée.", bundle: .app)
+            return String(localized: "Le plus court de ta liste qui rentre dans ton temps.", bundle: .app)
         }
         if let platform = preferredPlatformName(for: item) {
             return String(localized: "Sur \(platform), tu peux le lancer tout de suite.", bundle: .app)
@@ -256,7 +256,7 @@ final class WatchlistViewModel {
         if let rating = item.entry.voteAverage, rating >= 8 {
             return String(localized: "Le mieux noté de ta liste.", bundle: .app)
         }
-        return String(localized: "Il attend son tour depuis un moment.", bundle: .app)
+        return String(localized: "Il est dans ta liste depuis un moment.", bundle: .app)
     }
 
     private func preferredPlatformName(for item: WatchlistItem) -> String? {

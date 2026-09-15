@@ -73,7 +73,7 @@ struct SwipeGuideOverlay: View {
 
     private var panel: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Les trois gestes", bundle: .app)
+            Text("Comment ça marche", bundle: .app)
                 .planTitle(21)
                 .foregroundStyle(Ink.ink)
 

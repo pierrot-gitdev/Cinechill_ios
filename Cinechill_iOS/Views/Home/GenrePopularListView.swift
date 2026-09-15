@@ -94,7 +94,7 @@ struct GenrePopularListView: View {
             HStack(spacing: 9) {
                 Text(selectedPlatforms.isEmpty
                      ? String(localized: "Toutes plateformes", bundle: .app)
-                     : String(localized: "Chez toi", bundle: .app))
+                     : String(localized: "Mes plateformes", bundle: .app))
                     .planLabel()
                     .foregroundStyle(Ink.ink2)
 

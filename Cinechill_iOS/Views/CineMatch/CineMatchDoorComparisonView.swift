@@ -146,7 +146,7 @@ struct CineMatchDoorComparisonView: View {
             PlanEmptyState(
                 title: String(localized: "Pas assez de films vus", bundle: .app),
                 message: String(
-                    localized: "Il faut d'abord \(memoryTarget) films dans ta galerie : en dessous, les mêmes films reviendraient d'une comparaison à l'autre.",
+                    localized: "Ajoute d'abord \(memoryTarget) films à ta galerie pour pouvoir comparer.",
                     bundle: .app
                 ),
                 actionTitle: String(localized: "Fermer", bundle: .app),

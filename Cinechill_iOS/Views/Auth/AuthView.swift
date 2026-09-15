@@ -293,7 +293,7 @@ struct AuthView: View {
     private func resetRequest(gap: CGFloat, compact: Bool) -> some View {
         title(String(localized: "Mot de passe\noublié", bundle: .app), gap: gap, compact: compact)
 
-        say(String(localized: "Indique l'adresse de ton compte. Nous envoyons un lien pour en choisir un nouveau.", bundle: .app))
+        say(String(localized: "Entre ton email. On t'envoie un lien pour choisir un nouveau mot de passe.", bundle: .app))
 
         VStack(alignment: .leading, spacing: 32) {
             emailField(contentType: .username, submitLabel: .go, onSubmit: submit)
@@ -321,8 +321,8 @@ struct AuthView: View {
         // serait une fuite d'information.
         outcome(
             gap: gap,
-            headline: String(localized: "Le lien est parti.", bundle: .app),
-            detail: String(localized: "Si un compte existe pour \(AuthService.normalize(email)), tu recevras un message d'ici une minute. Pense aux indésirables.", bundle: .app)
+            headline: String(localized: "Le lien a été envoyé.", bundle: .app),
+            detail: String(localized: "Si un compte existe pour \(AuthService.normalize(email)), tu recevras un email dans la minute. Pense à regarder dans tes spams.", bundle: .app)
         )
 
         Spacer(minLength: 32)
@@ -386,7 +386,7 @@ struct AuthView: View {
         outcome(
             gap: gap,
             headline: String(localized: "Mot de passe modifié.", bundle: .app),
-            detail: String(localized: "Tu peux te connecter avec le nouveau. Ton adresse est déjà reportée sur l'écran suivant.", bundle: .app)
+            detail: String(localized: "Tu peux maintenant te connecter avec ton nouveau mot de passe.", bundle: .app)
         )
 
         Spacer(minLength: 32)

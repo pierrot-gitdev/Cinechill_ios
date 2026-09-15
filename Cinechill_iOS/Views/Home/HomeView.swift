@@ -148,7 +148,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 14) {
                 sectionTitle(
                     seeded.seedTitle.map { String(localized: "Parce que tu as vu \($0)", bundle: .app) }
-                        ?? String(localized: "Dans la même veine", bundle: .app)
+                        ?? String(localized: "Dans le même style", bundle: .app)
                 )
                 posterRail(seeded.items)
             }
@@ -237,7 +237,7 @@ struct HomeView: View {
         HStack(spacing: 9) {
             Text(selectedPlatforms.isEmpty
                  ? String(localized: "Toutes plateformes", bundle: .app)
-                 : String(localized: "Chez toi", bundle: .app))
+                 : String(localized: "Mes plateformes", bundle: .app))
                 .planLabel()
                 .foregroundStyle(Ink.ink2)
 

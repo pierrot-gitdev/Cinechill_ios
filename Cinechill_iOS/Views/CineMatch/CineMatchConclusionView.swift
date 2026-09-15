@@ -204,7 +204,7 @@ struct CineMatchConclusionView: View {
         case .added:
             String(localized: "Il comptera dans tes prochaines propositions.", bundle: .app)
         case .failed:
-            String(localized: "L'ajout n'a pas été enregistré. Réessaie.", bundle: .app)
+            String(localized: "Le film n'a pas été ajouté. Réessaie.", bundle: .app)
         case .idle, .adding:
             String(localized: "Une fois que tu l'as vu, ajoute-le à ta galerie. Tes prochaines propositions en tiendront compte.", bundle: .app)
         }

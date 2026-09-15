@@ -74,7 +74,7 @@ struct AchievementCelebrationOverlay: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 14)
 
-            PlanButton(title: String(localized: "Équiper ce badge", bundle: .app), height: Metrics.control, action: onEquip)
+            PlanButton(title: String(localized: "Afficher sur mon profil", bundle: .app), height: Metrics.control, action: onEquip)
                 .padding(.top, 28)
 
             Button(String(localized: "Plus tard", bundle: .app), action: onDismiss)
@@ -120,7 +120,7 @@ struct AchievementCelebrationOverlay: View {
                 .foregroundStyle(distinction.accent)
                 .padding(.top, 9)
 
-            Text(String(localized: "Pour \(distinction.lowerBound) films portés à ton dossier.", bundle: .app))
+            Text(String(localized: "Pour \(distinction.lowerBound) films dans ta galerie.", bundle: .app))
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)

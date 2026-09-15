@@ -57,11 +57,11 @@ nonisolated enum Distinction: Int, CaseIterable, Sendable {
     /// pour l'utilisateur.
     var citation: String {
         switch self {
-        case .mention: String(localized: "Le jury te remarque", bundle: .app)
-        case .interpretation: String(localized: "Le jury te distingue", bundle: .app)
-        case .cesar: String(localized: "L'académie te récompense", bundle: .app)
-        case .palme: String(localized: "Cannes te consacre", bundle: .app)
-        case .oscar: String(localized: "Hollywood te couronne", bundle: .app)
+        case .mention: String(localized: "Nouvelle distinction", bundle: .app)
+        case .interpretation: String(localized: "Nouvelle distinction", bundle: .app)
+        case .cesar: String(localized: "Nouvelle distinction", bundle: .app)
+        case .palme: String(localized: "Nouvelle distinction", bundle: .app)
+        case .oscar: String(localized: "Nouvelle distinction", bundle: .app)
         }
     }
 

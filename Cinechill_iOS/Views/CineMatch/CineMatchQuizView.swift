@@ -429,7 +429,7 @@ struct CineMatchQuizView: View {
         case .light: String(localized: "Rythmé, sans prise de tête", bundle: .app)
         case .soft: String(localized: "Tranquille, sans tension, qui finit bien", bundle: .app)
         case .suspense: String(localized: "Un film qui te tient en haleine", bundle: .app)
-        case .think: String(localized: "Qui reste en tête après le générique", bundle: .app)
+        case .think: String(localized: "Un film qui marque", bundle: .app)
         case .feelgood: String(localized: "Pour te remonter le moral", bundle: .app)
         case .everyone: String(localized: "Grand public, tout le monde sera d'accord", bundle: .app)
         }
@@ -445,7 +445,7 @@ struct CineMatchQuizView: View {
     private func consequence(for energy: CineMatchEnergy) -> String {
         switch energy {
         case .low: String(localized: "Des films faciles à suivre, plutôt des valeurs sûres", bundle: .app)
-        case .high: String(localized: "Des films plus prenants, et plus de découvertes", bundle: .app)
+        case .high: String(localized: "Des films plus prenants, et des découvertes", bundle: .app)
         }
     }
 }

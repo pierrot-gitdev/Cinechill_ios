@@ -111,7 +111,7 @@ nonisolated enum BadgeCatalog {
     static var all: [Badge] {[
         Badge(
             id: "first_reel", name: String(localized: "Première Bobine", bundle: .app),
-            condition: String(localized: "Ton tout premier film enregistré.", bundle: .app),
+            condition: String(localized: "Ton premier film ajouté.", bundle: .app),
             rarity: .common, isSecret: false
         ),
         Badge(
@@ -121,7 +121,7 @@ nonisolated enum BadgeCatalog {
         ),
         Badge(
             id: "cinematheque", name: String(localized: "La Cinémathèque", bundle: .app),
-            condition: String(localized: "500 films. Une vie de spectateur, archivée.", bundle: .app),
+            condition: String(localized: "500 films dans ta galerie.", bundle: .app),
             rarity: .legendary, isSecret: false
         ),
         Badge(
@@ -151,22 +151,22 @@ nonisolated enum BadgeCatalog {
         ),
         Badge(
             id: "marathon", name: String(localized: "Marathon", bundle: .app),
-            condition: String(localized: "7 jours d'affilée à enrichir ta galerie.", bundle: .app),
+            condition: String(localized: "Ajouter des films 7 jours d'affilée.", bundle: .app),
             rarity: .common, isSecret: false
         ),
         Badge(
             id: "ritual", name: String(localized: "Le Rituel", bundle: .app),
-            condition: String(localized: "60 jours d'affilée. Sans une seule absence.", bundle: .app),
+            condition: String(localized: "Ajouter des films 60 jours d'affilée.", bundle: .app),
             rarity: .legendary, isSecret: false
         ),
         Badge(
             id: "clean_list", name: String(localized: "Liste Nette", bundle: .app),
-            condition: String(localized: "Ramener une watchlist d'au moins 15 films à zéro.", bundle: .app),
+            condition: String(localized: "Vider une watchlist d'au moins 15 films.", bundle: .app),
             rarity: .rare, isSecret: false
         ),
         Badge(
             id: "sorter", name: String(localized: "Le Trieur", bundle: .app),
-            condition: String(localized: "500 cartes tranchées dans le deck.", bundle: .app),
+            condition: String(localized: "500 films triés dans Découvrir.", bundle: .app),
             rarity: .common, isSecret: false
         ),
         Badge(
@@ -176,7 +176,7 @@ nonisolated enum BadgeCatalog {
         ),
         Badge(
             id: "integral", name: String(localized: "L'Intégrale", bundle: .app),
-            condition: String(localized: "Une saga entière, sans en manquer un seul épisode.", bundle: .app),
+            condition: String(localized: "Tous les films d'une saga.", bundle: .app),
             rarity: .legendary, isSecret: false
         ),
         Badge(

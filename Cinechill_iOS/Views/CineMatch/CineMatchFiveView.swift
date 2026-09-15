@@ -155,10 +155,10 @@ struct CineMatchFiveView: View {
 
             if mode == .five, let widening = viewModel.widening {
                 if widening.duration {
-                    wideningLine(String(localized: "On a élargi la durée", bundle: .app))
+                    wideningLine(String(localized: "On a été plus souple sur la durée", bundle: .app))
                 }
                 if widening.platforms {
-                    wideningLine(String(localized: "On a élargi à d'autres plateformes", bundle: .app))
+                    wideningLine(String(localized: "On a ajouté des films d'autres plateformes", bundle: .app))
                 }
             }
         }

@@ -121,7 +121,7 @@ struct CineMatchHomeView: View {
         } label: {
             VStack(spacing: 0) {
                 HStack(spacing: 10) {
-                    Text("Le scénario de la soirée", bundle: .app)
+                    Text("Ce soir", bundle: .app)
                         .planLabel()
                         .foregroundStyle(Ink.ink2)
                         .lineLimit(1)
@@ -245,7 +245,7 @@ struct CineMatchHomeView: View {
         let company = viewModel.situation.company.scenarioLabel
         let duration = viewModel.situation.duration.scenarioLabel
         return String(
-            localized: "Modifier le scénario de la soirée. Avec qui : \(company). Durée : \(duration). Plateformes : \(platforms).",
+            localized: "Modifier ta soirée. Avec qui : \(company). Durée : \(duration). Plateformes : \(platforms).",
             bundle: .app
         )
     }

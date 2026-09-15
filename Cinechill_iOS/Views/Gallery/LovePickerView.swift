@@ -61,10 +61,10 @@ struct LovePickerView: View {
                     .shadow(color: Color(hex: 0xFF6B7E).opacity(0.35), radius: 8)
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("L'artéfact du Cœur", bundle: .app)
+                    Text("Coups de cœur", bundle: .app)
                         .planLabel()
                         .foregroundStyle(Color(hex: 0xC25562))
-                    Text("Lesquels t'ont marqué ?", bundle: .app)
+                    Text("Quels films as-tu adorés ?", bundle: .app)
                         .planTitle(26)
                         .foregroundStyle(Ink.ink)
                 }
@@ -82,7 +82,7 @@ struct LovePickerView: View {
                 .accessibilityLabel(String(localized: "Fermer", bundle: .app))
             }
 
-            Text("Un appui suffit. Ce que tu laisses de côté ne compte pas contre toi, on ne saura simplement rien de plus.", bundle: .app)
+            Text("Touche un film pour en faire un coup de cœur.", bundle: .app)
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .lineSpacing(2)
@@ -166,7 +166,7 @@ struct LovePickerView: View {
         .accessibilityValue(
             loved
                 ? String(localized: "coup de cœur", bundle: .app)
-                : String(localized: "rien déclaré", bundle: .app)
+                : String(localized: "pas un coup de cœur", bundle: .app)
         )
         .accessibilityHint(String(localized: "Toucher pour changer", bundle: .app))
     }
@@ -179,10 +179,10 @@ struct LovePickerView: View {
 
             Group {
                 if lovedCount >= target {
-                    Text("L'artéfact du Cœur est allumé.", bundle: .app)
+                    Text("C'est fait, l'étape est validée.", bundle: .app)
                         .foregroundStyle(Color(hex: 0xF0B3BC))
                 } else {
-                    Text("Encore \(target - lovedCount) et l'artéfact s'allume.", bundle: .app)
+                    Text("Encore \(target - lovedCount) pour valider l'étape.", bundle: .app)
                         .foregroundStyle(Ink.ink3)
                 }
             }

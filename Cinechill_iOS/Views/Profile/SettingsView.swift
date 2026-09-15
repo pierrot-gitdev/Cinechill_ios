@@ -66,28 +66,28 @@ struct SettingsView: View {
 
                         declaration(
                             String(localized: "Langue", bundle: .app),
-                            note: String(localized: "Elle vaut pour l'application comme pour les films : titres, résumés et genres suivent.", bundle: .app)
+                            note: String(localized: "Elle change aussi la langue des titres, résumés et genres.", bundle: .app)
                         ) {
                             languagePicker
                         }
 
                         declaration(
                             String(localized: "Mes plateformes", bundle: .app),
-                            note: String(localized: "Ce qui n'est pas chez toi ne te sera pas proposé.", bundle: .app)
+                            note: String(localized: "On ne te proposera que des films disponibles sur tes plateformes.", bundle: .app)
                         ) {
                             platforms
                         }
 
                         declaration(
                             String(localized: "Jamais de…", bundle: .app),
-                            note: String(localized: "Exclus partout, sans exception.", bundle: .app)
+                            note: String(localized: "Ces genres ne te seront jamais proposés.", bundle: .app)
                         ) {
                             bannedGenres
                         }
 
                         declaration(
                             String(localized: "Ma génération", bundle: .app),
-                            note: String(localized: "À 25 et à 55 ans, on n'a pas vu les mêmes classiques.", bundle: .app),
+                            note: String(localized: "Ça nous aide à te proposer des films de ta génération.", bundle: .app),
                             isLast: true
                         ) {
                             generation
@@ -117,7 +117,7 @@ struct SettingsView: View {
         } message: {
             Text("La photo de profil sera supprimée.", bundle: .app)
         }
-        .alert(String(localized: "Remettre les films en jeu", bundle: .app), isPresented: $showResetSkipsAlert) {
+        .alert(String(localized: "Remettre les films passés", bundle: .app), isPresented: $showResetSkipsAlert) {
             Button(String(localized: "Réinitialiser", bundle: .app)) { Task { await resetSkips() } }
             Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
@@ -505,8 +505,8 @@ struct SettingsView: View {
 
     private var skipsSubtitle: String {
         guard let pendingSkips else { return String(localized: "Ceux que tu as dit ne pas avoir vus", bundle: .app) }
-        guard pendingSkips > 0 else { return String(localized: "Aucun film en attente", bundle: .app) }
-        return String(localized: "\(pendingSkips) films en attente de réapparition", bundle: .app)
+        guard pendingSkips > 0 else { return String(localized: "Aucun film passé", bundle: .app) }
+        return String(localized: "\(pendingSkips) films passés", bundle: .app)
     }
 
     private var appVersion: String {
@@ -525,8 +525,8 @@ struct SettingsView: View {
             let deleted = try await libraryStore.resetSwipeSkips()
             pendingSkips = 0
             actionMessage = deleted > 0
-                ? String(localized: "\(deleted) films remis en jeu.", bundle: .app)
-                : String(localized: "Aucun film n'était en attente.", bundle: .app)
+                ? String(localized: "\(deleted) films pourront à nouveau t'être proposés.", bundle: .app)
+                : String(localized: "Il n'y avait aucun film passé.", bundle: .app)
         } catch {
             actionMessage = String(localized: "La réinitialisation a échoué. Réessaie dans un instant.", bundle: .app)
         }

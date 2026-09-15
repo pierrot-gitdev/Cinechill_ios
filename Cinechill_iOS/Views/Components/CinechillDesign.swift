@@ -531,7 +531,7 @@ struct LibraryMark: View {
             VStack(alignment: .leading, spacing: 34) {
                 PlanSectionLabel(
                     title: "Mes plateformes",
-                    note: "Ce qui n'est pas chez toi ne te sera pas proposé."
+                    note: "On ne te proposera que des films disponibles sur tes plateformes."
                 )
 
                 HStack(spacing: 7) {
@@ -562,8 +562,8 @@ struct LibraryMark: View {
 
                 PlanEmptyState(
                     icon: .hall,
-                    title: "Ta collection est vide",
-                    message: "Chaque film que tu marques comme vu vient s'y ranger, et dessine peu à peu ton profil de cinéphile.",
+                    title: "Ta galerie est vide",
+                    message: "Les films que tu as vus s'affichent ici. Plus il y en a, mieux on connaît tes goûts.",
                     actionTitle: "Commencer à swiper",
                     action: {}
                 )

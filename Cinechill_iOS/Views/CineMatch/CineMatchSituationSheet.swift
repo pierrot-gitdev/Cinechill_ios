@@ -37,7 +37,7 @@ struct CineMatchSituationSheet: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Le scénario de la soirée", bundle: .app)
+                Text("Ce soir", bundle: .app)
                     .planTitle(22)
                     .foregroundStyle(Ink.ink)
                     .accessibilityAddTraits(.isHeader)

@@ -257,7 +257,7 @@ struct ProfileView: View {
                     Text("Quinze badges à décrocher", bundle: .app)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Ink.ink)
-                    Text("Le premier tombe dès ton premier film.", bundle: .app)
+                    Text("Tu gagnes le premier avec ton premier film.", bundle: .app)
                         .font(.system(size: 11.5))
                         .foregroundStyle(Ink.ink2)
                 }
@@ -278,7 +278,7 @@ struct ProfileView: View {
         let shares = genreShares
         if !shares.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Ton ADN cinéphile", bundle: .app)
+                Text("Tes goûts", bundle: .app)
                     .planTitle(21)
                     .foregroundStyle(Ink.ink)
 

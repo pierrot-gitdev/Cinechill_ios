@@ -287,7 +287,7 @@ struct CineMatchGateView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Le cercle des cinéphiles", bundle: .app)
+            Text("Pour débloquer CinéMatch", bundle: .app)
                 .planLabel()
                 .foregroundStyle(Ink.ink2)
 
@@ -300,9 +300,9 @@ struct CineMatchGateView: View {
                 // ternaire produit une `String` et sortirait du catalogue.
                 Group {
                     if door.litCount == 1 {
-                        Text("artéfact sur 5", bundle: .app)
+                        Text("étape sur 5", bundle: .app)
                     } else {
-                        Text("artéfacts sur 5", bundle: .app)
+                        Text("étapes sur 5", bundle: .app)
                     }
                 }
                 .planLabel()
@@ -313,7 +313,7 @@ struct CineMatchGateView: View {
             gauge
                 .padding(.top, 8)
 
-            Text("CinéMatch se mérite.", bundle: .app)
+            Text("Termine les 5 étapes.", bundle: .app)
                 .planTitle(26)
                 .foregroundStyle(Ink.ink)
                 .padding(.top, 16)
@@ -404,7 +404,7 @@ private struct DoorSceneView: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "La porte de CinéMatch, \(door.litCount) artéfacts sur 5", bundle: .app))
+        .accessibilityLabel(String(localized: "CinéMatch verrouillé, \(door.litCount) étapes sur 5 validées", bundle: .app))
     }
 
     /// Le prochain à viser : le premier médaillon éteint en montant. C'est un
@@ -451,10 +451,10 @@ private struct DoorSceneView: View {
         .accessibilityLabel(seat.key.displayName)
         .accessibilityValue(
             lit
-                ? String(localized: "allumé", bundle: .app)
-                : String(localized: "éteint", bundle: .app)
+                ? String(localized: "validée", bundle: .app)
+                : String(localized: "à faire", bundle: .app)
         )
-        .accessibilityHint(String(localized: "Toucher pour voir comment le gagner", bundle: .app))
+        .accessibilityHint(String(localized: "Touche pour voir comment la valider", bundle: .app))
     }
 }
 
@@ -862,7 +862,7 @@ private struct DoorArtifactSheet: View {
         guard waitsForMemory else { return artifactKey.consequence }
         let memoryTarget = door.artifact(.memoire)?.target ?? 0
         return String(
-            localized: "Il faut d'abord \(memoryTarget) films dans ta galerie : en dessous, les mêmes films reviendraient d'une comparaison à l'autre.",
+            localized: "Ajoute d'abord \(memoryTarget) films à ta galerie pour pouvoir comparer.",
             bundle: .app
         )
     }
@@ -887,7 +887,7 @@ private struct DoorArtifactSheet: View {
                     .shadow(color: Color(hex: artifactKey.halo).opacity(isDone ? 0.45 : 0), radius: 10)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Artéfact \(rank) sur 5", bundle: .app)
+                    Text("Étape \(rank) sur 5", bundle: .app)
                         .planLabel()
                         .foregroundStyle(Color(hex: artifactKey.hue))
                     Text(artifactKey.displayName)
@@ -968,11 +968,11 @@ extension DoorArtifactKey: Identifiable {
 
     var displayName: String {
         switch self {
-        case .memoire: String(localized: "La Mémoire", bundle: .app)
-        case .eventail: String(localized: "L'Éventail", bundle: .app)
-        case .coeur: String(localized: "Le Cœur", bundle: .app)
+        case .memoire: String(localized: "Films vus", bundle: .app)
+        case .eventail: String(localized: "Genres variés", bundle: .app)
+        case .coeur: String(localized: "Coups de cœur", bundle: .app)
         case .horizons: String(localized: "Tes préférences", bundle: .app)
-        case .promesse: String(localized: "La Promesse", bundle: .app)
+        case .promesse: String(localized: "Watchlist", bundle: .app)
         }
     }
 
@@ -983,9 +983,9 @@ extension DoorArtifactKey: Identifiable {
         case .memoire:
             return String(localized: "\(target) films dans ta galerie", bundle: .app)
         case .eventail:
-            return String(localized: "\(target) genres explorés", bundle: .app)
+            return String(localized: "Des films de \(target) genres différents", bundle: .app)
         case .coeur:
-            return String(localized: "Aimer \(target) films de ta galerie", bundle: .app)
+            return String(localized: "\(target) coups de cœur dans ta galerie", bundle: .app)
         case .horizons:
             return String(localized: "\(target) comparaisons entre des films que tu as vus", bundle: .app)
         case .promesse:
@@ -997,22 +997,22 @@ extension DoorArtifactKey: Identifiable {
     var consequence: String {
         switch self {
         case .memoire:
-            String(localized: "La base de ton profil : chaque film vu le précise. Sous ce plancher, on devinerait au lieu de savoir.", bundle: .app)
+            String(localized: "Plus tu ajoutes de films que tu as vus, mieux on connaît tes goûts.", bundle: .app)
         case .eventail:
-            String(localized: "Ton goût se lit par contraste : plusieurs familles vues, et on sait aussi ce que tu fuis.", bundle: .app)
+            String(localized: "Avec des genres variés, on voit aussi ce que tu aimes moins.", bundle: .app)
         case .coeur:
-            String(localized: "Tes films aimés nous disent ce que tu veux revivre, pas seulement ce que tu as vu. C'est par eux qu'on choisira des films qui te ressemblent.", bundle: .app)
+            String(localized: "Tes coups de cœur nous aident à trouver des films qui vont te plaire.", bundle: .app)
         case .horizons:
-            String(localized: "Douze comparaisons entre des films que tu as vus, et on saura déjà quelles soirées tu préfères.", bundle: .app)
+            String(localized: "En comparant des films que tu as vus, tu nous montres ce que tu préfères.", bundle: .app)
         case .promesse:
-            String(localized: "Tes envies comptent : ta watchlist devient candidate, en priorité quand on s'en approche.", bundle: .app)
+            String(localized: "On pourra aussi te proposer des films de ta watchlist.", bundle: .app)
         }
     }
 
     /// Là où le manque se comble.
     var actionTitle: String {
         switch self {
-        case .coeur: String(localized: "Aimer des films de ma galerie", bundle: .app)
+        case .coeur: String(localized: "Choisir mes coups de cœur", bundle: .app)
         case .horizons: String(localized: "Comparer mes films", bundle: .app)
         default: String(localized: "Ouvrir Découvrir", bundle: .app)
         }
