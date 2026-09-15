@@ -1679,22 +1679,6 @@
         }
       }
     },
-    "Ajoute au moins quatre films à ta galerie pour pouvoir les comparer." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add at least four films to your gallery to compare them."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajoute au moins quatre films à ta galerie pour pouvoir les comparer."
-          }
-        }
-      }
-    },
     "Ajouter à ma galerie" : {
       "localizations" : {
         "en" : {
@@ -5805,6 +5789,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il faut 8 caractères et une majuscule ou un chiffre"
+          }
+        }
+      }
+    },
+    "Il faut d'abord %lld films dans ta galerie : en dessous, les mêmes films reviendraient d'une comparaison à l'autre." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You need %lld films in your gallery first: with fewer, the same films would keep coming back from one comparison to the next."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il faut d'abord %lld films dans ta galerie : en dessous, les mêmes films reviendraient d'une comparaison à l'autre."
           }
         }
       }

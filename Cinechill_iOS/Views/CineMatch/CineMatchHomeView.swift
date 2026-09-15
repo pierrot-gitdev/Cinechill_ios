@@ -25,8 +25,9 @@ struct CineMatchHomeView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(MediaCatalog.self) private var catalog
 
-    /// Les deux entrées de la télé.
-    private enum Entry: CaseIterable {
+    /// Les deux entrées de la télé. Visibles du fichier : la porte en peint
+    /// l'image fixe (`SalonPainter.paintMenuStill`).
+    fileprivate enum Entry: CaseIterable {
         case guided, daily
 
         var title: String {
@@ -44,15 +45,21 @@ struct CineMatchHomeView: View {
     @State private var pendingEntry: Entry?
     @State private var showSituation = false
     /// Mesurés plutôt que supposés : la télé se cale sous eux.
-    @State private var headerHeight: CGFloat = 49
-    @State private var stripHeight: CGFloat = 82
+    ///
+    /// Le bas de l'en-tête se lit dans l'espace global, et non comme la zone
+    /// sûre plus la hauteur de l'en-tête : sous `ignoresSafeArea`, le
+    /// `GeometryReader` voit une zone sûre haute de zéro, et le bandeau
+    /// remontait sous l'en-tête de toute la hauteur de la barre d'état.
+    @State private var headerBottom: CGFloat = SalonGeometry.typicalChromeBottom
+    @State private var stripHeight: CGFloat = SalonGeometry.typicalStripHeight
 
     var body: some View {
         GeometryReader { proxy in
+            let chromeBottom = max(0, headerBottom - proxy.frame(in: .global).minY)
             let room = SalonGeometry(
                 width: proxy.size.width,
                 height: proxy.size.height,
-                chromeBottom: proxy.safeAreaInsets.top + headerHeight,
+                chromeBottom: chromeBottom,
                 stripHeight: stripHeight
             )
             let stripWidth = max(0, proxy.size.width - 2 * Metrics.margin)
@@ -69,7 +76,7 @@ struct CineMatchHomeView: View {
                     } action: { height in
                         stripHeight = height
                     }
-                    .offset(x: Metrics.margin, y: proxy.safeAreaInsets.top + headerHeight + 6)
+                    .offset(x: Metrics.margin, y: chromeBottom + 6)
 
                 tvScreen(room)
                     .frame(width: room.screenWidth, height: room.screenHeight)
@@ -87,9 +94,9 @@ struct CineMatchHomeView: View {
                 onProfileTap: onProfileTap
             )
             .onGeometryChange(for: CGFloat.self) { geometry in
-                geometry.size.height
-            } action: { height in
-                headerHeight = height
+                geometry.frame(in: .global).maxY
+            } action: { bottom in
+                headerBottom = bottom
             }
         }
         .sheet(isPresented: $showSituation) {
@@ -324,7 +331,7 @@ struct CineMatchHomeView: View {
     /// Le blanc bleuté de ce qui est affiché par l'écran, et non posé sur la
     /// page. Calculé : une couleur n'a rien à craindre d'un `static let`, mais
     /// la règle se tient mieux sans exception.
-    private static var screenInk: Color { Color(hex: 0xF2F7FB) }
+    fileprivate static var screenInk: Color { Color(hex: 0xF2F7FB) }
 
     private func choose(_ entry: Entry) {
         guard pendingEntry == nil else { return }
@@ -517,6 +524,14 @@ nonisolated struct SalonGeometry: Equatable {
     var screenTop: CGFloat { top + bezel }
 
     var menu: SalonMenuMetrics { SalonMenuMetrics(room: self) }
+
+    /// Le bas de l'en-tête avant toute mesure, barre d'état comprise : celui
+    /// d'un iPhone à encoche (47 + 49). La mesure le remplace au premier
+    /// passage de mise en page.
+    static var typicalChromeBottom: CGFloat { 96 }
+    /// La hauteur du bandeau du scénario avant mesure. Ses corps de texte sont
+    /// fixes : elle ne suit pas la taille du texte du système.
+    static var typicalStripHeight: CGFloat { 82 }
 }
 
 /// Les proportions du menu, prises sur l'écran de la télé (les unités de
@@ -570,9 +585,16 @@ private struct SalonBackdrop: View {
 
 /// `drawSalon()` du prototype, trait pour trait. On peint du plus loin au plus
 /// proche : l'ordre fait les occlusions.
-private struct SalonPainter {
+///
+/// Partagé avec la porte de CinéMatch, qui peint ce même salon en réduction
+/// derrière ses battants : l'ouverture découvre l'accueil, pas un décor.
+struct SalonPainter {
     let context: GraphicsContext
     let room: SalonGeometry
+    /// Ce que le mur et le sol débordent de la pièce, de chaque côté. Nul à
+    /// l'accueil ; dans la porte, l'embrasure peut être plus large que le
+    /// salon réduit, et le décor la remplit sans raccord.
+    var bleed: CGFloat = 0
 
     private func px(_ v: CGFloat) -> CGFloat { max(1, (v * room.scale).rounded()) }
 
@@ -671,11 +693,12 @@ private struct SalonPainter {
         let conH = px(22)
         let legH = px(5)
         let floorY = conTop + conH + legH
-        context.fill(Path(CGRect(x: 0, y: 0, width: cw, height: floorY)), with: vertical(0, floorY, [0x1C1A15, 0x24211A]))
-        context.fill(Path(CGRect(x: 0, y: floorY, width: cw, height: max(0, ch - floorY))), with: vertical(floorY, ch, [0x16140F, 0x0C0B08]))
+        let wide = cw + 2 * bleed
+        context.fill(Path(CGRect(x: -bleed, y: -bleed, width: wide, height: floorY + bleed)), with: vertical(0, floorY, [0x1C1A15, 0x24211A]))
+        context.fill(Path(CGRect(x: -bleed, y: floorY, width: wide, height: max(0, ch - floorY) + bleed)), with: vertical(floorY, ch, [0x16140F, 0x0C0B08]))
         let plH = px(7)
-        context.fill(Path(CGRect(x: 0, y: floorY - plH, width: cw, height: plH)), with: .color(Color(hex: 0x1A1813)))
-        line(0, floorY - plH + 0.5, cw, floorY - plH + 0.5, tint(0xDCD8CD, 0.10))
+        context.fill(Path(CGRect(x: -bleed, y: floorY - plH, width: wide, height: plH)), with: .color(Color(hex: 0x1A1813)))
+        line(-bleed, floorY - plH + 0.5, cw + bleed, floorY - plH + 0.5, tint(0xDCD8CD, 0.10))
         // La lumière de l'écran, sur le mur et sur le sol.
         glow(cw / 2, tt + th / 2, tw * 0.95, th * 1.05, 0x8FB4D8, 0.16)
         glow(cw / 2, floorY + px(10), tw * 0.9, px(40), 0x8FB4D8, 0.06)
@@ -717,6 +740,63 @@ private struct SalonPainter {
         box(tr - room.bezel - px(12), tb - (room.chin / 2).rounded() - led / 2, led, led, led / 2, .color(tint(0xF3F0E8, 0.55)))
 
         paintCouch()
+    }
+
+    /// Le menu de la télé à l'arrêt, peint et non posé en vues : l'image que la
+    /// porte découvre en s'ouvrant. Mêmes mesures que `tvScreen`, première ligne
+    /// en surbrillance comme à l'arrivée sur l'accueil, pour que le fondu vers
+    /// les vraies lignes ne déplace rien.
+    func paintMenuStill() {
+        let menu = room.menu
+        let ink = CineMatchHomeView.screenInk
+        let eyebrowLine = (menu.eyebrowSize * 1.2).rounded()
+        let block = eyebrowLine + menu.headGap + 2 * menu.rowHeight + menu.rowGap
+        let midX = room.screenLeft + room.screenWidth / 2
+        var y = room.screenTop + (room.screenHeight - block) / 2
+
+        let eyebrow = String(localized: "Ta soirée Cinechill", bundle: .app).uppercased()
+        context.draw(
+            Text(verbatim: eyebrow)
+                .font(.system(size: menu.eyebrowSize, weight: .semibold))
+                .tracking(menu.eyebrowSize * 0.16)
+                .foregroundStyle(CinechillPalette.wallHigh.opacity(0.55)),
+            at: CGPoint(x: midX, y: y + eyebrowLine / 2),
+            anchor: .center
+        )
+        y += eyebrowLine + menu.headGap
+
+        for (index, entry) in CineMatchHomeView.Entry.allCases.enumerated() {
+            let isOn = index == 0
+            let row = CGRect(x: midX - menu.width / 2, y: y, width: menu.width, height: menu.rowHeight)
+            context.fill(
+                Path(roundedRect: row, cornerRadius: Metrics.radius, style: .continuous),
+                with: .color(isOn ? Ink.paper : ink.opacity(0.05))
+            )
+            if !isOn {
+                context.stroke(
+                    Path(roundedRect: row.insetBy(dx: 0.5, dy: 0.5), cornerRadius: Metrics.radius, style: .continuous),
+                    with: .color(ink.opacity(0.18)),
+                    lineWidth: 1
+                )
+            }
+            context.draw(
+                Text(verbatim: entry.title)
+                    .font(.system(size: menu.fontSize, weight: isOn ? .semibold : .medium))
+                    .foregroundStyle(isOn ? Ink.ground : ink.opacity(0.8)),
+                at: CGPoint(x: row.minX + menu.rowPaddingH, y: row.midY),
+                anchor: .leading
+            )
+            if isOn {
+                let side = menu.chevronSize
+                let box = CGRect(x: row.maxX - menu.rowPaddingH - side, y: row.midY - side / 2, width: side, height: side)
+                context.stroke(
+                    EntryChevron().path(in: box),
+                    with: .color(Ink.ground),
+                    style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round)
+                )
+            }
+            y += menu.rowHeight + menu.rowGap
+        }
     }
 
     /// Le canapé, vu de dos, en vraie perspective.

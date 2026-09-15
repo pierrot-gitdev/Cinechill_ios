@@ -72,15 +72,23 @@ struct CineMatchGateView: View {
     @State private var isOpening = false
     @State private var hasPlayedOpening = false
     /// Le travelling avant, une fois les battants écartés : la scène grandit
-    /// et le seuil passe hors champ, comme si on entrait dans la salle.
+    /// et le seuil passe hors champ, comme si on entrait dans le salon.
     @State private var zoom: Double = 1
+    /// Mesurés pour que le travelling finisse **dans** l'accueil (`DoorEntry`).
+    /// Tous en coordonnées globales, et figés pendant l'ouverture : la scène
+    /// agrandie fausserait sa propre mesure.
+    @State private var sceneFrame: CGRect = .zero
+    @State private var roomFrame: CGRect = .zero
+    @State private var headerBottom: CGFloat = SalonGeometry.typicalChromeBottom
 
     var body: some View {
         ZStack(alignment: .bottom) {
             Ink.ground.ignoresSafeArea()
 
             doorLayer
-            veil
+            // Le voile ne sert qu'au texte du bas, qui se tait à l'ouverture :
+            // il s'efface avec les battants pour ne pas assombrir le canapé.
+            veil.opacity(1 - openProgress)
             // Porte gagnée, il n'y a plus rien à dire : la cérémonie parle, et
             // le seuil se franchit de lui-même.
             if !door.unlocked { content }
@@ -90,6 +98,26 @@ struct CineMatchGateView: View {
                 title: String(localized: "CinéMatch", bundle: .app),
                 onProfileTap: onProfileTap
             )
+            .onGeometryChange(for: CGFloat.self) { geometry in
+                geometry.frame(in: .global).maxY
+            } action: { bottom in
+                headerBottom = bottom
+            }
+        }
+        // Le cadre de l'accueil : même parent que la porte, mais le salon monte
+        // sous la barre d'état. Un lecteur qui ignore la zone sûre du haut en
+        // reprend exactement l'emprise.
+        .background {
+            GeometryReader { _ in
+                Color.clear
+                    .onGeometryChange(for: CGRect.self) { geometry in
+                        geometry.frame(in: .global)
+                    } action: { frame in
+                        guard !isOpening else { return }
+                        roomFrame = frame
+                    }
+            }
+            .ignoresSafeArea(edges: .top)
         }
         .sheet(
             item: $detailArtifact,
@@ -98,7 +126,7 @@ struct CineMatchGateView: View {
                 pendingDetailAction = nil
                 switch key {
                 case .coeur: onLovePicker()
-                case .horizons: onCompare()
+                case .horizons where door.canCompare: onCompare()
                 default: onDiscover()
                 }
             }
@@ -130,14 +158,20 @@ struct CineMatchGateView: View {
     private static let openingLeadIn: Double = 0.3
     /// Le travelling avant. En accélération : on hésite, puis on entre.
     private static let entryDuration: Double = 1.2
-    /// L'agrandissement au terme du travelling. Assez pour que le chambranle
-    /// sorte du cadre — tant qu'on le voit, on est encore devant la porte.
+    /// L'agrandissement au terme du travelling tant que la scène n'est pas
+    /// mesurée. Mesurée, c'est `DoorEntry` qui le fixe : juste assez pour que
+    /// le salon peint recouvre l'accueil, et que le chambranle sorte du cadre.
     private static let entryZoom: Double = 3.6
 
     /// Ce qui peut relancer la séquence : la porte qui se gagne, ou la planche
     /// de célébration qui se retire.
     private var openingTrigger: String {
         "\(door.unlocked)-\(isCelebrating)"
+    }
+
+    /// Le raccord avec l'accueil, dès que la scène et l'accueil sont mesurés.
+    private var entry: DoorEntry? {
+        DoorEntry(sceneFrame: sceneFrame, roomFrame: roomFrame, headerBottom: headerBottom)
     }
 
     /// Les battants s'écartent, puis le seuil se propose.
@@ -186,7 +220,9 @@ struct CineMatchGateView: View {
         // leur course et le pas est déjà engagé. L'accélération fait tout le
         // travail — un travelling linéaire se lit comme un zoom d'image, une
         // entrée commence lentement et finit vite.
-        withAnimation(.easeIn(duration: Self.entryDuration)) { zoom = Self.entryZoom }
+        withAnimation(.easeIn(duration: Self.entryDuration)) {
+            zoom = entry.map { Double($0.zoom) } ?? Self.entryZoom
+        }
         try? await Task.sleep(for: .seconds(Self.entryDuration))
         guard !Task.isCancelled else { return }
         isOpening = false
@@ -195,10 +231,9 @@ struct CineMatchGateView: View {
 
     // MARK: - La porte
 
-    /// Le point de fuite de la Salle : là où l'allée converge, un peu au-dessus
-    /// du centre, à hauteur de l'écran. C'est vers lui qu'on avance — viser le
-    /// centre géométrique du cadre donnerait un agrandissement d'image, pas une
-    /// entrée.
+    /// Le point fixe du travelling tant que la scène n'est pas mesurée : un peu
+    /// au-dessus du centre, à hauteur de la télé. Mesurée, la scène calcule le
+    /// sien (`DoorEntry.anchor`), celui qui pose le salon peint sur l'accueil.
     private static let vanishingPoint = UnitPoint(x: 0.5, y: 0.384)
 
     private var doorLayer: some View {
@@ -207,16 +242,24 @@ struct CineMatchGateView: View {
                 door: door,
                 isOpen: door.unlocked,
                 openProgress: openProgress,
+                entry: entry,
                 onArtifactTap: { key in
                     Haptics.impact(.light, intensity: 0.7)
                     detailArtifact = key
                 }
             )
             .aspectRatio(390 / 404, contentMode: .fit)
-            .frame(maxWidth: .infinity)
+            // Mesurée avant l'agrandissement, dont elle est la référence.
+            .onGeometryChange(for: CGRect.self) { geometry in
+                geometry.frame(in: .global)
+            } action: { frame in
+                guard !isOpening else { return }
+                sceneFrame = frame
+            }
             // `scaleEffect` ne change pas la mise en page : la scène déborde
             // du cadre en grandissant, ce qui est exactement l'effet cherché.
-            .scaleEffect(zoom, anchor: Self.vanishingPoint)
+            .scaleEffect(zoom, anchor: entry?.anchor ?? Self.vanishingPoint)
+            .frame(maxWidth: .infinity)
             .padding(.top, 104)
 
             Spacer(minLength: 0)
@@ -318,8 +361,10 @@ struct CineMatchGateView: View {
 private struct DoorSceneView: View {
     let door: DoorState
     let isOpen: Bool
-    /// 0 = fermée, 1 = grande ouverte sur la Salle.
+    /// 0 = fermée, 1 = grande ouverte sur le salon.
     let openProgress: Double
+    /// Le salon à peindre derrière les battants.
+    let entry: DoorEntry?
     let onArtifactTap: (DoorArtifactKey) -> Void
 
     /// Le repère de conception, hérité des maquettes.
@@ -345,7 +390,7 @@ private struct DoorSceneView: View {
             let s = proxy.size.width / Self.design.width
 
             ZStack(alignment: .topLeading) {
-                DoorCanvas(door: door, isOpen: isOpen, openProgress: openProgress)
+                DoorCanvas(door: door, isOpen: isOpen, entry: entry, openProgress: openProgress)
 
                 // Les médaillons s'effacent avant que les vantaux ne bougent :
                 // la serrure n'a plus de raison d'être une fois la porte
@@ -418,6 +463,7 @@ private struct DoorSceneView: View {
 private struct DoorCanvas: View, Animatable {
     let door: DoorState
     let isOpen: Bool
+    let entry: DoorEntry?
     /// L'avancement de l'ouverture, **interpolé image par image**.
     ///
     /// C'est la raison d'être de la conformité à `Animatable` : un `Canvas` ne
@@ -510,69 +556,26 @@ private struct DoorCanvas: View, Animatable {
                 with: .color(Color(hex: 0xF6EACB).opacity(0.28)), lineWidth: 1 * s
             )
 
-            // La Salle, au-delà du seuil. Dessinée avant les vantaux : c'est
-            // eux qui la découvrent en s'écartant, elle n'apparaît pas.
+            // Le salon, au-delà du seuil : l'accueil lui-même, peint en
+            // réduction. Dessiné avant les vantaux : ce sont eux qui le
+            // découvrent en s'écartant, il n'apparaît pas.
             let p = max(0, min(1, openProgress))
             if p > 0.001 {
-                context.fill(
-                    rect(100, 62, 190, 314),
-                    with: .linearGradient(
-                        Gradient(colors: [Color(hex: 0x0B1322), Color(hex: 0x05080D)]),
-                        startPoint: point(100, 62), endPoint: point(100, 376)
+                context.drawLayer { layer in
+                    layer.clip(to: rect(100, 62, 190, 314))
+                    guard let entry else {
+                        layer.fill(rect(100, 62, 190, 314), with: .color(Ink.ground))
+                        return
+                    }
+                    layer.translateBy(x: entry.origin.x, y: entry.origin.y)
+                    layer.scaleBy(x: 1 / entry.zoom, y: 1 / entry.zoom)
+                    let painter = SalonPainter(
+                        context: layer,
+                        room: entry.room,
+                        bleed: entry.room.width + entry.room.height
                     )
-                )
-                // L'écran, au fond, et sa lueur.
-                context.fill(
-                    Path(ellipseIn: CGRect(x: 100 * s, y: 88 * s, width: 190 * s, height: 132 * s)),
-                    with: .radialGradient(
-                        Gradient(colors: [
-                            Color(hex: 0xF4FDFF).opacity(0.30), Color(hex: 0xF4FDFF).opacity(0),
-                        ]),
-                        center: point(195, 154), startRadius: 0, endRadius: 95 * s
-                    )
-                )
-                context.fill(rect(157, 134, 76, 34), with: .color(Color(hex: 0xF4FDFF)))
-                var floor = Path()
-                floor.move(to: point(100, 226))
-                floor.addLine(to: point(290, 226))
-                context.stroke(floor, with: .color(Color(hex: 0xC6D3DF).opacity(0.10)), lineWidth: 1 * s)
-
-                // L'allée centrale et les rangées de fauteuils.
-                context.fill(
-                    quad(point(176, 236), point(214, 236), point(240, 376), point(150, 376)),
-                    with: .linearGradient(
-                        Gradient(colors: [
-                            Color(hex: 0x22304A).opacity(0.9), Color(hex: 0x0C1119),
-                        ]),
-                        startPoint: point(176, 236), endPoint: point(176, 376)
-                    )
-                )
-                let rows: [(CGFloat, CGFloat, CGFloat, CGFloat, CGFloat)] = [
-                    (106, 244, 63, 7, 221), (106, 264, 60, 9, 224),
-                    (106, 289, 55, 11, 229), (106, 319, 50, 13, 234),
-                    (106, 352, 44, 15, 240),
-                ]
-                for (x, y, w, h, rx) in rows {
-                    context.fill(rect(x, y, w, h), with: .color(Color(hex: 0x04070C)))
-                    context.fill(rect(rx, y, w, h), with: .color(Color(hex: 0x04070C)))
-                }
-
-                // Les cinq artéfacts devenus lumières d'allée : la porte garde
-                // ses teintes une fois franchie.
-                let aisle: [(CGFloat, DoorArtifactKey)] = [
-                    (366, .memoire), (336, .eventail), (306, .coeur),
-                    (279, .horizons), (254, .promesse),
-                ]
-                for (y, key) in aisle {
-                    let tint = Color(hex: key.hue)
-                    context.fill(
-                        Path(ellipseIn: CGRect(x: 188 * s, y: (y - 7) * s, width: 14 * s, height: 14 * s)),
-                        with: .color(tint.opacity(0.28))
-                    )
-                    context.fill(
-                        Path(ellipseIn: CGRect(x: 192.8 * s, y: (y - 2.2) * s, width: 4.4 * s, height: 4.4 * s)),
-                        with: .color(tint)
-                    )
+                    painter.paint()
+                    painter.paintMenuStill()
                 }
             }
 
@@ -744,8 +747,8 @@ private struct DoorCanvas: View, Animatable {
                     quad(point(108, 384), point(282, 384), point(322, 460), point(68, 460)),
                     with: .linearGradient(
                         Gradient(colors: [
-                            Color(hex: 0xE8F4FF).opacity(0.28 * p),
-                            Color(hex: 0xE8F4FF).opacity(0),
+                            Color(hex: 0xBFD9F0).opacity(0.22 * p),
+                            Color(hex: 0xBFD9F0).opacity(0),
                         ]),
                         startPoint: point(195, 384), endPoint: point(195, 460)
                     )
@@ -758,6 +761,73 @@ private struct DoorCanvas: View, Animatable {
 private extension DoorSceneView {
     /// Exposés au canvas, qui ne voit pas les membres privés de la scène.
     static var conduitSegments: [(y: CGFloat, h: CGFloat)] { conduits }
+}
+
+// MARK: - Le raccord avec l'accueil
+
+/// Le salon que la porte découvre, et le travelling qui y entre.
+///
+/// La porte ne s'ouvre pas sur un décor : elle s'ouvre sur l'accueil lui-même.
+/// Le salon est peint à la géométrie exacte de `CineMatchHomeView` (même cadre,
+/// même en-tête), réduit de l'échelle du travelling et centré dans l'embrasure.
+/// Le travelling l'agrandit d'autant, autour du seul point qui ramène son coin
+/// sur celui de l'accueil : à la dernière image, le salon peint recouvre
+/// l'accueil au point près, et le fondu qui suit ne fait apparaître que le
+/// bandeau du scénario.
+private struct DoorEntry {
+    /// L'accueil, tel qu'il sera mis en page.
+    let room: SalonGeometry
+    /// L'agrandissement final du travelling ; le salon est peint à son inverse.
+    let zoom: CGFloat
+    /// Le coin haut gauche du salon peint, en points, dans le repère de la scène.
+    let origin: CGPoint
+    /// Le point fixe du travelling, en fraction de la scène.
+    let anchor: UnitPoint
+
+    /// L'embrasure une fois les battants ouverts, dans le repère de 390 : de
+    /// 122 à 268 en largeur, moins un point de chaque côté pour que le liseré
+    /// d'or des battants sorte du cadre avec eux.
+    private static let clearWidth: CGFloat = 144
+    private static let clearTop: CGFloat = 62
+    private static let clearHeight: CGFloat = 314
+
+    /// - Parameters:
+    ///   - sceneFrame: la scène de la porte, avant agrandissement.
+    ///   - roomFrame: le cadre de l'accueil, barre d'état comprise.
+    ///   - headerBottom: le bas de l'en-tête.
+    ///   Les trois en coordonnées globales.
+    init?(sceneFrame: CGRect, roomFrame: CGRect, headerBottom: CGFloat) {
+        guard sceneFrame.width > 0, sceneFrame.height > 0,
+              roomFrame.width > 0, roomFrame.height > 0 else { return nil }
+        let s = sceneFrame.width / 390
+        let zoom = max(
+            roomFrame.width / (Self.clearWidth * s),
+            roomFrame.height / (Self.clearHeight * s)
+        )
+        guard zoom.isFinite, zoom > 1.01 else { return nil }
+
+        let origin = CGPoint(
+            x: 195 * s - roomFrame.width / (2 * zoom),
+            y: (Self.clearTop + Self.clearHeight / 2) * s - roomFrame.height / (2 * zoom)
+        )
+        // Un agrandissement Z de point fixe A envoie p sur A + Z·(p − A). On
+        // cherche A tel que le coin du salon peint tombe sur celui de l'accueil.
+        let target = CGPoint(x: roomFrame.minX - sceneFrame.minX, y: roomFrame.minY - sceneFrame.minY)
+        let fixed = CGPoint(
+            x: (zoom * origin.x - target.x) / (zoom - 1),
+            y: (zoom * origin.y - target.y) / (zoom - 1)
+        )
+
+        self.room = SalonGeometry(
+            width: roomFrame.width,
+            height: roomFrame.height,
+            chromeBottom: max(0, headerBottom - roomFrame.minY),
+            stripHeight: SalonGeometry.typicalStripHeight
+        )
+        self.zoom = zoom
+        self.origin = origin
+        self.anchor = UnitPoint(x: fixed.x / sceneFrame.width, y: fixed.y / sceneFrame.height)
+    }
 }
 
 // MARK: - La feuille de détail
@@ -783,6 +853,23 @@ private struct DoorArtifactSheet: View {
 
     private var target: Int { artifact?.target ?? 0 }
     private var isDone: Bool { artifact?.done == true || (target > 0 && current >= target) }
+
+    /// « Tes préférences » avant la Mémoire : les comparaisons n'ont pas encore
+    /// de quoi se jouer, la feuille le dit et renvoie là où la galerie se remplit.
+    private var waitsForMemory: Bool { artifactKey == .horizons && !door.canCompare }
+
+    private var consequence: String {
+        guard waitsForMemory else { return artifactKey.consequence }
+        let memoryTarget = door.artifact(.memoire)?.target ?? 0
+        return String(
+            localized: "Il faut d'abord \(memoryTarget) films dans ta galerie : en dessous, les mêmes films reviendraient d'une comparaison à l'autre.",
+            bundle: .app
+        )
+    }
+
+    private var actionTitle: String {
+        waitsForMemory ? String(localized: "Ouvrir Découvrir", bundle: .app) : artifactKey.actionTitle
+    }
 
     private var rank: Int {
         (DoorArtifactKey.allCases.firstIndex(of: artifactKey) ?? 0) + 1
@@ -825,7 +912,7 @@ private struct DoorArtifactSheet: View {
             }
             .padding(.top, 12)
 
-            Text(artifactKey.consequence)
+            Text(consequence)
                 .font(.system(size: 13.5))
                 .foregroundStyle(Ink.ink2)
                 .lineSpacing(2)
@@ -834,7 +921,7 @@ private struct DoorArtifactSheet: View {
 
             Spacer(minLength: 16)
 
-            PlanButton(title: artifactKey.actionTitle, action: onAction)
+            PlanButton(title: actionTitle, action: onAction)
         }
         .padding(.horizontal, Metrics.margin)
         .padding(.top, 22)

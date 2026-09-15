@@ -29,6 +29,11 @@ struct CineMatchDoorComparisonView: View {
     private static let rounds = 12
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(DoorStore.self) private var doorStore
+
+    /// Le seuil de la Mémoire : le serveur ne compare pas une galerie plus
+    /// petite, et c'est lui que l'écran vide doit nommer.
+    private var memoryTarget: Int { doorStore.door.artifact(.memoire)?.target ?? 100 }
 
     @State private var round = 1
     @State private var films: [CineMatchGalleryFilm] = []
@@ -140,7 +145,10 @@ struct CineMatchDoorComparisonView: View {
         } else if films.isEmpty, !isLoading, hasLoadedOnce {
             PlanEmptyState(
                 title: String(localized: "Pas assez de films vus", bundle: .app),
-                message: String(localized: "Ajoute au moins quatre films à ta galerie pour pouvoir les comparer.", bundle: .app),
+                message: String(
+                    localized: "Il faut d'abord \(memoryTarget) films dans ta galerie : en dessous, les mêmes films reviendraient d'une comparaison à l'autre.",
+                    bundle: .app
+                ),
                 actionTitle: String(localized: "Fermer", bundle: .app),
                 action: onClose
             )

@@ -86,13 +86,20 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
         artifacts.first { $0.key == key.rawValue }
     }
 
+    /// Les comparaisons de « Tes préférences » n'ouvrent qu'après la Mémoire :
+    /// sous ce nombre de films, les mêmes affiches reviendraient d'un tour à
+    /// l'autre et le choix ne dirait plus rien. Le serveur tient la même règle.
+    var canCompare: Bool { artifact(.memoire)?.done == true }
+
     /// La porte d'un compte que le serveur n'a pas encore raconté : tout à
     /// zéro, tout éteint. C'est l'état honnête d'un profil inconnu, et il
     /// évite de faire clignoter l'entrée avant de la refermer.
     ///
-    /// Les seuils sont ceux du serveur : la Mémoire à 20 films (vingt films
-    /// suffisent à situer quelqu'un), et l'artéfact de clé `horizons`, devenu
-    /// « Tes préférences », à 12 comparaisons entre des films vus.
+    /// Les seuils sont ceux du serveur : la Mémoire à 100 films, et l'artéfact
+    /// de clé `horizons`, devenu « Tes préférences », à 12 comparaisons entre
+    /// des films vus. Les deux se tiennent : chaque comparaison consomme cinq
+    /// films (quatre affiches et le remplaçant du film gardé), soit 60 sur les
+    /// douze tours ; à 100, aucune affiche ne revient d'un tour à l'autre.
     static let initial = DoorState(
         unlocked: false,
         artifacts: DoorArtifactKey.allCases.map { key in
@@ -106,7 +113,7 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
     /// Le seuil de chaque artéfact tant que le serveur ne l'a pas donné.
     private static func initialTarget(_ key: DoorArtifactKey) -> Int {
         switch key {
-        case .memoire: 20
+        case .memoire: 100
         case .eventail: 6
         case .coeur: 12
         case .horizons: 12
