@@ -7,7 +7,9 @@ import SwiftUI
 
 /// L'ouverture de l'app : le faisceau entre par la droite, allume la cabine, traverse la salle
 /// **rang par rang**, embrase l'écran, puis la lumière court tout autour du mur et dessine le C.
-/// Le C se redresse enfin, descend, et prend la tête du mot.
+/// Le C se redresse enfin, descend, et prend la tête du mot. Au moment où les lettres en sortent,
+/// le faisceau glisse au centre et pivote droit vers le bas : il éclaire la ligne à l'horizontale,
+/// dans le même temps exactement que son apparition.
 ///
 /// Deux choses commandent la séquence, et rien d'autre ne doit les contredire.
 ///
@@ -58,6 +60,8 @@ struct SplashView: View {
     // Le débordement hors du cercle.
     @State private var coneSpread: CGFloat = 0.06
     @State private var coneOpacity: Double = 0
+    /// Le faisceau a pivoté vers le mot.
+    @State private var beamAimed = false
 
     // La marquise.
     @State private var descended = false
@@ -290,8 +294,15 @@ struct SplashView: View {
 
     /// Le cône qui sort du cercle : la projection cesse d'être contenue par le logo et vient
     /// laver le bas de l'écran. Sommet à la cabine, base hors du cadre, même bascule que le mark.
+    ///
+    /// Quand les lettres sortent du C, le sommet du cône glisse au centre de l'écran et le cône
+    /// pivote **autour de ce sommet** jusqu'à pointer droit vers le bas : sa base passe à
+    /// l'horizontale, sous la ligne, qu'il éclaire sur toute sa largeur. Il se raccourcit pour
+    /// finir un peu au-delà du mot, et sa lumière baisse d'un cran pour que les lettres en corps
+    /// très fin restent lisibles.
     private func spill(_ proxy: GeometryProxy) -> some View {
         let width = proxy.size.width * 1.9
+        let aim = beamAim(proxy, coneLength: width)
 
         return SpillCone()
             .fill(
@@ -306,17 +317,39 @@ struct SplashView: View {
             )
             .frame(width: width, height: proxy.size.height * 1.2)
             .blur(radius: 18)
-            .scaleEffect(x: coneSpread, anchor: .trailing)
-            .rotationEffect(CinechillMarkMetrics.tilt, anchor: .trailing)
-            // `.position` place le centre du cadre : on recule d'une demi-largeur pour que ce
-            // soit le sommet, et non le milieu, qui tombe sur la cabine.
-            .position(
-                x: proxy.size.width / 2 + boothOffset.width - width / 2,
-                y: proxy.size.height * Self.markHeight + boothOffset.height
+            .scaleEffect(
+                x: coneSpread * (beamAimed ? aim.length : 1),
+                y: beamAimed ? aim.spread : 1,
+                anchor: .trailing
             )
-            .opacity(coneOpacity)
+            // Pointé vers la gauche au repos : -90° le fait regarder droit vers le bas.
+            .rotationEffect(beamAimed ? .degrees(-90) : CinechillMarkMetrics.tilt, anchor: .trailing)
+            // `.position` place le centre du cadre : on recule d'une demi-largeur pour que ce
+            // soit le sommet, et non le milieu, qui tombe sur la cabine, puis au centre.
+            .position(
+                x: proxy.size.width / 2 + (beamAimed ? 0 : boothOffset.width) - width / 2,
+                y: proxy.size.height * Self.markHeight + (beamAimed ? 0 : boothOffset.height)
+            )
+            .opacity(coneOpacity * (beamAimed ? Self.aimedBeamStrength : 1))
             .blendMode(.screen)
             .allowsHitTesting(false)
+    }
+
+    /// L'intensité du faisceau une fois tourné vers le mot, et jusqu'où il descend, en multiple
+    /// de la distance entre son sommet et la ligne.
+    private static let aimedBeamStrength: Double = 0.7
+    private static let aimedBeamReach: CGFloat = 1.6
+
+    /// Les proportions du faisceau tourné vers le bas, en fractions du cône plein.
+    ///
+    /// - `length` : il finit à `aimedBeamReach` fois la distance du sommet au mot.
+    /// - `spread` : à sa base, la demi-largeur du cône vaut la moitié de la hauteur de son cadre ;
+    ///   ramenée à la moitié de l'écran, la ligne se trouve dans la lumière sur toute sa largeur.
+    private func beamAim(_ proxy: GeometryProxy, coneLength: CGFloat) -> (length: CGFloat, spread: CGFloat) {
+        let wordDistance = proxy.size.height * (0.5 - Self.markHeight)
+        let length = min(1, max(0.1, wordDistance * Self.aimedBeamReach / max(1, coneLength)))
+        let spread = min(1, proxy.size.width / max(1, proxy.size.height * 1.2))
+        return (length, spread)
     }
 
     // MARK: Repères
@@ -357,6 +390,7 @@ struct SplashView: View {
                 markScale = 1
                 coneSpread = 1
                 coneOpacity = 0.85
+                beamAimed = true
                 bladeOffset = 0
                 bladeOpacity = 0.22
                 descended = true
@@ -432,10 +466,18 @@ struct SplashView: View {
         await sleep(100)
 
         // 9 — les lettres sortent de derrière le C et s'écartent jusqu'à leur interlettre.
+        //
+        // Le faisceau part au même instant, sur la même courbe, et dure exactement le temps de
+        // la sortie des lettres, décalages compris : il se pose sur la ligne quand la dernière
+        // lettre arrive à sa place.
+        let letterDuration = 0.55
+        let letterStagger = 0.05
+        let lettersSpan = letterDuration + letterStagger * Double(lettersIn.count - 1)
+        withAnimation(.timingCurve(0.2, 0.75, 0.3, 1, duration: lettersSpan)) { beamAimed = true }
         for index in lettersIn.indices {
             withAnimation(
-                .timingCurve(0.2, 0.75, 0.3, 1, duration: 0.55)
-                .delay(Double(index) * 0.05)
+                .timingCurve(0.2, 0.75, 0.3, 1, duration: letterDuration)
+                .delay(Double(index) * letterStagger)
             ) {
                 lettersIn[index] = true
             }
