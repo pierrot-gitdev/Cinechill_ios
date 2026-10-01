@@ -67,10 +67,17 @@ struct TonightCardView: View {
         .accessibilityElement(children: .contain)
     }
 
+    /// Pour une saison, l'épisode à lancer passe devant tout le reste : c'est
+    /// lui qu'on propose, pas la série.
     private var facts: String {
-        [pick.item.runtimeText, platformName, ratingText]
+        [episodeText, pick.item.runtimeText, platformName, ratingText]
             .compactMap { $0 }
             .joined(separator: " · ")
+    }
+
+    private var episodeText: String? {
+        guard let season = pick.item.entry.seasonFacts?.season else { return nil }
+        return String(localized: "Saison \(season), épisode \(pick.item.entry.episodeToPlay)", bundle: .app)
     }
 
     /// La note perd son étoile, comme sur la fiche film : c'est la même donnée,

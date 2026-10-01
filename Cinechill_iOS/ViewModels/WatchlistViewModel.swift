@@ -21,6 +21,11 @@ final class WatchlistViewModel {
     /// appels TMDB côté serveur : on reste bien en dessous du plafond.
     private static let enrichBatchSize = 25
     private static let enrichmentTTL: TimeInterval = 7 * 24 * 3600
+    /// Une saison en cours de diffusion change de semaine en semaine : ce
+    /// qu'on sait d'elle vieillit bien plus vite que la durée d'un film.
+    private static let seasonEnrichmentTTL: TimeInterval = 12 * 3600
+    /// Le plafond de `enrichSeasons`.
+    private static let seasonBatchSize = 30
 
     var budget: TimeBudget = .any {
         didSet { rebuild() }
@@ -37,19 +42,33 @@ final class WatchlistViewModel {
     private(set) var hiddenByBudget = 0
 
     private var entries: [WatchlistEntry] = []
+    /// Films seulement, par `tmdbId` : `enrichCandidates` lit des fiches de
+    /// films, et une série qui y passerait rendrait la durée du film qui porte
+    /// le même identifiant.
     private var enrichment: [Int: EnrichedCandidateRow] = [:]
+    /// Saisons seulement, par identifiant de bibliothèque.
+    private var seasonEnrichment: [String: SeasonEnrichment] = [:]
     private var preferredProviderIDs: Set<Int> = []
     private var platformNames: [Int: String] = [:]
-    private var rejectedTonight: Set<Int> = []
+    private var rejectedTonight: Set<String> = []
 
     private let client: any CandidateEnriching
+    private let seasonClient: any SeasonEnriching
     private let cache = DiskCache(
         name: "watchlist_enrich",
         defaultTTL: WatchlistViewModel.enrichmentTTL
     )
+    private let seasonCache = DiskCache(
+        name: "watchlist_seasons",
+        defaultTTL: WatchlistViewModel.seasonEnrichmentTTL
+    )
 
-    init(client: any CandidateEnriching = BackendRecommendationClient()) {
+    init(
+        client: any CandidateEnriching = BackendRecommendationClient(),
+        seasonClient: any SeasonEnriching = SeasonEnrichClient()
+    ) {
         self.client = client
+        self.seasonClient = seasonClient
     }
 
     // MARK: - Entrées
@@ -111,7 +130,9 @@ final class WatchlistViewModel {
     // MARK: - Enrichissement
 
     private func enrichMissing() async {
-        let missing = entries.filter { enrichment[$0.tmdbId] == nil }
+        await enrichMissingSeasons()
+
+        let missing = entries.filter { !$0.isSeason && enrichment[$0.tmdbId] == nil }
         guard !missing.isEmpty else { return }
 
         // Le cache est tenu film par film, pas par liste : ajouter un titre ne
@@ -155,10 +176,60 @@ final class WatchlistViewModel {
 
     private func cacheKey(_ id: Int) -> String { "enrich-\(id)" }
 
+    /// Les saisons, par leur propre point d'accès et leur propre cache. Même
+    /// affichage progressif que les films : chaque lot enrichit l'écran visible.
+    private func enrichMissingSeasons() async {
+        let missing = entries.filter { $0.isSeason && seasonEnrichment[$0.id] == nil }
+        guard !missing.isEmpty else { return }
+
+        var uncached: [WatchlistEntry] = []
+        for entry in missing {
+            if let cached = await seasonCache.read(for: entry.id), !cached.isExpired,
+               let row = try? JSONDecoder().decode(SeasonEnrichment.self, from: cached.data) {
+                seasonEnrichment[entry.id] = row
+            } else {
+                uncached.append(entry)
+            }
+        }
+        rebuild()
+        guard !uncached.isEmpty else { return }
+
+        isEnriching = true
+        defer { isEnriching = false }
+
+        for chunk in uncached.chunked(into: Self.seasonBatchSize) {
+            let wanted = chunk.compactMap { entry in
+                entry.seasonFacts.map { (tvId: entry.tmdbId, season: $0.season) }
+            }
+            guard let rows = try? await seasonClient.enrich(wanted) else { continue }
+            for row in rows {
+                let key = "tv-\(row.tvId)-s\(row.season)"
+                seasonEnrichment[key] = row
+                if let data = try? JSONEncoder().encode(row) {
+                    await seasonCache.store(data, for: key)
+                }
+            }
+            rebuild()
+        }
+    }
+
     // MARK: - Composition
 
     private func rebuild() {
         items = entries.map { entry in
+            if let facts = entry.seasonFacts {
+                // Ce qu'on a rafraîchi passe devant ce qui a été rangé : la
+                // saison a pu sortir un épisode depuis.
+                let fresh = seasonEnrichment[entry.id]
+                return WatchlistItem(
+                    entry: entry,
+                    runtimeMinutes: fresh?.episodeRuntime ?? facts.episodeRuntime,
+                    providerIDs: fresh?.providerIds ?? facts.providerIds,
+                    trailerKey: fresh?.trailerKey,
+                    airedEpisodes: fresh?.airedEpisodes ?? facts.airedEpisodes,
+                    nextAirDate: fresh?.nextAirDate ?? facts.nextAirDate
+                )
+            }
             let enriched = enrichment[entry.tmdbId]
             return WatchlistItem(
                 entry: entry,
@@ -175,7 +246,11 @@ final class WatchlistViewModel {
         // le film n'a pas été vu : la provenance prime sur la plateforme, et
         // mélanger les deux axes rendrait les deux illisibles.
         let recommended = withinBudget.filter { $0.entry.isRecommended }
-        let rest = withinBudget.filter { !$0.entry.isRecommended }
+        // Une saison qui attend son épisode passe avant tout le reste du
+        // rangement par disponibilité, y compris l'ancienneté : la saison 3
+        // annoncée pour janvier n'a rien d'un remords, elle attend sa date.
+        let awaiting = withinBudget.filter { !$0.entry.isRecommended && $0.isAwaitingEpisode }
+        let rest = withinBudget.filter { !$0.entry.isRecommended && !$0.isAwaitingEpisode }
 
         let cutoff = Date().addingTimeInterval(-Double(Self.dormantAfterDays) * 86400)
         let dormant = rest.filter { $0.entry.addedAt < cutoff }
@@ -188,6 +263,10 @@ final class WatchlistViewModel {
             WatchlistGroup(kind: .recommended, items: recommended.sorted(by: newestRecommendationFirst)),
             WatchlistGroup(kind: .available, items: available.sorted(by: newestFirst)),
             WatchlistGroup(kind: .elsewhere, items: elsewhere.sorted(by: newestFirst)),
+            // La date la plus proche d'abord : c'est ce qui sortira en premier.
+            WatchlistGroup(kind: .awaiting, items: awaiting.sorted {
+                ($0.nextAirDate ?? "9999") < ($1.nextAirDate ?? "9999")
+            }),
             // Les plus anciens d'abord : ce sont eux qu'il faut trancher.
             WatchlistGroup(kind: .dormant, items: dormant.sorted { $0.entry.addedAt < $1.entry.addedAt }),
         ].filter { !$0.items.isEmpty }
@@ -220,12 +299,16 @@ final class WatchlistViewModel {
     private func pickTonight(from pool: [WatchlistItem]) -> TonightPick? {
         guard !pool.isEmpty else { return nil }
 
-        var candidates = pool.filter { !rejectedTonight.contains($0.id) }
+        // On ne propose pas ce soir un épisode qui sort vendredi.
+        let launchable = pool.filter { !$0.isAwaitingEpisode }
+        guard !launchable.isEmpty else { return nil }
+
+        var candidates = launchable.filter { !rejectedTonight.contains($0.id) }
         if candidates.isEmpty {
             // Tout a été écarté : on repart d'un tour neuf plutôt que de ne
             // rien proposer.
             rejectedTonight.removeAll()
-            candidates = pool
+            candidates = launchable
         }
 
         let onPreferred = candidates.filter { $0.isAvailable(on: preferredProviderIDs) }
@@ -260,6 +343,12 @@ final class WatchlistViewModel {
                     : String(localized: "Recommandé par \(recommender.displayName) et \(others) autres.", bundle: .app)
             }
             return String(localized: "Recommandé par \(recommender.displayName).", bundle: .app)
+        }
+
+        // Une saison qu'on a commencée se reprend là où on l'a laissée : c'est
+        // la raison la plus simple qu'un écran puisse donner.
+        if item.entry.isSeason, let next = item.entry.nextEpisode, next > 1 {
+            return String(localized: "Tu en es à l'épisode \(next).", bundle: .app)
         }
 
         let months = Int(monthsWaiting(item))

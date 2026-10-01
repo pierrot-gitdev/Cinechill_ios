@@ -237,12 +237,7 @@ struct WatchlistView: View {
                 let carriesCross = group.kind == .dormant && model.isTriaging
 
                 PlanSwipeRow(
-                    trailing: PlanRowAction(
-                        label: String(localized: "Vu", bundle: .app),
-                        tint: Ink.ink
-                    ) {
-                        libraryStore.addToGallery(item.entry.mediaItem)
-                    },
+                    trailing: trailingAction(for: item),
                     leading: PlanRowAction(
                         label: String(localized: "Retirer", bundle: .app),
                         tint: Ink.warn,
@@ -299,9 +294,13 @@ struct WatchlistView: View {
                             .foregroundStyle(Ink.ink)
                             .lineLimit(1)
 
-                        if let provenance = item.entry.recommendedByText {
-                            Text(provenance)
+                        // Pour une saison, la seconde ligne dit quoi lancer :
+                        // c'est plus utile que la provenance, que l'avatar
+                        // porte déjà.
+                        if let line = seasonLine(for: item) ?? item.entry.recommendedByText {
+                            Text(line)
                                 .font(.system(size: 10.5))
+                                .monospacedDigit()
                                 .foregroundStyle(Ink.ink2)
                                 .lineLimit(1)
                         }
@@ -309,7 +308,11 @@ struct WatchlistView: View {
 
                     Spacer(minLength: 4)
 
-                    if let runtime = item.runtimeText {
+                    // L'épisode suivant n'est montré qu'une fois écrit : d'ici
+                    // là, l'attente se lit à la place de la durée.
+                    if isWriting(item) {
+                        CinechillSpinner(size: 12)
+                    } else if let runtime = item.runtimeText {
                         Text(runtime)
                             .font(.system(size: 10.5))
                             .monospacedDigit()
@@ -340,6 +343,56 @@ struct WatchlistView: View {
         }
         .padding(.horizontal, Metrics.margin)
         .padding(.vertical, 6)
+    }
+
+    // MARK: - Les saisons
+
+    /// « Saison 2 · épisode 5 sur 10 ». Écrit, jamais mesuré : une jauge se
+    /// lirait comme un état, et la saison n'en a qu'un — à voir.
+    private func seasonLine(for item: WatchlistItem) -> String? {
+        guard let facts = item.entry.seasonFacts else { return nil }
+        let season = facts.season
+        let episode = item.entry.episodeToPlay
+        if item.isAwaitingEpisode {
+            if let date = item.nextAirDate, let day = TVDate.shortDay(date) {
+                return String(localized: "Saison \(season) · épisode \(episode) le \(day)", bundle: .app)
+            }
+            return String(localized: "Saison \(season) · épisode \(episode) à venir", bundle: .app)
+        }
+        if item.entry.nextEpisode != nil, let total = facts.episodes, total > 0 {
+            return String(localized: "Saison \(season) · épisode \(episode) sur \(total)", bundle: .app)
+        }
+        if let total = facts.episodes, total > 0 {
+            return String(localized: "Saison \(season) · \(total) épisodes", bundle: .app)
+        }
+        return String(localized: "Saison \(season)", bundle: .app)
+    }
+
+    private func isWriting(_ item: WatchlistItem) -> Bool {
+        libraryStore.pendingNextEpisode(for: item.entry) != nil
+            || libraryStore.pendingStatus(for: item.entry.mediaItem) != nil
+    }
+
+    /// Vers la droite : « vu » pour un film, un épisode de plus pour une
+    /// saison — et « saison vue » sur le dernier, parce que le même geste la
+    /// range alors en galerie. Le libellé dit toujours ce qui va être écrit.
+    private func trailingAction(for item: WatchlistItem) -> PlanRowAction? {
+        // Personne n'a vu un épisode qui n'est pas sorti : la ligne ne glisse
+        // que vers la gauche, pour la retirer.
+        guard !item.isAwaitingEpisode else { return nil }
+        guard item.entry.isSeason else {
+            return PlanRowAction(label: String(localized: "Vu", bundle: .app), tint: Ink.ink) {
+                libraryStore.addToGallery(item.entry.mediaItem)
+            }
+        }
+        if item.entry.isOnLastEpisode {
+            return PlanRowAction(label: String(localized: "Saison vue", bundle: .app), tint: Ink.paper) {
+                libraryStore.addToGallery(item.entry.mediaItem)
+            }
+        }
+        return PlanRowAction(label: String(localized: "+ 1 ép.", bundle: .app), tint: Ink.ink) {
+            libraryStore.setNextEpisode(item.entry, to: item.entry.episodeToPlay + 1)
+        }
     }
 
     @ViewBuilder
@@ -382,9 +435,15 @@ struct WatchlistView: View {
 
     // MARK: - Actions
 
+    /// « Je le regarde » : un film part en galerie ; une saison avance d'un
+    /// épisode, ou part en galerie si c'était le dernier.
     private func watch(_ item: WatchlistItem) {
         Haptics.success()
-        libraryStore.addToGallery(item.entry.mediaItem)
+        if item.entry.isSeason, !item.entry.isOnLastEpisode {
+            libraryStore.setNextEpisode(item.entry, to: item.entry.episodeToPlay + 1)
+        } else {
+            libraryStore.addToGallery(item.entry.mediaItem)
+        }
     }
 
     private func preferredPlatform(for item: WatchlistItem) -> StreamingPlatform? {

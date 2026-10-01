@@ -37,11 +37,27 @@ enum TimeBudget: String, CaseIterable, Identifiable {
 /// durée, plateformes, bande-annonce.
 struct WatchlistItem: Identifiable, Hashable {
     let entry: WatchlistEntry
+    /// La durée d'un film, ou celle d'un épisode pour une saison : c'est le
+    /// temps d'une soirée, et c'est lui que le budget compare.
     let runtimeMinutes: Int?
     let providerIDs: [Int]
     let trailerKey: String?
+    /// Épisodes sortis, à jour — une saison en cours de diffusion change de
+    /// semaine en semaine. `nil` pour un film.
+    var airedEpisodes: Int? = nil
+    /// Date du prochain épisode à sortir, pour une saison qui l'attend.
+    var nextAirDate: String? = nil
 
-    var id: Int { entry.tmdbId }
+    /// L'identité de bibliothèque, et non `tmdbId` : deux saisons d'une même
+    /// série partagent leur `tmdbId`, et une série peut porter celui d'un film.
+    var id: String { entry.id }
+
+    /// L'épisode à lancer n'est pas encore sorti : la ligne ne se lance pas ce
+    /// soir, quoi que dise sa plateforme.
+    var isAwaitingEpisode: Bool {
+        guard entry.isSeason, let airedEpisodes else { return false }
+        return entry.episodeToPlay > airedEpisodes
+    }
 
     func isAvailable(on preferred: Set<Int>) -> Bool {
         guard !preferred.isEmpty else { return false }
@@ -76,6 +92,10 @@ struct WatchlistGroup: Identifiable, Hashable {
         case recommended
         case available
         case elsewhere
+        /// Une saison dont l'épisode à lancer n'est pas sorti. Ce n'est pas un
+        /// état de la saison mais une disponibilité, au même titre que « sur
+        /// d'autres plateformes » : on ne peut pas la lancer ce soir.
+        case awaiting
         case dormant
     }
 
@@ -89,6 +109,7 @@ struct WatchlistGroup: Identifiable, Hashable {
         case .recommended: String(localized: "RECOMMANDÉS PAR TES AMIS", bundle: .app)
         case .available: String(localized: "SUR TES PLATEFORMES", bundle: .app)
         case .elsewhere: String(localized: "SUR D'AUTRES PLATEFORMES", bundle: .app)
+        case .awaiting: String(localized: "L'ÉPISODE N'EST PAS SORTI", bundle: .app)
         case .dormant: String(localized: "AJOUTÉS IL Y A PLUS DE 3 MOIS", bundle: .app)
         }
     }
