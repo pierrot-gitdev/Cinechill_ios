@@ -20,8 +20,22 @@ nonisolated struct SagaPart: Identifiable, Hashable, Sendable {
     let voteCount: Int?
     let genreIds: [Int]
     let releaseDate: String?
+    /// Pour une série : la saison que désigne la ligne. Une série est une saga
+    /// de saisons, et la feuille la traite comme telle.
+    var season: Int? = nil
+    /// Le nom de la série, pour une saison : la ligne affiche « Saison 2 »,
+    /// mais ce qui se range s'appelle « Severance ».
+    var seriesName: String? = nil
 
-    var id: Int { tmdbId }
+    var id: String { libraryID }
+
+    /// L'identifiant de bibliothèque de l'opus : `movie-671`, `tv-1399-s2`.
+    /// C'est par lui, et jamais par `tmdbId` seul, qu'on sait ce qui est déjà
+    /// rangé — les identifiants TMDB des films et des séries se recoupent.
+    var libraryID: String {
+        if let season { return "tv-\(tmdbId)-s\(season)" }
+        return "movie-\(tmdbId)"
+    }
 
     var displayYear: String {
         guard let releaseDate, releaseDate.count >= 4 else { return "—" }
@@ -32,14 +46,16 @@ nonisolated struct SagaPart: Identifiable, Hashable, Sendable {
     var swipeCard: SwipeCard {
         SwipeCard(
             tmdbId: tmdbId,
-            title: title,
+            title: seriesName ?? title,
             posterPath: posterPath,
             overview: overview,
             voteAverage: voteAverage,
             voteCount: voteCount,
             genreIds: genreIds,
             releaseDate: releaseDate,
-            source: nil
+            source: nil,
+            mediaType: season == nil ? .movie : .tv,
+            season: season
         )
     }
 }

@@ -42,19 +42,30 @@ nonisolated struct SwipeFeedBatch: Sendable {
 }
 
 protocol SwipeFeedFetching: Sendable {
-    /// - Parameter excludedIDs: ids déjà servis dans la session courante, pour
-    ///   que deux lots consécutifs ne se recouvrent pas.
-    func fetchFeed(excludedIDs: [Int]) async throws -> SwipeFeedBatch
+    /// - Parameter excludedIDs: identités de cartes déjà servies dans la session
+    ///   courante (`movie-603`, `tv-1399`), pour que deux lots consécutifs ne se
+    ///   recouvrent pas.
+    func fetchFeed(excludedIDs: [String]) async throws -> SwipeFeedBatch
     func record(_ swipes: [PendingSwipe]) async throws
 }
 
 nonisolated struct BackendSwipeFeedClient: SwipeFeedFetching, Sendable {
-    func fetchFeed(excludedIDs: [Int]) async throws -> SwipeFeedBatch {
+    func fetchFeed(excludedIDs: [String]) async throws -> SwipeFeedBatch {
         // Le backend recharge la galerie à chaque appel : au-delà de quelques
         // centaines d'ids la requête grossit pour rien, les plus récents
         // suffisent à éviter les doublons de session.
-        let recent = Array(excludedIDs.suffix(300))
-        let data = try await post(to: APIEndpoints.swipeFeed(), body: ["excludeIds": recent])
+        let recent = excludedIDs.suffix(300)
+        // Deux listes, parce que le serveur tient deux ensembles : la série
+        // 1399 et le film 1399 n'ont rien à voir.
+        let films = recent.compactMap { $0.hasPrefix("movie-") ? Int($0.dropFirst(6)) : nil }
+        let series = recent.compactMap { $0.hasPrefix("tv-") ? Int($0.dropFirst(3)) : nil }
+        let data = try await post(to: APIEndpoints.swipeFeed(), body: [
+            "excludeIds": films,
+            "excludeTvIds": series,
+            // Sans cette marque, le serveur ne sert que des films : une version
+            // antérieure lirait une carte de série comme un film.
+            "series": true,
+        ])
         let decoded = try decode(SwipeFeedResponseDTO.self, from: data)
         return SwipeFeedBatch(
             cards: decoded.cards.map(\.swipeCard),
@@ -142,9 +153,13 @@ private struct SwipeCardDTO: Decodable, Sendable {
     let source: String?
     let collectionID: Int?
     let collectionTotal: Int?
+    let mediaType: String?
+    let seasonCount: Int?
 
     enum CodingKeys: String, CodingKey {
         case id, title, overview, source
+        case mediaType = "media_type"
+        case seasonCount = "season_count"
         case posterPath = "poster_path"
         case voteAverage = "vote_average"
         case voteCount = "vote_count"
@@ -166,7 +181,9 @@ private struct SwipeCardDTO: Decodable, Sendable {
             releaseDate: releaseDate,
             source: source,
             collectionID: collectionID,
-            collectionCount: collectionTotal
+            collectionCount: collectionTotal,
+            mediaType: mediaType == MediaType.tv.rawValue ? .tv : .movie,
+            seasonCount: seasonCount
         )
     }
 }

@@ -32,6 +32,15 @@ nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
     /// Le nombre d'opus de cette saga. En dessous de deux, il n'y a rien à
     /// proposer, et la feuille ne s'ouvre pas.
     let collectionCount: Int?
+    /// Film ou série. Le deck demande « tu connais ? » sur une série entière ;
+    /// ce qu'il range, lui, est toujours une saison.
+    let mediaType: MediaType
+    /// Les saisons sorties d'une série : ce que la carte écrit à la place du
+    /// mot « série », et ce que la feuille propose de ranger d'un tap.
+    let seasonCount: Int?
+    /// La saison que range une décision. `nil` sur une carte du deck, qui
+    /// range toujours la première ; renseignée par la feuille des saisons.
+    let season: Int?
 
     /// Explicite, et non synthétisé : les deux champs de saga sont arrivés
     /// après les autres, et leur valeur par défaut évite de reprendre les cinq
@@ -47,7 +56,10 @@ nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
         releaseDate: String?,
         source: String?,
         collectionID: Int? = nil,
-        collectionCount: Int? = nil
+        collectionCount: Int? = nil,
+        mediaType: MediaType = .movie,
+        seasonCount: Int? = nil,
+        season: Int? = nil
     ) {
         self.tmdbId = tmdbId
         self.title = title
@@ -60,26 +72,43 @@ nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
         self.source = source
         self.collectionID = collectionID
         self.collectionCount = collectionCount
+        self.mediaType = mediaType
+        self.seasonCount = seasonCount
+        self.season = season
     }
 
-    var id: Int { tmdbId }
+    /// L'identité de la carte dans le deck : `movie-603`, `tv-1399`. Le format
+    /// en fait partie, parce que les identifiants TMDB des films et des séries
+    /// se recoupent — la série 1399 n'est pas le film 1399.
+    var id: String { "\(mediaType.rawValue)-\(tmdbId)" }
+
+    var isSeries: Bool { mediaType == .tv }
 
     /// Y a-t-il une saga à proposer derrière ce film ?
     var hasSagaToOffer: Bool {
         collectionID != nil && (collectionCount ?? 0) >= 2
     }
 
+    /// Y a-t-il d'autres saisons à proposer derrière celle qu'on vient de ranger ?
+    var hasSeasonsToOffer: Bool {
+        isSeries && (seasonCount ?? 0) >= 2
+    }
+
+    /// Ce que range une décision « vu » ou « à voir » : le film, ou une saison
+    /// — la première, sauf si la feuille des saisons en désigne une autre.
     var mediaItem: MediaItem {
         MediaItem(
             tmdbId: tmdbId,
-            mediaType: .movie,
+            mediaType: mediaType,
             title: title,
             posterPath: posterPath,
             overview: overview,
             voteAverage: voteAverage,
             voteCount: voteCount,
             genreIds: genreIds,
-            releaseDate: releaseDate
+            releaseDate: releaseDate,
+            season: isSeries ? (season ?? 1) : nil,
+            seasonCount: seasonCount
         )
     }
 
@@ -100,11 +129,15 @@ nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
 
     /// Payload envoyé à `recordSwipes` — mêmes clés que `setMediaStatus`, plus
     /// `voteCount` que seul le swipe sait renseigner.
-    var jsonPayload: [String: Any] {
+    ///
+    /// Pour une série, la décision change l'objet : « vu » et « à voir » rangent
+    /// une saison (`tv-1399-s1`), « pas vue » écarte la série entière
+    /// (`tv-1399`) — le deck n'a jamais demandé une saison.
+    func jsonPayload(for decision: SwipeDecision) -> [String: Any] {
         [
-            "id": mediaItem.id,
+            "id": isSeries && decision == .skipped ? id : mediaItem.id,
             "tmdbId": tmdbId,
-            "mediaType": MediaType.movie.rawValue,
+            "mediaType": mediaType.rawValue,
             "title": title,
             "posterPath": posterPath as Any,
             "overview": overview as Any,
@@ -144,7 +177,7 @@ nonisolated struct PendingSwipe: Sendable, Hashable {
         [
             "decision": decision.rawValue,
             "loved": loved,
-            "item": card.jsonPayload,
+            "item": card.jsonPayload(for: decision),
         ]
     }
 }

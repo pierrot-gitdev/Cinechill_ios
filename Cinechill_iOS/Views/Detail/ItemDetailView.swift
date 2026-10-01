@@ -83,13 +83,8 @@ struct ItemDetailView: View {
         // c'est le même composant qu'au deck : ranger un film n'a pas deux
         // suites possibles selon l'écran d'où on l'a rangé.
         .sheet(item: $sagaOffer) { offer in
-            SagaSheet(
-                collectionID: offer.collectionID,
-                originTmdbID: offer.tmdbID,
-                originTitle: offer.title,
-                onClose: { sagaOffer = nil }
-            )
-            .environmentObject(libraryStore)
+            SagaSheet(offer: offer, onClose: { sagaOffer = nil })
+                .environmentObject(libraryStore)
         }
         .task { await loadDetail() }
         // Ouvrir une fiche est le meilleur signe qu'un « Vu » approche. Le réveil de
@@ -744,8 +739,8 @@ struct ItemDetailView: View {
               (detail?.collectionCount ?? 0) >= 2 else { return }
         hasOfferedSaga = true
         sagaOffer = SagaOffer(
-            collectionID: collectionID,
-            tmdbID: displayItem.tmdbId,
+            source: .collection(collectionID),
+            originID: displayItem.id,
             title: displayItem.title
         )
     }

@@ -52,12 +52,12 @@ final class SwipeDeckViewModel {
     /// n'a pas swipé la suivante : c'est ce qui rend le retour arrière toujours
     /// possible, sans avoir à défaire une écriture déjà partie.
     private var heldSwipe: PendingSwipe?
-    private var servedIDs: [Int] = []
-    private var servedSet: Set<Int> = []
+    private var servedIDs: [String] = []
+    private var servedSet: Set<String> = []
     /// Ce que l'utilisateur a déjà en galerie ou en watchlist, tenu à jour par
     /// la vue. Le backend filtre déjà, mais il peut ignorer un ajout fait à
     /// l'instant depuis un autre onglet.
-    private var libraryIDs: Set<Int> = []
+    private var libraryIDs: Set<String> = []
     private var emptyBatchStreak = 0
 
     init(client: any SwipeFeedFetching = BackendSwipeFeedClient()) {
@@ -98,7 +98,9 @@ final class SwipeDeckViewModel {
         await loadMore()
     }
 
-    func syncLibrary(_ ids: Set<Int>) {
+    /// - Parameter ids: identités de cartes déjà rangées (`movie-603`,
+    ///   `tv-1399` dès qu'une saison de la série est rangée).
+    func syncLibrary(_ ids: Set<String>) {
         libraryIDs = ids
         // Une carte peut avoir été classée ailleurs pendant que le deck est
         // ouvert : on la retire plutôt que de la faire trancher deux fois.

@@ -27,24 +27,25 @@ import SwiftUI
 ///   événement qu'un balayage à droite : la feuille envoie des décisions de
 ///   deck, et c'est tout.
 struct SagaSheet: View {
-    let collectionID: Int
-    /// Le film qui vient d'être rangé. Il est acquis même si la bibliothèque ne
-    /// le sait pas encore : le deck envoie ses décisions par paquets, et la
-    /// feuille s'ouvre bien avant que Firestore ait rendu la main.
-    let originTmdbID: Int
-    let originTitle: String
+    let offer: SagaOffer
     let onClose: () -> Void
 
     @EnvironmentObject private var libraryStore: LibraryStore
 
     @State private var saga: Saga?
-    @State private var selection: Set<Int> = []
+    @State private var selection: Set<String> = []
     @State private var isLoading = true
     @State private var isSaving = false
     @State private var errorMessage: String?
 
     private let client: any SagaFetching = BackendSagaClient()
+    private let tvClient = TVClient()
     private let recorder: any SwipeFeedFetching = BackendSwipeFeedClient()
+
+    private var isSeries: Bool {
+        if case .series = offer.source { return true }
+        return false
+    }
 
     var body: some View {
         ZStack {
@@ -69,7 +70,7 @@ struct SagaSheet: View {
     }
 
     private var headerTitle: String {
-        saga?.displayName ?? String(localized: "La saga", bundle: .app)
+        saga?.displayName ?? (isSeries ? offer.title : String(localized: "La saga", bundle: .app))
     }
 
     // MARK: - Les opus
@@ -78,16 +79,17 @@ struct SagaSheet: View {
     /// dans la phrase d'en-tête, et une ligne cochée d'office qu'on ne peut pas
     /// décocher n'apprend rien.
     private var others: [SagaPart] {
-        (saga?.parts ?? []).filter { $0.tmdbId != originTmdbID }
+        (saga?.parts ?? []).filter { $0.libraryID != offer.originID }
     }
 
-    /// Ce qui est déjà en galerie : montré, mais pas à cocher.
-    private var ownedIDs: Set<Int> {
-        Set(libraryStore.galleryItems.map(\.tmdbId))
+    /// Ce qui est déjà en galerie : montré, mais pas à cocher. Par identifiant
+    /// de bibliothèque, jamais par `tmdbId` seul.
+    private var ownedIDs: Set<String> {
+        Set(libraryStore.galleryItems.map(\.id))
     }
 
     private var selectable: [SagaPart] {
-        others.filter { !ownedIDs.contains($0.tmdbId) }
+        others.filter { !ownedIDs.contains($0.libraryID) }
     }
 
     // MARK: - Contenu
@@ -96,7 +98,7 @@ struct SagaSheet: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(String(localized: "Tu as vu « \(originTitle) ». Coche ceux que tu as vus aussi, ils entrent dans ta galerie.", bundle: .app))
+                    Text(introduction)
                         .font(.system(size: 12.5))
                         .foregroundStyle(Ink.ink2)
                         .lineSpacing(2)
@@ -130,18 +132,24 @@ struct SagaSheet: View {
         }
     }
 
+    private var introduction: String {
+        isSeries
+            ? String(localized: "Tu as vu la saison 1. Coche celles que tu as vues aussi, elles entrent dans ta galerie.", bundle: .app)
+            : String(localized: "Tu as vu « \(offer.title) ». Coche ceux que tu as vus aussi, ils entrent dans ta galerie.", bundle: .app)
+    }
+
     private func row(_ part: SagaPart) -> some View {
-        let isOwned = ownedIDs.contains(part.tmdbId)
-        let isOn = selection.contains(part.tmdbId)
+        let isOwned = ownedIDs.contains(part.libraryID)
+        let isOn = selection.contains(part.libraryID)
 
         return Button {
             guard !isOwned, !isSaving else { return }
             Haptics.selection()
             withAnimation(Metrics.shift) {
                 if isOn {
-                    selection.remove(part.tmdbId)
+                    selection.remove(part.libraryID)
                 } else {
-                    selection.insert(part.tmdbId)
+                    selection.insert(part.libraryID)
                 }
             }
         } label: {
@@ -217,18 +225,27 @@ struct SagaSheet: View {
                 height: Metrics.control
             ) {
                 let ticked = selection.isEmpty ? selectable :
-                    selectable.filter { selection.contains($0.tmdbId) }
-                let rest = selection.isEmpty ? [] :
-                    selectable.filter { !selection.contains($0.tmdbId) }
+                    selectable.filter { selection.contains($0.libraryID) }
+                // Une saison non cochée n'est pas un « pas vue » : le deck ne
+                // demande jamais une saison, et la série est déjà rangée. Rien
+                // n'est écrit pour elle.
+                let rest = selection.isEmpty || isSeries ? [] :
+                    selectable.filter { !selection.contains($0.libraryID) }
                 submit(seen: ticked, skipped: rest)
             }
 
             // Toujours à sa place, pour que le bas de la feuille ne bouge pas
             // pendant qu'on coche.
             Button {
-                submit(seen: [], skipped: selectable)
+                if isSeries {
+                    onClose()
+                } else {
+                    submit(seen: [], skipped: selectable)
+                }
             } label: {
-                Text("Je n'en ai vu aucun", bundle: .app)
+                Text(isSeries
+                     ? String(localized: "Je n'ai vu que la première", bundle: .app)
+                     : String(localized: "Je n'en ai vu aucun", bundle: .app))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Ink.ink2)
                     .frame(maxWidth: .infinity)
@@ -245,11 +262,19 @@ struct SagaSheet: View {
 
     /// Le libellé dit toujours ce qui va être écrit, et rien d'autre.
     private var primaryTitle: String {
-        let ticked = selection.intersection(Set(selectable.map(\.tmdbId))).count
+        let ticked = selection.intersection(Set(selectable.map(\.libraryID))).count
         if ticked == 0 {
-            return selectable.count == 1
-                ? String(localized: "Je l'ai vu aussi", bundle: .app)
-                : String(localized: "J'ai vu les \(selectable.count)", bundle: .app)
+            if selectable.count == 1 {
+                return isSeries
+                    ? String(localized: "Je l'ai vue aussi", bundle: .app)
+                    : String(localized: "Je l'ai vu aussi", bundle: .app)
+            }
+            return String(localized: "J'ai vu les \(selectable.count)", bundle: .app)
+        }
+        if isSeries {
+            return ticked == 1
+                ? String(localized: "Ajouter 1 saison", bundle: .app)
+                : String(localized: "Ajouter \(ticked) saisons", bundle: .app)
         }
         return ticked == 1
             ? String(localized: "Ajouter 1 film", bundle: .app)
@@ -273,7 +298,9 @@ struct SagaSheet: View {
             Spacer(minLength: 0)
             PlanEmptyState(
                 icon: .salle,
-                title: String(localized: "La saga n'est pas venue", bundle: .app),
+                title: isSeries
+                    ? String(localized: "La série n'est pas venue", bundle: .app)
+                    : String(localized: "La saga n'est pas venue", bundle: .app),
                 message: message,
                 actionTitle: String(localized: "Fermer", bundle: .app),
                 action: onClose
@@ -291,8 +318,12 @@ struct SagaSheet: View {
             Spacer(minLength: 0)
             PlanEmptyState(
                 icon: .hall,
-                title: String(localized: "Tu as toute la saga", bundle: .app),
-                message: String(localized: "Elle est entière dans ta galerie.", bundle: .app),
+                title: isSeries
+                    ? String(localized: "Tu as toutes ses saisons", bundle: .app)
+                    : String(localized: "Tu as toute la saga", bundle: .app),
+                message: isSeries
+                    ? String(localized: "Elles sont toutes dans ta galerie.", bundle: .app)
+                    : String(localized: "Elle est entière dans ta galerie.", bundle: .app),
                 actionTitle: String(localized: "Fermer", bundle: .app),
                 action: onClose
             )
@@ -307,7 +338,12 @@ struct SagaSheet: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            saga = try await client.saga(id: collectionID)
+            switch offer.source {
+            case .collection(let id):
+                saga = try await client.saga(id: id)
+            case .series(let id):
+                saga = sagaOfSeasons(try await tvClient.series(id: id))
+            }
         } catch is CancellationError {
             return
         } catch {
@@ -345,14 +381,53 @@ struct SagaSheet: View {
             }
         }
     }
+
+    /// Une série est une saga de saisons : ses saisons sorties, chacune comme
+    /// un opus.
+    private func sagaOfSeasons(_ series: TVSeriesDetail) -> Saga {
+        Saga(
+            id: series.id,
+            name: series.name,
+            parts: series.seasons.filter(\.isReleased).map { season in
+                SagaPart(
+                    tmdbId: series.id,
+                    title: String(localized: "Saison \(season.number)", bundle: .app),
+                    posterPath: season.posterPath ?? series.posterPath,
+                    overview: nil,
+                    voteAverage: season.voteAverage,
+                    voteCount: nil,
+                    genreIds: series.genreIds,
+                    releaseDate: season.airDate,
+                    season: season.number,
+                    seriesName: series.name
+                )
+            }
+        )
+    }
+}
+
+/// D'où vient la feuille : la saga d'un film, ou les saisons d'une série.
+enum SagaSource: Hashable {
+    case collection(Int)
+    case series(Int)
 }
 
 /// Ce qu'il faut pour ouvrir la feuille, et qui sert de déclencheur à
 /// `sheet(item:)`.
 struct SagaOffer: Identifiable, Equatable {
-    let collectionID: Int
-    let tmdbID: Int
+    let source: SagaSource
+    /// L'identifiant de bibliothèque de ce qui vient d'être rangé
+    /// (`movie-671`, `tv-1399-s1`). Il est acquis même si la bibliothèque ne
+    /// le sait pas encore : le deck envoie ses décisions par paquets, et la
+    /// feuille s'ouvre bien avant que Firestore ait rendu la main.
+    let originID: String
+    /// Le titre du film rangé, ou le nom de la série.
     let title: String
 
-    var id: Int { collectionID }
+    var id: String {
+        switch source {
+        case .collection(let id): "collection-\(id)"
+        case .series(let id): "series-\(id)"
+        }
+    }
 }

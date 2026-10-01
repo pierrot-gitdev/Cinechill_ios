@@ -217,8 +217,15 @@ struct SwipeCardView: View {
             .lineLimit(1)
     }
 
+    /// Pour une série, le nombre de saisons s'intercale : c'est lui, et non le
+    /// mot « série », qui dit ce qu'on regarde.
     private var eyebrowText: String {
         var parts = [card.displayYear]
+        if card.isSeries, let count = card.seasonCount, count > 0 {
+            parts.append(count == 1
+                         ? String(localized: "1 saison", bundle: .app)
+                         : String(localized: "\(count) saisons", bundle: .app))
+        }
         if let genre, !genre.isEmpty { parts.append(genre) }
         return parts.joined(separator: " · ")
     }

@@ -73,7 +73,7 @@ struct SwipeDeckView: View {
     /// Les sagas déjà proposées depuis l'ouverture de l'onglet. Une saga ne se
     /// propose qu'une fois : passé le premier refus, ses opus partent en
     /// retrait côté serveur et ne reviennent plus la poser.
-    @State private var offeredSagas: Set<Int> = []
+    @State private var offeredSagas: Set<String> = []
 
     /// L'aide s'ouvre d'elle-même à la première venue, et une seule fois : elle
     /// reste à un tap dans le plafond pour tout le reste de la vie de
@@ -110,13 +110,8 @@ struct SwipeDeckView: View {
             // toutes la même source, que l'ordonnancement du lot écarte les
             // unes des autres.
             .sheet(item: $sagaOffer) { offer in
-                SagaSheet(
-                    collectionID: offer.collectionID,
-                    originTmdbID: offer.tmdbID,
-                    originTitle: offer.title,
-                    onClose: { sagaOffer = nil }
-                )
-                .environmentObject(libraryStore)
+                SagaSheet(offer: offer, onClose: { sagaOffer = nil })
+                    .environmentObject(libraryStore)
             }
         }
         .task {
@@ -711,14 +706,26 @@ struct SwipeDeckView: View {
                 title: card.title,
                 // Le cœur s'ajoute à la destination, il ne la remplace pas :
                 // le film est bien rangé en galerie, et le toast doit le dire.
-                destination: loved
-                    ? String(localized: "Ajouté à ta galerie · Coup de cœur", bundle: .app)
-                    : confirmation,
+                destination: card.isSeries
+                    ? seasonConfirmation(direction) ?? confirmation
+                    : (loved
+                       ? String(localized: "Ajouté à ta galerie · Coup de cœur", bundle: .app)
+                       : confirmation),
                 isAcquired: direction.verdict.isFilled
             )
         }
 
         offerSagaIfAny(for: card, direction: direction)
+    }
+
+    /// Une carte de série range sa première saison, et le toast le dit : c'est
+    /// elle, et pas la série, qui vient d'entrer.
+    private func seasonConfirmation(_ direction: SwipeDirection) -> String? {
+        switch direction {
+        case .right: String(localized: "Saison 1 ajoutée à ta galerie", bundle: .app)
+        case .up: String(localized: "Saison 1 ajoutée à ta watchlist", bundle: .app)
+        case .left: nil
+        }
     }
 
     /// La saga, proposée **après un « vu » seulement**.
@@ -728,21 +735,26 @@ struct SwipeDeckView: View {
     /// un sens et peut rapporter sept films pour un tap. Après un « pas vu »,
     /// elle n'en aurait aucun — et le serveur met déjà la suite de la saga en
     /// retrait de lui-même.
+    ///
+    /// Une série est une saga de saisons : balayer « Dark » vers la droite
+    /// range sa saison 1, et la même feuille propose les deux autres.
     private func offerSagaIfAny(for card: SwipeCard, direction: SwipeDirection) {
         guard case .right = direction else { return }
-        guard card.hasSagaToOffer, !tour.isRunning,
-              let collectionID = card.collectionID,
-              !offeredSagas.contains(collectionID),
-              // Un palier occupe déjà l'écran : deux planches l'une sur
-              // l'autre ne se lisent pas, et la saga passe son tour.
-              model.celebratedMilestone == nil else { return }
+        // Un palier occupe déjà l'écran : deux planches l'une sur l'autre ne
+        // se lisent pas, et la saga passe son tour.
+        guard !tour.isRunning, model.celebratedMilestone == nil else { return }
 
-        offeredSagas.insert(collectionID)
-        sagaOffer = SagaOffer(
-            collectionID: collectionID,
-            tmdbID: card.tmdbId,
-            title: card.title
-        )
+        let offer: SagaOffer
+        if card.hasSeasonsToOffer {
+            offer = SagaOffer(source: .series(card.tmdbId), originID: card.mediaItem.id, title: card.title)
+        } else if card.hasSagaToOffer, let collectionID = card.collectionID {
+            offer = SagaOffer(source: .collection(collectionID), originID: card.mediaItem.id, title: card.title)
+        } else {
+            return
+        }
+        guard !offeredSagas.contains(offer.id) else { return }
+        offeredSagas.insert(offer.id)
+        sagaOffer = offer
     }
 
     /// Le retour arrière. La carte rentre par le bord d'où elle est sortie : sans
@@ -886,9 +898,12 @@ struct SwipeDeckView: View {
         withAnimation(.easeOut(duration: 0.22)) { showGuide = false }
     }
 
-    private var libraryIDs: Set<Int> {
-        Set(libraryStore.galleryItems.map(\.tmdbId))
-            .union(libraryStore.watchlistItems.map(\.tmdbId))
+    /// Ce qui est déjà rangé, dans l'identité des cartes. Une série compte dès
+    /// qu'une de ses saisons est rangée : le deck demande si on la connaît, et
+    /// cette question a déjà sa réponse.
+    private var libraryIDs: Set<String> {
+        Set(libraryStore.galleryItems.map { "\($0.mediaType.rawValue)-\($0.tmdbId)" })
+            .union(libraryStore.watchlistItems.map { "\($0.mediaType.rawValue)-\($0.tmdbId)" })
     }
 }
 
