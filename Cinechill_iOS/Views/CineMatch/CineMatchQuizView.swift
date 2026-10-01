@@ -32,6 +32,8 @@ struct CineMatchQuizView: View {
     /// tour suivant arrive. Le modèle enregistre le geste tout de suite : la
     /// latence est mesurée au geste, pas à la fin d'une animation.
     @State private var excludedID: Int?
+    /// Le surligné du switch glisse d'une moitié à l'autre au lieu d'y sauter.
+    @Namespace private var stageSwitch
 
     init(viewModel: CineMatchViewModel) {
         self.viewModel = viewModel
@@ -173,7 +175,7 @@ struct CineMatchQuizView: View {
         }
     }
 
-    private func questionTitle(_ text: String, isCompact: Bool) -> some View {
+    private func questionTitle(_ text: String, isCompact: Bool, top: CGFloat? = nil) -> some View {
         Text(text)
             .font(.system(size: isCompact ? 20 : 24, weight: .regular, design: .serif))
             .kerning(0.1)
@@ -181,7 +183,7 @@ struct CineMatchQuizView: View {
             .foregroundStyle(Ink.ink)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, isCompact ? 14 : 24)
+            .padding(.top, top ?? (isCompact ? 14 : 24))
             .accessibilityAddTraits(.isHeader)
     }
 
@@ -267,28 +269,50 @@ struct CineMatchQuizView: View {
 
     // MARK: Les comparaisons
 
+    /// Une comparaison se joue en deux questions, et le passage de l'une à
+    /// l'autre doit se voir. Il ne tenait qu'au titre, qui changeait de
+    /// quelques mots au-dessus d'une grille presque identique : on écartait un
+    /// film en croyant encore en choisir un.
+    ///
+    /// Trois choses le marquent maintenant. Le switch en tête de page, dont le
+    /// surligné passe d'« Envie » à « Pas envie » et qui garde l'affiche du
+    /// film choisi en souvenir. La page qui glisse vers la gauche, question et
+    /// grille ensemble, comme on tourne une page. Et quatre affiches neuves :
+    /// aucune de la première question ne revient (voir `CineMatchViewModel.keep`).
     private func comparisonPage(isCompact: Bool) -> some View {
         let films = viewModel.displayedFilms
         let isExcluding = viewModel.comparisonStage == .exclude
 
         return VStack(alignment: .leading, spacing: 0) {
-            questionTitle(
-                isExcluding
-                    ? String(localized: "Et lequel tu n'as pas du tout envie de revoir ?", bundle: .app)
-                    : String(localized: "Lequel tu reverrais bien ce soir ?", bundle: .app),
-                isCompact: isCompact
-            )
+            stageSwitchBar(isExcluding: isExcluding)
+                .padding(.top, isCompact ? 12 : 18)
 
-            GeometryReader { proxy in
-                if films.isEmpty {
-                    CinechillSpinner(size: 26)
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                } else {
-                    posterGrid(films, in: proxy.size)
+            // Une pile et non une colonne : pendant la bascule, la page qui
+            // part et celle qui arrive occupent la même place.
+            ZStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 0) {
+                    questionTitle(
+                        isExcluding
+                            ? String(localized: "Et lequel tu n'as pas du tout envie de revoir ?", bundle: .app)
+                            : String(localized: "Lequel tu reverrais bien ce soir ?", bundle: .app),
+                        isCompact: isCompact,
+                        top: isCompact ? 12 : 18
+                    )
+
+                    GeometryReader { proxy in
+                        if films.isEmpty {
+                            CinechillSpinner(size: 26)
+                                .frame(width: proxy.size.width, height: proxy.size.height)
+                        } else {
+                            posterGrid(films, in: proxy.size)
+                        }
+                    }
+                    .frame(minHeight: 130)
+                    .padding(.top, isCompact ? 10 : 14)
                 }
+                .id(viewModel.comparisonStage)
+                .transition(stageTransition)
             }
-            .frame(minHeight: 130)
-            .padding(.top, isCompact ? 10 : 14)
 
             Button {
                 guard excludedID == nil, !viewModel.isLoadingRound else { return }
@@ -306,6 +330,80 @@ struct CineMatchQuizView: View {
             .padding(.top, 8)
             .disabled(films.isEmpty || excludedID != nil || viewModel.isLoadingRound)
         }
+        .animation(stageAnimation, value: viewModel.comparisonStage)
+    }
+
+    private var stageAnimation: Animation {
+        reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.42, dampingFraction: 0.86)
+    }
+
+    /// La page de la seconde question arrive par la droite et pousse la
+    /// première : on avance, on ne revient pas.
+    private var stageTransition: AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        return .asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        )
+    }
+
+    /// Le switch des deux questions. Il ne se touche pas : il dit où l'on en
+    /// est. La moitié active est pleine, à l'encre, comme une réponse prise ;
+    /// l'autre reste au trait.
+    private func stageSwitchBar(isExcluding: Bool) -> some View {
+        HStack(spacing: 4) {
+            stageSegment(
+                title: String(localized: "Envie", bundle: .app),
+                isActive: !isExcluding,
+                kept: isExcluding ? viewModel.keptFilm : nil
+            )
+            stageSegment(
+                title: String(localized: "Pas envie", bundle: .app),
+                isActive: isExcluding,
+                kept: nil
+            )
+        }
+        .padding(3)
+        .background(Ink.ground2, in: RoundedRectangle(cornerRadius: Metrics.radius + 3, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Metrics.radius + 3, style: .continuous)
+                .strokeBorder(Ink.ruleSet, lineWidth: 1)
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(stageAccessibilityLabel(isExcluding: isExcluding))
+    }
+
+    private func stageSegment(title: String, isActive: Bool, kept: CineMatchGalleryFilm?) -> some View {
+        HStack(spacing: 7) {
+            // La moitié faite garde l'affiche du film choisi : la première
+            // réponse est prise, et on voit laquelle.
+            if let kept {
+                PosterImageView(url: kept.posterURL, contentMode: .fill)
+                    .frame(width: 16, height: 24)
+                    .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+            }
+            Text(title)
+                .planLabel()
+                .lineLimit(1)
+        }
+        .foregroundStyle(isActive ? Ink.ground : kept != nil ? Ink.ink2 : Ink.ink3)
+        .frame(maxWidth: .infinity)
+        .frame(height: 36)
+        .background {
+            if isActive {
+                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                    .fill(Ink.ink)
+                    .matchedGeometryEffect(id: "stage", in: stageSwitch)
+            }
+        }
+    }
+
+    private func stageAccessibilityLabel(isExcluding: Bool) -> String {
+        guard isExcluding, let kept = viewModel.keptFilm else {
+            return String(localized: "Étape 1 sur 2 : le film que tu reverrais", bundle: .app)
+        }
+        return String(localized: "Étape 2 sur 2 : le film que tu ne veux pas. Tu as gardé \(kept.title).", bundle: .app)
     }
 
     private func noneTitle(isExcluding: Bool, count: Int) -> String {
