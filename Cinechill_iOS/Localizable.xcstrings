@@ -132,6 +132,22 @@
         }
       }
     },
+    "%lld épisodes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld episodes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld épisodes"
+          }
+        }
+      }
+    },
     "%lld films passés" : {
       "localizations" : {
         "en" : {
@@ -164,6 +180,70 @@
         }
       }
     },
+    "%lld films · %lld saisons · %lld séries" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld movies · %lld seasons · %lld series"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld films · %lld saisons · %lld séries"
+          }
+        }
+      }
+    },
+    "%lld min par épisode" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min per episode"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min par épisode"
+          }
+        }
+      }
+    },
+    "%lld saisons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld seasons"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld saisons"
+          }
+        }
+      }
+    },
+    "%lld vus, dont %lld ce mois" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld watched, %lld this month"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld vus, dont %lld ce mois"
+          }
+        }
+      }
+    },
     "%lldᵉ film de ce genre et de cette décennie dans ta galerie." : {
       "localizations" : {
         "en" : {
@@ -176,6 +256,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lldᵉ film de ce genre et de cette décennie dans ta galerie."
+          }
+        }
+      }
+    },
+    "+ 1 ép." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ 1 ep."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ 1 ép."
           }
         }
       }
@@ -927,6 +1023,38 @@
         }
       }
     },
+    "1 épisode" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 episode"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 épisode"
+          }
+        }
+      }
+    },
+    "1 saison" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 season"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 saison"
+          }
+        }
+      }
+    },
     "500 films dans ta galerie." : {
       "localizations" : {
         "en" : {
@@ -1343,6 +1471,22 @@
         }
       }
     },
+    "À venir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coming up"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À venir"
+          }
+        }
+      }
+    },
     "À voir" : {
       "localizations" : {
         "en" : {
@@ -1583,6 +1727,22 @@
         }
       }
     },
+    "Ajouter %lld saisons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add %lld seasons"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter %lld saisons"
+          }
+        }
+      }
+    },
     "Ajouter 1 film" : {
       "localizations" : {
         "en" : {
@@ -1595,6 +1755,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter 1 film"
+          }
+        }
+      }
+    },
+    "Ajouter 1 saison" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add 1 season"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter 1 saison"
           }
         }
       }
@@ -4321,6 +4497,22 @@
         }
       }
     },
+    "Elles sont toutes dans ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "They're all in your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elles sont toutes dans ta galerie."
+          }
+        }
+      }
+    },
     "Email" : {
       "localizations" : {
         "en" : {
@@ -4685,6 +4877,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Épique"
+          }
+        }
+      }
+    },
+    "Épisode %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Episode %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Épisode %lld"
+          }
+        }
+      }
+    },
+    "Épisode %lld sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Episode %lld of %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Épisode %lld sur %lld"
           }
         }
       }
@@ -6145,6 +6369,22 @@
         }
       }
     },
+    "J'ai vu l'épisode %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watched episode %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai vu l'épisode %lld"
+          }
+        }
+      }
+    },
     "J'ai vu les %lld" : {
       "localizations" : {
         "en" : {
@@ -6241,6 +6481,22 @@
         }
       }
     },
+    "Je l'ai vue aussi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I've seen it too"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je l'ai vue aussi"
+          }
+        }
+      }
+    },
     "Je le regarde" : {
       "localizations" : {
         "en" : {
@@ -6269,6 +6525,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Je n'ai aucune plateforme"
+          }
+        }
+      }
+    },
+    "Je n'ai vu que la première" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I've only seen the first"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'ai vu que la première"
           }
         }
       }
@@ -6349,6 +6621,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L'envie d'en voir plus tout de suite"
+          }
+        }
+      }
+    },
+    "L'ÉPISODE N'EST PAS SORTI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "THE EPISODE ISN'T OUT"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'ÉPISODE N'EST PAS SORTI"
           }
         }
       }
@@ -6593,6 +6881,22 @@
         }
       }
     },
+    "La série n'est pas venue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The series didn't come through"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La série n'est pas venue"
+          }
+        }
+      }
+    },
     "La suppression a échoué. Reconnecte-toi puis réessaie." : {
       "localizations" : {
         "en" : {
@@ -6637,6 +6941,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Langue"
+          }
+        }
+      }
+    },
+    "Le %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le %@"
           }
         }
       }
@@ -7121,6 +7441,22 @@
         }
       }
     },
+    "Les épisodes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Episodes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les épisodes"
+          }
+        }
+      }
+    },
     "Les films qu'on te recommande arrivent ici. Commence par quelqu'un dont tu aimes les goûts." : {
       "localizations" : {
         "en" : {
@@ -7213,6 +7549,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les films sombres ne te dérangent pas."
+          }
+        }
+      }
+    },
+    "Les saisons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seasons"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les saisons"
           }
         }
       }
@@ -7997,6 +8349,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On évitera les films qui risquent de te faire ça."
+          }
+        }
+      }
+    },
+    "On n'a pas réussi à charger cette série." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't load this series."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On n'a pas réussi à charger cette série."
           }
         }
       }
@@ -10329,6 +10697,198 @@
         }
       }
     },
+    "Saison %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Season %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saison %lld"
+          }
+        }
+      }
+    },
+    "Saison %lld · %lld épisodes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Season %lld · %lld episodes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saison %lld · %lld épisodes"
+          }
+        }
+      }
+    },
+    "Saison %lld · à venir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Season %lld · coming up"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saison %lld · à venir"
+          }
+        }
+      }
+    },
+    "Saison %lld · épisode %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Season %lld · episode %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saison %lld · épisode %lld"
+          }
+        }
+      }
+    },
+    "Saison %lld · épisode %lld à venir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Season %lld · episode %lld coming up"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saison %lld · épisode %lld à venir"
+          }
+        }
+      }
+    },
+    "Saison %lld · épisode %lld le %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Season %lld · episode %lld on %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saison %lld · épisode %lld le %@"
+          }
+        }
+      }
+    },
+    "Saison %lld · épisode %lld sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Season %lld · episode %lld of %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saison %lld · épisode %lld sur %lld"
+          }
+        }
+      }
+    },
+    "Saison %lld · le %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Season %lld · on %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saison %lld · le %@"
+          }
+        }
+      }
+    },
+    "Saison %lld, épisode %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Season %lld, episode %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saison %lld, épisode %lld"
+          }
+        }
+      }
+    },
+    "Saison 1 ajoutée à ta galerie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Season 1 added to your gallery"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saison 1 ajoutée à ta galerie"
+          }
+        }
+      }
+    },
+    "Saison 1 ajoutée à ta watchlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Season 1 added to your watchlist"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saison 1 ajoutée à ta watchlist"
+          }
+        }
+      }
+    },
+    "Saison vue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Season watched"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saison vue"
+          }
+        }
+      }
+    },
     "Sans date" : {
       "localizations" : {
         "en" : {
@@ -11449,6 +12009,22 @@
         }
       }
     },
+    "Touche celui à lancer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the one to play"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touche celui à lancer"
+          }
+        }
+      }
+    },
     "Touche pour voir comment la valider" : {
       "localizations" : {
         "en" : {
@@ -11605,6 +12181,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tout voir"
+          }
+        }
+      }
+    },
+    "Toutes les saisons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All seasons"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toutes les saisons"
           }
         }
       }
@@ -11913,6 +12505,38 @@
         }
       }
     },
+    "Tu as déjà vu %lld de ses saisons." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've already watched %lld of its seasons."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu as déjà vu %lld de ses saisons."
+          }
+        }
+      }
+    },
+    "Tu as déjà vu sa saison %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've already watched its season %lld."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu as déjà vu sa saison %lld."
+          }
+        }
+      }
+    },
     "Tu as envie de quoi ce soir ?" : {
       "localizations" : {
         "en" : {
@@ -11941,6 +12565,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu as toute la saga"
+          }
+        }
+      }
+    },
+    "Tu as toutes ses saisons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have all its seasons"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu as toutes ses saisons"
+          }
+        }
+      }
+    },
+    "Tu as vu la saison 1. Coche celles que tu as vues aussi, elles entrent dans ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've watched season 1. Tick the ones you've watched too, they'll join your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu as vu la saison 1. Coche celles que tu as vues aussi, elles entrent dans ta galerie."
+          }
+        }
+      }
+    },
+    "Tu as vu toutes ses saisons." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've watched all its seasons."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu as vu toutes ses saisons."
           }
         }
       }
@@ -12064,6 +12736,22 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Tu en as déjà %1$lld sur %2$lld."
+          }
+        }
+      }
+    },
+    "Tu en es à l'épisode %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're on episode %lld."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu en es à l'épisode %lld."
           }
         }
       }
@@ -13060,6 +13748,22 @@
         }
       }
     },
+    "Vue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watched"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vue"
+          }
+        }
+      }
+    },
     "Vus" : {
       "localizations" : {
         "en" : {
@@ -13072,6 +13776,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vus"
+          }
+        }
+      }
+    },
+    "vus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "watched"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vus"
           }
         }
       }
