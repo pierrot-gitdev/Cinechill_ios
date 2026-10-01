@@ -24,6 +24,11 @@ enum CineMatchFiveMode {
 /// synopsis ne vit pas dans la carte ; le bouton « i » l'ouvre en feuille.
 /// **Balayer vers la droite amène le film suivant**, vers la gauche revient au
 /// précédent, et la carte résiste aux deux extrémités.
+///
+/// Une série a sa carte à elle, de même forme : le sourcil donne les saisons,
+/// la ligne de mesure le nombre d'épisodes et leur durée, et une ligne dit où
+/// en est l'histoire. « Je la commence » met la saison 1 dans la file, à son
+/// premier épisode, puis ouvre la plateforme.
 struct CineMatchFiveView: View {
     let viewModel: CineMatchViewModel
     let mode: CineMatchFiveMode
@@ -49,6 +54,8 @@ struct CineMatchFiveView: View {
         self.viewModel = viewModel
         self.mode = mode
     }
+
+    private var isSeries: Bool { viewModel.format == .series }
 
     private var films: [CineMatchFilm] {
         switch mode {
@@ -86,7 +93,9 @@ struct CineMatchFiveView: View {
                     .padding(.top, 10)
             } else if mode == .daily, let message = viewModel.errorMessage {
                 PlanEmptyState(
-                    title: String(localized: "Impossible de charger les films", bundle: .app),
+                    title: isSeries
+                        ? String(localized: "Impossible de charger les séries", bundle: .app)
+                        : String(localized: "Impossible de charger les films", bundle: .app),
                     message: message,
                     actionTitle: String(localized: "Réessayer", bundle: .app),
                     action: { Task { await viewModel.retry() } },
@@ -145,9 +154,15 @@ struct CineMatchFiveView: View {
                             .foregroundStyle(Ink.ink2)
                     }
                 case .daily:
-                    Text("La proposition du jour", bundle: .app)
-                        .planLabel()
-                        .foregroundStyle(Ink.ink2)
+                    Group {
+                        if isSeries {
+                            Text("La série du jour", bundle: .app)
+                        } else {
+                            Text("La proposition du jour", bundle: .app)
+                        }
+                    }
+                    .planLabel()
+                    .foregroundStyle(Ink.ink2)
                 }
                 Spacer(minLength: 0)
             }
@@ -158,7 +173,9 @@ struct CineMatchFiveView: View {
                     wideningLine(String(localized: "On a été plus souple sur la durée", bundle: .app))
                 }
                 if widening.platforms {
-                    wideningLine(String(localized: "On a ajouté des films d'autres plateformes", bundle: .app))
+                    wideningLine(isSeries
+                        ? String(localized: "On a ajouté des séries d'autres plateformes", bundle: .app)
+                        : String(localized: "On a ajouté des films d'autres plateformes", bundle: .app))
                 }
             }
         }
@@ -250,8 +267,8 @@ struct CineMatchFiveView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel(film.item.title)
         .accessibilityValue(mode == .five ? String(localized: "\(index + 1) sur \(films.count)", bundle: .app) : "")
-        .accessibilityAction(named: String(localized: "Film suivant", bundle: .app)) { turn(1, cardWidth: size.width) }
-        .accessibilityAction(named: String(localized: "Film précédent", bundle: .app)) { turn(-1, cardWidth: size.width) }
+        .accessibilityAction(named: nextLabel) { turn(1, cardWidth: size.width) }
+        .accessibilityAction(named: previousLabel) { turn(-1, cardWidth: size.width) }
         .accessibilityAction(named: String(localized: "Synopsis", bundle: .app)) { openSynopsis(film) }
     }
 
@@ -292,11 +309,21 @@ struct CineMatchFiveView: View {
                     .padding(.top, 8)
 
                 FiveMetaRow(
+                    episodes: film.isSeries ? film.episodeCount : nil,
                     runtime: film.runtimeMinutes,
                     platform: platform(for: film),
                     fontSize: 12
                 )
                 .padding(.top, 6)
+
+                if let status = film.status {
+                    Text(Self.statusLine(status))
+                        .font(.system(size: 12))
+                        .foregroundStyle(Ink.ink2)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 4)
+                }
             }
             .padding(.horizontal, isCompact ? 14 : 16)
             .padding(.top, isCompact ? 11 : 14)
@@ -324,11 +351,19 @@ struct CineMatchFiveView: View {
         .buttonStyle(.plain)
         .opacity(isDisabled ? 0.22 : 1)
         .disabled(isDisabled || isTurning)
-        .accessibilityLabel(
-            direction == .next
-                ? String(localized: "Film suivant", bundle: .app)
-                : String(localized: "Film précédent", bundle: .app)
-        )
+        .accessibilityLabel(direction == .next ? nextLabel : previousLabel)
+    }
+
+    private var nextLabel: String {
+        isSeries
+            ? String(localized: "Série suivante", bundle: .app)
+            : String(localized: "Film suivant", bundle: .app)
+    }
+
+    private var previousLabel: String {
+        isSeries
+            ? String(localized: "Série précédente", bundle: .app)
+            : String(localized: "Film précédent", bundle: .app)
     }
 
     // MARK: - Le geste
@@ -451,7 +486,10 @@ struct CineMatchFiveView: View {
     @ViewBuilder
     private func actions(for film: CineMatchFilm) -> some View {
         VStack(spacing: 7) {
-            PlanButton(title: String(localized: "Démarrer le film", bundle: .app)) {
+            PlanButton(title: film.isSeries
+                ? String(localized: "Je la commence", bundle: .app)
+                : String(localized: "Démarrer le film", bundle: .app)
+            ) {
                 start(film)
             }
 
@@ -489,6 +527,12 @@ struct CineMatchFiveView: View {
     /// prise, c'est elle qui compte.
     private func start(_ film: CineMatchFilm) {
         let platformIDs = preferredPlatformIDs
+        // Commencer une série, c'est mettre sa saison 1 dans la file, au
+        // premier épisode : c'est la watchlist qui prendra le relais dès le
+        // soir suivant. Une saison 1 déjà dans la file garde son épisode.
+        if film.isSeries, libraryStore.watchlistEntry(for: film.firstSeason) == nil {
+            libraryStore.addToWatchlist(film.firstSeason, nextEpisode: 1)
+        }
         viewModel.start(film)
         for candidate in film.watchAppURLCandidates(preferring: platformIDs)
         where UIApplication.shared.canOpenURL(candidate) {
@@ -512,6 +556,7 @@ struct CineMatchFiveView: View {
             id: film.id,
             eyebrow: eyebrow(for: film),
             title: film.item.title,
+            episodes: film.isSeries ? film.episodeCount : nil,
             runtime: film.runtimeMinutes,
             platform: platform(for: film),
             overview: film.item.overview
@@ -522,6 +567,11 @@ struct CineMatchFiveView: View {
 
     private func eyebrow(for film: CineMatchFilm) -> String {
         var parts = [film.item.displayYear]
+        if film.isSeries, let seasons = film.item.seasonCount, seasons > 0 {
+            parts.append(seasons == 1
+                ? String(localized: "1 saison", bundle: .app)
+                : String(localized: "\(seasons) saisons", bundle: .app))
+        }
         if let genreID = film.item.genreIds.first, let genre = catalog.name(forGenre: genreID) {
             parts.append(genre)
         }
@@ -531,6 +581,15 @@ struct CineMatchFiveView: View {
     private func platform(for film: CineMatchFilm) -> StreamingPlatform? {
         guard let providerID = film.providerID(preferring: preferredPlatformIDs) else { return nil }
         return catalog.platform(forProvider: providerID)
+    }
+
+    /// Où en est l'histoire : ce qu'on sait en la commençant.
+    static func statusLine(_ status: CineMatchSeriesStatus) -> String {
+        switch status {
+        case .ended: String(localized: "Terminée : l'histoire a sa fin.", bundle: .app)
+        case .returning: String(localized: "Toujours diffusée : d'autres saisons viendront.", bundle: .app)
+        case .canceled: String(localized: "Arrêtée avant sa fin : l'histoire reste ouverte.", bundle: .app)
+        }
     }
 }
 
@@ -542,6 +601,7 @@ private struct SynopsisContent: Identifiable {
     let id: Int
     let eyebrow: String
     let title: String
+    let episodes: Int?
     let runtime: Int?
     let platform: StreamingPlatform?
     let overview: String?
@@ -583,7 +643,7 @@ private struct CineMatchSynopsisSheet: View {
                     .padding(.top, 4)
                     .accessibilityAddTraits(.isHeader)
 
-                FiveMetaRow(runtime: content.runtime, platform: content.platform, fontSize: 12.5)
+                FiveMetaRow(episodes: content.episodes, runtime: content.runtime, platform: content.platform, fontSize: 12.5)
                     .padding(.top, 6)
 
                 if let overview = content.overview, !overview.isEmpty {
@@ -611,14 +671,25 @@ private struct CineMatchSynopsisSheet: View {
 
 // MARK: - La ligne de mesure
 
-/// La durée et le logo de la plateforme, séparés d'un point.
+/// La durée et le logo de la plateforme, séparés d'un point. Pour une série,
+/// le nombre d'épisodes vient devant, et la durée est celle d'un épisode.
 private struct FiveMetaRow: View {
+    let episodes: Int?
     let runtime: Int?
     let platform: StreamingPlatform?
     let fontSize: CGFloat
 
     var body: some View {
         HStack(spacing: 0) {
+            if let episodes, episodes > 0 {
+                Text(episodes == 1
+                    ? String(localized: "1 épisode", bundle: .app)
+                    : String(localized: "\(episodes) épisodes", bundle: .app))
+                    .font(.system(size: fontSize))
+                    .monospacedDigit()
+                    .foregroundStyle(Ink.ink2)
+                if runtime ?? 0 > 0 || platform != nil { dot }
+            }
             if let runtime, runtime > 0 {
                 Text(verbatim: Self.format(runtime))
                     .font(.system(size: fontSize))
@@ -626,17 +697,21 @@ private struct FiveMetaRow: View {
                     .foregroundStyle(Ink.ink2)
             }
             if runtime ?? 0 > 0, platform != nil {
-                Text(verbatim: "·")
-                    .font(.system(size: fontSize))
-                    .foregroundStyle(Ink.ink3)
-                    .padding(.horizontal, 6)
-                    .accessibilityHidden(true)
+                dot
             }
             if let platform {
                 logo(platform)
             }
         }
         .frame(minHeight: 18)
+    }
+
+    private var dot: some View {
+        Text(verbatim: "·")
+            .font(.system(size: fontSize))
+            .foregroundStyle(Ink.ink3)
+            .padding(.horizontal, 6)
+            .accessibilityHidden(true)
     }
 
     private func logo(_ platform: StreamingPlatform) -> some View {

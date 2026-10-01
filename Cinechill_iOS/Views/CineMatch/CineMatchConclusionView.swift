@@ -16,6 +16,10 @@ import SwiftUI
 /// **L'ajout attend sa confirmation avant de se dire fait** : la requête part,
 /// le bouton dit qu'il enregistre, et « Ajouté à ta galerie » n'apparaît qu'une
 /// fois que la galerie le contient réellement.
+///
+/// **Une série ne se range pas en galerie** : on vient de la commencer. Sa
+/// saison 1 est partie dans la file au moment de « Je la commence », et
+/// l'écran attend de l'y voir avant de le dire, de la même façon.
 struct CineMatchConclusionView: View {
     let viewModel: CineMatchViewModel
 
@@ -47,7 +51,13 @@ struct CineMatchConclusionView: View {
             poster(film)
 
             VStack(spacing: 0) {
-                Text("Bon film !", bundle: .app)
+                Group {
+                    if film.isSeries {
+                        Text("Bonne série !", bundle: .app)
+                    } else {
+                        Text("Bon film !", bundle: .app)
+                    }
+                }
                     .planTitle(32)
                     .foregroundStyle(Ink.ink)
                     .multilineTextAlignment(.center)
@@ -58,8 +68,14 @@ struct CineMatchConclusionView: View {
             }
             .padding(.top, 20)
 
-            footer(film)
-                .padding(.top, 22)
+            Group {
+                if film.isSeries {
+                    seriesFooter(film)
+                } else {
+                    footer(film)
+                }
+            }
+            .padding(.top, 22)
         }
         .padding(.horizontal, Metrics.margin)
         .padding(.top, 14)
@@ -226,6 +242,100 @@ struct CineMatchConclusionView: View {
             }
             let confirmed = libraryStore.isInGallery(film.item)
             if confirmed { Haptics.success() }
+            viewModel.finishGalleryAdd(success: confirmed)
+        }
+    }
+
+    // MARK: - La file, pour une série
+
+    private func seriesFooter(_ film: CineMatchFilm) -> some View {
+        let state = viewModel.galleryAddState
+        let queued = libraryStore.watchlistEntry(for: film.firstSeason)
+
+        return VStack(spacing: 6) {
+            Text(seriesNote(queued: queued != nil, state: state))
+                .font(.system(size: 13))
+                .foregroundStyle(Ink.ink2)
+                .lineSpacing(2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 8)
+                .contentTransition(.opacity)
+
+            if let queued {
+                HStack(spacing: 9) {
+                    PlanLight()
+                    Text("Dans ta watchlist : saison 1, épisode \(queued.episodeToPlay)", bundle: .app)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Ink.ink)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: Metrics.button)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                        .strokeBorder(Ink.ruleSet, lineWidth: 1)
+                )
+                .accessibilityElement(children: .combine)
+                .transition(.opacity)
+            } else {
+                PlanButton(
+                    title: String(localized: "Ajouter à ma watchlist", bundle: .app),
+                    loadingTitle: String(localized: "Enregistrement…", bundle: .app),
+                    isLoading: state == .adding
+                ) {
+                    queueFirstSeason(film, write: true)
+                }
+            }
+
+            Button {
+                viewModel.backToHome()
+            } label: {
+                Text("Retour à l'accueil", bundle: .app)
+                    .font(.system(size: 13.5, weight: .medium))
+                    .foregroundStyle(Ink.ink2)
+                    .padding(.horizontal, 18)
+                    .frame(minHeight: 40)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(state == .adding)
+        }
+        .animation(Metrics.shift, value: queued != nil)
+        .animation(Metrics.shift, value: state)
+        // L'écriture est partie avec « Je la commence » : on attend seulement
+        // de la voir arriver.
+        .task(id: film.id) { queueFirstSeason(film, write: false) }
+    }
+
+    private func seriesNote(queued: Bool, state: CineMatchViewModel.GalleryAddState) -> String {
+        if queued {
+            return String(localized: "Ta watchlist garde l'épisode à lancer : la suite partira de là.", bundle: .app)
+        }
+        if state == .failed {
+            return String(localized: "La saison 1 n'a pas été ajoutée à ta watchlist. Réessaie.", bundle: .app)
+        }
+        return String(localized: "On met la saison 1 dans ta watchlist, à son premier épisode.", bundle: .app)
+    }
+
+    /// Attend que la saison 1 soit dans la file. `write` relance l'écriture,
+    /// pour le bouton qui suit un échec.
+    private func queueFirstSeason(_ film: CineMatchFilm, write: Bool) {
+        let season = film.firstSeason
+        guard libraryStore.watchlistEntry(for: season) == nil,
+              viewModel.galleryAddState != .adding
+        else { return }
+        viewModel.beginGalleryAdd()
+        if write { libraryStore.addToWatchlist(season, nextEpisode: 1) }
+
+        Task {
+            let clock = ContinuousClock()
+            let deadline = clock.now.advanced(by: Self.confirmationTimeout)
+            while libraryStore.watchlistEntry(for: season) == nil, clock.now < deadline {
+                try? await Task.sleep(for: .milliseconds(150))
+            }
+            let confirmed = libraryStore.watchlistEntry(for: season) != nil
+            if confirmed && write { Haptics.success() }
             viewModel.finishGalleryAdd(success: confirmed)
         }
     }
