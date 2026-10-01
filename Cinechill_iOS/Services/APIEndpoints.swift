@@ -31,6 +31,33 @@ enum APIEndpoints {
         ])
     }
 
+    // MARK: - Les séries
+
+    static func tvDetails(id: Int) -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "gettvdetails", queryItems: [
+            URLQueryItem(name: "id", value: String(id)),
+        ])
+    }
+
+    static func tvSeason(id: Int, season: Int) -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "gettvseason", queryItems: [
+            URLQueryItem(name: "id", value: String(id)),
+            URLQueryItem(name: "season", value: String(season)),
+        ])
+    }
+
+    static func enrichSeasons() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "enrichseasons", queryItems: [])
+    }
+
+    static func setNextEpisode() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "setnextepisode", queryItems: [])
+    }
+
     static func movieGenres() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "getmoviegenres", queryItems: [])

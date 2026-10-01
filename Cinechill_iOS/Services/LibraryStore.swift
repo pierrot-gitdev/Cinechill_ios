@@ -56,6 +56,10 @@ final class LibraryStore: ObservableObject {
     /// listener ne l'ait répercuté, mais l'attente reste lisible tuile par
     /// tuile.
     @Published private(set) var pendingLoveByItemID: [String: Bool] = [:]
+    /// L'épisode à lancer visé par une écriture en cours, saison par saison.
+    /// Même règle que le statut : la ligne ne passe à l'épisode suivant qu'une
+    /// fois Firestore revenu, et l'attente se montre en place d'ici là.
+    @Published private(set) var pendingNextEpisodeByItemID: [String: Int] = [:]
     @Published private(set) var errorMessage: String?
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
@@ -149,8 +153,43 @@ final class LibraryStore: ObservableObject {
         _ = try? await URLSession.shared.data(for: request)
     }
 
+    /// Vrai pour un film ou une saison en galerie — et pour le dossier d'une
+    /// série dès qu'une de ses saisons y est. C'est ce qui fait que le point
+    /// plein d'une affiche de série dit « tu la connais » sans qu'aucun écran
+    /// n'ait à le calculer.
     func isInGallery(_ item: MediaItem) -> Bool {
-        galleryItems.contains { $0.id == item.id }
+        if item.isSeries {
+            return galleryItems.contains { $0.mediaType == .tv && $0.tmdbId == item.tmdbId }
+        }
+        return galleryItems.contains { $0.id == item.id }
+    }
+
+    /// Les films seuls de la galerie.
+    ///
+    /// **Les séries sont tenues à l'écart de CinéMatch**, et donc de tout ce qui
+    /// le nourrit ou le garde : la Porte, ses artéfacts, les distinctions et
+    /// les badges. Chacun de ces écrans compte des films, et doit lire ceci
+    /// plutôt que `galleryItems`.
+    var galleryFilms: [GalleryEntry] {
+        galleryItems.filter { $0.mediaType == .movie }
+    }
+
+    /// Les films seuls de la watchlist, pour la même raison.
+    var watchlistFilms: [WatchlistEntry] {
+        watchlistItems.filter { $0.mediaType == .movie }
+    }
+
+    /// Les saisons d'une série déjà rangées, de part et d'autre.
+    func seasons(ofSeries tvId: Int) -> (gallery: [GalleryEntry], watchlist: [WatchlistEntry]) {
+        (
+            galleryItems.filter { $0.mediaType == .tv && $0.tmdbId == tvId },
+            watchlistItems.filter { $0.mediaType == .tv && $0.tmdbId == tvId }
+        )
+    }
+
+    /// L'entrée de watchlist d'une saison, si elle y est.
+    func watchlistEntry(for item: MediaItem) -> WatchlistEntry? {
+        watchlistItems.first { $0.id == item.id }
     }
 
     /// Le coup de cœur tel que l'écran doit le montrer : ce que Firestore dit,
@@ -162,8 +201,10 @@ final class LibraryStore: ObservableObject {
     }
 
     /// Combien de films portent un cœur — le compte de l'artéfact du Cœur.
+    /// Une saison peut porter un cœur ; elle ne compte pas ici, parce que la
+    /// Porte ne compte que des films.
     var lovedCount: Int {
-        galleryItems.filter { entry in
+        galleryFilms.filter { entry in
             pendingLoveByItemID[entry.id] ?? entry.isLoved
         }.count
     }
@@ -191,7 +232,46 @@ final class LibraryStore: ObservableObject {
     }
 
     func isInWatchlist(_ item: MediaItem) -> Bool {
-        watchlistItems.contains { $0.id == item.id }
+        if item.isSeries {
+            return watchlistItems.contains { $0.mediaType == .tv && $0.tmdbId == item.tmdbId }
+        }
+        return watchlistItems.contains { $0.id == item.id }
+    }
+
+    /// Met une saison dans la file en disant d'emblée quel épisode lancer : un
+    /// seul aller-retour, celui de `setMediaStatus`.
+    func addToWatchlist(_ item: MediaItem, nextEpisode: Int) {
+        setStatus(.toWatch, for: item, extras: ["nextEpisode": nextEpisode])
+    }
+
+    /// L'épisode à lancer en attente d'écriture, s'il y en a une.
+    func pendingNextEpisode(for entry: WatchlistEntry) -> Int? {
+        pendingNextEpisodeByItemID[entry.id]
+    }
+
+    /// Pose l'épisode à lancer d'une saison déjà dans la file.
+    ///
+    /// Le dernier épisode n'a pas de suivant : passé lui, c'est la saison qui
+    /// est vue, et c'est à l'appelant de la ranger avec `addToGallery`. Cette
+    /// méthode refuse donc de dépasser la saison.
+    func setNextEpisode(_ entry: WatchlistEntry, to episode: Int) {
+        guard entry.isSeason, episode >= 1 else { return }
+        if let episodes = entry.seasonFacts?.episodes, episodes > 0, episode > episodes { return }
+        pendingNextEpisodeByItemID[entry.id] = episode
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await callSetNextEpisode(itemID: entry.id, episode: episode)
+                try? await Task.sleep(for: .seconds(4))
+                await MainActor.run { self.clearPendingNextEpisode(for: entry.id, ifStill: episode) }
+            } catch {
+                await MainActor.run {
+                    self.clearPendingNextEpisode(for: entry.id, ifStill: episode)
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
     }
 
     func addToGallery(_ item: MediaItem) {
@@ -368,6 +448,40 @@ private extension LibraryStore {
         }
     }
 
+    /// L'attente prend fin quand Firestore raconte l'épisode visé — ou quand la
+    /// saison a quitté la file, auquel cas il n'y a plus rien à attendre.
+    private func resolvePendingNextEpisodes() {
+        guard !pendingNextEpisodeByItemID.isEmpty else { return }
+        pendingNextEpisodeByItemID = pendingNextEpisodeByItemID.filter { id, target in
+            guard let entry = watchlistItems.first(where: { $0.id == id }) else { return false }
+            return entry.nextEpisode != target
+        }
+    }
+
+    private func clearPendingNextEpisode(for id: String, ifStill target: Int) {
+        guard pendingNextEpisodeByItemID[id] == target else { return }
+        pendingNextEpisodeByItemID.removeValue(forKey: id)
+    }
+
+    func callSetNextEpisode(itemID: String, episode: Int) async throws {
+        guard let url = APIEndpoints.setNextEpisode() else { return }
+        guard let user = Auth.auth().currentUser else { return }
+        let token = try await user.getIDToken()
+
+        var request = await URLRequest(backend: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "itemId": itemID, "nextEpisode": episode,
+        ])
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            throw URLError(.badServerResponse)
+        }
+    }
+
     private func clearPendingLove(for id: String, ifStill target: Bool) {
         guard pendingLoveByItemID[id] == target else { return }
         pendingLoveByItemID.removeValue(forKey: id)
@@ -505,6 +619,7 @@ private extension LibraryStore {
                     self.watchlistItems = docs.compactMap { self.watchlistEntry(from: $0.data()) }
                         .sorted(by: { $0.addedAt > $1.addedAt })
                     self.resolvePendingStatuses()
+                    self.resolvePendingNextEpisodes()
                 }
             }
     }
@@ -595,7 +710,8 @@ private extension LibraryStore {
             genreIds: data["genreIds"] as? [Int] ?? [],
             releaseDate: data["releaseDate"] as? String,
             addedAt: addedAt,
-            lovedAt: (data["lovedAt"] as? Timestamp)?.dateValue()
+            lovedAt: (data["lovedAt"] as? Timestamp)?.dateValue(),
+            seasonFacts: mediaType == .tv ? SeasonFacts(document: data) : nil
         )
     }
 
@@ -628,7 +744,9 @@ private extension LibraryStore {
             genreIds: data["genreIds"] as? [Int] ?? [],
             releaseDate: data["releaseDate"] as? String,
             addedAt: addedAt,
-            recommendedBy: recommenders(from: data["recommendedBy"])
+            recommendedBy: recommenders(from: data["recommendedBy"]),
+            seasonFacts: mediaType == .tv ? SeasonFacts(document: data) : nil,
+            nextEpisode: data["nextEpisode"] as? Int
         )
     }
 

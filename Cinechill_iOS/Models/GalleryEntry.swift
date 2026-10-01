@@ -14,8 +14,13 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
     /// Le coup de cœur, s'il a été posé. L'absence ne dit pas « pas aimé » :
     /// elle dit « rien déclaré », et ne pénalise jamais le film.
     let lovedAt: Date?
+    /// La saison, si l'entrée en est une. Une série ne se range que saison par
+    /// saison : `nil` veut toujours dire « un film ».
+    let seasonFacts: SeasonFacts?
 
     var isLoved: Bool { lovedAt != nil }
+
+    var isSeason: Bool { seasonFacts != nil }
 
     init(
         id: String,
@@ -28,7 +33,8 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
         genreIds: [Int],
         releaseDate: String?,
         addedAt: Date,
-        lovedAt: Date? = nil
+        lovedAt: Date? = nil,
+        seasonFacts: SeasonFacts? = nil
     ) {
         self.id = id
         self.tmdbId = tmdbId
@@ -41,6 +47,7 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
         self.releaseDate = releaseDate
         self.addedAt = addedAt
         self.lovedAt = lovedAt
+        self.seasonFacts = seasonFacts
     }
 
     init(item: MediaItem, addedAt: Date = .now) {
@@ -55,6 +62,7 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
         self.releaseDate = item.releaseDate
         self.addedAt = addedAt
         self.lovedAt = nil
+        self.seasonFacts = item.season.map { SeasonFacts(season: $0) }
     }
 
     var mediaItem: MediaItem {
@@ -67,7 +75,8 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
             voteAverage: voteAverage,
             voteCount: nil,
             genreIds: genreIds,
-            releaseDate: releaseDate
+            releaseDate: releaseDate,
+            season: seasonFacts?.season
         )
     }
 }

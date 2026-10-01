@@ -32,6 +32,16 @@ struct WatchlistEntry: Identifiable, Hashable, Codable, Sendable {
     /// Vide pour tout film ajouté par soi-même — c'est ce qui distingue la
     /// section « Recommandés par vos amis » du reste de la liste.
     let recommendedBy: [Recommender]
+    /// La saison, si l'entrée en est une.
+    let seasonFacts: SeasonFacts?
+    /// L'épisode à lancer, pour une saison.
+    ///
+    /// **Ce n'est pas un état.** La saison est « à voir » tant qu'elle n'est
+    /// pas vue, et elle ne connaît aucun intermédiaire. Ce champ dit seulement
+    /// quoi lancer ce soir, au même titre que la durée ou la plateforme d'une
+    /// ligne de film ; il est facultatif, et une saison peut être marquée vue
+    /// d'un tap sans qu'il ait jamais été renseigné.
+    let nextEpisode: Int?
 
     init(
         id: String,
@@ -44,7 +54,9 @@ struct WatchlistEntry: Identifiable, Hashable, Codable, Sendable {
         genreIds: [Int],
         releaseDate: String?,
         addedAt: Date,
-        recommendedBy: [Recommender] = []
+        recommendedBy: [Recommender] = [],
+        seasonFacts: SeasonFacts? = nil,
+        nextEpisode: Int? = nil
     ) {
         self.id = id
         self.tmdbId = tmdbId
@@ -57,6 +69,8 @@ struct WatchlistEntry: Identifiable, Hashable, Codable, Sendable {
         self.releaseDate = releaseDate
         self.addedAt = addedAt
         self.recommendedBy = recommendedBy
+        self.seasonFacts = seasonFacts
+        self.nextEpisode = nextEpisode
     }
 
     init(item: MediaItem, addedAt: Date = .now) {
@@ -71,6 +85,8 @@ struct WatchlistEntry: Identifiable, Hashable, Codable, Sendable {
         self.releaseDate = item.releaseDate
         self.addedAt = addedAt
         self.recommendedBy = []
+        self.seasonFacts = item.season.map { SeasonFacts(season: $0) }
+        self.nextEpisode = nil
     }
 
     var mediaItem: MediaItem {
@@ -83,8 +99,28 @@ struct WatchlistEntry: Identifiable, Hashable, Codable, Sendable {
             voteAverage: voteAverage,
             voteCount: nil,
             genreIds: genreIds,
-            releaseDate: releaseDate
+            releaseDate: releaseDate,
+            season: seasonFacts?.season
         )
+    }
+
+    var isSeason: Bool { seasonFacts != nil }
+
+    /// L'épisode à lancer, en partant du premier quand rien n'a été dit.
+    var episodeToPlay: Int { nextEpisode ?? 1 }
+
+    /// L'épisode à lancer n'est pas encore sorti : la saison ne peut pas se
+    /// regarder ce soir, quoi que dise sa plateforme.
+    var isAwaitingEpisode: Bool {
+        guard let facts = seasonFacts, let aired = facts.airedEpisodes else { return false }
+        return episodeToPlay > aired
+    }
+
+    /// Le dernier épisode de la saison est celui qu'on lance : le prochain
+    /// « vu » range la saison en galerie.
+    var isOnLastEpisode: Bool {
+        guard let episodes = seasonFacts?.episodes, episodes > 0 else { return true }
+        return episodeToPlay >= episodes
     }
 
     var isRecommended: Bool { !recommendedBy.isEmpty }
