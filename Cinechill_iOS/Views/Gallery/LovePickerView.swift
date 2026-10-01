@@ -7,7 +7,7 @@ import SwiftUI
 
 /// La planche des coups de cœur — le rattrapage de l'artéfact du Cœur.
 ///
-/// Le second cran du deck pose les cœurs au fil de l'eau, mais il ne sert que
+/// Le double tap du deck pose les cœurs au fil de l'eau, mais il ne sert que
 /// les films que Découvrir présente. Cette planche garantit qu'on peut finir :
 /// la galerie en grille, du plus récent au plus ancien, un appui pose ou retire
 /// le cœur, le compteur monte en direct. Pas de bouton valider — chaque appui

@@ -25,7 +25,7 @@ import SwiftUI
 ///   vraie carte sans réapprentissage.
 /// - **La séquence tourne en boucle.** On n'arrive pas forcément sur la planche
 ///   au premier temps, et le geste qu'on cherche est souvent celui qui vient de
-///   passer. Chaque tour se termine par un arrêt d'une seconde, les trois lignes
+///   passer. Chaque tour se termine par un arrêt d'une seconde, les quatre lignes
 ///   allumées : c'est là que la planche se lit d'un coup d'œil, avant que la
 ///   lumière ne redescende la liste au tour suivant.
 struct SwipeGuideOverlay: View {
@@ -37,6 +37,8 @@ struct SwipeGuideOverlay: View {
     @State private var intensity: Double = 0
     @State private var scale: CGFloat = 1
     @State private var cardOpacity: Double = 1
+    /// Le cœur du double tap, posé sur la carte.
+    @State private var showsLove = false
     /// Le geste en cours de démonstration.
     @State private var current: Move?
     /// Les gestes déjà montrés : leur ligne reste allumée.
@@ -116,6 +118,7 @@ struct SwipeGuideOverlay: View {
 
         return schematicCard
             .overlay { stamp }
+            .overlay { SwipeLoveBurst(isOn: showsLove, side: 40) }
             .scaleEffect(scale)
             .offset(offset)
             .rotationEffect(.degrees(pivot.angle), anchor: pivot.anchor)
@@ -168,7 +171,9 @@ struct SwipeGuideOverlay: View {
     /// sont ceux qu'on retrouvera sur la vraie carte.
     @ViewBuilder
     private var stamp: some View {
-        if let verdict = current?.direction.verdict {
+        // Le coup de cœur a son propre signe, le cœur : le tampon « VU » par
+        // dessus ferait lire deux réponses.
+        if current != .love, let verdict = current?.direction.verdict {
             HStack(spacing: 5) {
                 if verdict.isFilled {
                     PlanLight(tint: verdict.tint)
@@ -196,7 +201,7 @@ struct SwipeGuideOverlay: View {
         }
     }
 
-    // MARK: - Les trois lignes
+    // MARK: - Les quatre lignes
 
     /// Une ligne de la légende. Elle s'allume quand la carte atteint son bord, et
     /// ne s'éteint plus.
@@ -210,10 +215,16 @@ struct SwipeGuideOverlay: View {
         let isLit = revealed.contains(move) || current == move
 
         return HStack(spacing: 11) {
-            SwipeArrowGlyph(direction: move.direction.arrow, side: 13)
-                .foregroundStyle(isLit ? Ink.ink : Ink.ink3)
+            Group {
+                if move == .love {
+                    SwipeDoubleTapGlyph(side: 13)
+                } else {
+                    SwipeArrowGlyph(direction: move.direction.arrow, side: 13)
+                }
+            }
+            .foregroundStyle(isLit ? Ink.ink : Ink.ink3)
 
-            Text(move.direction.destination)
+            Text(move.title)
                 .planLabel()
                 .foregroundStyle(isLit ? Ink.ink : Ink.ink2)
 
@@ -228,7 +239,7 @@ struct SwipeGuideOverlay: View {
         .frame(height: 40)
         .opacity(isLit ? 1 : 0.5)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(move.direction.destination). \(move.outcome)")
+        .accessibilityLabel("\(move.title). \(move.outcome)")
     }
 
     // MARK: - La séquence
@@ -254,14 +265,14 @@ struct SwipeGuideOverlay: View {
                 guard !Task.isCancelled else { return }
             }
 
-            // Un temps d'arrêt avec les trois lignes allumées : c'est le résumé
+            // Un temps d'arrêt avec les quatre lignes allumées : c'est le résumé
             // du tour, et le seul moment où la planche se lit d'un coup d'œil.
             try? await Task.sleep(for: .milliseconds(1100))
             guard !Task.isCancelled else { return }
 
             // Les lignes s'éteignent pour que la lumière puisse redescendre la
-            // liste au tour suivant : trois lignes déjà allumées ne diraient plus
-            // lequel des trois gestes est en train d'être joué.
+            // liste au tour suivant : quatre lignes déjà allumées ne diraient plus
+            // lequel des quatre gestes est en train d'être joué.
             withAnimation(SwipeMotion.reveal) { revealed = [] }
             try? await Task.sleep(for: .milliseconds(280))
             guard !Task.isCancelled else { return }
@@ -273,14 +284,33 @@ struct SwipeGuideOverlay: View {
     private func demonstrate(_ move: Move) async {
         withAnimation(SwipeMotion.reveal) { current = move }
 
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.76)) {
-            offset = move.hold(width: Self.cardWidth, height: cardHeight)
-            intensity = 1
+        if move == .love {
+            // Deux taps : la carte s'enfonce deux fois, puis le cœur s'y pose.
+            // Elle part ensuite à droite, comme un « vu » : c'est bien en
+            // galerie que le film se range.
+            for _ in 0 ..< 2 {
+                withAnimation(.easeOut(duration: 0.08)) { scale = 0.93 }
+                try? await Task.sleep(for: .milliseconds(90))
+                withAnimation(.spring(response: 0.22, dampingFraction: 0.6)) { scale = 1 }
+                try? await Task.sleep(for: .milliseconds(110))
+                guard !Task.isCancelled else { return }
+            }
+            withAnimation(SwipeLoveBurst.pop) {
+                showsLove = true
+                intensity = 1
+            }
+            try? await Task.sleep(for: .milliseconds(620))
+            guard !Task.isCancelled else { return }
+        } else {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.76)) {
+                offset = move.hold(width: Self.cardWidth, height: cardHeight)
+                intensity = 1
+            }
+            // Le temps de lire le tampon. Sans cette pause, le verdict passe
+            // sous l'œil et le geste n'apprend rien.
+            try? await Task.sleep(for: .milliseconds(520))
+            guard !Task.isCancelled else { return }
         }
-        // Le temps de lire le tampon. Sans cette pause, le verdict passe sous
-        // l'œil et le geste n'apprend rien.
-        try? await Task.sleep(for: .milliseconds(520))
-        guard !Task.isCancelled else { return }
 
         withAnimation(SwipeMotion.flight) {
             offset = move.exit(width: Self.cardWidth, height: cardHeight)
@@ -298,6 +328,7 @@ struct SwipeGuideOverlay: View {
         current = nil
         offset = .zero
         intensity = 0
+        showsLove = false
         scale = 0.96
 
         // Une frame de battement, sinon SwiftUI regroupe la remise à zéro et
@@ -316,23 +347,34 @@ struct SwipeGuideOverlay: View {
 
 // MARK: - Les trois gestes
 
-/// Les trois gestes, dans l'ordre où on les enseigne : le plus fréquent d'abord,
-/// et la watchlist en dernier — c'est celui dont on se souvient le mieux, parce
-/// qu'il est le seul à sortir par le haut. Les lignes de la légende suivent le
-/// même ordre, si bien que la lumière descend la liste au lieu d'y sauter.
+/// Les gestes, dans l'ordre où on les enseigne : le plus fréquent d'abord, puis
+/// la watchlist, le seul à sortir par le haut. Le double tap ferme la liste : il
+/// précise un « vu », il ne s'apprend qu'une fois les trois directions connues.
+/// Les lignes de la légende suivent le même ordre, si bien que la lumière
+/// descend la liste au lieu d'y sauter.
 ///
 /// Le geste enseigné n'est pas une notion propre à l'aide : c'est une
-/// `SwipeDirection`, avec son verdict, sa destination et sa flèche. `Move`
+/// `SwipeDirection`, avec son verdict, sa destination et sa flèche. Le coup de
+/// cœur emprunte celle du « vu », puisqu'il range lui aussi en galerie. `Move`
 /// n'ajoute que ce qui appartient à la planche — la conséquence en clair, et la
 /// géométrie de la scène.
 private enum Move: CaseIterable, Hashable {
-    case right, left, up
+    case right, left, up, love
 
     var direction: SwipeDirection {
         switch self {
-        case .right: .right
+        case .right, .love: .right
         case .left: .left
         case .up: .up
+        }
+    }
+
+    /// Le nom de la ligne : la destination pour un balayage, le geste lui-même
+    /// pour le coup de cœur, dont la destination redirait « Galerie ».
+    var title: String {
+        switch self {
+        case .love: String(localized: "Coup de cœur", bundle: .app)
+        default: direction.destination
         }
     }
 
@@ -343,6 +385,7 @@ private enum Move: CaseIterable, Hashable {
         case .right: String(localized: "Tu l'as vu", bundle: .app)
         case .left: String(localized: "Il reviendra plus tard", bundle: .app)
         case .up: String(localized: "Envie de le voir", bundle: .app)
+        case .love: String(localized: "Touche deux fois l'affiche", bundle: .app)
         }
     }
 
@@ -358,13 +401,14 @@ private enum Move: CaseIterable, Hashable {
         case .right: CGSize(width: width * 0.62, height: 6)
         case .left: CGSize(width: -width * 0.62, height: 6)
         case .up: CGSize(width: 0, height: -21)
+        case .love: .zero
         }
     }
 
     /// La sortie : franchement hors de la scène, qui la coupe.
     func exit(width: CGFloat, height: CGFloat) -> CGSize {
         switch self {
-        case .right: CGSize(width: width + 240, height: 34)
+        case .right, .love: CGSize(width: width + 240, height: 34)
         case .left: CGSize(width: -(width + 240), height: 34)
         case .up: CGSize(width: 0, height: -(height + 130))
         }

@@ -5505,18 +5505,18 @@
         }
       }
     },
-    "Glisse à droite si tu l'as vu, plus loin si tu l'as adoré, à gauche sinon, vers le haut pour l'ajouter à ta watchlist" : {
+    "Glisse à droite si tu l'as vu, à gauche sinon, vers le haut pour l'ajouter à ta watchlist. Touche deux fois l'affiche si tu l'as adoré." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Swipe right if you've seen it, further if you loved it, left if you haven't, up to add it to your watchlist"
+            "value" : "Swipe right if you've seen it, left if you haven't, up to add it to your watchlist. Double-tap the poster if you loved it."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Glisse à droite si tu l'as vu, plus loin si tu l'as adoré, à gauche sinon, vers le haut pour l'ajouter à ta watchlist"
+            "value" : "Glisse à droite si tu l'as vu, à gauche sinon, vers le haut pour l'ajouter à ta watchlist. Touche deux fois l'affiche si tu l'as adoré."
           }
         }
       }
@@ -12880,6 +12880,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Watchlist"
+          }
+        }
+      }
+    },
+    "Touche deux fois l'affiche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double-tap the poster"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touche deux fois l'affiche"
           }
         }
       }

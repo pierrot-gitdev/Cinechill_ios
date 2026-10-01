@@ -22,10 +22,6 @@ struct SwipeDeckView: View {
     /// Distance à parcourir pour valider un verdict.
     private static let sideThreshold: CGFloat = 105
     private static let upThreshold: CGFloat = 130
-    /// Le second cran du balayage droite : « vu ET adoré ». Mesuré sur la
-    /// translation **réelle**, jamais sur la projection — un lancer rapide
-    /// reste « vu », seul un tirage long et voulu vaut coup de cœur.
-    private static let loveThreshold: CGFloat = 190
     private static let deckHorizontalInset: CGFloat = 26
     private static let deckVerticalInset: CGFloat = 12
     /// Débord vers le bas des deux cartes empilées sous celle du dessus.
@@ -53,8 +49,11 @@ struct SwipeDeckView: View {
     @State private var grabbedHigh = true
     /// Le seuil est franchi : lever le doigt tranche.
     @State private var isArmed = false
-    /// Le second cran est franchi : lever le doigt vaut « vu et adoré ».
-    @State private var isLoveArmed = false
+    /// La démonstration de la prise en main en est au double tap : le cœur est
+    /// posé sur la carte, qui ne part pas.
+    @State private var isDemoLoving = false
+    /// L'enfoncement de la carte sous les deux taps de la démonstration.
+    @State private var demoPress: CGFloat = 1
     @State private var departing: [DepartingCard] = []
     /// L'accusé de réception du dernier classement. Un seul à la fois : le
     /// suivant remplace le précédent plutôt que de s'empiler, sinon swiper vite
@@ -242,9 +241,6 @@ struct SwipeDeckView: View {
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
-            // Le repère du Cœur vit au bord de l'écran, pas sur la carte : il
-            // doit rester lisible pendant que la carte s'en va vers lui.
-            .overlay(alignment: .trailing) { loveCrest }
             // Le toast est posé sur le haut du **deck**, et non sur le haut de
             // l'écran : le bandeau au-dessus porte l'annulation, et la masquer
             // pendant la seconde et demie qui suit un classement serait la
@@ -307,10 +303,13 @@ struct SwipeDeckView: View {
                     parallax: reduceMotion ? .zero : SwipeMotion.parallax(for: drag),
                     showsCompass: (isPressing || showsReminder) && !isSynopsisOpen,
                     compassEnabled: !isShowingTourDemo,
-                    onTap: toggleSynopsis
+                    onTap: toggleSynopsis,
+                    onDoubleTap: love
                 )
                 .frame(width: size.width, height: size.height)
                 .overlay { if isShowingTourDemo { tourStamp } }
+                .overlay { SwipeLoveBurst(isOn: isDemoLoving) }
+                .scaleEffect(demoPress)
                 .offset(x: drag.width + returnOffset.width, y: drag.height + returnOffset.height)
                 .rotationEffect(.degrees(pivot.angle + returnAngle), anchor: pivot.anchor)
                 .gesture(dragGesture(cardHeight: size.height))
@@ -430,55 +429,6 @@ struct SwipeDeckView: View {
         }
     }
 
-    /// Le repère du second cran : l'écusson du Cœur, le même artéfact que sur
-    /// la porte de CinéMatch — le geste et ce qu'il déverrouille partagent le
-    /// même signe, il n'y a donc rien à expliquer.
-    ///
-    /// Il naît en pierre au franchissement du premier seuil, à l'instant exact
-    /// où le second devient atteignable, et s'embrase quand on l'atteint.
-    /// Jamais au repos : une légende permanente sous le deck a déjà été
-    /// essayée, et retirée.
-    @ViewBuilder
-    private var loveCrest: some View {
-        if currentVerdict?.verdict == .seen {
-            VStack(spacing: 9) {
-                Image("ArtefactCoeur")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 56, height: 56)
-                    // La grammaire des badges : éteint = la même silhouette,
-                    // désaturée et assombrie ; allumé = pleine couleur et halo.
-                    .saturation(isLoveArmed ? 1 : 0)
-                    .brightness(isLoveArmed ? 0 : -0.42)
-                    .shadow(
-                        color: Color(hex: 0xFF6B7E).opacity(isLoveArmed ? 0.55 : 0),
-                        radius: 11
-                    )
-                    .scaleEffect(isLoveArmed ? 1.08 : 1)
-
-                // Le mot du verdict, à l'identique : une seule formulation
-                // pour une seule idée, où qu'elle apparaisse.
-                Text("Je l'ai adoré", bundle: .app)
-                    .planLabel()
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(isLoveArmed ? Color(hex: 0xF0B3BC) : Ink.ink2)
-            }
-            .frame(width: 96)
-            .padding(.vertical, 24)
-            .background(
-                LinearGradient(
-                    colors: [Ink.ground.opacity(0), Ink.ground.opacity(0.9)],
-                    startPoint: .leading, endPoint: .trailing
-                )
-            )
-            .opacity(isArmed ? 1 : 0)
-            .animation(SwipeMotion.unfold, value: isArmed)
-            .animation(SwipeMotion.lock, value: isLoveArmed)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-        }
-    }
-
     @ViewBuilder
     private var milestoneOverlay: some View {
         if let milestone = model.celebratedMilestone {
@@ -513,11 +463,11 @@ struct SwipeDeckView: View {
         tour.step == .decouvrir && selectedTab == 2
     }
 
-    /// Les trois gestes, joués sur la carte du dessus au lieu d'être écrits.
+    /// Les gestes, joués sur la carte du dessus au lieu d'être écrits.
     ///
     /// La carte penche vers chaque direction jusqu'au seuil, le tampon
-    /// s'allume, puis elle revient au centre. Vers la droite, elle marque un
-    /// second temps jusqu'au cran du coup de cœur. **Elle ne part jamais** : rien
+    /// s'allume, puis elle revient au centre. Le tour se termine par le double
+    /// tap : la carte bat deux fois et le cœur s'y pose. **Elle ne part jamais** : rien
     /// n'est classé, et `commit` n'est jamais appelé. Le mouvement passe par
     /// `drag`, la même valeur que le doigt : inclinaison, parallaxe et tampon
     /// sont exactement ceux du vrai geste. Aucune vibration, elles ne partent
@@ -546,34 +496,31 @@ struct SwipeDeckView: View {
                 try? await Task.sleep(for: .milliseconds(750))
                 guard !Task.isCancelled else { break }
 
-                if direction == .right {
-                    // Le second temps : la carte continue jusqu'au cran du coup
-                    // de cœur, et l'écusson s'allume. Sa course est celle que
-                    // prend la carte sous un doigt tiré jusqu'à `loveThreshold`,
-                    // résistance comprise, sinon la démonstration irait plus
-                    // loin que le vrai geste.
-                    let loveTravel = SwipeMotion.resisted(Self.loveThreshold + 8, threshold: Self.sideThreshold)
-                    withAnimation(.easeInOut(duration: 0.5)) { drag = CGSize(width: loveTravel, height: 0) }
-                    try? await Task.sleep(for: .milliseconds(500))
-                    guard !Task.isCancelled else { break }
-
-                    withAnimation(SwipeMotion.lock) { isLoveArmed = true }
-                    try? await Task.sleep(for: .milliseconds(900))
-                    guard !Task.isCancelled else { break }
-                    withAnimation(SwipeMotion.lock) { isLoveArmed = false }
-                }
-
                 isArmed = false
                 withAnimation(SwipeMotion.recenter) { drag = .zero }
                 try? await Task.sleep(for: .milliseconds(600))
                 guard !Task.isCancelled else { break }
             }
-            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { break }
+
+            // Le double tap : deux battements de la carte, le cœur s'y pose,
+            // puis s'efface. La carte reste au centre.
+            for _ in 0 ..< 2 {
+                withAnimation(.easeOut(duration: 0.08)) { demoPress = 0.96 }
+                try? await Task.sleep(for: .milliseconds(90))
+                withAnimation(.spring(response: 0.22, dampingFraction: 0.6)) { demoPress = 1 }
+                try? await Task.sleep(for: .milliseconds(110))
+            }
+            withAnimation(SwipeLoveBurst.pop) { isDemoLoving = true }
+            try? await Task.sleep(for: .milliseconds(1100))
+            withAnimation(.easeOut(duration: 0.25)) { isDemoLoving = false }
+            try? await Task.sleep(for: .milliseconds(700))
         }
 
         // L'étape a changé en plein mouvement : la carte revient au centre.
         isArmed = false
-        isLoveArmed = false
+        isDemoLoving = false
+        demoPress = 1
         withAnimation(SwipeMotion.recenter) { drag = .zero }
     }
 
@@ -657,7 +604,7 @@ struct SwipeDeckView: View {
                     width: SwipeMotion.resisted(value.translation.width, threshold: Self.sideThreshold),
                     height: SwipeMotion.resisted(value.translation.height, threshold: Self.upThreshold)
                 )
-                updateArming(rawRight: value.translation.width)
+                updateArming()
             }
             .onEnded { value in
                 releasePress()
@@ -667,10 +614,6 @@ struct SwipeDeckView: View {
                 ) {
                     commit(
                         direction,
-                        // La translation réelle seulement : la projection d'un
-                        // flick ne doit jamais poser un cœur toute seule.
-                        loved: direction == .right &&
-                            value.translation.width >= Self.loveThreshold,
                         velocity: CGSize(
                             width: value.predictedEndTranslation.width - value.translation.width,
                             height: value.predictedEndTranslation.height - value.translation.height
@@ -678,7 +621,6 @@ struct SwipeDeckView: View {
                     )
                 } else {
                     isArmed = false
-                    isLoveArmed = false
                     withAnimation(SwipeMotion.recenter) { drag = .zero }
                 }
             }
@@ -688,31 +630,13 @@ struct SwipeDeckView: View {
     /// autre, plus léger, quand on revient en arrière. Le tampon s'enclenche au
     /// même instant — c'est ce qui rend la limite négociable au doigt, sans
     /// jamais l'écrire.
-    private func updateArming(rawRight: CGFloat) {
+    private func updateArming() {
         let armed = (dragProgress >= 1)
-        let firstCranChanged = armed != isArmed
-        if firstCranChanged {
-            isArmed = armed
-            if armed {
-                Haptics.impact(.light, intensity: 0.85)
-            } else {
-                Haptics.selection()
-            }
-        }
-
-        // Le second cran, sur la course réelle du doigt : la carte, elle,
-        // résiste déjà, et c'est précisément cet effort en plus qui dit
-        // qu'aimer n'est pas le même geste que voir.
-        let loveArmed = armed && currentVerdict?.verdict == .seen &&
-            rawRight >= Self.loveThreshold
-        guard loveArmed != isLoveArmed else { return }
-        withAnimation(SwipeMotion.lock) { isLoveArmed = loveArmed }
-        if loveArmed {
-            Haptics.impact(.medium, intensity: 0.9)
-        } else if !firstCranChanged {
-            // Quand les deux crans tombent dans la même passe, une seule
-            // vibration de retour : deux « selection » collées se lisent comme
-            // un raté.
+        guard armed != isArmed else { return }
+        isArmed = armed
+        if armed {
+            Haptics.impact(.light, intensity: 0.85)
+        } else {
             Haptics.selection()
         }
     }
@@ -748,13 +672,13 @@ struct SwipeDeckView: View {
                 velocity: velocity,
                 angle: pivot.angle,
                 anchor: pivot.anchor,
+                loved: loved,
                 reduceMotion: reduceMotion
             )
         )
         lastCommitted = direction
         drag = .zero
         isArmed = false
-        isLoveArmed = false
         isSynopsisOpen = false
         model.swipe(direction, loved: loved)
 
@@ -818,6 +742,25 @@ struct SwipeDeckView: View {
         case .left: -7
         case .up: 0
         }
+    }
+
+    /// Le coup de cœur : deux taps sur l'affiche valent « vu et adoré ».
+    ///
+    /// Il remplace le second cran du balayage à droite, qu'il fallait tirer
+    /// jusqu'au bord de l'écran : un geste qu'on ne trouvait pas seul, et qu'on
+    /// déclenchait parfois sans le vouloir en lançant fort. Le double tap est
+    /// celui que tout le monde connaît pour « j'aime ».
+    ///
+    /// La carte part à droite, comme un « vu » : le cœur s'ajoute à la
+    /// destination, il ne la remplace pas. Elle marque d'abord un temps sur
+    /// place, le cœur posé dessus — voir `DepartingCardView`.
+    private func love() {
+        guard !tour.isRunning, drag == .zero, model.topCard != nil else { return }
+        // La carte part sous le doigt : le geste de contact, lié à son
+        // identité, ne recevrait jamais sa fin, et la boussole resterait
+        // allumée sur la suivante.
+        releasePress()
+        commit(.right, loved: true, velocity: CGSize(width: 240, height: 0))
     }
 
     private func toggleSynopsis() {
@@ -965,6 +908,8 @@ private struct DepartingCard: Identifiable {
     let velocity: CGSize
     let angle: Double
     let anchor: UnitPoint
+    /// Un coup de cœur : la carte s'arrête le temps que le cœur s'y pose.
+    let loved: Bool
     let reduceMotion: Bool
 }
 
@@ -977,6 +922,7 @@ private struct DepartingCardView: View {
     @State private var offset: CGSize
     @State private var angle: Double
     @State private var opacity: Double = 1
+    @State private var showsLove = false
 
     init(item: DepartingCard, size: CGSize, genre: String?, onFinished: @escaping () -> Void) {
         self.item = item
@@ -996,12 +942,21 @@ private struct DepartingCardView: View {
             isArmed: true
         )
         .frame(width: size.width, height: size.height)
+        .overlay { SwipeLoveBurst(isOn: showsLove) }
         .offset(offset)
         .rotationEffect(.degrees(angle), anchor: item.anchor)
         .opacity(opacity)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
         .task {
+            if item.loved {
+                // Le cœur se voit avant que la carte parte : sans ce temps, il
+                // s'envolerait avec elle sans avoir été lu.
+                withAnimation(item.reduceMotion ? .easeOut(duration: 0.15) : SwipeLoveBurst.pop) {
+                    showsLove = true
+                }
+                try? await Task.sleep(for: .milliseconds(item.reduceMotion ? 450 : 520))
+            }
             guard !item.reduceMotion else {
                 withAnimation(.easeOut(duration: 0.2)) { opacity = 0 }
                 try? await Task.sleep(for: .milliseconds(220))

@@ -90,7 +90,7 @@ nonisolated enum SwipeDecision: String, Sendable, Hashable {
 nonisolated struct PendingSwipe: Sendable, Hashable {
     let card: SwipeCard
     let decision: SwipeDecision
-    /// Le second cran du balayage droite : vu ET adoré. Un modificateur de
+    /// Le double tap sur l'affiche : vu ET adoré. Un modificateur de
     /// `seen`, jamais un quatrième verbe — le serveur garde sa liste fermée.
     let loved: Bool
 

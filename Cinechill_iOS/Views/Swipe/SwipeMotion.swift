@@ -193,6 +193,51 @@ struct SwipeArrowGlyph: View {
     }
 }
 
+// MARK: - Le coup de cœur
+
+/// Le cœur posé sur une carte qu'on vient de toucher deux fois.
+///
+/// C'est l'écusson du Cœur, le même artéfact que sur la porte de CinéMatch : le
+/// geste et ce qu'il déverrouille partagent le même signe. Il prend la grammaire
+/// des badges allumés, pleine couleur et halo.
+struct SwipeLoveBurst: View {
+    var isOn: Bool
+    var side: CGFloat = 92
+
+    /// L'arrivée du cœur : elle dépasse un peu sa taille, puis s'y pose.
+    static let pop = Animation.spring(response: 0.3, dampingFraction: 0.55)
+
+    var body: some View {
+        Image("ArtefactCoeur")
+            .resizable()
+            .scaledToFit()
+            .frame(width: side, height: side)
+            .shadow(color: Color(hex: 0xFF6B7E).opacity(0.55), radius: side * 0.14)
+            .scaleEffect(isOn ? 1 : 0.4)
+            .opacity(isOn ? 1 : 0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+/// Le double tap, dans l'écriture des flèches : un point plein, l'onde du toucher
+/// autour.
+struct SwipeDoubleTapGlyph: View {
+    var side: CGFloat = 12
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(lineWidth: 1.5)
+                .frame(width: side * 0.75, height: side * 0.75)
+            Circle()
+                .frame(width: side * 0.25, height: side * 0.25)
+        }
+        .frame(width: side, height: side)
+        .accessibilityHidden(true)
+    }
+}
+
 // MARK: - L'aide
 
 /// Le point d'interrogation qui rouvre la planche des gestes, dans la même

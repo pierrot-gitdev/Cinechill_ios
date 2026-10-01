@@ -93,6 +93,8 @@ struct SwipeCardView: View {
     /// réponses à la même question.
     var compassEnabled = true
     var onTap: () -> Void = {}
+    /// Deux taps sur l'affiche : le coup de cœur.
+    var onDoubleTap: () -> Void = {}
 
     private var shape: RoundedRectangle {
         RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
@@ -107,7 +109,17 @@ struct SwipeCardView: View {
         // la rogner.
         VStack(spacing: 0) {
             poster
+                .contentShape(Rectangle())
+                // Le double tap passe en premier : un tap seul n'ouvre le
+                // synopsis qu'une fois sûr qu'aucun second ne suit. La plaque,
+                // elle, ne connaît que le tap seul et répond sans délai.
+                .gesture(
+                    TapGesture(count: 2).onEnded(onDoubleTap)
+                        .exclusively(before: TapGesture().onEnded(onTap))
+                )
             plate
+                .contentShape(Rectangle())
+                .onTapGesture(perform: onTap)
         }
         .overlay(compass)
         .overlay(shape.strokeBorder(Ink.rule, lineWidth: 1))
@@ -120,10 +132,13 @@ struct SwipeCardView: View {
         // glissement ne fait pas traîner la carte.
         .animation(SwipeMotion.unfold, value: isSynopsisOpen)
         .contentShape(shape)
-        .onTapGesture(perform: onTap)
         .accessibilityElement(children: .combine)
+        // Les taps vivent sur l'affiche et la plaque : l'élément combiné doit
+        // les reprendre à son compte, sans quoi VoiceOver n'en verrait aucun.
+        .accessibilityAction(.default, onTap)
+        .accessibilityAction(named: Text("Coup de cœur", bundle: .app), onDoubleTap)
         .accessibilityLabel(String(localized: "\(card.title), \(card.displayYear), note \(card.voteAverageText) sur 10", bundle: .app))
-        .accessibilityHint(String(localized: "Glisse à droite si tu l'as vu, plus loin si tu l'as adoré, à gauche sinon, vers le haut pour l'ajouter à ta watchlist", bundle: .app))
+        .accessibilityHint(String(localized: "Glisse à droite si tu l'as vu, à gauche sinon, vers le haut pour l'ajouter à ta watchlist. Touche deux fois l'affiche si tu l'as adoré.", bundle: .app))
     }
 
     // MARK: - L'affiche
