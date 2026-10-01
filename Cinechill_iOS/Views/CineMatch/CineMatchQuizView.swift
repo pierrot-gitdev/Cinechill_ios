@@ -39,6 +39,8 @@ struct CineMatchQuizView: View {
         self.viewModel = viewModel
     }
 
+    private var isSeries: Bool { viewModel.format == .series }
+
     var body: some View {
         GeometryReader { proxy in
             let isCompact = proxy.size.height < 480
@@ -151,6 +153,18 @@ struct CineMatchQuizView: View {
                     answers: viewModel.availableWants.map { want in
                         Answer(key: want.rawValue, title: title(for: want), consequence: consequence(for: want)) {
                             viewModel.chooseWant(want)
+                        }
+                    },
+                    isCompact: isCompact
+                )
+            case .energy where isSeries:
+                // Une série ne se choisit pas pour une soirée : la seconde
+                // question demande dans quoi on s'engage.
+                answersPage(
+                    question: String(localized: "Tu t'engages pour combien de temps ?", bundle: .app),
+                    answers: CineMatchEngagement.allCases.map { engagement in
+                        Answer(key: engagement.rawValue, title: title(for: engagement), consequence: consequence(for: engagement)) {
+                            await viewModel.chooseEngagement(engagement)
                         }
                     },
                     isCompact: isCompact
@@ -292,9 +306,7 @@ struct CineMatchQuizView: View {
             ZStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 0) {
                     questionTitle(
-                        isExcluding
-                            ? String(localized: "Et lequel tu n'as pas du tout envie de revoir ?", bundle: .app)
-                            : String(localized: "Lequel tu reverrais bien ce soir ?", bundle: .app),
+                        comparisonQuestion(isExcluding: isExcluding),
                         isCompact: isCompact,
                         top: isCompact ? 12 : 18
                     )
@@ -331,6 +343,17 @@ struct CineMatchQuizView: View {
             .disabled(films.isEmpty || excludedID != nil || viewModel.isLoadingRound)
         }
         .animation(stageAnimation, value: viewModel.comparisonStage)
+    }
+
+    /// On ne revoit pas une série, on la reprend du début : la question
+    /// change de verbe.
+    private func comparisonQuestion(isExcluding: Bool) -> String {
+        switch (isSeries, isExcluding) {
+        case (false, false): String(localized: "Lequel tu reverrais bien ce soir ?", bundle: .app)
+        case (false, true): String(localized: "Et lequel tu n'as pas du tout envie de revoir ?", bundle: .app)
+        case (true, false): String(localized: "Laquelle tu recommencerais bien ?", bundle: .app)
+        case (true, true): String(localized: "Et laquelle tu n'as pas du tout envie de recommencer ?", bundle: .app)
+        }
     }
 
     private var stageAnimation: Animation {
@@ -401,12 +424,24 @@ struct CineMatchQuizView: View {
 
     private func stageAccessibilityLabel(isExcluding: Bool) -> String {
         guard isExcluding, let kept = viewModel.keptFilm else {
-            return String(localized: "Étape 1 sur 2 : le film que tu reverrais", bundle: .app)
+            return isSeries
+                ? String(localized: "Étape 1 sur 2 : la série que tu reprendrais du début", bundle: .app)
+                : String(localized: "Étape 1 sur 2 : le film que tu reverrais", bundle: .app)
         }
-        return String(localized: "Étape 2 sur 2 : le film que tu ne veux pas. Tu as gardé \(kept.title).", bundle: .app)
+        return isSeries
+            ? String(localized: "Étape 2 sur 2 : la série que tu ne veux pas. Tu as gardé \(kept.title).", bundle: .app)
+            : String(localized: "Étape 2 sur 2 : le film que tu ne veux pas. Tu as gardé \(kept.title).", bundle: .app)
     }
 
     private func noneTitle(isExcluding: Bool, count: Int) -> String {
+        if isSeries {
+            guard isExcluding else {
+                return String(localized: "Aucune des quatre ce soir", bundle: .app)
+            }
+            return count == 3
+                ? String(localized: "Aucune des trois", bundle: .app)
+                : String(localized: "Aucune des quatre", bundle: .app)
+        }
         guard isExcluding else {
             return String(localized: "Aucun des quatre ce soir", bundle: .app)
         }
@@ -468,6 +503,7 @@ struct CineMatchQuizView: View {
             QuizPosterTile(
                 film: film,
                 layout: layout,
+                isSeries: isSeries,
                 isOut: isOut,
                 isFresh: film.id == viewModel.freshFilmID,
                 reduceMotion: reduceMotion
@@ -476,7 +512,9 @@ struct CineMatchQuizView: View {
         .buttonStyle(PressableScaleStyle(scale: 0.97))
         .accessibilityLabel(
             isOut
-                ? String(localized: "\(film.title), écarté", bundle: .app)
+                ? (isSeries
+                    ? String(localized: "\(film.title), écartée", bundle: .app)
+                    : String(localized: "\(film.title), écarté", bundle: .app))
                 : film.title
         )
     }
@@ -488,7 +526,13 @@ struct CineMatchQuizView: View {
     private var waiting: some View {
         VStack(spacing: 14) {
             CinechillSpinner(size: 28)
-            Text("On cherche tes cinq films…", bundle: .app)
+            Group {
+                if isSeries {
+                    Text("On cherche tes cinq séries…", bundle: .app)
+                } else {
+                    Text("On cherche tes cinq films…", bundle: .app)
+                }
+            }
                 .font(.system(size: 13.5))
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
@@ -499,7 +543,9 @@ struct CineMatchQuizView: View {
 
     private func failure(_ message: String) -> some View {
         PlanEmptyState(
-            title: String(localized: "Impossible de charger les films", bundle: .app),
+            title: isSeries
+                ? String(localized: "Impossible de charger les séries", bundle: .app)
+                : String(localized: "Impossible de charger les films", bundle: .app),
             message: message,
             actionTitle: String(localized: "Réessayer", bundle: .app),
             action: { Task { await viewModel.retry() } },
@@ -512,24 +558,47 @@ struct CineMatchQuizView: View {
     // MARK: - Les textes des réponses
 
     private func title(for want: CineMatchWant) -> String {
-        switch want {
-        case .light: String(localized: "Quelque chose de léger", bundle: .app)
-        case .soft: String(localized: "Quelque chose de doux", bundle: .app)
-        case .suspense: String(localized: "Du suspense", bundle: .app)
-        case .think: String(localized: "Un film qui fait réfléchir", bundle: .app)
-        case .feelgood: String(localized: "Un film qui fait du bien", bundle: .app)
-        case .everyone: String(localized: "Un film qui plaît à tout le monde", bundle: .app)
+        switch (want, isSeries) {
+        case (.light, _): String(localized: "Quelque chose de léger", bundle: .app)
+        case (.soft, _): String(localized: "Quelque chose de doux", bundle: .app)
+        case (.suspense, _): String(localized: "Du suspense", bundle: .app)
+        case (.think, false): String(localized: "Un film qui fait réfléchir", bundle: .app)
+        case (.feelgood, false): String(localized: "Un film qui fait du bien", bundle: .app)
+        case (.everyone, false): String(localized: "Un film qui plaît à tout le monde", bundle: .app)
+        case (.think, true): String(localized: "Une série qui fait réfléchir", bundle: .app)
+        case (.feelgood, true): String(localized: "Une série qui fait du bien", bundle: .app)
+        case (.everyone, true): String(localized: "Une série qui plaît à tout le monde", bundle: .app)
         }
     }
 
     private func consequence(for want: CineMatchWant) -> String {
-        switch want {
-        case .light: String(localized: "Rythmé, sans prise de tête", bundle: .app)
-        case .soft: String(localized: "Tranquille, sans tension, qui finit bien", bundle: .app)
-        case .suspense: String(localized: "Un film qui te tient en haleine", bundle: .app)
-        case .think: String(localized: "Un film qui marque", bundle: .app)
-        case .feelgood: String(localized: "Pour te remonter le moral", bundle: .app)
-        case .everyone: String(localized: "Grand public, tout le monde sera d'accord", bundle: .app)
+        switch (want, isSeries) {
+        case (.light, _): String(localized: "Rythmé, sans prise de tête", bundle: .app)
+        case (.soft, _): String(localized: "Tranquille, sans tension, qui finit bien", bundle: .app)
+        case (.suspense, false): String(localized: "Un film qui te tient en haleine", bundle: .app)
+        case (.think, false): String(localized: "Un film qui marque", bundle: .app)
+        case (.suspense, true): String(localized: "Une série qui te tient en haleine", bundle: .app)
+        case (.think, true): String(localized: "Une série qui marque", bundle: .app)
+        case (.feelgood, _): String(localized: "Pour te remonter le moral", bundle: .app)
+        case (.everyone, _): String(localized: "Grand public, tout le monde sera d'accord", bundle: .app)
+        }
+    }
+
+    private func title(for engagement: CineMatchEngagement) -> String {
+        switch engagement {
+        case .mini: String(localized: "Une mini-série", bundle: .app)
+        case .season: String(localized: "Une saison, pour voir", bundle: .app)
+        case .long: String(localized: "Une longue histoire", bundle: .app)
+        case .any: String(localized: "Peu importe", bundle: .app)
+        }
+    }
+
+    private func consequence(for engagement: CineMatchEngagement) -> String {
+        switch engagement {
+        case .mini: String(localized: "Une histoire qui finit en moins de huit heures", bundle: .app)
+        case .season: String(localized: "Si elle prend, il y a la suite", bundle: .app)
+        case .long: String(localized: "Plusieurs saisons, de quoi tenir des semaines", bundle: .app)
+        case .any: String(localized: "On regarde ce qui vient", bundle: .app)
         }
     }
 
@@ -597,6 +666,7 @@ private struct QuizPosterLayout {
 private struct QuizPosterTile: View {
     let film: CineMatchGalleryFilm
     let layout: QuizPosterLayout
+    let isSeries: Bool
     let isOut: Bool
     let isFresh: Bool
     let reduceMotion: Bool
@@ -616,7 +686,13 @@ private struct QuizPosterTile: View {
                 .opacity(isOut ? 0.22 : 1)
                 .overlay(alignment: .top) {
                     if isOut {
-                        Text("Écarté", bundle: .app)
+                        Group {
+                            if isSeries {
+                                Text("Écartée", bundle: .app)
+                            } else {
+                                Text("Écarté", bundle: .app)
+                            }
+                        }
                             .planLabel()
                             .foregroundStyle(Ink.ink2)
                             .padding(.horizontal, 7)
