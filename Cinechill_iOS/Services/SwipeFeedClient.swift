@@ -45,12 +45,12 @@ protocol SwipeFeedFetching: Sendable {
     /// - Parameter excludedIDs: identités de cartes déjà servies dans la session
     ///   courante (`movie-603`, `tv-1399`), pour que deux lots consécutifs ne se
     ///   recouvrent pas.
-    func fetchFeed(excludedIDs: [String]) async throws -> SwipeFeedBatch
+    func fetchFeed(excludedIDs: [String], format: MediaFormat) async throws -> SwipeFeedBatch
     func record(_ swipes: [PendingSwipe]) async throws
 }
 
 nonisolated struct BackendSwipeFeedClient: SwipeFeedFetching, Sendable {
-    func fetchFeed(excludedIDs: [String]) async throws -> SwipeFeedBatch {
+    func fetchFeed(excludedIDs: [String], format: MediaFormat) async throws -> SwipeFeedBatch {
         // Le backend recharge la galerie à chaque appel : au-delà de quelques
         // centaines d'ids la requête grossit pour rien, les plus récents
         // suffisent à éviter les doublons de session.
@@ -62,9 +62,10 @@ nonisolated struct BackendSwipeFeedClient: SwipeFeedFetching, Sendable {
         let data = try await post(to: APIEndpoints.swipeFeed(), body: [
             "excludeIds": films,
             "excludeTvIds": series,
-            // Sans cette marque, le serveur ne sert que des films : une version
-            // antérieure lirait une carte de série comme un film.
-            "series": true,
+            // L'interrupteur Films · Séries : le serveur sert un lot de l'un
+            // ou de l'autre, jamais des deux. Sans lui, des films seuls — ce
+            // que les versions antérieures savent lire.
+            "format": format == .series ? "tv" : "movie",
         ])
         let decoded = try decode(SwipeFeedResponseDTO.self, from: data)
         return SwipeFeedBatch(

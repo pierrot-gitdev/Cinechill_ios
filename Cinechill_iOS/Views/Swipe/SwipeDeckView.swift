@@ -16,6 +16,7 @@ struct SwipeDeckView: View {
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(MediaCatalog.self) private var catalog
     @Environment(OnboardingTour.self) private var tour
+    @Environment(DoorStore.self) private var doorStore
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -79,6 +80,10 @@ struct SwipeDeckView: View {
     /// reste à un tap dans le plafond pour tout le reste de la vie de
     /// l'application.
     @AppStorage("swipe.guideSeen") private var guideSeen = false
+    /// Films ou séries : le réglage que Découvrir partage avec CinéMatch.
+    @AppStorage(MediaFormat.storageKey) private var formatRaw = MediaFormat.film.rawValue
+
+    private var format: MediaFormat { MediaFormat(rawValue: formatRaw) ?? .film }
 
     var body: some View {
         NavigationStack {
@@ -87,6 +92,7 @@ struct SwipeDeckView: View {
 
                 VStack(spacing: 0) {
                     statusBar
+                    goalLine
                     deckArea
                 }
             }
@@ -115,6 +121,7 @@ struct SwipeDeckView: View {
             }
         }
         .task {
+            model.prepare(format: format)
             model.syncLibrary(libraryIDs)
             // Le répertoire des genres ne conditionne pas le deck : la légende
             // s'écrira sans son genre plutôt que de retarder la première carte.
@@ -127,6 +134,11 @@ struct SwipeDeckView: View {
         }
         .onChange(of: libraryIDs) { _, ids in
             model.syncLibrary(ids)
+        }
+        // L'interrupteur a pu basculer ici ou dans CinéMatch : le deck suit.
+        .onChange(of: formatRaw) { _, _ in
+            toast = nil
+            Task { await model.setFormat(format) }
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase != .active else { return }
@@ -174,10 +186,9 @@ struct SwipeDeckView: View {
 
     private var statusBar: some View {
         HStack(spacing: 14) {
-            if model.addedThisSession > 0 {
-                SessionTally(count: model.addedThisSession)
-                    .transition(.opacity)
-            }
+            // L'interrupteur prend la place du compte de session : ce qu'on
+            // remplit compte plus que ce qu'on a fait depuis l'ouverture.
+            FormatSwitch(isEnabled: !tour.isRunning)
 
             Spacer()
 
@@ -205,6 +216,42 @@ struct SwipeDeckView: View {
         .padding(.top, 6)
         .animation(Metrics.shift, value: model.addedThisSession)
         .animation(Metrics.shift, value: model.canUndo)
+    }
+
+    // MARK: - Le but
+
+    /// La Porte du format, écrite sous le bandeau tant qu'elle est fermée.
+    ///
+    /// Découvrir sert à ouvrir CinéMatch, et l'écran ne le disait pas : on
+    /// balayait vers un but qu'on ne voyait pas. Un compteur qui avance est ce
+    /// qui fait faire la carte suivante. Il disparaît une fois la Porte ouverte.
+    @ViewBuilder
+    private var goalLine: some View {
+        let door = doorStore.door(for: format)
+        if !door.unlocked, !tour.isRunning, let memory = door.artifact(.memoire) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(format == .series
+                         ? String(localized: "\(min(memory.current, memory.target)) sur \(memory.target) séries", bundle: .app)
+                         : String(localized: "\(min(memory.current, memory.target)) sur \(memory.target) films", bundle: .app))
+                        .planLabel()
+                        .monospacedDigit()
+                        .foregroundStyle(Ink.ink)
+                        .contentTransition(.numericText())
+                    Spacer(minLength: 8)
+                    Text("pour ouvrir CinéMatch", bundle: .app)
+                        .planLabel()
+                        .foregroundStyle(Ink.ink3)
+                }
+                PlanProgressRule(
+                    fraction: memory.target > 0 ? Double(memory.current) / Double(memory.target) : 0
+                )
+            }
+            .padding(.horizontal, Metrics.margin)
+            .padding(.top, 8)
+            .animation(Metrics.shift, value: memory.current)
+            .accessibilityElement(children: .combine)
+        }
     }
 
     /// Le « ? », en haut à droite de la vue.
@@ -385,7 +432,9 @@ struct SwipeDeckView: View {
             if let errorMessage = model.errorMessage {
                 PlanEmptyState(
                     icon: .salle,
-                    title: String(localized: "Impossible de charger les films", bundle: .app),
+                    title: format == .series
+                        ? String(localized: "Impossible de charger les séries", bundle: .app)
+                        : String(localized: "Impossible de charger les films", bundle: .app),
                     message: errorMessage,
                     actionTitle: String(localized: "Réessayer", bundle: .app),
                     action: { Task { await model.retry() } }
@@ -400,8 +449,12 @@ struct SwipeDeckView: View {
             } else if model.isExhausted {
                 PlanEmptyState(
                     icon: .hall,
-                    title: String(localized: "Plus de films pour l'instant", bundle: .app),
-                    message: String(localized: "Les films que tu as passés reviendront plus tard.", bundle: .app),
+                    title: format == .series
+                        ? String(localized: "Plus de séries pour l'instant", bundle: .app)
+                        : String(localized: "Plus de films pour l'instant", bundle: .app),
+                    message: format == .series
+                        ? String(localized: "Les séries que tu as passées reviendront plus tard.", bundle: .app)
+                        : String(localized: "Les films que tu as passés reviendront plus tard.", bundle: .app),
                     actionTitle: String(localized: "Voir ma galerie", bundle: .app),
                     action: { selectedTab = 3 },
                     secondaryTitle: String(localized: "Chercher encore", bundle: .app),
@@ -908,42 +961,6 @@ struct SwipeDeckView: View {
     private var libraryIDs: Set<String> {
         Set(libraryStore.galleryItems.map { "\($0.mediaType.rawValue)-\($0.tmdbId)" })
             .union(libraryStore.watchlistItems.map { "\($0.mediaType.rawValue)-\($0.tmdbId)" })
-    }
-}
-
-// MARK: - Le compteur de séance
-
-/// Le compteur d'ajouts de la séance. Le point bat une fois à chaque film
-/// rangé : c'est le seul endroit de l'écran où un chiffre change tout seul, et
-/// un battement de 300 ms suffit à ce qu'on le remarque sans quitter la carte
-/// des yeux.
-private struct SessionTally: View {
-    let count: Int
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var beat: CGFloat = 1
-
-    var body: some View {
-        HStack(spacing: 9) {
-            PlanLight()
-                .scaleEffect(beat)
-
-            Text(String(localized: "\(count) ajoutés", bundle: .app))
-                .planLabel()
-                .monospacedDigit()
-                .foregroundStyle(Ink.ink2)
-                .contentTransition(.numericText())
-        }
-        .task(id: count) {
-            guard !reduceMotion else { return }
-            beat = 1.9
-            // Deux passes de rendu, sinon la mise à l'échelle et son retour se
-            // regroupent et rien ne bat.
-            try? await Task.sleep(for: .milliseconds(16))
-            guard !Task.isCancelled else { return }
-            withAnimation(.spring(response: 0.34, dampingFraction: 0.5)) { beat = 1 }
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 

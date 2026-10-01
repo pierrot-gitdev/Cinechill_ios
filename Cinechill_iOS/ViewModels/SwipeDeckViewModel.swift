@@ -47,6 +47,8 @@ final class SwipeDeckViewModel {
     /// Palier tout juste franchi, à célébrer puis à remettre à `nil`.
     var celebratedMilestone: Int?
     private(set) var canUndo = false
+    /// Films ou séries : le profil que le deck remplit en ce moment.
+    private(set) var format: MediaFormat = .film
 
     /// Décision de la dernière carte, gardée en main tant que l'utilisateur
     /// n'a pas swipé la suivante : c'est ce qui rend le retour arrière toujours
@@ -114,13 +116,45 @@ final class SwipeDeckViewModel {
         await loadMore()
     }
 
+    /// Le format avant le premier chargement, sans rien charger : l'onglet
+    /// s'ouvre directement sur le dernier format choisi.
+    func prepare(format: MediaFormat) {
+        guard cards.isEmpty, !isLoading else { return }
+        self.format = format
+    }
+
+    /// L'interrupteur a basculé : le deck repart de zéro sur l'autre profil.
+    /// La décision en main part d'abord, elle appartient au lot qu'on quitte.
+    /// Un chargement encore en route pour l'ancien format est jeté à son
+    /// retour, et le nouveau part derrière lui.
+    func setFormat(_ newFormat: MediaFormat) async {
+        guard newFormat != format else { return }
+        commitHeldSwipe()
+        format = newFormat
+        cards = []
+        servedIDs = []
+        servedSet = []
+        emptyBatchStreak = 0
+        isExhausted = false
+        errorMessage = nil
+        await loadMore()
+    }
+
     private func loadMore() async {
         guard !isLoading else { return }
         isLoading = true
-        defer { isLoading = false }
+        let requested = format
 
         do {
-            let batch = try await client.fetchFeed(excludedIDs: servedIDs)
+            let batch = try await client.fetchFeed(excludedIDs: servedIDs, format: requested)
+            guard requested == format else {
+                // L'interrupteur a bougé pendant l'attente : ce lot n'est plus
+                // le bon, et celui du nouveau format n'est pas encore parti.
+                isLoading = false
+                await loadMore()
+                return
+            }
+            defer { isLoading = false }
             let fresh = batch.cards.filter {
                 !servedSet.contains($0.id) && !libraryIDs.contains($0.id)
             }
@@ -137,7 +171,12 @@ final class SwipeDeckViewModel {
 
             prefetchUpcoming()
         } catch {
+            isLoading = false
             if error is CancellationError { return }
+            guard requested == format else {
+                await loadMore()
+                return
+            }
             errorMessage = (error as? LocalizedError)?.errorDescription
                 ?? error.localizedDescription
         }
