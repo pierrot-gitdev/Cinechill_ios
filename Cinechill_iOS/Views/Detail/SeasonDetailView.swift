@@ -74,7 +74,7 @@ struct SeasonDetailView: View {
                 title: title,
                 progress: DetailCeiling.progress(forOffset: scrollOffset),
                 onBack: { dismiss() },
-                onTrailer: series?.trailerKey == nil ? nil : openTrailer
+                onTrailer: trailerAction
             )
         }
         .safeAreaInset(edge: .bottom) { floor }
@@ -409,6 +409,15 @@ struct SeasonDetailView: View {
     }
 
     // MARK: - Chargement
+
+    /// Le bouton de bande-annonce, s'il y en a une. Une propriété typée et non
+    /// un ternaire dans `body` : mêler `nil` et une méthode isolée au main
+    /// actor sous un `==` optionnel faisait renoncer le vérificateur de types
+    /// de Xcode (« Failed to produce diagnostic »).
+    private var trailerAction: (() -> Void)? {
+        guard series?.trailerKey != nil else { return nil }
+        return { openTrailer() }
+    }
 
     private func openTrailer() {
         guard let appURL = series?.trailerAppURL, let webURL = series?.trailerURL else { return }
