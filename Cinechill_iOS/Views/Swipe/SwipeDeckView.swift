@@ -213,7 +213,9 @@ struct SwipeDeckView: View {
         }
         .frame(height: 34)
         .padding(.horizontal, Metrics.margin)
-        .padding(.top, 6)
+        // L'écart sous le filet de l'en-tête, le même que dans CinéMatch :
+        // collé au filet, l'interrupteur se lisait comme une part du plafond.
+        .padding(.top, 12)
         .animation(Metrics.shift, value: model.addedThisSession)
         .animation(Metrics.shift, value: model.canUndo)
     }

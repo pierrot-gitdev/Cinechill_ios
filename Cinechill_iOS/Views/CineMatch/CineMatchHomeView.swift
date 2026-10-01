@@ -115,6 +115,8 @@ struct CineMatchHomeView: View {
                 if showsFormatSwitch {
                     FormatSwitch(isEnabled: pendingEntry == nil)
                         .padding(.horizontal, Metrics.margin)
+                        // Détaché du filet de l'en-tête, comme dans Découvrir.
+                        .padding(.top, 12)
                         .padding(.bottom, 6)
                 }
             }
