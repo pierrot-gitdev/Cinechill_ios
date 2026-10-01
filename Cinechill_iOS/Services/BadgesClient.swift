@@ -43,6 +43,7 @@ private struct BadgeProgressDTO: Decodable, Sendable {
     let current: Int
     let target: Int
     let detail: String?
+    let unlockedBy: BadgeTriggerDTO?
 
     var progress: BadgeProgress {
         BadgeProgress(
@@ -51,7 +52,20 @@ private struct BadgeProgressDTO: Decodable, Sendable {
             unlockedAt: unlockedAt.flatMap { ISO8601DateFormatter().date(from: $0) },
             current: current,
             target: target,
-            detail: detail
+            detail: detail,
+            unlockedBy: unlockedBy?.trigger
         )
+    }
+}
+
+private struct BadgeTriggerDTO: Decodable, Sendable {
+    let tmdbId: Int
+    let title: String?
+    let posterPath: String?
+
+    /// Sans titre, on ne peut rien dire du film : autant ne rien dire.
+    var trigger: BadgeTrigger? {
+        guard let title, !title.isEmpty else { return nil }
+        return BadgeTrigger(tmdbID: tmdbId, title: title, posterPath: posterPath)
     }
 }

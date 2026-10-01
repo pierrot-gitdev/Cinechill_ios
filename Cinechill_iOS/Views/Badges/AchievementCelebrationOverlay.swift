@@ -41,14 +41,14 @@ struct AchievementCelebrationOverlay: View {
     @ViewBuilder
     private var card: some View {
         switch celebration {
-        case .badge(let badge): badgeCard(badge)
+        case .badge(let badge, let trigger): badgeCard(badge, trigger: trigger)
         case .distinction(let distinction): distinctionCard(distinction)
         }
     }
 
     // MARK: - Badge débloqué
 
-    private func badgeCard(_ badge: Badge) -> some View {
+    private func badgeCard(_ badge: Badge, trigger: BadgeTrigger?) -> some View {
         VStack(spacing: 0) {
             eyebrow(String(localized: "Nouveau badge", bundle: .app), color: badge.rarity.accent)
 
@@ -74,6 +74,11 @@ struct AchievementCelebrationOverlay: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 14)
 
+            if let trigger {
+                triggerRow(trigger)
+                    .padding(.top, 16)
+            }
+
             PlanButton(title: String(localized: "Afficher sur mon profil", bundle: .app), height: Metrics.control, action: onEquip)
                 .padding(.top, 28)
 
@@ -86,7 +91,32 @@ struct AchievementCelebrationOverlay: View {
         .frame(maxWidth: 340)
         .background(cardBackground(accent: badge.rarity.accent))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(String(localized: "Nouveau badge débloqué : \(badge.name), \(badge.rarity.label). \(badge.condition)", bundle: .app))
+        .accessibilityLabel(badgeAccessibilityLabel(badge, trigger: trigger))
+    }
+
+    /// Le film qui a fait tomber le badge. La félicitation attend que le
+    /// serveur ait écrit le badge : on a souvent balayé une ou deux cartes de
+    /// plus entre-temps, et c'est cette ligne qui dit laquelle a compté.
+    private func triggerRow(_ trigger: BadgeTrigger) -> some View {
+        HStack(spacing: 10) {
+            PosterImageView(url: trigger.posterURL, contentMode: .fill)
+                .frame(width: 24, height: 36)
+                .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
+                .accessibilityHidden(true)
+            Text("Débloqué avec « \(trigger.title) »", bundle: .app)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Ink.ink)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func badgeAccessibilityLabel(_ badge: Badge, trigger: BadgeTrigger?) -> String {
+        let base = String(localized: "Nouveau badge débloqué : \(badge.name), \(badge.rarity.label). \(badge.condition)", bundle: .app)
+        guard let trigger else { return base }
+        let film = String(localized: "Débloqué avec « \(trigger.title) »", bundle: .app)
+        return "\(base) \(film)"
     }
 
     // MARK: - Distinction décernée
@@ -174,7 +204,10 @@ struct AchievementCelebrationOverlay: View {
     ZStack {
         Ink.ground.ignoresSafeArea()
         AchievementCelebrationOverlay(
-            celebration: .badge(BadgeCatalog.all[2]),
+            celebration: .badge(
+                BadgeCatalog.all[2],
+                unlockedBy: BadgeTrigger(tmdbID: 244786, title: "Whiplash", posterPath: nil)
+            ),
             onEquip: {},
             onDismiss: {}
         )

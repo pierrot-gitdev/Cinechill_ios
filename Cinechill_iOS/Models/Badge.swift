@@ -82,6 +82,8 @@ nonisolated struct BadgeProgress: Identifiable, Sendable, Hashable {
     let target: Int
     /// Ce qui manque précisément, quand le serveur sait le dire.
     let detail: String?
+    /// Le film qui a fait tomber le badge, quand c'est un film qui l'a fait.
+    var unlockedBy: BadgeTrigger? = nil
 
     var fraction: Double {
         guard target > 0 else { return 0 }
@@ -90,6 +92,20 @@ nonisolated struct BadgeProgress: Identifiable, Sendable, Hashable {
 
     static func locked(id: String) -> BadgeProgress {
         BadgeProgress(id: id, unlocked: false, unlockedAt: nil, current: 0, target: 1, detail: nil)
+    }
+}
+
+/// Le film qui a fait tomber un badge. La félicitation arrive une fois
+/// l'écriture confirmée par le serveur, souvent quelques cartes plus loin :
+/// sans ce nom, on ne sait plus ce qui l'a méritée.
+nonisolated struct BadgeTrigger: Sendable, Hashable {
+    let tmdbID: Int
+    let title: String
+    let posterPath: String?
+
+    var posterURL: URL? {
+        guard let posterPath, !posterPath.isEmpty else { return nil }
+        return URL(string: "https://image.tmdb.org/t/p/w185\(posterPath)")
     }
 }
 

@@ -27,12 +27,13 @@ final class BadgesViewModel {
     /// mécanisme d'affichage, mais deux échelles de carte : c'est cette
     /// différence qui fait qu'un rang ne se confond pas avec une citation.
     enum Celebration: Identifiable, Equatable {
-        case badge(Badge)
+        /// `unlockedBy` : le film qui l'a fait tomber, quand le serveur le sait.
+        case badge(Badge, unlockedBy: BadgeTrigger? = nil)
         case distinction(Distinction)
 
         var id: String {
             switch self {
-            case .badge(let badge): "badge-\(badge.id)"
+            case .badge(let badge, _): "badge-\(badge.id)"
             case .distinction(let distinction): "distinction-\(distinction.rawValue)"
             }
         }
@@ -155,7 +156,7 @@ final class BadgesViewModel {
             let wasUnlocked = previousProgress[badge.id]?.unlocked ?? false
             let isUnlocked = progressByID[badge.id]?.unlocked ?? false
             if !wasUnlocked, isUnlocked {
-                pendingCelebrations.append(.badge(badge))
+                pendingCelebrations.append(.badge(badge, unlockedBy: progressByID[badge.id]?.unlockedBy))
             }
         }
 

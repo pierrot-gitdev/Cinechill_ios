@@ -287,7 +287,7 @@ struct MainTabView: View {
             AchievementCelebrationOverlay(
                 celebration: celebration,
                 onEquip: {
-                    if case .badge(let badge) = celebration {
+                    if case .badge(let badge, _) = celebration {
                         libraryStore.setDisplayedBadge(badge.id)
                     }
                     withAnimation(.easeOut(duration: 0.22)) {
