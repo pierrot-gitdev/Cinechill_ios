@@ -30,7 +30,13 @@ actor SwipeDecisionQueue {
 
     func enqueue(_ swipe: PendingSwipe) {
         pending.append(swipe)
-        scheduleFlush(after: pending.count >= Self.flushThreshold ? .zero : Self.debounce)
+        // Un « vu » part tout de suite : c'est lui qui remplit la galerie, et
+        // c'est sur la galerie écrite que se décident badges et distinctions.
+        // Attendre le debounce reculait d'autant leur félicitation, qui
+        // tombait alors sur une carte sans rapport. Les autres décisions
+        // restent groupées.
+        let urgent = swipe.decision == .seen || pending.count >= Self.flushThreshold
+        scheduleFlush(after: urgent ? .zero : Self.debounce)
     }
 
     /// Vide la file sans attendre le debounce — à appeler quand le deck
