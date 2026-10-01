@@ -85,7 +85,7 @@ final class CineMatchViewModel {
     /// aboutit. Remis à zéro une fois transmis avec les cinq.
     private var hesitations = 0
     private var currentRoundData: CineMatchComparisonRound?
-    private var keptFilm: CineMatchGalleryFilm?
+    private(set) var keptFilm: CineMatchGalleryFilm?
     /// L'instant où les affiches (ou le remplaçant) sont apparues : l'origine
     /// de la latence d'une comparaison.
     private var appearedAt = ContinuousClock.now
@@ -138,15 +138,26 @@ final class CineMatchViewModel {
 
     // MARK: - Comparaisons
 
-    /// Le premier geste : la gardée cède sa place à son remplaçant (ou disparaît
-    /// si la galerie est épuisée), et on demande laquelle écarter.
+    /// Le premier geste : on garde un film, et la seconde question arrive sur
+    /// quatre autres. Garder les trois restants et n'en changer qu'un faisait
+    /// passer le changement de question inaperçu.
+    ///
+    /// Une galerie trop courte pour huit films n'en a pas d'autres : la gardée
+    /// cède alors sa place à son remplaçant (ou disparaît si la galerie est
+    /// épuisée), comme avant.
     func keep(_ film: CineMatchGalleryFilm) {
         guard step == .comparison, comparisonStage == .keep, !isLoadingRound,
               errorMessage == nil,
               let index = displayedFilms.firstIndex(where: { $0.id == film.id })
         else { return }
         keptFilm = film
-        if let replacement = currentRoundData?.replacements[film.id] {
+        if let others = currentRoundData?.excludeFilms, others.count >= 3 {
+            displayedFilms = others
+            freshFilmID = nil
+            let ids = others.map(\.id)
+            appendShown(ids)
+            recordPosterExposure(ids)
+        } else if let replacement = currentRoundData?.replacements[film.id] {
             displayedFilms[index] = replacement
             freshFilmID = replacement.id
             appendShown([replacement.id])

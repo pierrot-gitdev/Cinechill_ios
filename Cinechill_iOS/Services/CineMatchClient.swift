@@ -215,6 +215,7 @@ private nonisolated struct ComparisonResponseDTO: Decodable, Sendable {
     let films: [GalleryFilmDTO]
     /// Les clés JSON sont des chaînes : un objet JSON n'en connaît pas d'autres.
     let replacements: [String: GalleryFilmDTO]?
+    let excludeFilms: [GalleryFilmDTO]?
 
     var roundValue: CineMatchComparisonRound {
         CineMatchComparisonRound(
@@ -226,7 +227,8 @@ private nonisolated struct ComparisonResponseDTO: Decodable, Sendable {
                     Int(key).map { ($0, value.film) }
                 },
                 uniquingKeysWith: { first, _ in first }
-            )
+            ),
+            excludeFilms: (excludeFilms ?? []).map(\.film)
         )
     }
 }

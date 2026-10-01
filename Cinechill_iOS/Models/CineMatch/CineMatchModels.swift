@@ -54,8 +54,8 @@ nonisolated struct CineMatchGalleryFilm: Identifiable, Hashable, Sendable {
     }
 }
 
-/// Une comparaison telle que le serveur la prépare : quatre affiches, et pour
-/// chacune le film qui prendra sa place si elle est gardée.
+/// Une comparaison telle que le serveur la prépare : quatre affiches pour la
+/// première question, quatre autres pour la seconde.
 nonisolated struct CineMatchComparisonRound: Equatable, Sendable {
     /// Le nombre de comparaisons de la séance (0 à 4). Ignoré par la Porte.
     let total: Int
@@ -63,7 +63,11 @@ nonisolated struct CineMatchComparisonRound: Equatable, Sendable {
     /// Vide quand `round` dépasse `total`.
     let films: [CineMatchGalleryFilm]
     /// Clé : l'id d'un des quatre films. Absent quand la galerie est épuisée.
+    /// Ne sert plus que quand `excludeFilms` est vide.
     let replacements: [Int: CineMatchGalleryFilm]
+    /// Les films de la seconde question, tous différents de `films`. Vide
+    /// quand la galerie n'en a pas assez, ou face à un serveur plus ancien.
+    let excludeFilms: [CineMatchGalleryFilm]
 }
 
 /// Une comparaison jouée. `pick` garde un film et en écarte un autre ;
