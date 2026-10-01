@@ -177,6 +177,7 @@ struct HomeView: View {
                                             title: item.title,
                                             width: 104
                                         )
+                                        .overlay(alignment: .bottomLeading) { seasonPlate(item) }
                                         LibraryMark(
                                             inGallery: libraryStore.isInGallery(item),
                                             inWatchlist: libraryStore.isInWatchlist(item)
@@ -361,6 +362,7 @@ struct HomeView: View {
                                     title: item.title,
                                     width: 104
                                 )
+                                .overlay(alignment: .bottomLeading) { seasonPlate(item) }
                                 LibraryMark(
                                     inGallery: libraryStore.isInGallery(item),
                                     inWatchlist: libraryStore.isInWatchlist(item)
@@ -386,6 +388,18 @@ struct HomeView: View {
             .padding(.horizontal, 1)
         }
         .scrollClipDisabled()
+    }
+
+    /// Une série porte son nombre de saisons, en bas de l'affiche. Le point de
+    /// la bibliothèque, en haut, garde son sens : il s'allume dès qu'une de
+    /// ses saisons est rangée.
+    @ViewBuilder
+    private func seasonPlate(_ item: MediaItem) -> some View {
+        if item.isSeries, let count = item.seasonCount, count > 0 {
+            PosterPlate(text: count == 1
+                        ? String(localized: "1 saison", bundle: .app)
+                        : String(localized: "\(count) saisons", bundle: .app))
+        }
     }
 
     private func sectionTitle(_ title: String) -> some View {

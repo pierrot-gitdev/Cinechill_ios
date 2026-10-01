@@ -50,7 +50,10 @@ nonisolated struct BackendHomeRowsClient: HomeRowsFetching, Sendable {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.httpBody = Data("{}".utf8)
+        // L'app déclare qu'elle sait ouvrir une série : sans cette marque, le
+        // serveur sert des tendances de films seuls, que les versions
+        // antérieures savent lire.
+        request.httpBody = Data(#"{"series":true}"#.utf8)
 
         let data: Data
         let response: URLResponse
@@ -141,6 +144,10 @@ private struct HomeRowItemDTO: Decodable, Sendable {
     let voteCount: Int?
     let genreIds: [Int]?
     let releaseDate: String?
+    /// Absent des anciennes réponses : tout ce qui n'est pas une série est un
+    /// film.
+    let mediaType: String?
+    let seasonCount: Int?
 
     enum CodingKeys: String, CodingKey {
         case id, title, overview
@@ -149,19 +156,22 @@ private struct HomeRowItemDTO: Decodable, Sendable {
         case voteCount = "vote_count"
         case genreIds = "genre_ids"
         case releaseDate = "release_date"
+        case mediaType = "media_type"
+        case seasonCount = "season_count"
     }
 
     var mediaItem: MediaItem {
         MediaItem(
             tmdbId: id,
-            mediaType: .movie,
+            mediaType: mediaType == MediaType.tv.rawValue ? .tv : .movie,
             title: title ?? String(localized: "Sans titre", bundle: .app),
             posterPath: posterPath,
             overview: overview,
             voteAverage: voteAverage,
             voteCount: voteCount,
             genreIds: genreIds ?? [],
-            releaseDate: releaseDate
+            releaseDate: releaseDate,
+            seasonCount: seasonCount
         )
     }
 }
