@@ -35,14 +35,14 @@ struct DoorCelebrationOverlay: View {
                 row
                     .padding(.top, 22)
 
-                Text("\(unlocked.displayName) : c'est fait.", bundle: .app)
+                Text("\(unlocked.displayName(series: door.series)) : c'est fait.", bundle: .app)
                     .planTitle(24)
                     .foregroundStyle(Ink.ink)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 22)
 
-                Text(unlocked.consequence)
+                Text(unlocked.consequence(series: door.series))
                     .font(.system(size: 13))
                     .foregroundStyle(Ink.ink2)
                     .lineSpacing(2)
@@ -93,7 +93,7 @@ struct DoorCelebrationOverlay: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "\(unlocked.displayName) : c'est fait. \(door.litCount) étapes sur 5.", bundle: .app))
+        .accessibilityLabel(String(localized: "\(unlocked.displayName(series: door.series)) : c'est fait. \(door.litCount) étapes sur 5.", bundle: .app))
     }
 
     // MARK: - La rangée
@@ -146,7 +146,9 @@ struct DoorCelebrationOverlay: View {
     private var remainingText: String {
         let left = max(0, 5 - door.litCount)
         if left == 0 {
-            return String(localized: "CinéMatch est débloqué", bundle: .app)
+            return door.series
+                ? String(localized: "CinéMatch des séries est débloqué", bundle: .app)
+                : String(localized: "CinéMatch est débloqué", bundle: .app)
         }
         return String(localized: "\(door.litCount) sur 5", bundle: .app)
     }

@@ -197,11 +197,14 @@ struct MainTabView: View {
 
     /// Ce qui, dans la bibliothèque, peut faire bouger un artéfact.
     private var doorSignature: String {
-        // La Porte ne compte que des films : une saison qui entre ou sort ne
-        // la fait pas remesurer.
+        // Les deux Portes se mesurent du même appel : une saison qui entre fait
+        // avancer celle des séries, un film celle des films.
         let gallery = libraryStore.galleryFilms.count
         let watchlist = libraryStore.watchlistFilms.count
-        return "\(gallery)-\(libraryStore.lovedCount)-\(watchlist)"
+        let seasons = libraryStore.galleryItems.count - gallery
+        let queued = libraryStore.watchlistItems.count - watchlist
+        let lovedSeasons = libraryStore.galleryItems.filter { $0.isSeason && $0.isLoved }.count
+        return "\(gallery)-\(libraryStore.lovedCount)-\(watchlist)-\(seasons)-\(lovedSeasons)-\(queued)"
     }
 
     // MARK: - La prise en main
@@ -312,7 +315,7 @@ struct MainTabView: View {
     private var doorOverlay: some View {
         if let key = doorStore.celebration, badgesModel.currentCelebration == nil {
             DoorCelebrationOverlay(
-                door: doorStore.door,
+                door: doorStore.celebrationDoor,
                 unlocked: key,
                 onDismiss: {
                     withAnimation(.easeOut(duration: 0.22)) {

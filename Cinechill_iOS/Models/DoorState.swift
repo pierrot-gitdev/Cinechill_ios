@@ -77,7 +77,13 @@ nonisolated struct DoorHorizons: Codable, Equatable, Sendable {
 nonisolated struct DoorState: Codable, Equatable, Sendable {
     let unlocked: Bool
     let artifacts: [DoorArtifact]
-    let horizons: DoorHorizons
+    /// Absent de la Porte des séries, qui n'a jamais compté de décennies.
+    var horizons: DoorHorizons?
+    /// Vrai pour la Porte des séries : mêmes cinq étapes, autres seuils, et
+    /// d'autres mots. Absent de la réponse du serveur, posé par `DoorStore`.
+    var isSeries: Bool? = nil
+
+    var series: Bool { isSeries == true }
 
     /// Nombre d'artéfacts allumés.
     var litCount: Int { artifacts.filter(\.done).count }
@@ -110,6 +116,35 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
         )
     )
 
+    /// La Porte des séries d'un compte que le serveur n'a pas encore racontée.
+    /// Les seuils sont ceux du serveur : 15 séries, 4 genres, 4 saisons
+    /// adorées, 6 comparaisons, 3 saisons dans la file.
+    static let initialSeries = DoorState(
+        unlocked: false,
+        artifacts: DoorArtifactKey.allCases.map { key in
+            DoorArtifact(key: key.rawValue, done: false, current: 0, target: initialSeriesTarget(key))
+        },
+        horizons: nil,
+        isSeries: true
+    )
+
+    private static func initialSeriesTarget(_ key: DoorArtifactKey) -> Int {
+        switch key {
+        case .memoire: 15
+        case .eventail: 4
+        case .coeur: 4
+        case .horizons: 6
+        case .promesse: 3
+        }
+    }
+
+    /// La même Porte, marquée comme celle des séries.
+    func markedAsSeries() -> DoorState {
+        var copy = self
+        copy.isSeries = true
+        return copy
+    }
+
     /// Le seuil de chaque artéfact tant que le serveur ne l'a pas donné.
     private static func initialTarget(_ key: DoorArtifactKey) -> Int {
         switch key {
@@ -127,14 +162,18 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
     /// l'autre : l'onglet s'ouvre sur un état plausible au lieu d'attendre le
     /// réseau, et la réponse ne fait que le rafraîchir.
     private static let cacheKey = "cinematch.door"
+    private static let seriesCacheKey = "cinematch.seriesDoor"
 
-    static var cached: DoorState? {
-        guard let data = UserDefaults.standard.data(forKey: cacheKey) else { return nil }
-        return try? JSONDecoder().decode(DoorState.self, from: data)
-    }
+    static var cached: DoorState? { read(cacheKey) }
+    static var cachedSeries: DoorState? { read(seriesCacheKey)?.markedAsSeries() }
 
     static func cache(_ state: DoorState) {
         guard let data = try? JSONEncoder().encode(state) else { return }
-        UserDefaults.standard.set(data, forKey: cacheKey)
+        UserDefaults.standard.set(data, forKey: state.series ? seriesCacheKey : cacheKey)
+    }
+
+    private static func read(_ key: String) -> DoorState? {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(DoorState.self, from: data)
     }
 }

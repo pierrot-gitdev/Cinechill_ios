@@ -331,9 +331,11 @@ private struct TasteProfileDTO: Decodable, Sendable {
     let verdictCount: Int?
     let pendingVerdict: PendingVerdictDTO?
     let door: DoorState?
+    let seriesDoor: DoorState?
 
     enum CodingKeys: String, CodingKey {
         case mu, tau, door
+        case seriesDoor = "series_door"
         case galleryCount = "gallery_count"
         case watchlistCount = "watchlist_count"
         case correctedAxes = "corrected_axes"
@@ -356,7 +358,8 @@ private struct TasteProfileDTO: Decodable, Sendable {
             pendingVerdict: pendingVerdict.map {
                 PendingVerdict(tmdbID: $0.tmdbId, title: $0.title)
             },
-            door: door
+            door: door,
+            seriesDoor: seriesDoor?.markedAsSeries()
         )
     }
 }

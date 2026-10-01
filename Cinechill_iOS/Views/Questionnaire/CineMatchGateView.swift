@@ -287,9 +287,15 @@ struct CineMatchGateView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Pour débloquer CinéMatch", bundle: .app)
-                .planLabel()
-                .foregroundStyle(Ink.ink2)
+            Group {
+                if door.series {
+                    Text("Pour débloquer CinéMatch des séries", bundle: .app)
+                } else {
+                    Text("Pour débloquer CinéMatch", bundle: .app)
+                }
+            }
+            .planLabel()
+            .foregroundStyle(Ink.ink2)
 
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(verbatim: "\(door.litCount)")
@@ -319,7 +325,9 @@ struct CineMatchGateView: View {
                 .padding(.top, 16)
 
             PlanButton(
-                title: String(localized: "Compléter ma galerie", bundle: .app),
+                title: door.series
+                    ? String(localized: "Découvrir des séries", bundle: .app)
+                    : String(localized: "Compléter ma galerie", bundle: .app),
                 action: onDiscover
             )
             .padding(.top, 20)
@@ -859,16 +867,17 @@ private struct DoorArtifactSheet: View {
     private var waitsForMemory: Bool { artifactKey == .horizons && !door.canCompare }
 
     private var consequence: String {
-        guard waitsForMemory else { return artifactKey.consequence }
+        guard waitsForMemory else { return artifactKey.consequence(series: door.series) }
         let memoryTarget = door.artifact(.memoire)?.target ?? 0
-        return String(
-            localized: "Ajoute d'abord \(memoryTarget) films à ta galerie pour pouvoir comparer.",
-            bundle: .app
-        )
+        return door.series
+            ? String(localized: "Ajoute d'abord \(memoryTarget) séries à ta galerie pour pouvoir comparer.", bundle: .app)
+            : String(localized: "Ajoute d'abord \(memoryTarget) films à ta galerie pour pouvoir comparer.", bundle: .app)
     }
 
     private var actionTitle: String {
-        waitsForMemory ? String(localized: "Ouvrir Découvrir", bundle: .app) : artifactKey.actionTitle
+        waitsForMemory
+            ? String(localized: "Ouvrir Découvrir", bundle: .app)
+            : artifactKey.actionTitle(series: door.series)
     }
 
     private var rank: Int {
@@ -890,7 +899,7 @@ private struct DoorArtifactSheet: View {
                     Text("Étape \(rank) sur 5", bundle: .app)
                         .planLabel()
                         .foregroundStyle(Color(hex: artifactKey.hue))
-                    Text(artifactKey.displayName)
+                    Text(artifactKey.displayName(series: door.series))
                         .planTitle(22)
                         .foregroundStyle(Ink.ink)
                 }
@@ -976,9 +985,55 @@ extension DoorArtifactKey: Identifiable {
         }
     }
 
+    /// Le nom de l'étape, dans le format de la Porte.
+    func displayName(series: Bool) -> String {
+        guard series else { return displayName }
+        switch self {
+        case .memoire: return String(localized: "Séries vues", bundle: .app)
+        default: return displayName
+        }
+    }
+
+    /// La conséquence, dans le format de la Porte.
+    func consequence(series: Bool) -> String {
+        guard series else { return consequence }
+        switch self {
+        case .memoire:
+            return String(localized: "Plus tu ajoutes de séries que tu as vues, mieux on connaît tes goûts.", bundle: .app)
+        case .eventail:
+            return String(localized: "Avec des genres variés, on voit aussi ce que tu aimes moins.", bundle: .app)
+        case .coeur:
+            return String(localized: "Tes saisons préférées nous aident à trouver des séries qui vont te plaire.", bundle: .app)
+        case .horizons:
+            return String(localized: "En comparant des séries que tu as vues, tu nous montres ce que tu préfères.", bundle: .app)
+        case .promesse:
+            return String(localized: "On pourra aussi te proposer des séries de ta watchlist.", bundle: .app)
+        }
+    }
+
+    /// Là où le manque se comble, dans le format de la Porte.
+    func actionTitle(series: Bool) -> String {
+        guard series, self == .horizons else { return actionTitle }
+        return String(localized: "Comparer mes séries", bundle: .app)
+    }
+
     /// La condition, avec les seuils que le serveur mesure vraiment.
     func condition(in door: DoorState) -> String {
         let target = door.artifact(self)?.target ?? 0
+        if door.series {
+            switch self {
+            case .memoire:
+                return String(localized: "\(target) séries dans ta galerie", bundle: .app)
+            case .eventail:
+                return String(localized: "Des séries de \(target) genres différents", bundle: .app)
+            case .coeur:
+                return String(localized: "\(target) saisons en coup de cœur", bundle: .app)
+            case .horizons:
+                return String(localized: "\(target) comparaisons entre des séries que tu as vues", bundle: .app)
+            case .promesse:
+                return String(localized: "\(target) saisons dans ta watchlist", bundle: .app)
+            }
+        }
         switch self {
         case .memoire:
             return String(localized: "\(target) films dans ta galerie", bundle: .app)

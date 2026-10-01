@@ -53,6 +53,9 @@ nonisolated struct TasteProfile: Equatable, Sendable {
     /// les mêmes lectures que le trait. `nil` tant que le serveur n'a pas
     /// répondu.
     var door: DoorState?
+    /// La Porte des séries, mesurée sur les mêmes lectures. `nil` face à un
+    /// serveur plus ancien.
+    var seriesDoor: DoorState? = nil
 
     static let empty = TasteProfile(
         mu: [:], tau: [:], galleryCount: 0, watchlistCount: 0, correctedAxes: []

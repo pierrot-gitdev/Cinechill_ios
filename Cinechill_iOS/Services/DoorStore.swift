@@ -23,6 +23,7 @@ final class DoorStore {
     /// l'existant pour acquis sans le fêter, sinon un compte déjà riche
     /// ouvrirait sur une rafale de célébrations.
     private static let celebratedKey = "cinematch.doorCelebratedKeys"
+    private static let seriesCelebratedKey = "cinematch.seriesDoorCelebratedKeys"
 
     private let client: any RecommendationFetching
 
@@ -32,6 +33,19 @@ final class DoorStore {
     private(set) var hasMeasured = false
     /// L'artéfact tout juste gagné, à célébrer puis à remettre à `nil`.
     private(set) var celebration: DoorArtifactKey?
+    /// La Porte des séries : mêmes cinq étapes, à l'échelle des séries.
+    private(set) var seriesDoor: DoorState
+    /// L'étape gagnée l'a été sur la Porte des séries.
+    private(set) var celebrationIsSeries = false
+
+    /// La Porte dont l'étape vient d'être gagnée : c'est elle que la planche
+    /// raconte, avec ses mots à elle.
+    var celebrationDoor: DoorState { celebrationIsSeries ? seriesDoor : door }
+
+    /// La Porte d'un format.
+    func door(for format: MediaFormat) -> DoorState {
+        format == .series ? seriesDoor : door
+    }
 
     private var isRefreshing = false
     private var isBootstrapping = false
@@ -44,6 +58,7 @@ final class DoorStore {
     init(client: any RecommendationFetching = BackendRecommendationClient()) {
         self.client = client
         self.door = DoorState.cached ?? .initial
+        self.seriesDoor = DoorState.cachedSeries ?? .initialSeries
     }
 
     /// La mise à niveau de l'existant, une fois par ouverture de l'app.
@@ -84,6 +99,10 @@ final class DoorStore {
               let fresh = profile.door else { return }
         door = fresh
         DoorState.cache(fresh)
+        if let freshSeries = profile.seriesDoor {
+            seriesDoor = freshSeries
+            DoorState.cache(freshSeries)
+        }
         hasMeasured = true
 
         guard announcing else {
@@ -96,10 +115,10 @@ final class DoorStore {
     /// Prend l'état courant pour acquis, sans rien fêter. C'est le point de
     /// départ à partir duquel un gain devient un gain.
     private func sealBaseline() {
-        let lit = door.artifacts.filter(\.done).compactMap(\.artifactKey)
-        UserDefaults.standard.set(
-            lit.map(\.rawValue).joined(separator: ","), forKey: Self.celebratedKey
-        )
+        for (state, key) in [(door, Self.celebratedKey), (seriesDoor, Self.seriesCelebratedKey)] {
+            let lit = state.artifacts.filter(\.done).compactMap(\.artifactKey)
+            UserDefaults.standard.set(lit.map(\.rawValue).joined(separator: ","), forKey: key)
+        }
     }
 
     /// La célébration vue, on passe à la suivante s'il y en a une : deux
@@ -116,21 +135,33 @@ final class DoorStore {
         }
     }
 
-    /// Le premier artéfact allumé qu'on n'a pas encore fêté.
+    /// Le premier artéfact allumé qu'on n'a pas encore fêté. Ceux des films
+    /// d'abord, ceux des séries ensuite : deux gains du même geste s'annoncent
+    /// l'un après l'autre, comme sur une seule Porte.
     private func pickCelebration() {
         guard celebration == nil else { return }
-        let lit = door.artifacts.filter(\.done).compactMap(\.artifactKey)
+        if let key = freshlyLit(in: door, storedUnder: Self.celebratedKey) {
+            celebrationIsSeries = false
+            celebration = key
+        } else if let key = freshlyLit(in: seriesDoor, storedUnder: Self.seriesCelebratedKey) {
+            celebrationIsSeries = true
+            celebration = key
+        }
+    }
+
+    private func freshlyLit(in state: DoorState, storedUnder storageKey: String) -> DoorArtifactKey? {
+        let lit = state.artifacts.filter(\.done).compactMap(\.artifactKey)
         let defaults = UserDefaults.standard
 
-        guard let stored = defaults.string(forKey: Self.celebratedKey) else {
-            defaults.set(lit.map(\.rawValue).joined(separator: ","), forKey: Self.celebratedKey)
-            return
+        guard let stored = defaults.string(forKey: storageKey) else {
+            defaults.set(lit.map(\.rawValue).joined(separator: ","), forKey: storageKey)
+            return nil
         }
 
         var seen = Set(stored.split(separator: ",").map(String.init))
-        guard let fresh = lit.first(where: { !seen.contains($0.rawValue) }) else { return }
+        guard let fresh = lit.first(where: { !seen.contains($0.rawValue) }) else { return nil }
         seen.insert(fresh.rawValue)
-        defaults.set(seen.sorted().joined(separator: ","), forKey: Self.celebratedKey)
-        celebration = fresh
+        defaults.set(seen.sorted().joined(separator: ","), forKey: storageKey)
+        return fresh
     }
 }
