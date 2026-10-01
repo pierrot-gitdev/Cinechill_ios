@@ -209,6 +209,19 @@ final class LibraryStore: ObservableObject {
         }.count
     }
 
+    /// Les saisons de la galerie, pour la planche des coups de cœur des séries.
+    var gallerySeasons: [GalleryEntry] {
+        galleryItems.filter { $0.mediaType == .tv }
+    }
+
+    /// Combien de saisons portent un cœur : le compte du Cœur de la Porte des
+    /// séries, qui compte des saisons parce que c'est là que le cœur se pose.
+    var lovedSeasonCount: Int {
+        gallerySeasons.filter { entry in
+            pendingLoveByItemID[entry.id] ?? entry.isLoved
+        }.count
+    }
+
     /// Pose ou retire un coup de cœur sur un film déjà en galerie.
     func setLove(_ item: MediaItem, loved: Bool) {
         guard isInGallery(item) else { return }

@@ -17,14 +17,27 @@ import SwiftUI
 /// dire « je n'ai pas aimé », elle veut dire « je ne l'ai pas dit » — le même
 /// principe que le balayage gauche du deck, et la raison pour laquelle rien ici
 /// ne ressemble à un tri en deux camps.
+///
+/// Côté séries, la planche montre des saisons : c'est là que le cœur se pose,
+/// et c'est ce que compte le Cœur de la Porte des séries.
 struct LovePickerView: View {
     /// Le seuil de l'artéfact, tel que le serveur le mesure.
     let target: Int
+    var format: MediaFormat = .film
     let onClose: () -> Void
 
     @EnvironmentObject private var libraryStore: LibraryStore
 
-    private var lovedCount: Int { libraryStore.lovedCount }
+    private var isSeries: Bool { format == .series }
+
+    private var lovedCount: Int {
+        isSeries ? libraryStore.lovedSeasonCount : libraryStore.lovedCount
+    }
+
+    /// Les films seuls, ou les saisons seules : chaque Porte compte les siens.
+    private var entries: [GalleryEntry] {
+        isSeries ? libraryStore.gallerySeasons : libraryStore.galleryFilms
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,9 +48,7 @@ struct LovePickerView: View {
                     columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4),
                     spacing: 10
                 ) {
-                    // Les films seuls : le Cœur est un artéfact de la Porte,
-                    // et la Porte ne compte que des films.
-                    ForEach(libraryStore.galleryFilms) { entry in
+                    ForEach(entries) { entry in
                         tile(entry)
                     }
                 }
@@ -66,9 +77,15 @@ struct LovePickerView: View {
                     Text("Coups de cœur", bundle: .app)
                         .planLabel()
                         .foregroundStyle(Color(hex: 0xC25562))
-                    Text("Quels films as-tu adorés ?", bundle: .app)
-                        .planTitle(26)
-                        .foregroundStyle(Ink.ink)
+                    Group {
+                        if isSeries {
+                            Text("Quelles saisons as-tu adorées ?", bundle: .app)
+                        } else {
+                            Text("Quels films as-tu adorés ?", bundle: .app)
+                        }
+                    }
+                    .planTitle(26)
+                    .foregroundStyle(Ink.ink)
                 }
 
                 Spacer(minLength: 0)
@@ -84,7 +101,13 @@ struct LovePickerView: View {
                 .accessibilityLabel(String(localized: "Fermer", bundle: .app))
             }
 
-            Text("Touche un film pour en faire un coup de cœur.", bundle: .app)
+            Group {
+                if isSeries {
+                    Text("Touche une saison pour en faire un coup de cœur.", bundle: .app)
+                } else {
+                    Text("Touche un film pour en faire un coup de cœur.", bundle: .app)
+                }
+            }
                 .font(.system(size: 13))
                 .foregroundStyle(Ink.ink2)
                 .lineSpacing(2)
@@ -159,18 +182,37 @@ struct LovePickerView: View {
                             .transition(.scale.combined(with: .opacity))
                     }
                 }
+                .overlay(alignment: .topLeading) {
+                    if let season = entry.seasonFacts?.season {
+                        // Plusieurs saisons d'une série partagent souvent la
+                        // même affiche : le numéro dit laquelle on touche.
+                        Text("Saison \(season)", bundle: .app)
+                            .font(.system(size: 9.5, weight: .semibold))
+                            .foregroundStyle(Ink.ink)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(Ink.ground3, in: RoundedRectangle(cornerRadius: 2, style: .continuous))
+                            .padding(4)
+                    }
+                }
                 // L'attente reste lisible tuile par tuile, sans rien promettre.
                 .opacity(isPending ? 0.7 : 1)
         }
         .buttonStyle(PressableScaleStyle(scale: 0.93))
         .animation(Metrics.shift, value: loved)
-        .accessibilityLabel(entry.title)
+        .accessibilityLabel(accessibilityTitle(entry))
         .accessibilityValue(
             loved
                 ? String(localized: "coup de cœur", bundle: .app)
                 : String(localized: "pas un coup de cœur", bundle: .app)
         )
         .accessibilityHint(String(localized: "Toucher pour changer", bundle: .app))
+    }
+
+    private func accessibilityTitle(_ entry: GalleryEntry) -> String {
+        guard let season = entry.seasonFacts?.season else { return entry.title }
+        let label = String(localized: "Saison \(season)", bundle: .app)
+        return "\(entry.title), \(label)"
     }
 
     // MARK: - Le plancher
