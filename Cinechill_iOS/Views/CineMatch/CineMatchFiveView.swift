@@ -534,6 +534,9 @@ struct CineMatchFiveView: View {
             libraryStore.addToWatchlist(film.firstSeason, nextEpisode: 1)
         }
         viewModel.start(film)
+        // Avant d'ouvrir la plateforme : une fois l'app passée en arrière-plan,
+        // iOS refuserait de démarrer l'activité.
+        CineMatchLiveActivity.start(film: film, details: liveActivityDetails(for: film))
         for candidate in film.watchAppURLCandidates(preferring: platformIDs)
         where UIApplication.shared.canOpenURL(candidate) {
             UIApplication.shared.open(candidate)
@@ -574,6 +577,30 @@ struct CineMatchFiveView: View {
         }
         if let genreID = film.item.genreIds.first, let genre = catalog.name(forGenre: genreID) {
             parts.append(genre)
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    /// La ligne sous le titre, sur l'écran verrouillé : « 2023 · Drame · 1h46
+    /// · Netflix ». Une série commence toujours au premier épisode, c'est donc
+    /// lui qu'on nomme à la place de l'année.
+    private func liveActivityDetails(for film: CineMatchFilm) -> String {
+        var parts: [String] = []
+        if film.isSeries {
+            parts.append(String(localized: "Saison \(1) · épisode \(1)", bundle: .app))
+        } else {
+            if (film.item.releaseDate?.count ?? 0) >= 4 {
+                parts.append(film.item.displayYear)
+            }
+            if let genreID = film.item.genreIds.first, let genre = catalog.name(forGenre: genreID) {
+                parts.append(genre)
+            }
+        }
+        if let runtime = film.runtimeMinutes, runtime > 0 {
+            parts.append(FiveMetaRow.format(runtime))
+        }
+        if let platform = platform(for: film) {
+            parts.append(platform.name)
         }
         return parts.joined(separator: " · ")
     }

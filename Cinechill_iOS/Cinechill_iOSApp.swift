@@ -43,6 +43,8 @@ struct Cinechill_iOSApp: App {
     /// de la vue ne survivrait pas ; celui de l'application, si.
     @State private var tour = OnboardingTour()
 
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
             // L'aiguillage vit dans `RootView`, et non ici, parce qu'il doit exister pendant
@@ -70,6 +72,11 @@ struct Cinechill_iOSApp: App {
             .environmentObject(profileStore)
             .environmentObject(socialStore)
             .environment(tour)
+            // Le seul moment où l'app reprend la main après un film lancé :
+            // l'activité « en cours » dont la durée est passée s'y retire.
+            .onChange(of: scenePhase, initial: true) { _, phase in
+                if phase == .active { CineMatchLiveActivity.endFinished() }
+            }
             .task {
                 libraryStore.start()
                 socialStore.start()

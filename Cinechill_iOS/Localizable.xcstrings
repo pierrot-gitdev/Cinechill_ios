@@ -5090,6 +5090,22 @@
         }
       }
     },
+    "En cours" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playing"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En cours"
+          }
+        }
+      }
+    },
     "En cours…" : {
       "localizations" : {
         "en" : {
