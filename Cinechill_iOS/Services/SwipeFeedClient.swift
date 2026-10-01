@@ -140,6 +140,8 @@ private struct SwipeCardDTO: Decodable, Sendable {
     let genreIds: [Int]?
     let releaseDate: String?
     let source: String?
+    let collectionID: Int?
+    let collectionTotal: Int?
 
     enum CodingKeys: String, CodingKey {
         case id, title, overview, source
@@ -148,6 +150,8 @@ private struct SwipeCardDTO: Decodable, Sendable {
         case voteCount = "vote_count"
         case genreIds = "genre_ids"
         case releaseDate = "release_date"
+        case collectionID = "collection_id"
+        case collectionTotal = "collection_total"
     }
 
     var swipeCard: SwipeCard {
@@ -160,7 +164,9 @@ private struct SwipeCardDTO: Decodable, Sendable {
             voteCount: voteCount,
             genreIds: genreIds ?? [],
             releaseDate: releaseDate,
-            source: source
+            source: source,
+            collectionID: collectionID,
+            collectionCount: collectionTotal
         )
     }
 }

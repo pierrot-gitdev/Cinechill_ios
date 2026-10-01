@@ -68,6 +68,12 @@ struct SwipeDeckView: View {
     @State private var showProfile = false
     /// L'aide aux gestes — voir `SwipeGuideOverlay`.
     @State private var showGuide = false
+    /// La saga proposée après un « vu », s'il y en a une.
+    @State private var sagaOffer: SagaOffer?
+    /// Les sagas déjà proposées depuis l'ouverture de l'onglet. Une saga ne se
+    /// propose qu'une fois : passé le premier refus, ses opus partent en
+    /// retrait côté serveur et ne reviennent plus la poser.
+    @State private var offeredSagas: Set<Int> = []
 
     /// L'aide s'ouvre d'elle-même à la première venue, et une seule fois : elle
     /// reste à un tap dans le plafond pour tout le reste de la vie de
@@ -96,6 +102,21 @@ struct SwipeDeckView: View {
                     .environmentObject(libraryStore)
                     .environmentObject(authService)
                     .environmentObject(socialStore)
+            }
+            // La feuille ne coupe pas le rythme : le balayage est déjà
+            // tranché, la carte déjà partie, et la carte suivante est déjà en
+            // place derrière. Deux feuilles d'affilée sont par ailleurs très
+            // improbables — les cartes issues de la règle de saga portent
+            // toutes la même source, que l'ordonnancement du lot écarte les
+            // unes des autres.
+            .sheet(item: $sagaOffer) { offer in
+                SagaSheet(
+                    collectionID: offer.collectionID,
+                    originTmdbID: offer.tmdbID,
+                    originTitle: offer.title,
+                    onClose: { sagaOffer = nil }
+                )
+                .environmentObject(libraryStore)
             }
         }
         .task {
@@ -696,6 +717,32 @@ struct SwipeDeckView: View {
                 isAcquired: direction.verdict.isFilled
             )
         }
+
+        offerSagaIfAny(for: card, direction: direction)
+    }
+
+    /// La saga, proposée **après un « vu » seulement**.
+    ///
+    /// C'est la condition qui rend la feuille légitime : la personne vient de
+    /// déclarer qu'elle connaît ce film, donc la question « et les autres ? » a
+    /// un sens et peut rapporter sept films pour un tap. Après un « pas vu »,
+    /// elle n'en aurait aucun — et le serveur met déjà la suite de la saga en
+    /// retrait de lui-même.
+    private func offerSagaIfAny(for card: SwipeCard, direction: SwipeDirection) {
+        guard case .right = direction else { return }
+        guard card.hasSagaToOffer, !tour.isRunning,
+              let collectionID = card.collectionID,
+              !offeredSagas.contains(collectionID),
+              // Un palier occupe déjà l'écran : deux planches l'une sur
+              // l'autre ne se lisent pas, et la saga passe son tour.
+              model.celebratedMilestone == nil else { return }
+
+        offeredSagas.insert(collectionID)
+        sagaOffer = SagaOffer(
+            collectionID: collectionID,
+            tmdbID: card.tmdbId,
+            title: card.title
+        )
     }
 
     /// Le retour arrière. La carte rentre par le bord d'où elle est sortie : sans

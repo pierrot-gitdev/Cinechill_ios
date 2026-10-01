@@ -33,6 +33,11 @@ struct ItemDetailView: View {
     @State private var errorMessage: String?
     @State private var showComposer = false
     @State private var outcome: SuggestionOutcome?
+    /// La saga proposée après un « Vu », s'il y en a une. Elle ne se propose
+    /// qu'une fois par visite de la fiche : on ne la repose pas à chaque
+    /// aller-retour sur le bouton.
+    @State private var sagaOffer: SagaOffer?
+    @State private var hasOfferedSaga = false
     /// Position du haut du contenu par rapport au haut de l'écran. Sert au seul
     /// mouvement de l'écran : la matérialisation du plafond.
     @State private var scrollOffset: CGFloat = 0
@@ -73,6 +78,18 @@ struct ItemDetailView: View {
                 withAnimation(.easeOut(duration: 0.25)) { outcome = result }
             }
             .environmentObject(socialStore)
+        }
+        // La fiche est le second endroit où un « vu » peut ouvrir une saga, et
+        // c'est le même composant qu'au deck : ranger un film n'a pas deux
+        // suites possibles selon l'écran d'où on l'a rangé.
+        .sheet(item: $sagaOffer) { offer in
+            SagaSheet(
+                collectionID: offer.collectionID,
+                originTmdbID: offer.tmdbID,
+                originTitle: offer.title,
+                onClose: { sagaOffer = nil }
+            )
+            .environmentObject(libraryStore)
         }
         .task { await loadDetail() }
         // Ouvrir une fiche est le meilleur signe qu'un « Vu » approche. Le réveil de
@@ -712,9 +729,25 @@ struct ItemDetailView: View {
                 collectionID: detail?.collectionID,
                 collectionTotal: detail?.collectionCount
             )
+            offerSagaIfAny()
         } else {
             libraryStore.addToWatchlist(displayItem)
         }
+    }
+
+    /// « Tu l'as vu. Et le reste de la saga ? » La question ne se pose qu'une
+    /// fois, et seulement si la saga compte au moins deux autres opus — sans
+    /// quoi la feuille s'ouvrirait pour ne rien proposer.
+    private func offerSagaIfAny() {
+        guard !hasOfferedSaga,
+              let collectionID = detail?.collectionID,
+              (detail?.collectionCount ?? 0) >= 2 else { return }
+        hasOfferedSaga = true
+        sagaOffer = SagaOffer(
+            collectionID: collectionID,
+            tmdbID: displayItem.tmdbId,
+            title: displayItem.title
+        )
     }
 
     // MARK: - Confirmation

@@ -1567,6 +1567,38 @@
         }
       }
     },
+    "Ajouter %lld films" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add %lld movies"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter %lld films"
+          }
+        }
+      }
+    },
+    "Ajouter 1 film" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add 1 movie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter 1 film"
+          }
+        }
+      }
+    },
     "Ajouter à ma galerie" : {
       "localizations" : {
         "en" : {
@@ -3151,6 +3183,22 @@
         }
       }
     },
+    "Coché" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ticked"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coché"
+          }
+        }
+      }
+    },
     "Coche celles que tu as : on ne te proposera que des films disponibles dessus." : {
       "localizations" : {
         "en" : {
@@ -3825,6 +3873,22 @@
         }
       }
     },
+    "Déjà dans ta galerie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already in your gallery"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déjà dans ta galerie"
+          }
+        }
+      }
+    },
     "Déjà recommandé" : {
       "localizations" : {
         "en" : {
@@ -4237,6 +4301,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Elle change aussi la langue des titres, résumés et genres."
+          }
+        }
+      }
+    },
+    "Elle est entière dans ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's complete in your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elle est entière dans ta galerie."
           }
         }
       }
@@ -6065,6 +6145,22 @@
         }
       }
     },
+    "J'ai vu les %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I've seen all %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai vu les %lld"
+          }
+        }
+      }
+    },
     "Jamais de…" : {
       "localizations" : {
         "en" : {
@@ -6129,6 +6225,22 @@
         }
       }
     },
+    "Je l'ai vu aussi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I've seen it too"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je l'ai vu aussi"
+          }
+        }
+      }
+    },
     "Je le regarde" : {
       "localizations" : {
         "en" : {
@@ -6157,6 +6269,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Je n'ai aucune plateforme"
+          }
+        }
+      }
+    },
+    "Je n'en ai vu aucun" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I haven't seen any of them"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'en ai vu aucun"
           }
         }
       }
@@ -6429,6 +6557,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La réinitialisation a échoué. Réessaie dans un instant."
+          }
+        }
+      }
+    },
+    "La saga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The saga"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La saga"
+          }
+        }
+      }
+    },
+    "La saga n'est pas venue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The saga didn't come through"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La saga n'est pas venue"
           }
         }
       }
@@ -7837,6 +7997,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On évitera les films qui risquent de te faire ça."
+          }
+        }
+      }
+    },
+    "On n'a pas réussi à charger la saga." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't load the saga."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On n'a pas réussi à charger la saga."
           }
         }
       }
@@ -11749,6 +11925,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu as envie de quoi ce soir ?"
+          }
+        }
+      }
+    },
+    "Tu as toute la saga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have the whole saga"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu as toute la saga"
+          }
+        }
+      }
+    },
+    "Tu as vu « %@ ». Coche ceux que tu as vus aussi, ils entrent dans ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've seen “%@”. Tick the ones you've seen too, they'll join your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu as vu « %@ ». Coche ceux que tu as vus aussi, ils entrent dans ta galerie."
           }
         }
       }

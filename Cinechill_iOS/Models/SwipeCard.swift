@@ -26,8 +26,48 @@ nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
     let genreIds: [Int]
     let releaseDate: String?
     let source: String?
+    /// La saga du film, quand le serveur la connaît. C'est elle qui déclenche
+    /// la feuille de saga après un « vu » : voir `SagaSheet`.
+    let collectionID: Int?
+    /// Le nombre d'opus de cette saga. En dessous de deux, il n'y a rien à
+    /// proposer, et la feuille ne s'ouvre pas.
+    let collectionCount: Int?
+
+    /// Explicite, et non synthétisé : les deux champs de saga sont arrivés
+    /// après les autres, et leur valeur par défaut évite de reprendre les cinq
+    /// endroits qui fabriquent une carte sans jamais connaître de saga.
+    init(
+        tmdbId: Int,
+        title: String,
+        posterPath: String?,
+        overview: String?,
+        voteAverage: Double?,
+        voteCount: Int?,
+        genreIds: [Int],
+        releaseDate: String?,
+        source: String?,
+        collectionID: Int? = nil,
+        collectionCount: Int? = nil
+    ) {
+        self.tmdbId = tmdbId
+        self.title = title
+        self.posterPath = posterPath
+        self.overview = overview
+        self.voteAverage = voteAverage
+        self.voteCount = voteCount
+        self.genreIds = genreIds
+        self.releaseDate = releaseDate
+        self.source = source
+        self.collectionID = collectionID
+        self.collectionCount = collectionCount
+    }
 
     var id: Int { tmdbId }
+
+    /// Y a-t-il une saga à proposer derrière ce film ?
+    var hasSagaToOffer: Bool {
+        collectionID != nil && (collectionCount ?? 0) >= 2
+    }
 
     var mediaItem: MediaItem {
         MediaItem(

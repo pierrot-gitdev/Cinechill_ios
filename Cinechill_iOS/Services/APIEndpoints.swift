@@ -23,6 +23,14 @@ enum APIEndpoints {
         ])
     }
 
+    /// Les opus d'une saga, pour la feuille qui propose d'ajouter les autres.
+    static func collection(id: Int) -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getcollection", queryItems: [
+            URLQueryItem(name: "id", value: String(id)),
+        ])
+    }
+
     static func movieGenres() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "getmoviegenres", queryItems: [])
