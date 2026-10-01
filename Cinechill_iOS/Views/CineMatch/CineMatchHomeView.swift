@@ -24,6 +24,10 @@ struct CineMatchHomeView: View {
     /// `false` dans la vignette de la prise en main : réduit, le bandeau ne se
     /// lit plus et encombre le haut de la pièce. La télé monte à sa place.
     var showsScenario = true
+    /// L'interrupteur Films · Séries sous l'en-tête, absent de la prise en main.
+    var showsFormatSwitch = true
+
+    private var isSeries: Bool { viewModel.format == .series }
 
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(MediaCatalog.self) private var catalog
@@ -33,10 +37,13 @@ struct CineMatchHomeView: View {
     fileprivate enum Entry: CaseIterable {
         case guided, daily
 
-        var title: String {
-            switch self {
-            case .guided: String(localized: "Trouver mon film", bundle: .app)
-            case .daily: String(localized: "La proposition du jour", bundle: .app)
+        /// Le verbe dit l'enjeu : une série, on la commence.
+        func title(series: Bool) -> String {
+            switch (self, series) {
+            case (.guided, false): String(localized: "Trouver mon film", bundle: .app)
+            case (.daily, false): String(localized: "La proposition du jour", bundle: .app)
+            case (.guided, true): String(localized: "Trouver ma prochaine série", bundle: .app)
+            case (.daily, true): String(localized: "La série du jour", bundle: .app)
             }
         }
     }
@@ -100,10 +107,17 @@ struct CineMatchHomeView: View {
         // bord de la zone sûre. Le bas, lui, s'arrête sur la barre d'onglets.
         .ignoresSafeArea(edges: .top)
         .overlay(alignment: .top) {
-            AppHeaderView(
-                title: String(localized: "CinéMatch", bundle: .app),
-                onProfileTap: onProfileTap
-            )
+            VStack(alignment: .leading, spacing: 0) {
+                AppHeaderView(
+                    title: String(localized: "CinéMatch", bundle: .app),
+                    onProfileTap: onProfileTap
+                )
+                if showsFormatSwitch {
+                    FormatSwitch(isEnabled: pendingEntry == nil)
+                        .padding(.horizontal, Metrics.margin)
+                        .padding(.bottom, 6)
+                }
+            }
             .onGeometryChange(for: CGFloat.self) { geometry in
                 geometry.frame(in: .named(Self.space)).maxY
             } action: { bottom in
@@ -158,8 +172,8 @@ struct CineMatchHomeView: View {
                     scenarioColumn(String(localized: "Avec qui", bundle: .app), width: columnWidth, showsRule: true) {
                         scenarioValue(viewModel.situation.company.scenarioLabel)
                     }
-                    scenarioColumn(String(localized: "Durée", bundle: .app), width: columnWidth, showsRule: true) {
-                        scenarioValue(viewModel.situation.duration.scenarioLabel)
+                    scenarioColumn(durationColumnTitle, width: columnWidth, showsRule: true) {
+                        scenarioValue(viewModel.situation.duration.scenarioLabel(series: isSeries))
                     }
                     scenarioColumn(String(localized: "Plateformes", bundle: .app), width: columnWidth, showsRule: false) {
                         platformsValue
@@ -178,6 +192,13 @@ struct CineMatchHomeView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(scenarioAccessibilityLabel)
         .accessibilityAddTraits(.isButton)
+    }
+
+    /// La durée d'un film, ou celle d'un épisode.
+    private var durationColumnTitle: String {
+        isSeries
+            ? String(localized: "Par épisode", bundle: .app)
+            : String(localized: "Durée", bundle: .app)
     }
 
     private func scenarioColumn<Value: View>(
@@ -257,7 +278,13 @@ struct CineMatchHomeView: View {
             ? String(localized: "Aucune", bundle: .app)
             : names.joined(separator: ", ")
         let company = viewModel.situation.company.scenarioLabel
-        let duration = viewModel.situation.duration.scenarioLabel
+        let duration = viewModel.situation.duration.scenarioLabel(series: isSeries)
+        if isSeries {
+            return String(
+                localized: "Modifier ta soirée. Avec qui : \(company). Par épisode : \(duration). Plateformes : \(platforms).",
+                bundle: .app
+            )
+        }
         return String(
             localized: "Modifier ta soirée. Avec qui : \(company). Durée : \(duration). Plateformes : \(platforms).",
             bundle: .app
@@ -272,7 +299,7 @@ struct CineMatchHomeView: View {
         let menu = room.menu
 
         return VStack(spacing: menu.headGap) {
-            Text("Ta soirée Cinechill", bundle: .app)
+            eyebrow
                 .font(.system(size: menu.eyebrowSize, weight: .semibold))
                 .tracking(menu.eyebrowSize * 0.16)
                 .textCase(.uppercase)
@@ -294,6 +321,17 @@ struct CineMatchHomeView: View {
         .animation(Metrics.shift, value: focusedEntry)
     }
 
+    /// Le sur-titre de la télé. Côté séries, il dit ce qu'on vient faire : on
+    /// ne choisit pas une soirée, on commence quelque chose.
+    @ViewBuilder
+    private var eyebrow: some View {
+        if isSeries {
+            Text("Ce soir, on commence", bundle: .app)
+        } else {
+            Text("Ta soirée Cinechill", bundle: .app)
+        }
+    }
+
     /// Une ligne du menu. Sélectionnée ou non, **elle garde sa largeur** : ni
     /// agrandissement ni anneau, seul le fond passe au papier et le chevron
     /// apparaît. Un toucher choisit tout de suite.
@@ -305,7 +343,7 @@ struct CineMatchHomeView: View {
             choose(entry)
         } label: {
             HStack(spacing: 10) {
-                Text(entry.title)
+                Text(entry.title(series: isSeries))
                     .font(.system(size: menu.fontSize, weight: isOn ? .semibold : .medium))
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
@@ -337,7 +375,7 @@ struct CineMatchHomeView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(EntryPressStyle(onPress: { focusedEntry = entry }))
-        .accessibilityLabel(entry.title)
+        .accessibilityLabel(entry.title(series: isSeries))
         .accessibilityAddTraits(isOn ? .isSelected : [])
         .accessibilityAddTraits(isLoading ? .updatesFrequently : [])
     }
@@ -609,6 +647,9 @@ struct SalonPainter {
     /// l'accueil ; dans la porte, l'embrasure peut être plus large que le
     /// salon réduit, et le décor la remplit sans raccord.
     var bleed: CGFloat = 0
+    /// Le menu peint est celui des séries : la porte des séries découvre
+    /// l'accueil des séries.
+    var series = false
 
     private func px(_ v: CGFloat) -> CGFloat { max(1, (v * room.scale).rounded()) }
 
@@ -768,7 +809,9 @@ struct SalonPainter {
         let midX = room.screenLeft + room.screenWidth / 2
         var y = room.screenTop + (room.screenHeight - block) / 2
 
-        let eyebrow = String(localized: "Ta soirée Cinechill", bundle: .app).uppercased()
+        let eyebrow = (series
+            ? String(localized: "Ce soir, on commence", bundle: .app)
+            : String(localized: "Ta soirée Cinechill", bundle: .app)).uppercased()
         context.draw(
             Text(verbatim: eyebrow)
                 .font(.system(size: menu.eyebrowSize, weight: .semibold))
@@ -794,7 +837,7 @@ struct SalonPainter {
                 )
             }
             context.draw(
-                Text(verbatim: entry.title)
+                Text(verbatim: entry.title(series: series))
                     .font(.system(size: menu.fontSize, weight: isOn ? .semibold : .medium))
                     .foregroundStyle(isOn ? Ink.ground : ink.opacity(0.8)),
                 at: CGPoint(x: row.minX + menu.rowPaddingH, y: row.midY),

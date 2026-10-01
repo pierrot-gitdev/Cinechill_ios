@@ -15,6 +15,10 @@ import SwiftUI
 /// Passé le seuil, l'écran n'a plus de décor commun : chaque étape porte le sien
 /// (le salon à l'accueil, une page plate pour les questions, la planche des
 /// cinq). Le conteneur ne fait qu'aiguiller sur `viewModel.step`.
+///
+/// L'interrupteur Films · Séries est celui de Découvrir : le même réglage, lu
+/// ici. Chaque format a sa Porte, et la franchir pour l'un ne l'ouvre pas pour
+/// l'autre.
 struct CineMatchView: View {
     let viewModel: CineMatchViewModel
     /// L'onglet courant : la porte envoie vers Découvrir, là où la galerie se
@@ -30,13 +34,27 @@ struct CineMatchView: View {
     @Environment(MediaCatalog.self) private var catalog
     @Environment(OnboardingTour.self) private var tour
 
+    @AppStorage(MediaFormat.storageKey) private var formatRaw = MediaFormat.film.rawValue
+
     @State private var showProfile = false
     @State private var showLovePicker = false
     @State private var showDoorComparison = false
-    /// Le seuil a été franchi **dans cette ouverture de l'app**. Volontairement
-    /// un état de session et non une préférence gardée : la cérémonie se rejoue
-    /// à chaque lancement, elle ne se consomme pas une fois pour toutes.
-    @State private var hasCrossedThreshold = false
+    /// Les formats dont le seuil a été franchi **dans cette ouverture de
+    /// l'app**. Volontairement un état de session et non une préférence
+    /// gardée : la cérémonie se rejoue à chaque lancement, elle ne se consomme
+    /// pas une fois pour toutes. Un par format : avoir franchi la Porte des
+    /// films ne dispense pas de voir s'ouvrir celle des séries.
+    @State private var crossedFormats: Set<MediaFormat> = []
+
+    private var format: MediaFormat { MediaFormat(rawValue: formatRaw) ?? .film }
+
+    /// La Porte du format courant.
+    private var door: DoorState { doorStore.door(for: format) }
+
+    /// Les cœurs comptés par la Porte affichée : des films, ou des saisons.
+    private var lovedCount: Int {
+        format == .series ? libraryStore.lovedSeasonCount : libraryStore.lovedCount
+    }
 
     var body: some View {
         NavigationStack {
@@ -54,13 +72,14 @@ struct CineMatchView: View {
             }
             .sheet(isPresented: $showLovePicker) {
                 LovePickerView(
-                    target: doorStore.door.artifact(.coeur)?.target ?? 12,
+                    target: door.artifact(.coeur)?.target ?? (format == .series ? 4 : 12),
+                    format: format,
                     onClose: { showLovePicker = false }
                 )
                 .environmentObject(libraryStore)
             }
             .fullScreenCover(isPresented: $showDoorComparison) {
-                CineMatchDoorComparisonView(onClose: { showDoorComparison = false })
+                CineMatchDoorComparisonView(format: format, onClose: { showDoorComparison = false })
                     .environmentObject(libraryStore)
                     .environment(doorStore)
                     .environment(catalog)
@@ -90,7 +109,15 @@ struct CineMatchView: View {
         .onChange(of: libraryStore.preferredPlatformIDs) { _, _ in
             syncPlatforms()
         }
-        .task { syncPlatforms() }
+        // L'interrupteur a pu basculer ici ou dans Découvrir : le parcours
+        // repart sur l'autre profil.
+        .onChange(of: formatRaw) { _, _ in
+            viewModel.setFormat(format)
+        }
+        .task {
+            viewModel.setFormat(format)
+            syncPlatforms()
+        }
     }
 
     @ViewBuilder
@@ -100,7 +127,7 @@ struct CineMatchView: View {
         // la trouve. Tout reste inerte : la visite montre, elle ne sert pas.
         switch tour.step {
         case .cinematch?:
-            CineMatchHomeView(viewModel: viewModel, onProfileTap: {}, showsScenario: false)
+            CineMatchHomeView(viewModel: viewModel, onProfileTap: {}, showsScenario: false, showsFormatSwitch: false)
                 .transition(.opacity)
         case .porte?:
             CineMatchGateView(
@@ -111,7 +138,8 @@ struct CineMatchView: View {
                 onDiscover: {},
                 onLovePicker: {},
                 onCompare: {},
-                onEnter: {}
+                onEnter: {},
+                showsFormatSwitch: false
             )
             .transition(.opacity)
         default:
@@ -132,20 +160,25 @@ struct CineMatchView: View {
         // une dernière fois pour l'ouverture : le seuil ne se franchit qu'en la
         // voyant céder. Elle ne peut s'interposer qu'à l'accueil, jamais au
         // milieu d'une recherche.
-        if viewModel.step == .home && (!doorStore.door.unlocked || !hasCrossedThreshold) {
+        if viewModel.step == .home && (!door.unlocked || !crossedFormats.contains(format)) {
             CineMatchGateView(
-                door: doorStore.door,
+                door: door,
                 isMeasured: doorStore.hasMeasured,
-                lovedCount: libraryStore.lovedCount,
+                lovedCount: lovedCount,
                 onProfileTap: { showProfile = true },
                 onDiscover: { selectedTab = 2 },
                 onLovePicker: { showLovePicker = true },
                 onCompare: { showDoorComparison = true },
                 onEnter: {
-                    withAnimation(.easeOut(duration: 0.45)) { hasCrossedThreshold = true }
+                    let crossed = format
+                    withAnimation(.easeOut(duration: 0.45)) { _ = crossedFormats.insert(crossed) }
                 },
                 isCelebrating: doorStore.celebration != nil
             )
+            // Une Porte par format : basculer remonte l'écran, pour que la
+            // cérémonie de l'autre Porte parte de zéro et non de l'état de
+            // celle qu'on quitte.
+            .id(format)
             // Le raccord : le travelling finit dans l'accueil au lieu de le
             // laisser apparaître d'un coup.
             .transition(.opacity)

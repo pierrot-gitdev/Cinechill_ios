@@ -58,6 +58,9 @@ struct CineMatchGateView: View {
     /// Une célébration d'artéfact occupe l'écran : la porte attend son tour
     /// plutôt que de jouer son ouverture derrière une planche.
     var isCelebrating = false
+    /// L'interrupteur Films · Séries sous l'en-tête. Absent de la prise en
+    /// main, qui montre la porte sans la servir.
+    var showsFormatSwitch = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var detailArtifact: DoorArtifactKey?
@@ -94,10 +97,20 @@ struct CineMatchGateView: View {
             if !door.unlocked { content }
         }
         .overlay(alignment: .top) {
-            AppHeaderView(
-                title: String(localized: "CinéMatch", bundle: .app),
-                onProfileTap: onProfileTap
-            )
+            // L'interrupteur fait partie de l'en-tête : le bas mesuré est le
+            // sien, comme dans l'accueil, pour que le travelling y finisse.
+            VStack(alignment: .leading, spacing: 0) {
+                AppHeaderView(
+                    title: String(localized: "CinéMatch", bundle: .app),
+                    onProfileTap: onProfileTap
+                )
+                if showsFormatSwitch {
+                    FormatSwitch(isEnabled: !isOpening)
+                        .padding(.horizontal, Metrics.margin)
+                        .padding(.bottom, 6)
+                        .opacity(1 - openProgress)
+                }
+            }
             .onGeometryChange(for: CGFloat.self) { geometry in
                 geometry.frame(in: .global).maxY
             } action: { bottom in
@@ -580,7 +593,8 @@ private struct DoorCanvas: View, Animatable {
                     let painter = SalonPainter(
                         context: layer,
                         room: entry.room,
-                        bleed: entry.room.width + entry.room.height
+                        bleed: entry.room.width + entry.room.height,
+                        series: door.series
                     )
                     painter.paint()
                     painter.paintMenuStill()

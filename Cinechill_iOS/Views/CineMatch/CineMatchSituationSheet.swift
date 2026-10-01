@@ -24,6 +24,8 @@ struct CineMatchSituationSheet: View {
     @State private var contentHeight: CGFloat = 480
     @State private var bottomInset: CGFloat = 0
 
+    private var isSeries: Bool { viewModel.format == .series }
+
     private var platformSelection: Binding<Set<String>> {
         Binding(
             get: { libraryStore.preferredPlatformIDs },
@@ -42,7 +44,9 @@ struct CineMatchSituationSheet: View {
                     .foregroundStyle(Ink.ink)
                     .accessibilityAddTraits(.isHeader)
 
-                question(String(localized: "Avec qui comptes-tu regarder le film ?", bundle: .app))
+                question(isSeries
+                    ? String(localized: "Avec qui comptes-tu regarder la série ?", bundle: .app)
+                    : String(localized: "Avec qui comptes-tu regarder le film ?", bundle: .app))
                     .padding(.top, 18)
 
                 FlowLayout(spacing: 6) {
@@ -58,13 +62,15 @@ struct CineMatchSituationSheet: View {
                 }
                 .padding(.top, 9)
 
-                question(String(localized: "Quelle durée pour le film ?", bundle: .app))
+                question(isSeries
+                    ? String(localized: "Quelle durée pour un épisode ?", bundle: .app)
+                    : String(localized: "Quelle durée pour le film ?", bundle: .app))
                     .padding(.top, 16)
 
                 FlowLayout(spacing: 6) {
                     ForEach(CineMatchDuration.allCases, id: \.self) { duration in
                         PlanChip(
-                            title: duration.scenarioLabel,
+                            title: duration.scenarioLabel(series: isSeries),
                             isOn: viewModel.situation.duration == duration
                         ) {
                             Haptics.selection()
@@ -159,12 +165,18 @@ extension CineMatchCompany {
 
 extension CineMatchDuration {
     /// Le libellé de la puce, repris mot pour mot dans le bandeau de l'accueil.
-    var scenarioLabel: String {
-        switch self {
-        case .short: String(localized: "< 1h30", bundle: .app)
-        case .medium: String(localized: "1h30 – 2h", bundle: .app)
-        case .long: String(localized: "2h +", bundle: .app)
-        case .any: String(localized: "Peu importe", bundle: .app)
+    /// Côté séries, la durée est celle d'un épisode, sur les paliers du
+    /// serveur : moins d'une demi-heure, entre une demi-heure et une heure,
+    /// une heure et plus.
+    func scenarioLabel(series: Bool) -> String {
+        switch (self, series) {
+        case (.short, false): String(localized: "< 1h30", bundle: .app)
+        case (.medium, false): String(localized: "1h30 – 2h", bundle: .app)
+        case (.long, false): String(localized: "2h +", bundle: .app)
+        case (.short, true): String(localized: "< 30 min", bundle: .app)
+        case (.medium, true): String(localized: "30 min – 1h", bundle: .app)
+        case (.long, true): String(localized: "1h +", bundle: .app)
+        case (.any, _): String(localized: "Peu importe", bundle: .app)
         }
     }
 }
