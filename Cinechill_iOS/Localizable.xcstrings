@@ -116,6 +116,22 @@
         }
       }
     },
+    "%lld comparaisons entre des séries que tu as vues" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld comparisons between series you've watched"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld comparaisons entre des séries que tu as vues"
+          }
+        }
+      }
+    },
     "%lld coups de cœur dans ta galerie" : {
       "localizations" : {
         "en" : {
@@ -224,6 +240,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld saisons"
+          }
+        }
+      }
+    },
+    "%lld saisons dans ta watchlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld seasons in your watchlist"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld saisons dans ta watchlist"
+          }
+        }
+      }
+    },
+    "%lld saisons en coup de cœur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld seasons you loved"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld saisons en coup de cœur"
+          }
+        }
+      }
+    },
+    "%lld séries dans ta galerie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld series in your gallery"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld séries dans ta galerie"
+          }
+        }
+      }
+    },
+    "%lld sur %lld films" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld movies"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sur %lld films"
+          }
+        }
+      }
+    },
+    "%lld sur %lld séries" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld series"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sur %lld séries"
           }
         }
       }
@@ -1711,6 +1807,22 @@
         }
       }
     },
+    "Ajoute d'abord %lld séries à ta galerie pour pouvoir comparer." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First add %lld series to your gallery to compare."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute d'abord %lld séries à ta galerie pour pouvoir comparer."
+          }
+        }
+      }
+    },
     "Ajouter %lld films" : {
       "localizations" : {
         "en" : {
@@ -2783,6 +2895,22 @@
         }
       }
     },
+    "Celles que tu ne coches pas restent comme elles sont." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The ones you don't tick stay as they are."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Celles que tu ne coches pas restent comme elles sont."
+          }
+        }
+      }
+    },
     "Ces conclusions viennent de %@, et de tes réponses. Si l'une d'elles est fausse, déplace le curseur : c'est toi qui auras raison." : {
       "localizations" : {
         "en" : {
@@ -2923,6 +3051,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ceux que tu as dit ne pas avoir vus"
+          }
+        }
+      }
+    },
+    "Ceux que tu ne coches pas restent comme ils sont." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The ones you don't tick stay as they are."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ceux que tu ne coches pas restent comme ils sont."
           }
         }
       }
@@ -3311,6 +3455,22 @@
         }
       }
     },
+    "CinéMatch des séries est débloqué" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CinéMatch for series is unlocked"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CinéMatch des séries est débloqué"
+          }
+        }
+      }
+    },
     "CinéMatch est débloqué" : {
       "localizations" : {
         "en" : {
@@ -3419,6 +3579,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Comment ça marche"
+          }
+        }
+      }
+    },
+    "Comparer mes séries" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare my series"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comparer mes séries"
           }
         }
       }
@@ -4049,6 +4225,22 @@
         }
       }
     },
+    "Découvrir des séries" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discover series"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Découvrir des séries"
+          }
+        }
+      }
+    },
     "Déjà dans ta galerie" : {
       "localizations" : {
         "en" : {
@@ -4285,6 +4477,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Des questions sans réponse"
+          }
+        }
+      }
+    },
+    "Des séries de %lld genres différents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Series from %lld different genres"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des séries de %lld genres différents"
           }
         }
       }
@@ -4589,6 +4797,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "En comparant des films que tu as vus, tu nous montres ce que tu préfères."
+          }
+        }
+      }
+    },
+    "En comparant des séries que tu as vues, tu nous montres ce que tu préfères." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By comparing series you've watched, you show us what you prefer."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En comparant des séries que tu as vues, tu nous montres ce que tu préfères."
           }
         }
       }
@@ -6193,6 +6417,22 @@
         }
       }
     },
+    "Impossible de charger les séries" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load the series"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de charger les séries"
+          }
+        }
+      }
+    },
     "Impossible de lire la réponse backend détail. %@" : {
       "localizations" : {
         "en" : {
@@ -6865,34 +7105,34 @@
         }
       }
     },
-    "La saga n'est pas venue" : {
+    "La saga n'a pas pu se charger" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The saga didn't come through"
+            "value" : "The saga couldn't load"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La saga n'est pas venue"
+            "value" : "La saga n'a pas pu se charger"
           }
         }
       }
     },
-    "La série n'est pas venue" : {
+    "La série n'a pas pu se charger" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The series didn't come through"
+            "value" : "The series couldn't load"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La série n'est pas venue"
+            "value" : "La série n'a pas pu se charger"
           }
         }
       }
@@ -7581,6 +7821,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les sensations fortes"
+          }
+        }
+      }
+    },
+    "Les séries que tu as passées reviendront plus tard." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The series you skipped will come back later."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les séries que tu as passées reviendront plus tard."
           }
         }
       }
@@ -8481,6 +8737,22 @@
         }
       }
     },
+    "On pourra aussi te proposer des séries de ta watchlist." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We'll also be able to suggest series from your watchlist."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On pourra aussi te proposer des séries de ta watchlist."
+          }
+        }
+      }
+    },
     "On prépare ta sélection…" : {
       "localizations" : {
         "en" : {
@@ -9073,6 +9345,22 @@
         }
       }
     },
+    "Plus de séries pour l'instant" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No more series for now"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus de séries pour l'instant"
+          }
+        }
+      }
+    },
     "Plus ta galerie grandit, plus les suggestions sont justes." : {
       "localizations" : {
         "en" : {
@@ -9117,6 +9405,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plus tu ajoutes de films que tu as vus, mieux on connaît tes goûts."
+          }
+        }
+      }
+    },
+    "Plus tu ajoutes de séries que tu as vues, mieux on connaît tes goûts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The more series you've watched you add, the better we know your taste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus tu ajoutes de séries que tu as vues, mieux on connaît tes goûts."
           }
         }
       }
@@ -9357,6 +9661,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pour débloquer CinéMatch"
+          }
+        }
+      }
+    },
+    "Pour débloquer CinéMatch des séries" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To unlock CinéMatch for series"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour débloquer CinéMatch des séries"
+          }
+        }
+      }
+    },
+    "pour ouvrir CinéMatch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "to open CinéMatch"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pour ouvrir CinéMatch"
           }
         }
       }
@@ -11161,6 +11497,22 @@
         }
       }
     },
+    "Séries vues" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Series watched"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Séries vues"
+          }
+        }
+      }
+    },
     "Ses goûts" : {
       "localizations" : {
         "en" : {
@@ -11813,6 +12165,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tes préférences"
+          }
+        }
+      }
+    },
+    "Tes saisons préférées nous aident à trouver des séries qui vont te plaire." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your favorite seasons help us find series you'll like."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes saisons préférées nous aident à trouver des séries qui vont te plaire."
           }
         }
       }
