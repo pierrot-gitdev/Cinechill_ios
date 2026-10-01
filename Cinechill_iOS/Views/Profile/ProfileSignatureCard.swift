@@ -20,7 +20,8 @@ struct ProfileSignatureCard: View {
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
 
-    private var galleryCount: Int { libraryStore.galleryItems.count }
+    /// Des films : la distinction et le compte du profil sont ceux de la Porte.
+    private var galleryCount: Int { libraryStore.galleryFilms.count }
     private var distinction: Distinction { .distinction(for: galleryCount) }
 
     private var displayedBadge: Badge? {

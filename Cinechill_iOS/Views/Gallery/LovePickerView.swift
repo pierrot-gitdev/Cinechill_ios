@@ -35,7 +35,9 @@ struct LovePickerView: View {
                     columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4),
                     spacing: 10
                 ) {
-                    ForEach(libraryStore.galleryItems) { entry in
+                    // Les films seuls : le Cœur est un artéfact de la Porte,
+                    // et la Porte ne compte que des films.
+                    ForEach(libraryStore.galleryFilms) { entry in
                         tile(entry)
                     }
                 }

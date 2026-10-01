@@ -226,12 +226,12 @@ struct SettingsView: View {
             }
 
             HStack(spacing: 10) {
-                Text(String(localized: "\(distinction.label) · \(libraryStore.galleryItems.count) films", bundle: .app))
+                Text(String(localized: "\(distinction.label) · \(libraryStore.galleryFilms.count) films", bundle: .app))
                     .planLabel()
                     .foregroundStyle(Ink.ink2)
                     .fixedSize()
 
-                PlanProgressRule(fraction: distinction.progress(count: libraryStore.galleryItems.count))
+                PlanProgressRule(fraction: distinction.progress(count: libraryStore.galleryFilms.count))
             }
             .padding(.top, 18)
 
@@ -243,7 +243,7 @@ struct SettingsView: View {
         }
     }
 
-    private var distinction: Distinction { .distinction(for: libraryStore.galleryItems.count) }
+    private var distinction: Distinction { .distinction(for: libraryStore.galleryFilms.count) }
 
     @ViewBuilder
     private var avatar: some View {

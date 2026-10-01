@@ -26,6 +26,9 @@ struct ProfileView: View {
     @State private var showSearch = false
     @State private var showHandleSheet = false
 
+    /// Le même total que la galerie, films et saisons : « Vus » ne prétend pas
+    /// compter des films. Seule la distinction, juste au-dessus, compte des
+    /// films — c'est un palier de la Porte.
     private var galleryCount: Int { libraryStore.galleryItems.count }
 
     var body: some View {

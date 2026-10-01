@@ -147,13 +147,15 @@ struct MainTabView: View {
         // 0 → N initial se ferait passer pour une avalanche de déblocages.
         .onChange(of: libraryStore.hasLoadedGalleryOnce) { _, loaded in
             if loaded {
-                Task { await badgesModel.checkForNewAchievements(galleryCount: libraryStore.galleryItems.count) }
+                Task { await badgesModel.checkForNewAchievements(galleryCount: libraryStore.galleryFilms.count) }
                 Task { await startTourIfNeeded() }
             } else {
                 badgesModel.resetAchievementTracking()
             }
         }
-        .onChange(of: libraryStore.galleryItems.count) { _, newCount in
+        // Les badges comptent des films : une saison rangée ne doit pas faire
+        // croire à un palier franchi.
+        .onChange(of: libraryStore.galleryFilms.count) { _, newCount in
             guard libraryStore.hasLoadedGalleryOnce else { return }
             Task { await badgesModel.checkForNewAchievements(galleryCount: newCount) }
         }
@@ -195,8 +197,10 @@ struct MainTabView: View {
 
     /// Ce qui, dans la bibliothèque, peut faire bouger un artéfact.
     private var doorSignature: String {
-        let gallery = libraryStore.galleryItems.count
-        let watchlist = libraryStore.watchlistItems.count
+        // La Porte ne compte que des films : une saison qui entre ou sort ne
+        // la fait pas remesurer.
+        let gallery = libraryStore.galleryFilms.count
+        let watchlist = libraryStore.watchlistFilms.count
         return "\(gallery)-\(libraryStore.lovedCount)-\(watchlist)"
     }
 
@@ -204,8 +208,8 @@ struct MainTabView: View {
 
     private func startTourIfNeeded() async {
         await tour.startIfNeeded(
-            galleryCount: libraryStore.galleryItems.count,
-            watchlistCount: libraryStore.watchlistItems.count
+            galleryCount: libraryStore.galleryFilms.count,
+            watchlistCount: libraryStore.watchlistFilms.count
         )
     }
 
