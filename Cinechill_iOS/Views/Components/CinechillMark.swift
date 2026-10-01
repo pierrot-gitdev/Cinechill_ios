@@ -172,8 +172,21 @@ struct CinechillBeamShape: Shape {
 
 // MARK: - Palette
 
+/// Vit ici, et non plus dans `Distinction.swift`, parce que ce fichier est
+/// aussi membre de l'extension `CinechillWidgets` : l'activité en direct dessine
+/// la signature, et l'extension ne doit rien tirer d'autre de l'app.
+nonisolated extension Color {
+    init(hex: UInt) {
+        self.init(
+            red: Double((hex >> 16) & 0xFF) / 255,
+            green: Double((hex >> 8) & 0xFF) / 255,
+            blue: Double(hex & 0xFF) / 255
+        )
+    }
+}
+
 /// Les valeurs de la finition « Étain », identiques au SVG de référence et aux PNG de l'icône.
-/// L'initialiseur `Color(hex:)` vient de `Distinction.swift` — un seul dans le projet.
+/// L'initialiseur `Color(hex:)` est défini plus bas, un seul dans le projet.
 enum CinechillPalette {
     /// La nuit de l'application, et le sol de la salle du logo.
     ///
