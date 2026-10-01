@@ -157,3 +157,29 @@ struct PosterCell: View {
         }
     }
 }
+
+/// La plaque de nuit posée en bas d'une affiche de série.
+///
+/// Elle dit ce qu'on sait — « 3 saisons », « Saison 2 » — et jamais ce que
+/// c'est : on n'écrit pas « série », le compte le dit et il est plus utile que
+/// l'étiquette. C'est le dessin du bandeau d'ancienneté des films en salle.
+struct PosterPlate: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 9, weight: .semibold))
+            .tracking(1.2)
+            .textCase(.uppercase)
+            .monospacedDigit()
+            .foregroundStyle(Ink.ink)
+            .lineLimit(1)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(
+                Ink.ground.opacity(0.86),
+                in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+            )
+            .padding(5)
+    }
+}

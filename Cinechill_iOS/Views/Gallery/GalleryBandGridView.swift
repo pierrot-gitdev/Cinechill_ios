@@ -22,14 +22,23 @@ struct GalleryBandGridView: View {
     var body: some View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 14) {
-                ForEach(band.entries) { entry in
-                    NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
-                        PosterCell(
-                            posterPath: entry.posterPath,
-                            title: entry.title
-                        )
+                // Les tuiles de la frise, pas ses entrées : trois saisons de la
+                // même série restent une affiche, ici comme dans la bande.
+                ForEach(band.tiles) { tile in
+                    if let destination = tile.destination {
+                        NavigationLink(destination: ItemDetailView(item: destination)) {
+                            PosterCell(
+                                posterPath: tile.posterPath,
+                                title: tile.title
+                            )
+                            .overlay(alignment: .topLeading) {
+                                if let plate = tile.plate {
+                                    PosterPlate(text: plate)
+                                }
+                            }
+                        }
+                        .buttonStyle(PressableScaleStyle(scale: 0.94))
                     }
-                    .buttonStyle(PressableScaleStyle(scale: 0.94))
                 }
             }
             .padding(.horizontal, Metrics.margin)

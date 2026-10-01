@@ -34,7 +34,86 @@ struct GalleryBand: Identifiable, Hashable {
     let subtitle: String?
     let entries: [GalleryEntry]
 
+    /// Les saisons comptent une par une : le volume d'une bande est celui de
+    /// ce qu'on a regardé, et trois saisons de Dark pèsent trois fois.
     var count: Int { entries.count }
+
+    /// Ce que la frise affiche. Les saisons d'une même série qui partagent la
+    /// bande se fondent en une tuile, à la place de la première : le volume
+    /// reste vrai, et l'affiche n'est jamais répétée.
+    var tiles: [GalleryTile] {
+        var tiles: [GalleryTile] = []
+        var seriesIndex: [Int: Int] = [:]
+        for entry in entries {
+            guard entry.isSeason else {
+                tiles.append(.film(entry))
+                continue
+            }
+            if let index = seriesIndex[entry.tmdbId], case .series(let seasons) = tiles[index] {
+                tiles[index] = .series(seasons + [entry])
+            } else {
+                seriesIndex[entry.tmdbId] = tiles.count
+                tiles.append(.series([entry]))
+            }
+        }
+        return tiles
+    }
+}
+
+/// Une tuile de la frise : un film, ou une série et celles de ses saisons qui
+/// tombent dans la bande.
+enum GalleryTile: Identifiable, Hashable {
+    case film(GalleryEntry)
+    case series([GalleryEntry])
+
+    var id: String {
+        switch self {
+        case .film(let entry): entry.id
+        case .series(let seasons): "series-\(seasons.first?.tmdbId ?? 0)"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .film(let entry): entry.title
+        case .series(let seasons): seasons.first?.title ?? ""
+        }
+    }
+
+    /// L'affiche de la série plutôt que celle d'une saison : la tuile est la
+    /// série. Une saison seule garde la sienne.
+    var posterPath: String? {
+        switch self {
+        case .film(let entry):
+            return entry.posterPath
+        case .series(let seasons):
+            guard let first = seasons.first else { return nil }
+            if seasons.count == 1 { return first.posterPath }
+            return first.seasonFacts?.seriesPosterPath ?? first.posterPath
+        }
+    }
+
+    /// La plaque d'une tuile de série : « Saison 2 » pour une saison seule,
+    /// « 3 saisons » au-delà. Jamais « série » : le compte le dit.
+    var plate: String? {
+        guard case .series(let seasons) = self else { return nil }
+        if seasons.count == 1, let number = seasons.first?.seasonFacts?.season {
+            return String(localized: "Saison \(number)", bundle: .app)
+        }
+        return String(localized: "\(seasons.count) saisons", bundle: .app)
+    }
+
+    /// Ce qu'ouvre un tap : la fiche du film, la fiche de la saison seule, ou
+    /// le dossier de la série quand plusieurs saisons se sont fondues.
+    var destination: MediaItem? {
+        switch self {
+        case .film(let entry):
+            return entry.mediaItem
+        case .series(let seasons):
+            guard let first = seasons.first else { return nil }
+            return seasons.count == 1 ? first.mediaItem : first.mediaItem.seriesItem
+        }
+    }
 }
 
 /// Une part de la barre de genres. `id` vaut `-1` pour l'agrégat « autres ».
@@ -63,8 +142,15 @@ struct GallerySignature: Hashable {
     let total: Int
     let addedThisMonth: Int
     let shares: [GenreShare]
+    var films: Int = 0
+    var seasons: Int = 0
+    /// Séries distinctes : trois saisons de Dark font une série.
+    var series: Int = 0
 
     static let empty = GallerySignature(total: 0, addedThisMonth: 0, shares: [])
+
+    /// La signature ne change pas pour qui n'a vu que des films.
+    var hasSeasons: Bool { seasons > 0 }
 }
 
 /// Palette de la barre de genres — les couleurs sont attribuées par ordre de

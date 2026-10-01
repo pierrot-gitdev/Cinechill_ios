@@ -172,53 +172,80 @@ struct GalleryView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 8) {
-                    ForEach(band.entries) { entry in
-                        NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
-                            PosterTile(
-                                posterPath: entry.posterPath,
-                                title: entry.title,
-                                width: posterWidth
-                            )
-                        }
-                        .buttonStyle(PressableScaleStyle(scale: 0.93))
-                        // Le raccourci de recommandation. Coût visuel au
-                        // repos : zéro — c'est ce qui permet de le proposer
-                        // sans encombrer « La Frise ».
-                        .contextMenu {
-                            // Le coup de cœur, même logique que le raccourci de
-                            // recommandation : coût visuel au repos, zéro.
-                            Button {
-                                Haptics.impact(.light, intensity: 0.8)
-                                libraryStore.setLove(
-                                    entry.mediaItem,
-                                    loved: !libraryStore.isLoved(entry.mediaItem)
-                                )
-                            } label: {
-                                if libraryStore.isLoved(entry.mediaItem) {
-                                    Label(String(localized: "Retirer le coup de cœur", bundle: .app), systemImage: "heart.slash")
-                                } else {
-                                    Label(String(localized: "Coup de cœur", bundle: .app), systemImage: "heart")
-                                }
-                            }
-
-                            Button {
-                                composerItem = entry.mediaItem
-                            } label: {
-                                Label(String(localized: "Recommander", bundle: .app), systemImage: "paperplane")
-                            }
-
-                            Button(role: .destructive) {
-                                Haptics.impact(.light)
-                                libraryStore.removeFromGallery(entry.mediaItem)
-                            } label: {
-                                Label(String(localized: "Retirer de ma galerie", bundle: .app), systemImage: "xmark")
-                            }
-                        }
+                    ForEach(band.tiles) { tile in
+                        tileView(tile, width: posterWidth)
                     }
                 }
                 .padding(.horizontal, Metrics.margin)
             }
             .scrollClipDisabled()
+        }
+    }
+
+    /// Une tuile de la frise. Un film garde son menu ; une série, qui peut
+    /// réunir plusieurs saisons, ouvre son dossier et n'en a pas — une action
+    /// de masse sur trois saisons d'un appui long serait un piège.
+    @ViewBuilder
+    private func tileView(_ tile: GalleryTile, width posterWidth: CGFloat) -> some View {
+        switch tile {
+        case .series:
+            if let destination = tile.destination {
+                NavigationLink(destination: ItemDetailView(item: destination)) {
+                    PosterTile(posterPath: tile.posterPath, title: tile.title, width: posterWidth)
+                        .overlay(alignment: .bottomLeading) {
+                            if let plate = tile.plate, posterWidth >= 48 {
+                                PosterPlate(text: plate)
+                            }
+                        }
+                }
+                .buttonStyle(PressableScaleStyle(scale: 0.93))
+            }
+        case .film(let entry):
+            filmTile(entry, width: posterWidth)
+        }
+    }
+
+    private func filmTile(_ entry: GalleryEntry, width posterWidth: CGFloat) -> some View {
+        NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
+            PosterTile(
+                posterPath: entry.posterPath,
+                title: entry.title,
+                width: posterWidth
+            )
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.93))
+        // Le raccourci de recommandation. Coût visuel au
+        // repos : zéro — c'est ce qui permet de le proposer
+        // sans encombrer « La Frise ».
+        .contextMenu {
+            // Le coup de cœur, même logique que le raccourci de
+            // recommandation : coût visuel au repos, zéro.
+            Button {
+                Haptics.impact(.light, intensity: 0.8)
+                libraryStore.setLove(
+                    entry.mediaItem,
+                    loved: !libraryStore.isLoved(entry.mediaItem)
+                )
+            } label: {
+                if libraryStore.isLoved(entry.mediaItem) {
+                    Label(String(localized: "Retirer le coup de cœur", bundle: .app), systemImage: "heart.slash")
+                } else {
+                    Label(String(localized: "Coup de cœur", bundle: .app), systemImage: "heart")
+                }
+            }
+
+            Button {
+                composerItem = entry.mediaItem
+            } label: {
+                Label(String(localized: "Recommander", bundle: .app), systemImage: "paperplane")
+            }
+
+            Button(role: .destructive) {
+                Haptics.impact(.light)
+                libraryStore.removeFromGallery(entry.mediaItem)
+            } label: {
+                Label(String(localized: "Retirer de ma galerie", bundle: .app), systemImage: "xmark")
+            }
         }
     }
 

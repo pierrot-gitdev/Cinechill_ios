@@ -13,6 +13,7 @@ struct GallerySignatureView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
             countRow
+            compositionRow
 
             if !signature.shares.isEmpty {
                 genreBar
@@ -32,7 +33,7 @@ struct GallerySignatureView: View {
                 .foregroundStyle(Ink.ink)
                 .contentTransition(.numericText())
 
-            Text(signature.total > 1 ? String(localized: "films vus", bundle: .app) : String(localized: "film vu", bundle: .app))
+            Text(countLabel)
                 .planLabel()
                 .foregroundStyle(Ink.ink2)
 
@@ -51,7 +52,31 @@ struct GallerySignatureView: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(String(localized: "\(signature.total) films vus, dont \(signature.addedThisMonth) ce mois", bundle: .app))
+        .accessibilityLabel(signature.hasSeasons
+            ? String(localized: "\(signature.total) vus, dont \(signature.addedThisMonth) ce mois", bundle: .app)
+            : String(localized: "\(signature.total) films vus, dont \(signature.addedThisMonth) ce mois", bundle: .app))
+    }
+
+    /// Le détail n'apparaît qu'avec des séries : pour qui n'a vu que des
+    /// films, la signature reste exactement ce qu'elle était.
+    @ViewBuilder
+    private var compositionRow: some View {
+        if signature.hasSeasons {
+            Text(String(localized: "\(signature.films) films · \(signature.seasons) saisons · \(signature.series) séries", bundle: .app))
+                .font(.system(size: 12))
+                .monospacedDigit()
+                .foregroundStyle(Ink.ink2)
+                .padding(.top, -6)
+        }
+    }
+
+    /// « films vus » tant qu'il n'y a que des films ; « vus » dès qu'une saison
+    /// s'y mêle, le détail venant juste dessous.
+    private var countLabel: String {
+        if signature.hasSeasons { return String(localized: "vus", bundle: .app) }
+        return signature.total > 1
+            ? String(localized: "films vus", bundle: .app)
+            : String(localized: "film vu", bundle: .app)
     }
 
     /// Une seule ligne proportionnelle plutôt qu'un camembert : la comparaison

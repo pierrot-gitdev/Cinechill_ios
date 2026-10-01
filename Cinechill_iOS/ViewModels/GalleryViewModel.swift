@@ -229,9 +229,16 @@ final class GalleryViewModel {
             counts[genreID, default: 0] += 1
         }
 
+        let seasonEntries = entries.filter(\.isSeason)
+        let films = entries.count - seasonEntries.count
+        let series = Set(seasonEntries.map(\.tmdbId)).count
+
         let total = Double(counts.values.reduce(0, +))
         guard total > 0 else {
-            return GallerySignature(total: entries.count, addedThisMonth: addedThisMonth, shares: [])
+            return GallerySignature(
+                total: entries.count, addedThisMonth: addedThisMonth, shares: [],
+                films: films, seasons: seasonEntries.count, series: series
+            )
         }
 
         let ranked = counts.sorted { lhs, rhs in
@@ -257,7 +264,10 @@ final class GalleryViewModel {
         return GallerySignature(
             total: entries.count,
             addedThisMonth: addedThisMonth,
-            shares: shares
+            shares: shares,
+            films: films,
+            seasons: seasonEntries.count,
+            series: series
         )
     }
 
