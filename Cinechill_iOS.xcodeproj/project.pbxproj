@@ -11,23 +11,92 @@
 		8F24D3C32F89C10B0021A936 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8F24D3C22F89C10B0021A936 /* FirebaseCore */; };
 		8F24D5132F8A52180021A936 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 8F9A41012F8A8F9400A1B2C3 /* FirebaseAuth */; };
 		8F24D5142F8A52180021A936 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 8F9A41022F8A8F9400A1B2C3 /* GoogleSignIn */; };
+		8F81696F306F220400FDBFCA /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F81696E306F220400FDBFCA /* WidgetKit.framework */; };
+		8F816971306F220400FDBFCA /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F816970306F220400FDBFCA /* SwiftUI.framework */; };
+		8F81697C306F220600FDBFCA /* CinechillWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8F81696D306F220300FDBFCA /* CinechillWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8FBB11012F8B000100A1B2C3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 8FBB11022F8B000100A1B2C3 /* FirebaseFirestore */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		8F81697A306F220600FDBFCA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8FD80F472F81756100066FC9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8F81696C306F220300FDBFCA;
+			remoteInfo = CinechillWidgetsExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8F816981306F220600FDBFCA /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				8F81697C306F220600FDBFCA /* CinechillWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		8F81696D306F220300FDBFCA /* CinechillWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CinechillWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		8F81696E306F220400FDBFCA /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		8F816970306F220400FDBFCA /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		8F816AD1306F240A00FDBFCA /* CinechillWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CinechillWidgetsExtension.entitlements; sourceTree = "<group>"; };
 		8FD80F4F2F81756100066FC9 /* Cinechill_iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cinechill_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1C2E3F42F81756200000001 /* Project.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Project.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8F81697D306F220600FDBFCA /* Exceptions for "CinechillWidgets" folder in "CinechillWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8F81696C306F220300FDBFCA /* CinechillWidgetsExtension */;
+		};
+		8F816990306F220600FDBFCA /* Exceptions for "Cinechill_iOS" folder in "CinechillWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/CineMatch/CineMatchActivityAttributes.swift,
+				Views/Components/CinechillMark.swift,
+			);
+			target = 8F81696C306F220300FDBFCA /* CinechillWidgetsExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		8F816972306F220400FDBFCA /* CinechillWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8F81697D306F220600FDBFCA /* Exceptions for "CinechillWidgets" folder in "CinechillWidgetsExtension" target */,
+			);
+			path = CinechillWidgets;
+			sourceTree = "<group>";
+		};
 		8FD80F512F81756100066FC9 /* Cinechill_iOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8F816990306F220600FDBFCA /* Exceptions for "Cinechill_iOS" folder in "CinechillWidgetsExtension" target */,
+			);
 			path = Cinechill_iOS;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		8F81696A306F220300FDBFCA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8F816971306F220400FDBFCA /* SwiftUI.framework in Frameworks */,
+				8F81696F306F220400FDBFCA /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8FD80F4C2F81756100066FC9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -46,6 +115,8 @@
 		8F24D3C12F89C10B0021A936 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8F81696E306F220400FDBFCA /* WidgetKit.framework */,
+				8F816970306F220400FDBFCA /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -53,8 +124,10 @@
 		8FD80F462F81756100066FC9 = {
 			isa = PBXGroup;
 			children = (
+				8F816AD1306F240A00FDBFCA /* CinechillWidgetsExtension.entitlements */,
 				A1C2E3F42F81756200000001 /* Project.xcconfig */,
 				8FD80F512F81756100066FC9 /* Cinechill_iOS */,
+				8F816972306F220400FDBFCA /* CinechillWidgets */,
 				8F24D3C12F89C10B0021A936 /* Frameworks */,
 				8FD80F502F81756100066FC9 /* Products */,
 			);
@@ -64,6 +137,7 @@
 			isa = PBXGroup;
 			children = (
 				8FD80F4F2F81756100066FC9 /* Cinechill_iOS.app */,
+				8F81696D306F220300FDBFCA /* CinechillWidgetsExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -71,6 +145,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		8F81696C306F220300FDBFCA /* CinechillWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8F81697E306F220600FDBFCA /* Build configuration list for PBXNativeTarget "CinechillWidgetsExtension" */;
+			buildPhases = (
+				8F816969306F220300FDBFCA /* Sources */,
+				8F81696A306F220300FDBFCA /* Frameworks */,
+				8F81696B306F220300FDBFCA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				8F816972306F220400FDBFCA /* CinechillWidgets */,
+			);
+			name = CinechillWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = CinechillWidgetsExtension;
+			productReference = 8F81696D306F220300FDBFCA /* CinechillWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		8FD80F4E2F81756100066FC9 /* Cinechill_iOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8FD80F5A2F81756200066FC9 /* Build configuration list for PBXNativeTarget "Cinechill_iOS" */;
@@ -78,10 +174,12 @@
 				8FD80F4B2F81756100066FC9 /* Sources */,
 				8FD80F4C2F81756100066FC9 /* Frameworks */,
 				8FD80F4D2F81756100066FC9 /* Resources */,
+				8F816981306F220600FDBFCA /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				8F81697B306F220600FDBFCA /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				8FD80F512F81756100066FC9 /* Cinechill_iOS */,
@@ -105,9 +203,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2640;
+				LastSwiftUpdateCheck = 2700;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
+					8F81696C306F220300FDBFCA = {
+						CreatedOnToolsVersion = 27.0;
+					};
 					8FD80F4E2F81756100066FC9 = {
 						CreatedOnToolsVersion = 26.4;
 					};
@@ -133,11 +234,19 @@
 			projectRoot = "";
 			targets = (
 				8FD80F4E2F81756100066FC9 /* Cinechill_iOS */,
+				8F81696C306F220300FDBFCA /* CinechillWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		8F81696B306F220300FDBFCA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8FD80F4D2F81756100066FC9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -148,6 +257,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		8F816969306F220300FDBFCA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8FD80F4B2F81756100066FC9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -157,7 +273,84 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		8F81697B306F220600FDBFCA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8F81696C306F220300FDBFCA /* CinechillWidgetsExtension */;
+			targetProxy = 8F81697A306F220600FDBFCA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		8F81697F306F220600FDBFCA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = CinechillWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = S9Y623749M;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CinechillWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CinechillWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.devpierre.Cinechill-iOS.CinechillWidgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		8F816980306F220600FDBFCA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = CinechillWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = S9Y623749M;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CinechillWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CinechillWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.devpierre.Cinechill-iOS.CinechillWidgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		8FD80F582F81756200066FC9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -296,6 +489,7 @@
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_BACKEND_BASE_HOST = "$(BACKEND_BASE_HOST)";
 				INFOPLIST_KEY_CFBundleDisplayName = Cinechill;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -305,6 +499,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -340,6 +535,7 @@
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_BACKEND_BASE_HOST = "$(BACKEND_BASE_HOST)";
 				INFOPLIST_KEY_CFBundleDisplayName = Cinechill;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -349,6 +545,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -371,6 +568,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		8F81697E306F220600FDBFCA /* Build configuration list for PBXNativeTarget "CinechillWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8F81697F306F220600FDBFCA /* Debug */,
+				8F816980306F220600FDBFCA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		8FD80F4A2F81756100066FC9 /* Build configuration list for PBXProject "Cinechill_iOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
