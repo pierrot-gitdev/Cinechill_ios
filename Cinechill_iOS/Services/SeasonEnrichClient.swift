@@ -10,7 +10,11 @@ import FirebaseAuth
 ///
 /// À part du client des séries parce qu'il demande un compte : ce qu'il rend
 /// dépend de ce que la personne a rangé, pas seulement de TMDB.
-struct SeasonEnrichClient: SeasonEnriching, Sendable {
+///
+/// `nonisolated`, comme `BackendRecommendationClient` : il sert de valeur par
+/// défaut dans l'init de `WatchlistViewModel`, et un argument par défaut
+/// s'évalue hors du main actor.
+nonisolated struct SeasonEnrichClient: SeasonEnriching, Sendable {
     /// Les saisons de la watchlist, à jour. Plafonné à trente par le serveur.
     func enrich(_ seasons: [(tvId: Int, season: Int)]) async throws -> [SeasonEnrichment] {
         guard !seasons.isEmpty else { return [] }
@@ -35,6 +39,6 @@ struct SeasonEnrichClient: SeasonEnriching, Sendable {
     }
 }
 
-private struct EnrichSeasonsDTO: Decodable {
+private nonisolated struct EnrichSeasonsDTO: Decodable {
     let seasons: [SeasonEnrichment]
 }

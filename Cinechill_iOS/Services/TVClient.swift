@@ -188,7 +188,7 @@ protocol SeasonEnriching: Sendable {
 
 /// Une seule erreur, comme pour la saga : une fiche qui ne vient pas se dit en
 /// une phrase, et ce qu'il y a à faire ne dépend pas de la cause.
-enum TVClientError: LocalizedError {
+nonisolated enum TVClientError: LocalizedError {
     case unavailable
 
     var errorDescription: String? {
