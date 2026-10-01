@@ -21,19 +21,29 @@ import SwiftUI
 /// fermeture, comme pour la planche des coups de cœur : chaque duel a déjà été
 /// attendu avant de passer au tour suivant, donc rien n'est en route quand on
 /// ferme.
+///
+/// Côté séries, la même planche compare des séries vues, six fois et non
+/// douze : c'est la cible de la Porte des séries.
 struct CineMatchDoorComparisonView: View {
     private let client: any CineMatchFetching
+    private let format: MediaFormat
     private let onClose: () -> Void
-
-    /// La cible de l'artéfact, telle que le serveur la mesure.
-    private static let rounds = 12
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(DoorStore.self) private var doorStore
 
+    private var isSeries: Bool { format == .series }
+
+    /// La cible de l'artéfact, telle que le serveur la mesure.
+    private var rounds: Int {
+        doorStore.door(for: format).artifact(.horizons)?.target ?? (isSeries ? 6 : 12)
+    }
+
     /// Le seuil de la Mémoire : le serveur ne compare pas une galerie plus
     /// petite, et c'est lui que l'écran vide doit nommer.
-    private var memoryTarget: Int { doorStore.door.artifact(.memoire)?.target ?? 100 }
+    private var memoryTarget: Int {
+        doorStore.door(for: format).artifact(.memoire)?.target ?? (isSeries ? 15 : 100)
+    }
 
     @State private var round = 1
     @State private var films: [CineMatchGalleryFilm] = []
@@ -46,8 +56,13 @@ struct CineMatchDoorComparisonView: View {
     @State private var hasLoadedOnce = false
     @State private var errorMessage: String?
 
-    init(client: any CineMatchFetching = BackendCineMatchClient(), onClose: @escaping () -> Void) {
+    init(
+        client: any CineMatchFetching = BackendCineMatchClient(),
+        format: MediaFormat = .film,
+        onClose: @escaping () -> Void
+    ) {
         self.client = client
+        self.format = format
         self.onClose = onClose
     }
 
@@ -84,7 +99,7 @@ struct CineMatchDoorComparisonView: View {
 
                 Spacer(minLength: 0)
 
-                Text(String(localized: "\(round) sur \(Self.rounds)", bundle: .app))
+                Text(String(localized: "\(round) sur \(rounds)", bundle: .app))
                     .planLabel()
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink2)
@@ -106,7 +121,7 @@ struct CineMatchDoorComparisonView: View {
 
     /// La jauge tracée de l'app, dans la teinte de l'artéfact.
     private var gauge: some View {
-        let fraction = Double(round - 1) / Double(Self.rounds)
+        let fraction = Double(round - 1) / Double(max(1, rounds))
         let tint = Color(hex: DoorArtifactKey.horizons.hue)
 
         return GeometryReader { proxy in
@@ -134,7 +149,9 @@ struct CineMatchDoorComparisonView: View {
     private func content(isCompact: Bool) -> some View {
         if let errorMessage, films.isEmpty {
             PlanEmptyState(
-                title: String(localized: "Impossible de charger les films", bundle: .app),
+                title: isSeries
+                    ? String(localized: "Impossible de charger les séries", bundle: .app)
+                    : String(localized: "Impossible de charger les films", bundle: .app),
                 message: errorMessage,
                 actionTitle: String(localized: "Réessayer", bundle: .app),
                 action: { Task { await load() } },
@@ -144,22 +161,19 @@ struct CineMatchDoorComparisonView: View {
             .frame(maxHeight: .infinity)
         } else if films.isEmpty, !isLoading, hasLoadedOnce {
             PlanEmptyState(
-                title: String(localized: "Pas assez de films vus", bundle: .app),
-                message: String(
-                    localized: "Ajoute d'abord \(memoryTarget) films à ta galerie pour pouvoir comparer.",
-                    bundle: .app
-                ),
+                title: isSeries
+                    ? String(localized: "Pas assez de séries vues", bundle: .app)
+                    : String(localized: "Pas assez de films vus", bundle: .app),
+                message: isSeries
+                    ? String(localized: "Ajoute d'abord \(memoryTarget) séries à ta galerie pour pouvoir comparer.", bundle: .app)
+                    : String(localized: "Ajoute d'abord \(memoryTarget) films à ta galerie pour pouvoir comparer.", bundle: .app),
                 actionTitle: String(localized: "Fermer", bundle: .app),
                 action: onClose
             )
             .frame(maxHeight: .infinity)
         } else {
             VStack(alignment: .leading, spacing: 0) {
-                Text(
-                    keptID == nil
-                        ? String(localized: "Lequel tu préfères ?", bundle: .app)
-                        : String(localized: "Et celui que tu aimes le moins ?", bundle: .app)
-                )
+                Text(questionTitle)
                 .font(.system(size: isCompact ? 20 : 24, weight: .regular, design: .serif))
                 .kerning(0.1)
                 .foregroundStyle(Ink.ink)
@@ -196,6 +210,15 @@ struct CineMatchDoorComparisonView: View {
     }
 
     private var isBusy: Bool { isLoading || excludedID != nil }
+
+    private var questionTitle: String {
+        switch (isSeries, keptID == nil) {
+        case (false, true): String(localized: "Lequel tu préfères ?", bundle: .app)
+        case (false, false): String(localized: "Et celui que tu aimes le moins ?", bundle: .app)
+        case (true, true): String(localized: "Laquelle tu préfères ?", bundle: .app)
+        case (true, false): String(localized: "Et celle que tu aimes le moins ?", bundle: .app)
+        }
+    }
 
     private func grid(in size: CGSize) -> some View {
         let layout = DoorPosterLayout(size: size)
@@ -237,7 +260,7 @@ struct CineMatchDoorComparisonView: View {
                     .opacity(isOut ? 0.22 : 1)
                     .overlay(alignment: .top) {
                         if isOut {
-                            Text("Écarté", bundle: .app)
+                            outLabel
                                 .planLabel()
                                 .foregroundStyle(Ink.ink2)
                                 .padding(.horizontal, 7)
@@ -266,6 +289,18 @@ struct CineMatchDoorComparisonView: View {
         .accessibilityAddTraits(isKept ? [.isSelected] : [])
     }
 
+    /// « Écarté », accordé : une série est écartée.
+    @ViewBuilder
+    private var outLabel: some View {
+        Group {
+            if isSeries {
+                Text("Écartée", bundle: .app)
+            } else {
+                Text("Écarté", bundle: .app)
+            }
+        }
+    }
+
     // MARK: - Les gestes
 
     /// Garder, puis écarter. Toucher à nouveau le film gardé le relâche : on
@@ -290,8 +325,8 @@ struct CineMatchDoorComparisonView: View {
         Task {
             // Le duel est attendu avant de passer au tour suivant : la porte se
             // remesure à la fermeture, et elle doit trouver chaque duel écrit.
-            try? await client.recordDuel(winnerID: kept, loserID: film.id)
-            if round >= Self.rounds {
+            try? await client.recordDuel(winnerID: kept, loserID: film.id, format: format)
+            if round >= rounds {
                 onClose()
                 return
             }
@@ -315,7 +350,7 @@ struct CineMatchDoorComparisonView: View {
 
         do {
             let next = try await client.comparisonRound(
-                round: round, shownIDs: shownIDs, history: history, forDoor: true
+                round: round, shownIDs: shownIDs, history: history, forDoor: true, format: format
             )
             films = next.films
             keptID = nil
@@ -328,7 +363,8 @@ struct CineMatchDoorComparisonView: View {
             let ids = next.films.map(\.id)
             if !ids.isEmpty {
                 let client = client
-                Task { try? await client.recordExposure(kind: .poster, tmdbIDs: ids) }
+                let format = format
+                Task { try? await client.recordExposure(kind: .poster, tmdbIDs: ids, format: format) }
             }
         } catch {
             excludedID = nil

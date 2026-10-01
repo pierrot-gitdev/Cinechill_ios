@@ -8,6 +8,10 @@ import Foundation
 /// Le parcours CinéMatch v2 : deux questions, jusqu'à quatre comparaisons entre
 /// films vus, puis cinq films. Ou, en un geste, la proposition du jour.
 ///
+/// Le même parcours sert les séries, sur l'autre profil : la seconde question
+/// y demande l'engagement au lieu de l'énergie, les comparaisons portent sur
+/// des séries vues, et les cinq sont des séries à commencer.
+///
 /// Le moteur est sur le serveur. Ce ViewModel ne classe rien : il tient la
 /// séance (ce qui a été montré, ce qui a été choisi, combien de fois on a
 /// hésité) et la transmet. Aucune mise à jour optimiste : chaque attente est un
@@ -16,6 +20,8 @@ import Foundation
 @Observable
 @MainActor
 final class CineMatchViewModel {
+    /// `.energy` est la seconde question : l'énergie pour un film,
+    /// l'engagement pour une série.
     enum Step: Equatable { case home, want, energy, comparison, loadingFive, five, daily, conclusion }
     enum ComparisonStage: Equatable { case keep, exclude }
     enum GalleryAddState: Equatable { case idle, adding, added, failed }
@@ -26,6 +32,13 @@ final class CineMatchViewModel {
     var situation: CineMatchSituation
     private(set) var want: CineMatchWant?
     private(set) var energy: CineMatchEnergy?
+    private(set) var engagement: CineMatchEngagement?
+    /// Films ou séries : le profil sur lequel le parcours travaille.
+    private(set) var format: MediaFormat = .film
+    /// La durée retenue pour l'autre format. Une durée de film et une durée
+    /// d'épisode ne se mesurent pas pareil : chaque format garde la sienne,
+    /// la compagnie et les plateformes restent communes.
+    private var parkedDurations: [MediaFormat: CineMatchDuration] = [:]
 
     // MARK: Questionnaire
 
@@ -108,6 +121,28 @@ final class CineMatchViewModel {
         situation = s
     }
 
+    /// L'interrupteur a basculé. Il ne se montre qu'à l'accueil et devant la
+    /// Porte, jamais au milieu d'une recherche : la séance en cours, s'il en
+    /// reste une, est abandonnée sans compter d'hésitation, puisqu'elle ne
+    /// parlait pas du même profil.
+    func setFormat(_ newFormat: MediaFormat) {
+        guard newFormat != format else { return }
+        stopInflight()
+        resetSession()
+        parkedDurations[format] = situation.duration
+        situation.duration = parkedDurations[newFormat] ?? .any
+        format = newFormat
+        hesitations = 0
+        films = []
+        currentIndex = 0
+        widening = nil
+        dailyFilm = nil
+        concludedFilm = nil
+        galleryAddState = .idle
+        pendingFiveExposure = []
+        step = .home
+    }
+
     /// Accueil → question 1. Repart d'une séance vierge, hésitations exceptées.
     func startGuided() {
         stopInflight()
@@ -131,8 +166,15 @@ final class CineMatchViewModel {
     /// Question 2 → premier tour de comparaison, ou directement les cinq quand
     /// la galerie ne permet aucune comparaison.
     func chooseEnergy(_ e: CineMatchEnergy) async {
-        guard step == .energy, !isLoadingRound else { return }
+        guard step == .energy, format == .film, !isLoadingRound else { return }
         energy = e
+        await perform { [weak self] in await self?.loadRound(1) }
+    }
+
+    /// La question 2 des séries : même suite que l'énergie.
+    func chooseEngagement(_ e: CineMatchEngagement) async {
+        guard step == .energy, format == .series, !isLoadingRound else { return }
+        engagement = e
         await perform { [weak self] in await self?.loadRound(1) }
     }
 
@@ -181,7 +223,8 @@ final class CineMatchViewModel {
         else { return }
         history.append(.pick(keptID: kept.id, excludedID: film.id, latencyMs: elapsedMs()))
         let client = client
-        Task { try? await client.recordDuel(winnerID: kept.id, loserID: film.id) }
+        let format = format
+        Task { try? await client.recordDuel(winnerID: kept.id, loserID: film.id, format: format) }
         await advanceAfterComparison()
     }
 
@@ -228,7 +271,8 @@ final class CineMatchViewModel {
     /// Le lancement part au serveur sans être attendu ; la vue ouvre l'URL.
     func start(_ film: CineMatchFilm) {
         let client = client
-        Task { try? await client.recordLaunch(tmdbID: film.id) }
+        let format = format
+        Task { try? await client.recordLaunch(tmdbID: film.id, format: format) }
         concludedFilm = film
         galleryAddState = .idle
         step = .conclusion
@@ -272,7 +316,7 @@ final class CineMatchViewModel {
         guard !pendingFiveExposure.isEmpty else { return }
         let ids = pendingFiveExposure
         pendingFiveExposure = []
-        try? await client.recordExposure(kind: .five, tmdbIDs: ids)
+        try? await client.recordExposure(kind: .five, tmdbIDs: ids, format: format)
     }
 
     // MARK: - Chargements
@@ -282,7 +326,7 @@ final class CineMatchViewModel {
         errorMessage = nil
         do {
             let result = try await client.comparisonRound(
-                round: round, shownIDs: shownIDs, history: history, forDoor: false
+                round: round, shownIDs: shownIDs, history: history, forDoor: false, format: format
             )
             guard !Task.isCancelled else { return }
             isLoadingRound = false
@@ -326,17 +370,21 @@ final class CineMatchViewModel {
     }
 
     private func loadFive() async {
-        guard let want, let energy else { return }
+        guard let want else { return }
+        switch format {
+        case .film: guard energy != nil else { return }
+        case .series: guard engagement != nil else { return }
+        }
         step = .loadingFive
         errorMessage = nil
         do {
             let response = try await client.five(
-                situation: situation, want: want, energy: energy,
-                comparisons: history, hesitations: hesitations
+                situation: situation, want: want, energy: energy, engagement: engagement,
+                comparisons: history, hesitations: hesitations, format: format
             )
             guard !Task.isCancelled else { return }
             guard !response.films.isEmpty else {
-                fail(CineMatchClientError.noCandidates) { [weak self] in await self?.loadFive() }
+                fail(CineMatchClientError.noCandidates(for: format)) { [weak self] in await self?.loadFive() }
                 return
             }
             hesitations = 0
@@ -356,15 +404,16 @@ final class CineMatchViewModel {
     private func loadDaily() async {
         errorMessage = nil
         do {
-            let film = try await client.daily(situation: situation)
+            let film = try await client.daily(situation: situation, format: format)
             guard !Task.isCancelled else { return }
             guard let film else {
-                fail(CineMatchClientError.noCandidates) { [weak self] in await self?.loadDaily() }
+                fail(CineMatchClientError.noCandidates(for: format)) { [weak self] in await self?.loadDaily() }
                 return
             }
             dailyFilm = film
             let client = client
-            Task { try? await client.recordExposure(kind: .daily, tmdbIDs: [film.id]) }
+            let format = format
+            Task { try? await client.recordExposure(kind: .daily, tmdbIDs: [film.id], format: format) }
         } catch {
             fail(error) { [weak self] in await self?.loadDaily() }
         }
@@ -396,6 +445,7 @@ final class CineMatchViewModel {
     private func resetSession() {
         want = nil
         energy = nil
+        engagement = nil
         comparisonTotal = 0
         comparisonRound = 0
         comparisonStage = .keep
@@ -425,7 +475,8 @@ final class CineMatchViewModel {
     private func recordPosterExposure(_ ids: [Int]) {
         guard !ids.isEmpty else { return }
         let client = client
-        Task { try? await client.recordExposure(kind: .poster, tmdbIDs: ids) }
+        let format = format
+        Task { try? await client.recordExposure(kind: .poster, tmdbIDs: ids, format: format) }
     }
 
     private func flushExposureInBackground() {

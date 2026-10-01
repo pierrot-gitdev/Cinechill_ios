@@ -12,54 +12,81 @@ nonisolated enum CineMatchClientError: LocalizedError {
     /// 409 `no_candidates` : aucun film, même après tous les élargissements.
     /// Réessayer ne changerait rien ; seul le scénario peut le faire.
     case noCandidates
+    /// La même chose, côté séries.
+    case noSeriesCandidates
 
     var errorDescription: String? {
         switch self {
         case .noCandidates:
             return String(localized: "Aucun film ne correspond pour l'instant. Change tes réglages pour ce soir.", bundle: .app)
+        case .noSeriesCandidates:
+            return String(localized: "Aucune série ne correspond pour l'instant. Change tes réglages pour ce soir.", bundle: .app)
         }
+    }
+
+    static func noCandidates(for format: MediaFormat) -> CineMatchClientError {
+        format == .series ? .noSeriesCandidates : .noCandidates
     }
 }
 
 /// Le moteur de CinéMatch v2 vit sur le serveur : l'app pose les questions,
 /// transmet les réponses, et affiche ce qui revient.
+///
+/// Chaque appel porte son format. Films et séries sont deux profils que le
+/// serveur tient à part (galerie, duels, exposition, historique), et leurs
+/// identifiants TMDB se recoupent : un appel sans format parlerait de films.
 protocol CineMatchFetching: Sendable {
-    /// `forDoor` : les douze comparaisons de la Porte. Le serveur lève alors la
+    /// `forDoor` : les comparaisons de la Porte. Le serveur lève alors la
     /// limite de `total` et recycle les films les moins récemment montrés.
-    func comparisonRound(round: Int, shownIDs: [Int], history: [CineMatchComparison], forDoor: Bool) async throws -> CineMatchComparisonRound
-    func five(situation: CineMatchSituation, want: CineMatchWant, energy: CineMatchEnergy,
-              comparisons: [CineMatchComparison], hesitations: Int) async throws -> CineMatchFiveResponse
+    func comparisonRound(round: Int, shownIDs: [Int], history: [CineMatchComparison], forDoor: Bool,
+                         format: MediaFormat) async throws -> CineMatchComparisonRound
+    /// `energy` pour un film, `engagement` pour une série : l'une remplace
+    /// l'autre, jamais les deux.
+    func five(situation: CineMatchSituation, want: CineMatchWant, energy: CineMatchEnergy?,
+              engagement: CineMatchEngagement?, comparisons: [CineMatchComparison], hesitations: Int,
+              format: MediaFormat) async throws -> CineMatchFiveResponse
     /// `nil` quand aucun film ne correspond au scénario.
-    func daily(situation: CineMatchSituation) async throws -> CineMatchFilm?
-    func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int]) async throws
-    func recordDuel(winnerID: Int, loserID: Int) async throws
-    func recordLaunch(tmdbID: Int) async throws
+    func daily(situation: CineMatchSituation, format: MediaFormat) async throws -> CineMatchFilm?
+    func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int], format: MediaFormat) async throws
+    func recordDuel(winnerID: Int, loserID: Int, format: MediaFormat) async throws
+    func recordLaunch(tmdbID: Int, format: MediaFormat) async throws
 }
 
 nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
     /// Le serveur n'accepte pas plus de vingt films par écriture d'exposition.
     private static let exposureBatchLimit = 20
 
-    func comparisonRound(round: Int, shownIDs: [Int], history: [CineMatchComparison], forDoor: Bool) async throws -> CineMatchComparisonRound {
+    func comparisonRound(round: Int, shownIDs: [Int], history: [CineMatchComparison], forDoor: Bool,
+                         format: MediaFormat) async throws -> CineMatchComparisonRound {
         var body: [String: Any] = [
             "round": round,
             "shownIds": shownIDs,
             "history": history.map(Self.payload(for:)),
+            "format": format.rawValue,
         ]
         if forDoor { body["purpose"] = "door" }
         let data = try await post(to: APIEndpoints.cineMatchComparison(), body: body)
         return try decode(ComparisonResponseDTO.self, from: data).roundValue
     }
 
-    func five(situation: CineMatchSituation, want: CineMatchWant, energy: CineMatchEnergy,
-              comparisons: [CineMatchComparison], hesitations: Int) async throws -> CineMatchFiveResponse {
-        let data = try await post(to: APIEndpoints.cineMatchFive(), body: [
+    func five(situation: CineMatchSituation, want: CineMatchWant, energy: CineMatchEnergy?,
+              engagement: CineMatchEngagement?, comparisons: [CineMatchComparison], hesitations: Int,
+              format: MediaFormat) async throws -> CineMatchFiveResponse {
+        var body: [String: Any] = [
             "situation": Self.payload(for: situation),
             "want": want.rawValue,
-            "energy": energy.rawValue,
             "comparisons": comparisons.map(Self.payload(for:)),
             "hesitations": hesitations,
-        ])
+            "format": format.rawValue,
+        ]
+        if let energy { body["energy"] = energy.rawValue }
+        if let engagement { body["engagement"] = engagement.rawValue }
+        let data: Data
+        do {
+            data = try await post(to: APIEndpoints.cineMatchFive(), body: body)
+        } catch CineMatchClientError.noCandidates {
+            throw CineMatchClientError.noCandidates(for: format)
+        }
         let decoded = try decode(FiveResponseDTO.self, from: data)
         return CineMatchFiveResponse(
             films: decoded.films.map(\.film),
@@ -69,14 +96,15 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         )
     }
 
-    func daily(situation: CineMatchSituation) async throws -> CineMatchFilm? {
+    func daily(situation: CineMatchSituation, format: MediaFormat) async throws -> CineMatchFilm? {
         let data = try await post(to: APIEndpoints.cineMatchDaily(), body: [
             "situation": Self.payload(for: situation),
+            "format": format.rawValue,
         ])
         return try decode(DailyResponseDTO.self, from: data).film?.film
     }
 
-    func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int]) async throws {
+    func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int], format: MediaFormat) async throws {
         guard !tmdbIDs.isEmpty else { return }
         var start = 0
         while start < tmdbIDs.count {
@@ -84,20 +112,21 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
             _ = try await post(to: APIEndpoints.cineMatchExposure(), body: [
                 "kind": kind.rawValue,
                 "tmdbIds": Array(tmdbIDs[start..<end]),
+                "format": format.rawValue,
             ])
             start = end
         }
     }
 
-    func recordDuel(winnerID: Int, loserID: Int) async throws {
+    func recordDuel(winnerID: Int, loserID: Int, format: MediaFormat) async throws {
         _ = try await post(to: APIEndpoints.filmDuel(), body: [
-            "winnerTmdbId": winnerID, "loserTmdbId": loserID,
+            "winnerTmdbId": winnerID, "loserTmdbId": loserID, "format": format.rawValue,
         ])
     }
 
-    func recordLaunch(tmdbID: Int) async throws {
+    func recordLaunch(tmdbID: Int, format: MediaFormat) async throws {
         _ = try await post(to: APIEndpoints.sessionOutcome(), body: [
-            "kind": "launch", "tmdbId": tmdbID,
+            "kind": "launch", "tmdbId": tmdbID, "format": format.rawValue,
         ])
     }
 
@@ -243,22 +272,31 @@ private nonisolated struct FiveFilmDTO: Decodable, Sendable {
     let runtimeMinutes: Int?
     let providerIds: [Int]?
     let trailerKey: String?
+    /// `tv` pour une série ; absent pour un film.
+    let mediaType: String?
+    let seasonCount: Int?
+    let episodeCount: Int?
+    let status: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, overview
+        case id, title, overview, status
         case posterPath = "poster_path"
         case releaseDate = "release_date"
         case genreIds = "genre_ids"
         case runtimeMinutes = "runtime_minutes"
         case providerIds = "provider_ids"
         case trailerKey = "trailer_key"
+        case mediaType = "media_type"
+        case seasonCount = "season_count"
+        case episodeCount = "episode_count"
     }
 
     var film: CineMatchFilm {
-        CineMatchFilm(
+        let isSeries = mediaType == "tv"
+        return CineMatchFilm(
             item: MediaItem(
                 tmdbId: id,
-                mediaType: .movie,
+                mediaType: isSeries ? .tv : .movie,
                 title: title ?? String(localized: "Sans titre", bundle: .app),
                 posterPath: posterPath,
                 overview: overview,
@@ -267,11 +305,14 @@ private nonisolated struct FiveFilmDTO: Decodable, Sendable {
                 voteAverage: nil,
                 voteCount: nil,
                 genreIds: genreIds ?? [],
-                releaseDate: releaseDate
+                releaseDate: releaseDate,
+                seasonCount: isSeries ? seasonCount : nil
             ),
             runtimeMinutes: runtimeMinutes,
             providerIDs: providerIds ?? [],
-            trailerKey: trailerKey
+            trailerKey: trailerKey,
+            episodeCount: isSeries ? episodeCount : nil,
+            status: isSeries ? status.flatMap(CineMatchSeriesStatus.init(rawValue:)) : nil
         )
     }
 }

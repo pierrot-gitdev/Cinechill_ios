@@ -40,6 +40,19 @@ nonisolated enum CineMatchEnergy: String, CaseIterable, Sendable {
     case low, high
 }
 
+/// La question 2 des séries, à la place de l'énergie : le temps total qu'on
+/// accepte de donner. Une série ne se choisit pas pour une soirée, on choisit
+/// dans quoi s'engager. Le serveur en fait un filtre souple, jamais un mur.
+nonisolated enum CineMatchEngagement: String, CaseIterable, Sendable {
+    case mini, season, long, any
+}
+
+/// Où en est l'histoire d'une série proposée. La carte l'écrit toujours :
+/// commencer une série annulée, c'est savoir qu'elle n'aura pas de fin.
+nonisolated enum CineMatchSeriesStatus: String, Sendable {
+    case ended, returning, canceled
+}
+
 /// Un film de la galerie, montré en affiche pendant les comparaisons.
 nonisolated struct CineMatchGalleryFilm: Identifiable, Hashable, Sendable {
     let id: Int
@@ -77,14 +90,40 @@ nonisolated enum CineMatchComparison: Equatable, Sendable {
     case none(shownIDs: [Int])
 }
 
-/// Un des cinq films proposés, ou la proposition du jour.
+/// Un des cinq films proposés, ou la proposition du jour. Une série y entre
+/// aussi : `item` en est alors le dossier, et la durée celle d'un épisode.
 nonisolated struct CineMatchFilm: Identifiable, Hashable, Sendable {
     let item: MediaItem
+    /// La durée du film, ou celle d'un épisode.
     let runtimeMinutes: Int?
     let providerIDs: [Int]
     let trailerKey: String?
+    /// Séries seulement : épisodes des saisons sorties.
+    var episodeCount: Int? = nil
+    /// Séries seulement.
+    var status: CineMatchSeriesStatus? = nil
 
     var id: Int { item.tmdbId }
+
+    var isSeries: Bool { item.mediaType == .tv }
+
+    /// La saison par laquelle on commence une série proposée : la première,
+    /// toujours. CinéMatch ne propose jamais de reprendre en route.
+    var firstSeason: MediaItem {
+        MediaItem(
+            tmdbId: item.tmdbId,
+            mediaType: .tv,
+            title: item.title,
+            posterPath: item.posterPath,
+            overview: item.overview,
+            voteAverage: item.voteAverage,
+            voteCount: item.voteCount,
+            genreIds: item.genreIds,
+            releaseDate: item.releaseDate,
+            season: 1,
+            seasonCount: item.seasonCount
+        )
+    }
 
     var trailerURL: URL? {
         guard let trailerKey, !trailerKey.isEmpty else { return nil }
