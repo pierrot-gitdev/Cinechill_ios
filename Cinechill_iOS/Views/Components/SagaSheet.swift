@@ -19,10 +19,12 @@ import SwiftUI
 /// - **Rien n'est coché d'avance.** L'app n'écrit jamais ce que personne n'a
 ///   dit. Le cas majoritaire — tout vu — est servi par l'action principale,
 ///   pas par des cases pré-remplies qu'il faudrait décocher.
-/// - **Ce qui n'est pas coché est une réponse, pas un silence.** Valider dit
-///   donc deux choses à la fois : ceux-là je les ai vus, les autres non. Les
-///   non-cochés passent en retrait comme un « pas vu » du deck, et la saga ne
-///   revient plus la poser.
+/// - **Ne pas cocher n'est pas répondre.** Ne pas cocher, c'est souvent ne pas
+///   avoir pris le temps : les non-cochés restent comme ils sont, et la feuille
+///   le dit. Seul « Je n'en ai vu aucun » écrit des « pas vu ».
+/// - **La sélection se dit à l'encre, l'acquis à la lumière.** Une case cochée
+///   prend l'aplat d'encre du système ; le point de lumière reste aux opus déjà
+///   en galerie, et à eux seuls.
 /// - **Elle ne parle pas une langue à elle.** Un « vu » posé ici est le même
 ///   événement qu'un balayage à droite : la feuille envoie des décisions de
 ///   deck, et c'est tout.
@@ -198,16 +200,27 @@ struct SagaSheet: View {
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
     }
 
-    /// Le vocabulaire commun : point plein pour ce qui est acquis, point creux
-    /// pour ce qui est prévu, rien pour ce qui n'a pas été dit.
+    /// Ce qui est déjà en galerie porte le point de lumière, le seul signe
+    /// d'« acquis ». Une case, elle, se coche à l'encre : le système dit qu'une
+    /// sélection se dit à l'encre, et le point de lumière ne s'allume pas plus
+    /// de deux fois par écran. Vide ou pleine, la case garde sa taille.
     @ViewBuilder
     private func mark(isOwned: Bool, isOn: Bool) -> some View {
-        if isOwned || isOn {
+        if isOwned {
             PlanLight()
         } else {
-            Rectangle()
-                .strokeBorder(Ink.ink3, lineWidth: 1)
-                .frame(width: 10, height: 10)
+            ZStack {
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(isOn ? Ink.ink : .clear)
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .strokeBorder(isOn ? Ink.ink : Ink.ink3, lineWidth: 1)
+                if isOn {
+                    SagaCheckGlyph()
+                        .stroke(Ink.ground, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                        .padding(3)
+                }
+            }
+            .frame(width: 14, height: 14)
         }
     }
 
@@ -226,12 +239,21 @@ struct SagaSheet: View {
             ) {
                 let ticked = selection.isEmpty ? selectable :
                     selectable.filter { selection.contains($0.libraryID) }
-                // Une saison non cochée n'est pas un « pas vue » : le deck ne
-                // demande jamais une saison, et la série est déjà rangée. Rien
-                // n'est écrit pour elle.
-                let rest = selection.isEmpty || isSeries ? [] :
-                    selectable.filter { !selection.contains($0.libraryID) }
-                submit(seen: ticked, skipped: rest)
+                // Ce qui n'est pas coché n'est pas écrit : ne pas cocher n'est
+                // pas répondre.
+                submit(seen: ticked, skipped: [])
+            }
+
+            // Le seul effet de la validation, dit avant qu'on valide.
+            if !selection.isEmpty {
+                Text(isSeries
+                     ? String(localized: "Celles que tu ne coches pas restent comme elles sont.", bundle: .app)
+                     : String(localized: "Ceux que tu ne coches pas restent comme ils sont.", bundle: .app))
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Ink.ink3)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 6)
+                    .transition(.opacity)
             }
 
             // Toujours à sa place, pour que le bas de la feuille ne bouge pas
@@ -299,8 +321,8 @@ struct SagaSheet: View {
             PlanEmptyState(
                 icon: .salle,
                 title: isSeries
-                    ? String(localized: "La série n'est pas venue", bundle: .app)
-                    : String(localized: "La saga n'est pas venue", bundle: .app),
+                    ? String(localized: "La série n'a pas pu se charger", bundle: .app)
+                    : String(localized: "La saga n'a pas pu se charger", bundle: .app),
                 message: message,
                 actionTitle: String(localized: "Fermer", bundle: .app),
                 action: onClose
@@ -429,5 +451,17 @@ struct SagaOffer: Identifiable, Equatable {
         case .collection(let id): "collection-\(id)"
         case .series(let id): "series-\(id)"
         }
+    }
+}
+
+
+/// La coche, dans l'écriture de la famille d'icônes.
+private struct SagaCheckGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.minX + rect.width * 0.38, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        return path
     }
 }

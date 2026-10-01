@@ -698,10 +698,16 @@ struct SwipeDeckView: View {
         isSynopsisOpen = false
         model.swipe(direction, loved: loved)
 
+        // La feuille de saga passe avant le toast : quand elle s'ouvre, c'est
+        // elle qui accuse réception, et un toast qui descend pendant qu'elle
+        // monte ferait deux accusés pour un geste.
+        offerSagaIfAny(for: card, direction: direction)
+
         // Après `swipe`, parce que c'est lui qui sait si un palier vient d'être
         // franchi : la célébration plein écran dit déjà que le film est rangé, et
         // deux accusés de réception pour le même geste en font un de trop.
-        if let confirmation = direction.confirmation, model.celebratedMilestone == nil {
+        if let confirmation = direction.confirmation, model.celebratedMilestone == nil,
+           sagaOffer == nil {
             toast = ToastMark(
                 title: card.title,
                 // Le cœur s'ajoute à la destination, il ne la remplace pas :
@@ -714,8 +720,6 @@ struct SwipeDeckView: View {
                 isAcquired: direction.verdict.isFilled
             )
         }
-
-        offerSagaIfAny(for: card, direction: direction)
     }
 
     /// Une carte de série range sa première saison, et le toast le dit : c'est
