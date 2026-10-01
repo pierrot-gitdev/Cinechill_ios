@@ -50,6 +50,13 @@ final class BadgesViewModel {
 
     private let client: any BadgesFetching
 
+    /// Une vérification est en cours : celle qu'on demande pendant ce temps
+    /// est rejouée juste après, au lieu d'être perdue. Sans ça, un film rangé
+    /// pendant l'aller-retour attendait le film suivant pour être compté, et
+    /// sa félicitation arrivait une carte plus tard encore.
+    private var isChecking = false
+    private var recheckGalleryCount: Int?
+
     /// Dernière taille de galerie connue, pour détecter le passage d'une
     /// distinction à la suivante. `nil` tant qu'aucune référence n'a été posée.
     private var lastKnownGalleryCount: Int?
@@ -120,6 +127,20 @@ final class BadgesViewModel {
     /// signal commun à tous les chemins qui peuvent décrocher un badge ou
     /// faire monter d'une distinction.
     func checkForNewAchievements(galleryCount: Int) async {
+        guard !isChecking else {
+            recheckGalleryCount = galleryCount
+            return
+        }
+        isChecking = true
+        await runCheck(galleryCount: galleryCount)
+        while let next = recheckGalleryCount {
+            recheckGalleryCount = nil
+            await runCheck(galleryCount: next)
+        }
+        isChecking = false
+    }
+
+    private func runCheck(galleryCount: Int) async {
         let isFirstCheck = !hasEstablishedBaseline
         let previousDistinction = lastKnownGalleryCount.map(Distinction.distinction(for:))
         let previousProgress = progressByID
@@ -154,6 +175,7 @@ final class BadgesViewModel {
     /// active pour le suivant qui se connecterait dans la même session.
     func resetAchievementTracking() {
         lastKnownGalleryCount = nil
+        recheckGalleryCount = nil
         hasEstablishedBaseline = false
         pendingCelebrations = []
         progressByID = [:]
