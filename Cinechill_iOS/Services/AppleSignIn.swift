@@ -23,7 +23,7 @@ final class AppleSignInCoordinator: NSObject {
     /// Le nonce brut, à transmettre tel quel à Firebase : c'est lui qui prouve
     /// que le jeton reçu répond bien à *cette* demande.
     private var rawNonce = ""
-    private var proceed: CheckedContinuation<(token: String, nonce: String, fullName: PersonNameComponents?), Error>?
+    private var proceed: CheckedContinuation<(token: String, nonce: String, fullName: PersonNameComponents?, code: String?), Error>?
     private var retained: AppleSignInCoordinator?
 
     struct Result {
@@ -32,6 +32,10 @@ final class AppleSignInCoordinator: NSObject {
         /// Apple ne renvoie le nom qu'à la **toute première** autorisation. Le
         /// perdre ici, c'est le perdre définitivement.
         let fullName: PersonNameComponents?
+        /// Code à usage unique, valable cinq minutes. Il ne sert qu'à révoquer
+        /// l'autorisation donnée à l'app quand le compte est supprimé : Apple
+        /// l'exige, et Firebase ne sait le faire qu'à partir de ce code.
+        let authorizationCode: String?
     }
 
     func run() async throws -> Result {
@@ -56,7 +60,8 @@ final class AppleSignInCoordinator: NSObject {
         return Result(
             identityToken: payload.token,
             rawNonce: payload.nonce,
-            fullName: payload.fullName
+            fullName: payload.fullName,
+            authorizationCode: payload.code
         )
     }
 
@@ -95,7 +100,8 @@ extension AppleSignInCoordinator: ASAuthorizationControllerDelegate {
                 finish(.failure(AuthFailure.form(String(localized: "Connexion Apple incomplète.", bundle: .app))))
                 return
             }
-            finish(.success((token, rawNonce, credential.fullName)))
+            let code = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
+            finish(.success((token, rawNonce, credential.fullName, code)))
         }
     }
 
@@ -109,7 +115,7 @@ extension AppleSignInCoordinator: ASAuthorizationControllerDelegate {
     }
 
     private func finish(
-        _ result: Swift.Result<(token: String, nonce: String, fullName: PersonNameComponents?), Error>
+        _ result: Swift.Result<(token: String, nonce: String, fullName: PersonNameComponents?, code: String?), Error>
     ) {
         guard let proceed else { return }
         self.proceed = nil

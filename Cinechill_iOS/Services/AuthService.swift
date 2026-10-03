@@ -340,6 +340,37 @@ final class AuthService: ObservableObject {
 #endif
     }
 
+    /// Retire à Cinechill l'autorisation « Se connecter avec Apple », juste
+    /// avant la suppression du compte.
+    ///
+    /// Effacer l'utilisateur Firebase ne suffit pas : l'app resterait listée
+    /// dans « Apps utilisant l'identifiant Apple » des réglages iOS. La règle
+    /// 5.1.1(v) de l'App Store demande la révocation, et Firebase ne la fait
+    /// qu'à partir d'un code d'autorisation frais, d'où la feuille Apple
+    /// rouverte ici. Côté console Firebase, le fournisseur Apple doit porter la
+    /// configuration du flux OAuth (Services ID, Team ID, Key ID, clé privée).
+    ///
+    /// - Returns: `false` si la personne a refermé la feuille Apple : elle a
+    ///   renoncé, la suppression s'arrête là.
+    func revokeAppleAuthorizationIfNeeded() async -> Bool {
+#if canImport(FirebaseAuth)
+        guard let user = Auth.auth().currentUser,
+              user.providerData.contains(where: { $0.providerID == "apple.com" })
+        else { return true }
+        do {
+            let apple = try await AppleSignInCoordinator().run()
+            guard let code = apple.authorizationCode else { return true }
+            try await Auth.auth().revokeToken(withAuthorizationCode: code)
+        } catch let error as ASAuthorizationError where error.code == .canceled {
+            return false
+        } catch {
+            // Une révocation ratée ne doit pas retenir des données que la
+            // personne a demandé d'effacer : la suppression passe avant.
+        }
+#endif
+        return true
+    }
+
     // MARK: - Google
 
     func signInWithGoogle() async throws {

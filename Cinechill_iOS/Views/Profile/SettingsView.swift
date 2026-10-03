@@ -536,6 +536,7 @@ struct SettingsView: View {
         isWorking = true
         actionMessage = nil
         defer { isWorking = false }
+        guard await authService.revokeAppleAuthorizationIfNeeded() else { return }
         do {
             try await libraryStore.deleteAccount()
             dismiss()
