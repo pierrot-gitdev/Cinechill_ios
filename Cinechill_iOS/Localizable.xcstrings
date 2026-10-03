@@ -1504,6 +1504,22 @@
         }
       }
     },
+    "Cinechill utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB. Disponibilités sur les plateformes : JustWatch." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This product uses the TMDB API but is not endorsed or certified by TMDB. Streaming availability: JustWatch."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cinechill utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB. Disponibilités sur les plateformes : JustWatch."
+          }
+        }
+      }
+    },
     "À débloquer" : {
       "localizations" : {
         "en" : {

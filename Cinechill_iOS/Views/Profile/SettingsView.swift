@@ -403,6 +403,16 @@ struct SettingsView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(Ink.ink2)
                 .padding(.top, 16)
+
+            // Les conditions de TMDB exigent cette mention, que la traduction
+            // anglaise reprend mot pour mot ; JustWatch, qui fournit à TMDB les
+            // disponibilités, demande d'être cité. C'est une licence, pas une
+            // règle App Store.
+            Text("Cinechill utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB. Disponibilités sur les plateformes : JustWatch.", bundle: .app)
+                .font(.system(size: 11))
+                .foregroundStyle(Ink.ink3)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 6)
         }
     }
 
