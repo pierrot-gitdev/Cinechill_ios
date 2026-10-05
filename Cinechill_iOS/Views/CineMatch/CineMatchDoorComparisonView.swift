@@ -174,7 +174,7 @@ struct CineMatchDoorComparisonView: View {
         } else {
             VStack(alignment: .leading, spacing: 0) {
                 Text(questionTitle)
-                .font(.system(size: isCompact ? 20 : 24, weight: .regular, design: .serif))
+                .planFont(isCompact ? 20 : 24, weight: .regular, design: .serif)
                 .kerning(0.1)
                 .foregroundStyle(Ink.ink)
                 .fixedSize(horizontal: false, vertical: true)
@@ -195,7 +195,7 @@ struct CineMatchDoorComparisonView: View {
 
                 Button(action: skip) {
                     Text("Passer", bundle: .app)
-                        .font(.system(size: 13, weight: .medium))
+                        .planFont(13, weight: .medium)
                         .foregroundStyle(Ink.ink2)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 11)
@@ -272,7 +272,7 @@ struct CineMatchDoorComparisonView: View {
                     }
 
                 Text(film.title)
-                    .font(.system(size: 12))
+                    .planFont(12)
                     .foregroundStyle(isKept ? Ink.ink : Ink.ink2)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -352,7 +352,9 @@ struct CineMatchDoorComparisonView: View {
             let next = try await client.comparisonRound(
                 round: round, shownIDs: shownIDs, history: history, forDoor: true, format: format
             )
-            films = next.films
+            // Un seul film ne se compare à rien : l'état « pas assez de films
+            // vus » prend le relais plutôt qu'une question sans réponse.
+            films = next.films.count >= 2 ? next.films : []
             keptID = nil
             excludedID = nil
             for id in next.films.map(\.id) where !shownIDs.contains(id) {
@@ -367,8 +369,12 @@ struct CineMatchDoorComparisonView: View {
                 Task { try? await client.recordExposure(kind: .poster, tmdbIDs: ids, format: format) }
             }
         } catch {
+            // L'écran d'erreur prend la place du tour. Garder l'ancien quatuor
+            // laissait enregistrer un duel sur des films déjà joués.
+            films = []
+            keptID = nil
             excludedID = nil
-            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            errorMessage = String(localized: "Le serveur n'a pas répondu comme prévu. Réessaie dans un instant.", bundle: .app)
         }
     }
 }

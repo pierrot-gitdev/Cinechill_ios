@@ -109,7 +109,7 @@ struct CineMatchConclusionView: View {
 
         return HStack(spacing: 0) {
             Text(film.item.title)
-                .font(.system(size: 13, weight: .medium))
+                .planFont(13, weight: .medium)
                 .foregroundStyle(Ink.ink)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
@@ -117,7 +117,7 @@ struct CineMatchConclusionView: View {
             if let runtime = film.runtimeMinutes, runtime > 0 {
                 separator
                 Text(verbatim: Self.format(runtime))
-                    .font(.system(size: 13))
+                    .planFont(13)
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink2)
             }
@@ -133,7 +133,7 @@ struct CineMatchConclusionView: View {
 
     private var separator: some View {
         Text(verbatim: "·")
-            .font(.system(size: 13))
+            .planFont(13)
             .foregroundStyle(Ink.ink3)
             .padding(.horizontal, 6)
             .accessibilityHidden(true)
@@ -145,7 +145,7 @@ struct CineMatchConclusionView: View {
                 PosterImageView(url: url)
             } else {
                 Text(verbatim: platform.shortLabel)
-                    .font(.system(size: 8, weight: .semibold))
+                    .planFont(8, weight: .semibold)
                     .foregroundStyle(Ink.ink2)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Ink.ground3)
@@ -165,7 +165,7 @@ struct CineMatchConclusionView: View {
 
         return VStack(spacing: 6) {
             Text(note(for: state))
-                .font(.system(size: 13))
+                .planFont(13)
                 .foregroundStyle(Ink.ink2)
                 .lineSpacing(2)
                 .multilineTextAlignment(.center)
@@ -178,11 +178,11 @@ struct CineMatchConclusionView: View {
                 HStack(spacing: 9) {
                     PlanLight()
                     Text("Ajouté à ta galerie", bundle: .app)
-                        .font(.system(size: 15, weight: .medium))
+                        .planFont(15, weight: .medium)
                         .foregroundStyle(Ink.ink)
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: Metrics.button)
+                .frame(minHeight: Metrics.button)
                 .overlay(
                     RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
                         .strokeBorder(Ink.ruleSet, lineWidth: 1)
@@ -203,7 +203,7 @@ struct CineMatchConclusionView: View {
                 viewModel.backToHome()
             } label: {
                 Text("Retour à l'accueil", bundle: .app)
-                    .font(.system(size: 13.5, weight: .medium))
+                    .planFont(13.5, weight: .medium)
                     .foregroundStyle(Ink.ink2)
                     .padding(.horizontal, 18)
                     .frame(minHeight: 40)
@@ -254,7 +254,7 @@ struct CineMatchConclusionView: View {
 
         return VStack(spacing: 6) {
             Text(seriesNote(queued: queued != nil, state: state))
-                .font(.system(size: 13))
+                .planFont(13)
                 .foregroundStyle(Ink.ink2)
                 .lineSpacing(2)
                 .multilineTextAlignment(.center)
@@ -267,11 +267,11 @@ struct CineMatchConclusionView: View {
                 HStack(spacing: 9) {
                     PlanLight()
                     Text("Dans ta watchlist : saison 1, épisode \(queued.episodeToPlay)", bundle: .app)
-                        .font(.system(size: 15, weight: .medium))
+                        .planFont(15, weight: .medium)
                         .foregroundStyle(Ink.ink)
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: Metrics.button)
+                .frame(minHeight: Metrics.button)
                 .overlay(
                     RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
                         .strokeBorder(Ink.ruleSet, lineWidth: 1)
@@ -292,7 +292,7 @@ struct CineMatchConclusionView: View {
                 viewModel.backToHome()
             } label: {
                 Text("Retour à l'accueil", bundle: .app)
-                    .font(.system(size: 13.5, weight: .medium))
+                    .planFont(13.5, weight: .medium)
                     .foregroundStyle(Ink.ink2)
                     .padding(.horizontal, 18)
                     .frame(minHeight: 40)

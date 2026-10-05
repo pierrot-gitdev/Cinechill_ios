@@ -91,6 +91,16 @@ struct CineMatchFiveView: View {
 
                 actions(for: current)
                     .padding(.top, 10)
+            } else if mode == .daily, let message = viewModel.errorMessage, viewModel.failureIsNoCandidates {
+                PlanEmptyState(
+                    title: isSeries
+                        ? String(localized: "Aucune série pour ce soir", bundle: .app)
+                        : String(localized: "Aucun film pour ce soir", bundle: .app),
+                    message: message,
+                    actionTitle: String(localized: "Retour", bundle: .app),
+                    action: { viewModel.backToHome() }
+                )
+                .frame(maxHeight: .infinity)
             } else if mode == .daily, let message = viewModel.errorMessage {
                 PlanEmptyState(
                     title: isSeries
@@ -195,7 +205,7 @@ struct CineMatchFiveView: View {
 
     private func wideningLine(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 13))
+            .planFont(13)
             .foregroundStyle(Ink.ink2)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -318,7 +328,7 @@ struct CineMatchFiveView: View {
 
                 if let status = film.status {
                     Text(Self.statusLine(status))
-                        .font(.system(size: 12))
+                        .planFont(12)
                         .foregroundStyle(Ink.ink2)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -486,10 +496,9 @@ struct CineMatchFiveView: View {
     @ViewBuilder
     private func actions(for film: CineMatchFilm) -> some View {
         VStack(spacing: 7) {
-            PlanButton(title: film.isSeries
-                ? String(localized: "Je la commence", bundle: .app)
-                : String(localized: "Démarrer le film", bundle: .app)
-            ) {
+            // « Démarrer » promet d'ouvrir une plateforme : sans plateforme
+            // connue, rien ne s'ouvrait. Le bouton dit alors ce qu'il fait.
+            PlanButton(title: launchTitle(for: film)) {
                 start(film)
             }
 
@@ -513,7 +522,7 @@ struct CineMatchFiveView: View {
             viewModel.backToHome()
         } label: {
             Text("Retour", bundle: .app)
-                .font(.system(size: 13.5, weight: .medium))
+                .planFont(13.5, weight: .medium)
                 .foregroundStyle(Ink.ink2)
                 .padding(.horizontal, 18)
                 .frame(minHeight: 40)
@@ -544,6 +553,20 @@ struct CineMatchFiveView: View {
         }
         guard let webURL = film.watchWebURL(preferring: platformIDs) else { return }
         openURL(webURL)
+    }
+
+    private func canLaunch(_ film: CineMatchFilm) -> Bool {
+        !film.watchAppURLCandidates(preferring: preferredPlatformIDs).isEmpty
+            || film.watchWebURL(preferring: preferredPlatformIDs) != nil
+    }
+
+    private func launchTitle(for film: CineMatchFilm) -> String {
+        switch (canLaunch(film), film.isSeries) {
+        case (true, true): String(localized: "Je la commence", bundle: .app)
+        case (true, false): String(localized: "Démarrer le film", bundle: .app)
+        case (false, true): String(localized: "Je choisis celle-là", bundle: .app)
+        case (false, false): String(localized: "Je choisis celui-là", bundle: .app)
+        }
     }
 
     private func openTrailer(_ film: CineMatchFilm) {
@@ -680,7 +703,7 @@ private struct CineMatchSynopsisSheet: View {
                         .padding(.top, 18)
 
                     Text(overview)
-                        .font(.system(size: 14.5))
+                        .planFont(14.5)
                         .foregroundStyle(Ink.ink)
                         .lineSpacing(3)
                         .fixedSize(horizontal: false, vertical: true)
@@ -712,14 +735,14 @@ private struct FiveMetaRow: View {
                 Text(episodes == 1
                     ? String(localized: "1 épisode", bundle: .app)
                     : String(localized: "\(episodes) épisodes", bundle: .app))
-                    .font(.system(size: fontSize))
+                    .planFont(fontSize)
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink2)
                 if runtime ?? 0 > 0 || platform != nil { dot }
             }
             if let runtime, runtime > 0 {
                 Text(verbatim: Self.format(runtime))
-                    .font(.system(size: fontSize))
+                    .planFont(fontSize)
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink2)
             }
@@ -735,7 +758,7 @@ private struct FiveMetaRow: View {
 
     private var dot: some View {
         Text(verbatim: "·")
-            .font(.system(size: fontSize))
+            .planFont(fontSize)
             .foregroundStyle(Ink.ink3)
             .padding(.horizontal, 6)
             .accessibilityHidden(true)
@@ -747,7 +770,7 @@ private struct FiveMetaRow: View {
                 PosterImageView(url: url)
             } else {
                 Text(verbatim: platform.shortLabel)
-                    .font(.system(size: 8, weight: .semibold))
+                    .planFont(8, weight: .semibold)
                     .foregroundStyle(Ink.ink2)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Ink.ground3)

@@ -74,6 +74,9 @@ struct CineMatchGateView: View {
     /// tait. On ne franchit un seuil qu'une fois, autant le regarder.
     @State private var isOpening = false
     @State private var hasPlayedOpening = false
+    /// Un toucher pendant la cérémonie la saute : elle se rejoue à chaque
+    /// lancement, et on ne fait pas attendre quatre secondes tous les soirs.
+    @State private var openingSkipped = false
     /// Le travelling avant, une fois les battants écartés : la scène grandit
     /// et le seuil passe hors champ, comme si on entrait dans le salon.
     @State private var zoom: Double = 1
@@ -83,6 +86,10 @@ struct CineMatchGateView: View {
     @State private var sceneFrame: CGRect = .zero
     @State private var roomFrame: CGRect = .zero
     @State private var headerBottom: CGFloat = SalonGeometry.typicalChromeBottom
+    /// La hauteur du bloc de texte du bas, mesurée. Elle grandit avec la taille
+    /// du texte (Dynamic Type) : la scène se réduit d'autant au lieu de passer
+    /// sous le texte, et le voile la suit.
+    @State private var contentHeight: CGFloat = 205
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -161,6 +168,19 @@ struct CineMatchGateView: View {
         // Rien ne répond pendant que les battants tournent : c'est la seule
         // fois où l'écran prend la main sur l'utilisateur, et il la rend.
         .allowsHitTesting(!isOpening)
+        // Posé après le verrou : rien d'autre ne répond pendant l'ouverture,
+        // sauf ce toucher qui la passe.
+        .overlay {
+            if isOpening {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture(perform: skipOpening)
+                    .accessibilityElement()
+                    .accessibilityLabel(String(localized: "Passer l'ouverture", bundle: .app))
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction(.default, skipOpening)
+            }
+        }
         .task(id: openingTrigger) { await playOpeningIfNeeded() }
     }
 
@@ -201,6 +221,7 @@ struct CineMatchGateView: View {
             zoom = 1
             isOpening = false
             hasPlayedOpening = false
+            openingSkipped = false
             return
         }
         guard !isCelebrating, !hasPlayedOpening else { return }
@@ -225,11 +246,11 @@ struct CineMatchGateView: View {
         // lui l'ouverture démarre dans le même souffle que l'annonce qui la
         // précède, et les deux se mangent.
         try? await Task.sleep(for: .seconds(Self.openingLeadIn))
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, !openingSkipped else { return }
         Haptics.success()
         withAnimation(.easeInOut(duration: Self.openingDuration)) { openProgress = 1 }
         try? await Task.sleep(for: .seconds(Self.openingDuration))
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, !openingSkipped else { return }
 
         // On entre dans la foulée, sans temps mort : les battants finissent
         // leur course et le pas est déjà engagé. L'accélération fait tout le
@@ -239,7 +260,22 @@ struct CineMatchGateView: View {
             zoom = entry.map { Double($0.zoom) } ?? Self.entryZoom
         }
         try? await Task.sleep(for: .seconds(Self.entryDuration))
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, !openingSkipped else { return }
+        isOpening = false
+        onEnter()
+    }
+
+    /// Saute à la fin : battants ouverts, et l'on entre. L'entrée dans
+    /// l'accueil garde son fondu, si bien que rien ne saute à l'œil.
+    private func skipOpening() {
+        guard isOpening, !openingSkipped else { return }
+        openingSkipped = true
+        var still = Transaction()
+        still.disablesAnimations = true
+        withTransaction(still) {
+            openProgress = 1
+            zoom = 1
+        }
         isOpening = false
         onEnter()
     }
@@ -279,6 +315,10 @@ struct CineMatchGateView: View {
 
             Spacer(minLength: 0)
         }
+        // La scène s'arrête au-dessus du bloc de texte. Sur les grands écrans
+        // elle est limitée par la largeur et rien ne bouge ; sur un iPhone SE
+        // ou avec un texte agrandi, elle se réduit plutôt que d'être recouverte.
+        .padding(.bottom, max(0, contentHeight - 20))
         .frame(maxHeight: .infinity, alignment: .top)
     }
 
@@ -293,7 +333,8 @@ struct CineMatchGateView: View {
             ],
             startPoint: .top, endPoint: .bottom
         )
-        .frame(height: 380)
+        // 380 pour le bloc de 205 pt d'origine ; il suit le bloc s'il grandit.
+        .frame(height: contentHeight + 175)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
@@ -320,7 +361,8 @@ struct CineMatchGateView: View {
                 // Deux clés distinctes plutôt qu'un ternaire dans `Text` : un
                 // ternaire produit une `String` et sortirait du catalogue.
                 Group {
-                    if door.litCount == 1 {
+                    // En français, zéro prend le singulier.
+                    if door.litCount <= 1 {
                         Text("étape sur 5", bundle: .app)
                     } else {
                         Text("étapes sur 5", bundle: .app)
@@ -349,6 +391,7 @@ struct CineMatchGateView: View {
         }
         .padding(.horizontal, Metrics.margin)
         .padding(.bottom, Metrics.margin)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
         .opacity(isOpening ? 0 : 1)
         .animation(Metrics.shift, value: door.litCount)
         .animation(.easeOut(duration: 0.35), value: isOpening)
@@ -427,7 +470,9 @@ private struct DoorSceneView: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "CinéMatch verrouillé, \(door.litCount) étapes sur 5 validées", bundle: .app))
+        .accessibilityLabel(door.litCount <= 1
+            ? String(localized: "CinéMatch verrouillé, \(door.litCount) étape sur 5 validée", bundle: .app)
+            : String(localized: "CinéMatch verrouillé, \(door.litCount) étapes sur 5 validées", bundle: .app))
     }
 
     /// Le prochain à viser : le premier médaillon éteint en montant. C'est un
@@ -471,7 +516,8 @@ private struct DoorSceneView: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.92))
         .position(x: 195 * s, y: seat.y * s)
-        .accessibilityLabel(seat.key.displayName)
+        // Le nom du format : sur la Porte des séries, « Films vus » était faux.
+        .accessibilityLabel(seat.key.displayName(series: door.series))
         .accessibilityValue(
             lit
                 ? String(localized: "validée", bundle: .app)
@@ -924,7 +970,7 @@ private struct DoorArtifactSheet: View {
             }
 
             Text(artifactKey.condition(in: door))
-                .font(.system(size: 15, weight: .medium))
+                .planFont(15, weight: .medium)
                 .foregroundStyle(Ink.ink)
                 .padding(.top, 22)
 
@@ -938,7 +984,7 @@ private struct DoorArtifactSheet: View {
             .padding(.top, 12)
 
             Text(consequence)
-                .font(.system(size: 13.5))
+                .planFont(13.5)
                 .foregroundStyle(Ink.ink2)
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)

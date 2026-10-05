@@ -92,7 +92,7 @@ struct CineMatchQuizView: View {
                 viewModel.cancel()
             } label: {
                 Text("Annuler", bundle: .app)
-                    .font(.system(size: 13, weight: .medium))
+                    .planFont(13, weight: .medium)
                     .foregroundStyle(Ink.ink2)
                     .padding(.leading, 12)
                     .frame(minHeight: Metrics.control)
@@ -142,8 +142,10 @@ struct CineMatchQuizView: View {
 
     @ViewBuilder
     private func page(isCompact: Bool) -> some View {
+        // `.energy` aussi : le premier tour se charge en y restant, et son échec
+        // n'affichait rien, la ligne touchée s'éteignait sans un mot.
         if let message = viewModel.errorMessage,
-           viewModel.step == .comparison || viewModel.step == .loadingFive {
+           [.energy, .comparison, .loadingFive].contains(viewModel.step) {
             failure(message)
         } else {
             switch viewModel.step {
@@ -191,7 +193,7 @@ struct CineMatchQuizView: View {
 
     private func questionTitle(_ text: String, isCompact: Bool, top: CGFloat? = nil) -> some View {
         Text(text)
-            .font(.system(size: isCompact ? 20 : 24, weight: .regular, design: .serif))
+            .planFont(isCompact ? 20 : 24, weight: .regular, design: .serif)
             .kerning(0.1)
             .lineSpacing(2)
             .foregroundStyle(Ink.ink)
@@ -245,10 +247,10 @@ struct CineMatchQuizView: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(answer.title)
-                        .font(.system(size: 15, weight: .medium))
+                        .planFont(15, weight: .medium)
                         .foregroundStyle(isOn ? Ink.ground : Ink.ink)
                     Text(answer.consequence)
-                        .font(.system(size: 12))
+                        .planFont(12)
                         .foregroundStyle(isOn ? Ink.ground.opacity(0.62) : Ink.ink2)
                 }
                 .multilineTextAlignment(.leading)
@@ -332,7 +334,7 @@ struct CineMatchQuizView: View {
                 Task { await viewModel.noneOfThese() }
             } label: {
                 Text(noneTitle(isExcluding: isExcluding, count: films.count))
-                    .font(.system(size: 13, weight: .medium))
+                    .planFont(13, weight: .medium)
                     .foregroundStyle(Ink.ink2)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 11)
@@ -412,7 +414,7 @@ struct CineMatchQuizView: View {
         }
         .foregroundStyle(isActive ? Ink.ground : kept != nil ? Ink.ink2 : Ink.ink3)
         .frame(maxWidth: .infinity)
-        .frame(height: 36)
+        .frame(minHeight: 36)
         .background {
             if isActive {
                 RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
@@ -533,7 +535,7 @@ struct CineMatchQuizView: View {
                     Text("On cherche tes cinq films…", bundle: .app)
                 }
             }
-                .font(.system(size: 13.5))
+                .planFont(13.5)
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
         }
@@ -541,18 +543,34 @@ struct CineMatchQuizView: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// Aucun film pour ce scénario : rien n'a échoué, et « Réessayer » ne
+    /// changerait rien. On le dit, et la seule issue utile est l'accueil, où
+    /// se règle la soirée.
+    @ViewBuilder
     private func failure(_ message: String) -> some View {
-        PlanEmptyState(
-            title: isSeries
-                ? String(localized: "Impossible de charger les séries", bundle: .app)
-                : String(localized: "Impossible de charger les films", bundle: .app),
-            message: message,
-            actionTitle: String(localized: "Réessayer", bundle: .app),
-            action: { Task { await viewModel.retry() } },
-            secondaryTitle: String(localized: "Retour à l'accueil", bundle: .app),
-            secondaryAction: { viewModel.backToHome() }
-        )
-        .frame(maxHeight: .infinity)
+        if viewModel.failureIsNoCandidates {
+            PlanEmptyState(
+                title: isSeries
+                    ? String(localized: "Aucune série pour ce soir", bundle: .app)
+                    : String(localized: "Aucun film pour ce soir", bundle: .app),
+                message: message,
+                actionTitle: String(localized: "Retour à l'accueil", bundle: .app),
+                action: { viewModel.backToHome() }
+            )
+            .frame(maxHeight: .infinity)
+        } else {
+            PlanEmptyState(
+                title: isSeries
+                    ? String(localized: "Impossible de charger les séries", bundle: .app)
+                    : String(localized: "Impossible de charger les films", bundle: .app),
+                message: message,
+                actionTitle: String(localized: "Réessayer", bundle: .app),
+                action: { Task { await viewModel.retry() } },
+                secondaryTitle: String(localized: "Retour à l'accueil", bundle: .app),
+                secondaryAction: { viewModel.backToHome() }
+            )
+            .frame(maxHeight: .infinity)
+        }
     }
 
     // MARK: - Les textes des réponses
@@ -706,7 +724,7 @@ private struct QuizPosterTile: View {
                 .offset(y: isFresh && !hasArrived && !reduceMotion ? 6 : 0)
 
             Text(film.title)
-                .font(.system(size: 12))
+                .planFont(12)
                 .foregroundStyle(Ink.ink2)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)

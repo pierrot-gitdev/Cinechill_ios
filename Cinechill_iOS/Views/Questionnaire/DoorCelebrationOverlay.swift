@@ -43,7 +43,7 @@ struct DoorCelebrationOverlay: View {
                     .padding(.top, 22)
 
                 Text(unlocked.consequence(series: door.series))
-                    .font(.system(size: 13))
+                    .planFont(13)
                     .foregroundStyle(Ink.ink2)
                     .lineSpacing(2)
                     .multilineTextAlignment(.center)
@@ -60,10 +60,10 @@ struct DoorCelebrationOverlay: View {
 
                 Button(action: onDismiss) {
                     Text("Continuer", bundle: .app)
-                        .font(.system(size: 15, weight: .semibold))
+                        .planFont(15, weight: .semibold)
                         .foregroundStyle(Ink.ink)
                         .frame(maxWidth: .infinity)
-                        .frame(height: Metrics.buttonSecondary)
+                        .frame(minHeight: Metrics.buttonSecondary)
                         .overlay(
                             RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
                                 .strokeBorder(Ink.ruleSet, lineWidth: 1)
@@ -79,6 +79,7 @@ struct DoorCelebrationOverlay: View {
                 RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
                     .strokeBorder(Color(hex: unlocked.hue).opacity(0.45), lineWidth: 1)
             )
+            .planScrollsIfNeeded()
         }
         .task {
             Haptics.success()
@@ -93,7 +94,11 @@ struct DoorCelebrationOverlay: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "\(unlocked.displayName(series: door.series)) : c'est fait. \(door.litCount) étapes sur 5.", bundle: .app))
+        // Modale : VoiceOver ne doit pas sortir vers l'onglet du dessous.
+        .accessibilityAddTraits(.isModal)
+        .accessibilityLabel(door.litCount <= 1
+            ? String(localized: "\(unlocked.displayName(series: door.series)) : c'est fait. \(door.litCount) étape sur 5.", bundle: .app)
+            : String(localized: "\(unlocked.displayName(series: door.series)) : c'est fait. \(door.litCount) étapes sur 5.", bundle: .app))
     }
 
     // MARK: - La rangée

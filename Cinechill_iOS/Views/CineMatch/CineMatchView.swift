@@ -184,8 +184,27 @@ struct CineMatchView: View {
             .transition(.opacity)
             .task { await doorStore.refresh() }
         } else {
-            stepContent
-                .transition(.opacity)
+            // Les grandes étapes se relaient en fondu. Le `.transition` posé
+            // sur le `switch` ne jouait jamais : rien n'animait le changement
+            // d'étape, et chaque passage était une coupe sèche.
+            ZStack {
+                stepContent
+                    .id(stage)
+                    .transition(.opacity)
+            }
+            .animation(.easeOut(duration: 0.2), value: stage)
+        }
+    }
+
+    /// Les écrans, regroupés : les questions s'enchaînent dans une même vue,
+    /// qui ne doit pas se reconstruire d'une question à l'autre.
+    private var stage: Int {
+        switch viewModel.step {
+        case .home: 0
+        case .want, .energy, .comparison, .loadingFive: 1
+        case .five: 2
+        case .daily: 3
+        case .conclusion: 4
         }
     }
 

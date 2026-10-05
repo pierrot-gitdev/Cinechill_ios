@@ -116,7 +116,7 @@ struct CineMatchSituationSheet: View {
 
     private func question(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 14, weight: .medium))
+            .planFont(14, weight: .medium)
             .foregroundStyle(Ink.ink)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -127,7 +127,7 @@ struct CineMatchSituationSheet: View {
             HStack(spacing: 10) {
                 CinechillSpinner(size: 18)
                 Text("Chargement des plateformes…", bundle: .app)
-                    .font(.system(size: 12.5))
+                    .planFont(12.5)
                     .foregroundStyle(Ink.ink2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -436,10 +436,22 @@ final class CineMatchViewModel {
         isLoadingRound = false
     }
 
+    /// L'échec vient du scénario, pas du réseau : réessayer n'y changerait
+    /// rien, seul un réglage de la soirée le peut.
+    private(set) var failureIsNoCandidates = false
+
     private func fail(_ error: Error, retry: @escaping @MainActor () async -> Void) {
         if error is CancellationError || Task.isCancelled { return }
         lastFailedAction = retry
-        errorMessage = error.localizedDescription
+        if let known = error as? CineMatchClientError {
+            failureIsNoCandidates = true
+            errorMessage = known.errorDescription
+        } else {
+            failureIsNoCandidates = false
+            // Le code HTTP et le corps de la réponse servent au rapport de bug,
+            // pas à l'écran, où ils poussaient « Réessayer » hors de vue.
+            errorMessage = String(localized: "Le serveur n'a pas répondu comme prévu. Réessaie dans un instant.", bundle: .app)
+        }
     }
 
     private func resetSession() {

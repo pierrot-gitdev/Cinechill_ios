@@ -160,9 +160,9 @@ struct CineMatchHomeView: View {
 
                     HStack(spacing: 5) {
                         Image(systemName: "pencil")
-                            .font(.system(size: 11, weight: .semibold))
+                            .planFont(11, weight: .semibold)
                         Text("Modifier", bundle: .app)
-                            .font(.system(size: 11.5, weight: .semibold))
+                            .planFont(11.5, weight: .semibold)
                     }
                     .foregroundStyle(Ink.ink)
                 }
@@ -210,12 +210,15 @@ struct CineMatchHomeView: View {
         @ViewBuilder value: () -> Value
     ) -> some View {
         VStack(alignment: .leading, spacing: 4) {
+            // Deux lignes et une légère réduction : la colonne ne s'élargit
+            // pas, le texte agrandi s'y range au lieu d'être coupé.
             Text(label)
-                .font(.system(size: 10.5))
+                .planFont(10.5)
                 .foregroundStyle(Ink.ink2)
-                .lineLimit(1)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
             value()
-                .frame(height: 20, alignment: .leading)
+                .frame(minHeight: 20, alignment: .leading)
         }
         .padding(.leading, 10)
         .padding(.trailing, 8)
@@ -233,9 +236,10 @@ struct CineMatchHomeView: View {
 
     private func scenarioValue(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 12, weight: .medium))
+            .planFont(12, weight: .medium)
             .foregroundStyle(Ink.ink)
-            .lineLimit(1)
+            .lineLimit(2)
+            .minimumScaleFactor(0.8)
     }
 
     /// Les plateformes retenues, dans l'ordre du répertoire. Celles que le
@@ -254,8 +258,9 @@ struct CineMatchHomeView: View {
     @ViewBuilder
     private var platformsValue: some View {
         let chosen = chosenPlatforms
+        // Aucune plateforme choisie, c'est aucun filtre : on cherche partout.
         if chosen.isEmpty {
-            scenarioValue(String(localized: "Aucune", bundle: .app))
+            scenarioValue(String(localized: "Toutes", bundle: .app))
         } else {
             let shown = chosen.count > 3 ? Array(chosen.prefix(2)) : chosen
             HStack(spacing: 3) {
@@ -264,7 +269,7 @@ struct CineMatchHomeView: View {
                 }
                 if chosen.count > shown.count {
                     Text(verbatim: "+\(chosen.count - shown.count)")
-                        .font(.system(size: 10.5, weight: .semibold))
+                        .planFont(10.5, weight: .semibold)
                         .monospacedDigit()
                         .foregroundStyle(Ink.ink2)
                         .padding(.leading, 3)
@@ -277,7 +282,7 @@ struct CineMatchHomeView: View {
     private var scenarioAccessibilityLabel: String {
         let names = chosenPlatforms.compactMap { $0.platform?.name }
         let platforms = names.isEmpty
-            ? String(localized: "Aucune", bundle: .app)
+            ? String(localized: "Toutes", bundle: .app)
             : names.joined(separator: ", ")
         let company = viewModel.situation.company.scenarioLabel
         let duration = viewModel.situation.duration.scenarioLabel(series: isSeries)
@@ -302,7 +307,7 @@ struct CineMatchHomeView: View {
 
         return VStack(spacing: menu.headGap) {
             eyebrow
-                .font(.system(size: menu.eyebrowSize, weight: .semibold))
+                .font(.system(size: menu.eyebrowSize, weight: .semibold)) // dessiné à l'échelle de la télé
                 .tracking(menu.eyebrowSize * 0.16)
                 .textCase(.uppercase)
                 .foregroundStyle(CinechillPalette.wallHigh.opacity(0.55))
@@ -346,7 +351,7 @@ struct CineMatchHomeView: View {
         } label: {
             HStack(spacing: 10) {
                 Text(entry.title(series: isSeries))
-                    .font(.system(size: menu.fontSize, weight: isOn ? .semibold : .medium))
+                    .font(.system(size: menu.fontSize, weight: isOn ? .semibold : .medium)) // dessiné à l'échelle de la télé
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
 
@@ -468,7 +473,7 @@ private struct ScenarioPlatformLogo: View {
                 PosterImageView(url: url)
             } else {
                 Text(verbatim: platform?.shortLabel ?? "")
-                    .font(.system(size: 9, weight: .semibold))
+                    .planFont(9, weight: .semibold)
                     .foregroundStyle(Ink.ink2)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -815,6 +820,7 @@ struct SalonPainter {
             ? String(localized: "Ce soir, on commence", bundle: .app)
             : String(localized: "Ta soirée Cinechill", bundle: .app)).uppercased()
         context.draw(
+            // Peint dans la scène : une taille de dessin, pas de lecture.
             Text(verbatim: eyebrow)
                 .font(.system(size: menu.eyebrowSize, weight: .semibold))
                 .tracking(menu.eyebrowSize * 0.16)
