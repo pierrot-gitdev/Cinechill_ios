@@ -156,8 +156,14 @@ final class GalleryViewModel {
         // Clé `année × 100 + mois` : un entier se trie et se compare bien plus
         // simplement qu'un `DateComponents`, et l'ordre reste chronologique.
         var byMonth: [Int: [GalleryEntry]] = [:]
+        // Une date d'ajout absente (`distantPast`) n'est pas « janvier de l'an 1 ».
+        var undated: [GalleryEntry] = []
 
         for entry in entries {
+            guard entry.addedAt.timeIntervalSince1970 > 0 else {
+                undated.append(entry)
+                continue
+            }
             let components = calendar.dateComponents([.year, .month], from: entry.addedAt)
             let year: Int = components.year ?? 0
             let month: Int = components.month ?? 0
@@ -177,6 +183,14 @@ final class GalleryViewModel {
                 )
             )
         }
+        if !undated.isEmpty {
+            result.append(GalleryBand(
+                id: "added-unknown",
+                title: String(localized: "Sans date", bundle: .app),
+                subtitle: nil,
+                entries: undated
+            ))
+        }
         return result
     }
 
@@ -191,7 +205,8 @@ final class GalleryViewModel {
 
         var result = buckets.compactMap { bucket -> GalleryBand? in
             let items = entries.filter { entry in
-                guard let rating = entry.voteAverage else { return false }
+                // 0 est l'absence de note de TMDB, pas une mauvaise note.
+                guard let rating = entry.voteAverage, rating > 0 else { return false }
                 return bucket.range.contains(rating)
             }
             guard !items.isEmpty else { return nil }
@@ -203,7 +218,7 @@ final class GalleryViewModel {
             )
         }
 
-        let unrated = entries.filter { $0.voteAverage == nil }
+        let unrated = entries.filter { ($0.voteAverage ?? 0) <= 0 }
         if !unrated.isEmpty {
             result.append(GalleryBand(id: "rating-none", title: String(localized: "Non noté", bundle: .app), subtitle: nil, entries: unrated))
         }
@@ -291,10 +306,12 @@ final class GalleryViewModel {
         components.month = month
         guard let date = Calendar.current.date(from: components) else { return "—" }
 
-        // Le nom du mois suit la langue de l'appareil : « Août 2026 » ici,
-        // « August 2026 » ailleurs — ce qu'un `fr_FR` gravé ne sait pas faire.
+        // Le nom du mois suit la langue choisie dans l'app, pas celle de
+        // l'appareil : un iPhone en français avec l'app en anglais lisait
+        // « Août 2026 ».
+        let locale = AppLanguage.current.locale
         return date
-            .formatted(.dateTime.month(.wide).year())
-            .capitalized(with: Locale.current)
+            .formatted(.dateTime.month(.wide).year().locale(locale))
+            .capitalized(with: locale)
     }
 }

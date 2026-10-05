@@ -26,29 +26,17 @@ struct GallerySignatureView: View {
     }
 
     private var countRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 9) {
-            Text(verbatim: "\(signature.total)")
-                .planTitle(38)
-                .monospacedDigit()
-                .foregroundStyle(Ink.ink)
-                .contentTransition(.numericText())
-
-            Text(countLabel)
-                .planLabel()
-                .foregroundStyle(Ink.ink2)
-
-            Spacer(minLength: 0)
-
-            // Ce qui vient d'entrer s'allume — le même signe que partout, plutôt
-            // qu'une pastille verte qui n'appartenait à rien.
-            if signature.addedThisMonth > 0 {
-                HStack(spacing: 7) {
-                    PlanLight()
-                    Text(String(localized: "+\(signature.addedThisMonth) ce mois", bundle: .app))
-                        .planLabel()
-                        .monospacedDigit()
-                        .foregroundStyle(Ink.light)
-                }
+        // Sur une ligne tant qu'elle tient ; avec un texte agrandi ou en
+        // anglais sur un petit écran, le « ce mois » passe dessous.
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 9) {
+                countHead
+                Spacer(minLength: 0)
+                monthMark
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                countHead
+                monthMark
             }
         }
         .accessibilityElement(children: .combine)
@@ -57,13 +45,44 @@ struct GallerySignatureView: View {
             : String(localized: "\(signature.total) films vus, dont \(signature.addedThisMonth) ce mois", bundle: .app))
     }
 
+    private var countHead: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 9) {
+            Text(verbatim: signature.total.formatted(.number.locale(AppLanguage.current.locale)))
+                .planTitle(38)
+                .monospacedDigit()
+                .foregroundStyle(Ink.ink)
+                .contentTransition(.numericText())
+
+            Text(countLabel)
+                .planLabel()
+                .foregroundStyle(Ink.ink2)
+                .fixedSize()
+        }
+    }
+
+    /// Ce qui vient d'entrer s'allume — le même signe que partout, plutôt
+    /// qu'une pastille verte qui n'appartenait à rien.
+    @ViewBuilder
+    private var monthMark: some View {
+        if signature.addedThisMonth > 0 {
+            HStack(spacing: 7) {
+                PlanLight()
+                Text(String(localized: "+\(signature.addedThisMonth) ce mois", bundle: .app))
+                    .planLabel()
+                    .monospacedDigit()
+                    .foregroundStyle(Ink.light)
+                    .fixedSize()
+            }
+        }
+    }
+
     /// Le détail n'apparaît qu'avec des séries : pour qui n'a vu que des
     /// films, la signature reste exactement ce qu'elle était.
     @ViewBuilder
     private var compositionRow: some View {
         if signature.hasSeasons {
             Text(String(localized: "\(signature.films) films · \(signature.seasons) saisons · \(signature.series) séries", bundle: .app))
-                .font(.system(size: 12))
+                .planFont(12)
                 .monospacedDigit()
                 .foregroundStyle(Ink.ink2)
                 .padding(.top, -6)
@@ -73,7 +92,9 @@ struct GallerySignatureView: View {
     /// « films vus » tant qu'il n'y a que des films ; « vus » dès qu'une saison
     /// s'y mêle, le détail venant juste dessous.
     private var countLabel: String {
-        if signature.hasSeasons { return String(localized: "vus", bundle: .app) }
+        if signature.hasSeasons {
+            return signature.total > 1 ? String(localized: "vus", bundle: .app) : String(localized: "vu", bundle: .app)
+        }
         return signature.total > 1
             ? String(localized: "films vus", bundle: .app)
             : String(localized: "film vu", bundle: .app)
@@ -112,7 +133,7 @@ struct GallerySignatureView: View {
                     Text(share.percentText)
                         .foregroundStyle(.primary)
                 }
-                .font(.system(size: 11))
+                .planFont(11)
             }
         }
         .accessibilityHidden(true)

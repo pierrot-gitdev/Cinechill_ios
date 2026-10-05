@@ -36,6 +36,9 @@ final class WatchlistViewModel {
     private(set) var items: [WatchlistItem] = []
     private(set) var groups: [WatchlistGroup] = []
     private(set) var tonight: TonightPick?
+    /// Faux quand un seul film peut se lancer ce soir : « Autre chose » ne
+    /// ferait que reproposer le même.
+    private(set) var tonightHasAlternative = false
     private(set) var isEnriching = false
     /// Films écartés par le budget de temps — affiché pour que le filtre ne
     /// soit jamais silencieux.
@@ -242,25 +245,33 @@ final class WatchlistViewModel {
         let withinBudget = items.filter(fitsBudget)
         hiddenByBudget = items.count - withinBudget.count
 
+        // La carte du soir est la ligne promue de son film : elle ne se
+        // répète pas plus bas dans les groupes.
+        tonight = pickTonight(from: withinBudget)
+        let listed = withinBudget.filter { $0.id != tonight?.item.id }
+
         // Ce qui vient d'un ami sort du groupement par disponibilité tant que
         // le film n'a pas été vu : la provenance prime sur la plateforme, et
         // mélanger les deux axes rendrait les deux illisibles.
-        let recommended = withinBudget.filter { $0.entry.isRecommended }
+        let recommended = listed.filter { $0.entry.isRecommended }
         // Une saison qui attend son épisode passe avant tout le reste du
         // rangement par disponibilité, y compris l'ancienneté : la saison 3
         // annoncée pour janvier n'a rien d'un remords, elle attend sa date.
-        let awaiting = withinBudget.filter { !$0.entry.isRecommended && $0.isAwaitingEpisode }
-        let rest = withinBudget.filter { !$0.entry.isRecommended && !$0.isAwaitingEpisode }
+        let awaiting = listed.filter { !$0.entry.isRecommended && $0.isAwaitingEpisode }
+        let rest = listed.filter { !$0.entry.isRecommended && !$0.isAwaitingEpisode }
 
         let cutoff = Date().addingTimeInterval(-Double(Self.dormantAfterDays) * 86400)
         let dormant = rest.filter { $0.entry.addedAt < cutoff }
         let recent = rest.filter { $0.entry.addedAt >= cutoff }
 
-        let available = recent.filter { $0.isAvailable(on: preferredProviderIDs) }
-        let elsewhere = recent.filter { !$0.isAvailable(on: preferredProviderIDs) }
+        let hasPlatforms = !preferredProviderIDs.isEmpty
+        let undeclared = hasPlatforms ? [] : recent
+        let available = hasPlatforms ? recent.filter { $0.isAvailable(on: preferredProviderIDs) } : []
+        let elsewhere = hasPlatforms ? recent.filter { !$0.isAvailable(on: preferredProviderIDs) } : []
 
         groups = [
             WatchlistGroup(kind: .recommended, items: recommended.sorted(by: newestRecommendationFirst)),
+            WatchlistGroup(kind: .undeclared, items: undeclared.sorted(by: newestFirst)),
             WatchlistGroup(kind: .available, items: available.sorted(by: newestFirst)),
             WatchlistGroup(kind: .elsewhere, items: elsewhere.sorted(by: newestFirst)),
             // La date la plus proche d'abord : c'est ce qui sortira en premier.
@@ -270,8 +281,6 @@ final class WatchlistViewModel {
             // Les plus anciens d'abord : ce sont eux qu'il faut trancher.
             WatchlistGroup(kind: .dormant, items: dormant.sorted { $0.entry.addedAt < $1.entry.addedAt }),
         ].filter { !$0.items.isEmpty }
-
-        tonight = pickTonight(from: withinBudget)
     }
 
     /// Une durée inconnue ne fait jamais disparaître un film : on ne peut pas
@@ -301,6 +310,7 @@ final class WatchlistViewModel {
 
         // On ne propose pas ce soir un épisode qui sort vendredi.
         let launchable = pool.filter { !$0.isAwaitingEpisode }
+        tonightHasAlternative = launchable.count > 1
         guard !launchable.isEmpty else { return nil }
 
         var candidates = launchable.filter { !rejectedTonight.contains($0.id) }

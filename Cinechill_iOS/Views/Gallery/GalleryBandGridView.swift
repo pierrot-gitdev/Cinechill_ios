@@ -37,7 +37,7 @@ struct GalleryBandGridView: View {
                                 }
                             }
                         }
-                        .buttonStyle(PressableScaleStyle(scale: 0.94))
+                        .buttonStyle(PressableScaleStyle(scale: 0.96))
                     }
                 }
             }

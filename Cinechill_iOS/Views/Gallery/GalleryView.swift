@@ -13,6 +13,7 @@ import SwiftUI
 /// C'est ce qui remplace un scroll de vignettes uniformes, sans intérêt passé
 /// la centaine de films.
 struct GalleryView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Bindable var model: GalleryViewModel
     @Binding var selectedTab: Int
 
@@ -116,7 +117,7 @@ struct GalleryView: View {
                 }
             }
         }
-        .animation(.easeInOut(duration: 0.28), value: model.axis)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.28), value: model.axis)
     }
 
     /// Le voile de la nuit remplace `ultraThinMaterial` : c'était le seul
@@ -146,24 +147,27 @@ struct GalleryView: View {
 
         return VStack(alignment: .leading, spacing: 8) {
             NavigationLink(destination: GalleryBandGridView(band: band)) {
+                // Le sous-titre passe sous le titre quand la ligne ne tient
+                // plus (texte agrandi, anglais sur un petit écran).
                 HStack(alignment: .firstTextBaseline, spacing: 9) {
-                    Text(band.title)
-                        .planTitle(16)
-                        .foregroundStyle(Ink.ink)
-                        .monospacedDigit()
-
-                    if let subtitle = band.subtitle {
-                        Text(subtitle)
-                            .planLabel()
-                            .foregroundStyle(Ink.ink2)
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .firstTextBaseline, spacing: 9) {
+                            bandTitle(band)
+                            bandSubtitle(band)
+                        }
+                        VStack(alignment: .leading, spacing: 4) {
+                            bandTitle(band)
+                            bandSubtitle(band)
+                        }
                     }
 
                     Spacer(minLength: 0)
 
-                    Text(verbatim: "\(band.count)")
+                    Text(verbatim: band.count.formatted(.number.locale(AppLanguage.current.locale)))
                         .planLabel()
                         .monospacedDigit()
                         .foregroundStyle(Ink.ink2)
+                        .fixedSize()
                 }
                 .contentShape(Rectangle())
             }
@@ -193,27 +197,67 @@ struct GalleryView: View {
                 NavigationLink(destination: ItemDetailView(item: destination)) {
                     PosterTile(posterPath: tile.posterPath, title: tile.title, width: posterWidth)
                         .overlay(alignment: .bottomLeading) {
-                            if let plate = tile.plate, posterWidth >= 48 {
+                            if let plate = tile.plate, posterWidth >= 66 {
                                 PosterPlate(text: plate)
                             }
                         }
                 }
-                .buttonStyle(PressableScaleStyle(scale: 0.93))
+                .buttonStyle(PressableScaleStyle(scale: 0.96))
             }
         case .film(let entry):
             filmTile(entry, width: posterWidth)
         }
     }
 
+    private func bandTitle(_ band: GalleryBand) -> some View {
+        Text(band.title)
+            .planTitle(16)
+            .foregroundStyle(Ink.ink)
+            .monospacedDigit()
+            .fixedSize()
+    }
+
+    @ViewBuilder
+    private func bandSubtitle(_ band: GalleryBand) -> some View {
+        if let subtitle = band.subtitle {
+            Text(subtitle)
+                .planLabel()
+                .foregroundStyle(Ink.ink2)
+        }
+    }
+
     private func filmTile(_ entry: GalleryEntry, width posterWidth: CGFloat) -> some View {
-        NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
+        // L'attente d'abord : le cœur se pose dès le geste, comme sur la fiche.
+        let loved = libraryStore.pendingLoveByItemID[entry.id] ?? entry.isLoved
+        return NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
             PosterTile(
                 posterPath: entry.posterPath,
                 title: entry.title,
                 width: posterWidth
             )
+            // Sans ce signe, « Coup de cœur » dans le menu ne changeait rien à
+            // l'écran : seule la vibration confirmait le geste.
+            .overlay(alignment: .bottomTrailing) {
+                if loved, posterWidth >= 48 {
+                    Image(decorative: "ArtefactCoeur")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 14, height: 14)
+                        .shadow(color: Ink.ground.opacity(0.8), radius: 2)
+                        .padding(3)
+                        .transition(.opacity)
+                }
+            }
+            .animation(Metrics.shift, value: loved)
         }
-        .buttonStyle(PressableScaleStyle(scale: 0.93))
+        .accessibilityValue(loved ? String(localized: "coup de cœur", bundle: .app) : "")
+        .accessibilityAction(named: loved
+            ? String(localized: "Retirer le coup de cœur", bundle: .app)
+            : String(localized: "Coup de cœur", bundle: .app)
+        ) {
+            libraryStore.setLove(entry.mediaItem, loved: !loved)
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.96))
         // Le raccourci de recommandation. Coût visuel au
         // repos : zéro — c'est ce qui permet de le proposer
         // sans encombrer « La Frise ».

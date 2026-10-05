@@ -21,6 +21,7 @@ import SwiftUI
 /// Côté séries, la planche montre des saisons : c'est là que le cœur se pose,
 /// et c'est ce que compte le Cœur de la Porte des séries.
 struct LovePickerView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Le seuil de l'artéfact, tel que le serveur le mesure.
     let target: Int
     var format: MediaFormat = .film
@@ -108,7 +109,7 @@ struct LovePickerView: View {
                     Text("Touche un film pour en faire un coup de cœur.", bundle: .app)
                 }
             }
-                .font(.system(size: 13))
+                .planFont(13)
                 .foregroundStyle(Ink.ink2)
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -179,7 +180,9 @@ struct LovePickerView: View {
                             .frame(width: 22, height: 22)
                             .shadow(color: Ink.ground.opacity(0.8), radius: 3)
                             .padding(4)
-                            .transition(.scale.combined(with: .opacity))
+                            // Jamais depuis une échelle nulle, et en fondu seul
+                            // quand le mouvement est réduit.
+                            .transition(reduceMotion ? .opacity : .scale(scale: 0.6).combined(with: .opacity))
                     }
                 }
                 .overlay(alignment: .topLeading) {
@@ -187,7 +190,7 @@ struct LovePickerView: View {
                         // Plusieurs saisons d'une série partagent souvent la
                         // même affiche : le numéro dit laquelle on touche.
                         Text("Saison \(season)", bundle: .app)
-                            .font(.system(size: 9.5, weight: .semibold))
+                            .planFont(9.5, weight: .semibold)
                             .foregroundStyle(Ink.ink)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 2)
@@ -198,7 +201,7 @@ struct LovePickerView: View {
                 // L'attente reste lisible tuile par tuile, sans rien promettre.
                 .opacity(isPending ? 0.7 : 1)
         }
-        .buttonStyle(PressableScaleStyle(scale: 0.93))
+        .buttonStyle(PressableScaleStyle(scale: 0.96))
         .animation(Metrics.shift, value: loved)
         .accessibilityLabel(accessibilityTitle(entry))
         .accessibilityValue(
@@ -230,7 +233,7 @@ struct LovePickerView: View {
                         .foregroundStyle(Ink.ink3)
                 }
             }
-            .font(.system(size: 12.5))
+            .planFont(12.5)
             .monospacedDigit()
             .frame(maxWidth: .infinity)
             .padding(.top, 14)

@@ -11,6 +11,10 @@ import SwiftUI
 /// se pose devant sa watchlist. Tout converge vers un seul choix : le temps
 /// qu'on a, ce qu'on peut lancer maintenant, et une proposition à trancher.
 struct WatchlistView: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    /// Les tailles d'accessibilité réorganisent les lignes plutôt que de les tronquer.
+    private var isLargeType: Bool { typeSize.isAccessibilitySize }
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Bindable var model: WatchlistViewModel
     @Binding var selectedTab: Int
 
@@ -93,6 +97,20 @@ struct WatchlistView: View {
 
     // MARK: - Contenu
 
+    /// Typée plutôt qu'un ternaire `nil`/méthode dans le `body`, que le
+    /// solveur de types de Xcode ne résout pas toujours.
+    private var rejectTonightAction: (() -> Void)? {
+        guard model.tonightHasAlternative else { return nil }
+        return { rejectTonight() }
+    }
+
+    private func rejectTonight() {
+        Haptics.impact(.light)
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.8)) {
+            model.rejectTonight()
+        }
+    }
+
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -103,12 +121,7 @@ struct WatchlistView: View {
                         pick: pick,
                         platformName: platformName(for: pick.item),
                         onWatch: { watch(pick.item) },
-                        onReject: {
-                            Haptics.impact(.light)
-                            withAnimation(.spring(response: 0.34, dampingFraction: 0.8)) {
-                                model.rejectTonight()
-                            }
-                        }
+                        onReject: rejectTonightAction
                     )
                     .padding(.horizontal, Metrics.margin)
                     .padding(.bottom, 6)
@@ -128,7 +141,7 @@ struct WatchlistView: View {
             }
             .padding(.bottom, 24)
         }
-        .animation(.easeInOut(duration: 0.25), value: model.budget)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: model.budget)
     }
 
     private var budgetPicker: some View {
@@ -178,10 +191,10 @@ struct WatchlistView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Choisis tes plateformes", bundle: .app)
-                        .font(.system(size: 13, weight: .medium))
+                        .planFont(13, weight: .medium)
                         .foregroundStyle(Ink.ink)
                     Text("Pour savoir ce que tu peux regarder tout de suite.", bundle: .app)
-                        .font(.system(size: 11.5))
+                        .planFont(11.5)
                         .foregroundStyle(Ink.ink2)
                         .multilineTextAlignment(.leading)
                 }
@@ -213,7 +226,7 @@ struct WatchlistView: View {
                         withAnimation(Metrics.unfold) { model.isTriaging.toggle() }
                     } label: {
                         Text(model.isTriaging ? String(localized: "Terminé", bundle: .app) : String(localized: "Faire le tri", bundle: .app))
-                            .font(.system(size: 12))
+                            .planFont(12)
                             .foregroundStyle(Ink.ink2)
                             .overlay(alignment: .bottom) {
                                 Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
@@ -289,20 +302,34 @@ struct WatchlistView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
+                        // Aux tailles d'accessibilité, le titre prend la place
+                        // qu'il lui faut : sur une ligne, il ne restait que
+                        // quelques lettres.
                         Text(item.entry.title)
-                            .font(.system(size: 13.5))
+                            .planFont(13.5)
                             .foregroundStyle(Ink.ink)
-                            .lineLimit(1)
+                            .lineLimit(isLargeType ? 3 : 1)
 
                         // Pour une saison, la seconde ligne dit quoi lancer :
                         // c'est plus utile que la provenance, que l'avatar
                         // porte déjà.
                         if let line = seasonLine(for: item) ?? item.entry.recommendedByText {
                             Text(line)
-                                .font(.system(size: 10.5))
+                                .planFont(10.5)
                                 .monospacedDigit()
                                 .foregroundStyle(Ink.ink2)
-                                .lineLimit(1)
+                                .lineLimit(isLargeType ? 2 : 1)
+                                // Coupé au milieu : un nom long mangeait « et 1 autre ».
+                                .truncationMode(.middle)
+                        }
+
+                        // La durée passe sous le titre quand le texte est très
+                        // grand : à droite, elle lui volait la moitié de la ligne.
+                        if isLargeType, !isWriting(item), let runtime = item.runtimeText {
+                            Text(runtime)
+                                .planFont(10.5)
+                                .monospacedDigit()
+                                .foregroundStyle(Ink.ink2)
                         }
                     }
 
@@ -312,9 +339,9 @@ struct WatchlistView: View {
                     // là, l'attente se lit à la place de la durée.
                     if isWriting(item) {
                         CinechillSpinner(size: 12)
-                    } else if let runtime = item.runtimeText {
+                    } else if !isLargeType, let runtime = item.runtimeText {
                         Text(runtime)
-                            .font(.system(size: 10.5))
+                            .planFont(10.5)
                             .monospacedDigit()
                             .foregroundStyle(Ink.ink2)
                     }
@@ -399,9 +426,15 @@ struct WatchlistView: View {
     private func platformBadge(for item: WatchlistItem) -> some View {
         if let platform = preferredPlatform(for: item) {
             PlatformBadge(platform: platform)
+        } else if libraryStore.preferredPlatformIDs.isEmpty {
+            // Sans plateforme déclarée, « hors de tes plateformes » serait faux
+            // sur chaque ligne : la place reste tenue, vide.
+            Color.clear
+                .frame(width: 20, height: 20)
+                .accessibilityHidden(true)
         } else if item.providerIDs.isEmpty {
             Text(verbatim: "—")
-                .font(.system(size: 11))
+                .planFont(11)
                 .foregroundStyle(Ink.ink2)
                 .frame(width: 20, height: 20)
         } else {
@@ -424,7 +457,7 @@ struct WatchlistView: View {
                 Text(model.hiddenByBudget == 1
                      ? String(localized: "\(model.hiddenByBudget) film dépasse \(model.budget.label) · Tout voir", bundle: .app)
                      : String(localized: "\(model.hiddenByBudget) films dépassent \(model.budget.label) · Tout voir", bundle: .app))
-                    .font(.system(size: 12))
+                    .planFont(12)
                     .foregroundStyle(Ink.ink2)
             }
             .buttonStyle(.plain)
@@ -493,7 +526,7 @@ private struct PlatformBadge: View {
                 PosterImageView(url: url)
             } else {
                 Text(platform.shortLabel)
-                    .font(.system(size: 8, weight: .semibold))
+                    .planFont(8, weight: .semibold)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(.tertiarySystemFill))

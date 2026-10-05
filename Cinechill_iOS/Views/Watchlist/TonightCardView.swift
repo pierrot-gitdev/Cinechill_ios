@@ -10,10 +10,15 @@ import SwiftUI
 /// C'est la pièce qui empêche la watchlist de pourrir. Une liste ne demande
 /// jamais rien ; cette carte, si — et « Je le regarde » la fait se vider.
 struct TonightCardView: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    /// Les tailles d'accessibilité empilent ce qui, à côté, écraserait le texte.
+    private var isLargeType: Bool { typeSize.isAccessibilitySize }
     let pick: TonightPick
     let platformName: String?
     let onWatch: () -> Void
-    let onReject: () -> Void
+    /// `nil` quand il n'y a rien d'autre à proposer : le bouton disparaît
+    /// plutôt que de vibrer sans rien changer.
+    let onReject: (() -> Void)?
 
     @Environment(\.openURL) private var openURL
 
@@ -46,11 +51,11 @@ struct TonightCardView: View {
                         .padding(.top, 3)
 
                     Text(facts)
-                        .font(.system(size: 11.5))
+                        .planFont(11.5)
                         .foregroundStyle(Ink.ink2)
 
                     Text(pick.reason)
-                        .font(.system(size: 11.5))
+                        .planFont(11.5)
                         .foregroundStyle(Ink.ink2)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 3)
@@ -84,15 +89,23 @@ struct TonightCardView: View {
     /// elle ne peut pas s'écrire de deux façons dans la même application.
     private var ratingText: String? {
         guard let rating = pick.item.entry.voteAverage, rating > 0 else { return nil }
-        return String(format: "%.1f", rating).replacingOccurrences(of: ".", with: ",") + " / 10"
+        // Dans la langue de l'app : « 7,5 » en français, « 7.5 » en anglais.
+        return rating.formatted(.number.precision(.fractionLength(1)).locale(AppLanguage.current.locale)) + " / 10"
     }
 
     private var actions: some View {
-        HStack(spacing: Metrics.gutter) {
+        // Côte à côte, puis empilés quand le texte devient très grand :
+        // « Autre chose » tenait dans 118 pt, plus à cette taille.
+        let layout = isLargeType
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Metrics.gutter))
+            : AnyLayout(HStackLayout(spacing: Metrics.gutter))
+        return layout {
             PlanButton(title: String(localized: "Je le regarde", bundle: .app), height: Metrics.control, action: onWatch)
 
-            PlanSecondaryButton(title: String(localized: "Autre chose", bundle: .app), height: Metrics.control, action: onReject)
-                .frame(width: 118)
+            if let onReject {
+                PlanSecondaryButton(title: String(localized: "Autre chose", bundle: .app), height: Metrics.control, action: onReject)
+                    .frame(width: isLargeType ? nil : 118)
+            }
 
             if let trailer = pick.item.trailerURL {
                 Button {

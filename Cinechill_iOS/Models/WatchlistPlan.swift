@@ -90,6 +90,9 @@ struct WatchlistItem: Identifiable, Hashable {
 struct WatchlistGroup: Identifiable, Hashable {
     enum Kind: String {
         case recommended
+        /// Aucune plateforme déclarée : ni « sur tes plateformes » ni « sur
+        /// d'autres » n'est vrai, les films récents sont simplement à voir.
+        case undeclared
         case available
         case elsewhere
         /// Une saison dont l'épisode à lancer n'est pas sorti. Ce n'est pas un
@@ -107,6 +110,7 @@ struct WatchlistGroup: Identifiable, Hashable {
     var title: String {
         switch kind {
         case .recommended: String(localized: "RECOMMANDÉS PAR TES AMIS", bundle: .app)
+        case .undeclared: String(localized: "À VOIR", bundle: .app)
         case .available: String(localized: "SUR TES PLATEFORMES", bundle: .app)
         case .elsewhere: String(localized: "SUR D'AUTRES PLATEFORMES", bundle: .app)
         case .awaiting: String(localized: "L'ÉPISODE N'EST PAS SORTI", bundle: .app)
