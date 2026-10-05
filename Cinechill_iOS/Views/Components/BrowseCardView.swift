@@ -13,11 +13,15 @@ struct BrowseCardView: View {
     let title: String
     let posterURL: URL?
     var height: CGFloat = 84
+    /// La carte grandit avec son titre (Dynamic Type) : à hauteur fixe, deux
+    /// lignes agrandies débordaient du cadre.
+    @ScaledMetric(relativeTo: .footnote) private var growth: CGFloat = 1
+    private var cardHeight: CGFloat { height * growth }
 
     var body: some View {
         HStack(spacing: 0) {
             Text(title)
-                .font(.system(size: 13, weight: .medium))
+                .planFont(13, weight: .medium)
                 .foregroundStyle(Ink.ink)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
@@ -28,7 +32,7 @@ struct BrowseCardView: View {
 
             poster
         }
-        .frame(height: height)
+        .frame(height: cardHeight)
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
@@ -43,7 +47,7 @@ struct BrowseCardView: View {
     private var poster: some View {
         if let posterURL {
             PosterImageView(url: posterURL)
-                .frame(width: (height - 16) * 2 / 3, height: height - 16)
+                .frame(width: (cardHeight - 16) * 2 / 3, height: cardHeight - 16)
                 .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
                 .padding(.trailing, 8)
         }

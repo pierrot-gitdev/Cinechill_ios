@@ -53,7 +53,7 @@ struct PlanToast: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
-                    .font(.system(size: 14, weight: .medium))
+                    .planFont(14, weight: .medium)
                     .foregroundStyle(Ink.ink)
                     .lineLimit(1)
 
@@ -93,7 +93,7 @@ struct PlanToast: View {
             withAnimation(.easeOut(duration: 0.2)) { opacity = 1 }
             try? await Task.sleep(for: .milliseconds(Self.dwell))
             guard !Task.isCancelled else { return }
-            withAnimation(.easeIn(duration: 0.22)) { opacity = 0 }
+            withAnimation(.easeOut(duration: 0.2)) { opacity = 0 }
             try? await Task.sleep(for: .milliseconds(240))
             guard !Task.isCancelled else { return }
             onFinished()
@@ -117,7 +117,7 @@ struct PlanToast: View {
         try? await Task.sleep(for: .milliseconds(Self.dwell))
         guard !Task.isCancelled else { return }
 
-        withAnimation(.easeIn(duration: 0.24)) { opacity = 0 }
+        withAnimation(.easeOut(duration: 0.2)) { opacity = 0 }
         try? await Task.sleep(for: .milliseconds(260))
         guard !Task.isCancelled else { return }
         onFinished()

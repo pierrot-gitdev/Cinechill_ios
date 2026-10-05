@@ -667,7 +667,7 @@ struct FilmDetailView: View {
                 // arrêté d'un côté, en train de travailler de l'autre. Le bouton garde sa
                 // largeur, seul le libellé glisse de trois points, que l'animation porte.
                 if isWaiting {
-                    CinechillSpinner(size: 12, tint: isOn ? .onAccent : .brand)
+                    CinechillSpinner(size: 12, tint: isOn ? .onPaper : .brand)
                 } else if isOn {
                     if status == .seen {
                         PlanLight(tint: Ink.ground)

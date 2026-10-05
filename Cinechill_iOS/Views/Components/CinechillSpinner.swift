@@ -40,10 +40,13 @@ struct CinechillSweepShape: Shape {
 /// en C et le faisceau qui tourne dans la salle. C'est le même geste que le splash, à l'échelle
 /// d'un bouton : le projecteur ne s'arrête pas tant que la donnée n'est pas là.
 struct CinechillSpinner: View {
-    /// Sur un fond de marque, ou posé sur un aplat coloré (bouton dégradé) où seul du blanc tient.
+    /// Sur un fond de marque, ou posé sur un aplat de papier (bouton allumé) où
+    /// seule l'encre de nuit se voit. Le blanc d'autrefois y disparaissait : il
+    /// tombait sur #F3F0E8, et l'attente, seul retour pendant l'écriture,
+    /// devenait invisible.
     enum Tint {
         case brand
-        case onAccent
+        case onPaper
     }
 
     var size: CGFloat = 24
@@ -101,20 +104,20 @@ struct CinechillSpinner: View {
                 ],
                 startPoint: UnitPoint(x: 0.16, y: 0.08), endPoint: UnitPoint(x: 0.82, y: 0.94)
             )
-        case .onAccent:
+        case .onPaper:
             return LinearGradient(
-                colors: [.white, .white.opacity(0.55)],
+                colors: [Ink.ground, Ink.ground.opacity(0.55)],
                 startPoint: UnitPoint(x: 0.16, y: 0.08), endPoint: UnitPoint(x: 0.82, y: 0.94)
             )
         }
     }
 
     private var beamCore: Color {
-        tint == .brand ? CinechillPalette.lightPale.opacity(0.95) : .white.opacity(0.95)
+        tint == .brand ? CinechillPalette.lightPale.opacity(0.95) : Ink.ground.opacity(0.9)
     }
 
     private var beamEdge: Color {
-        tint == .brand ? CinechillPalette.light.opacity(0.12) : .white.opacity(0.12)
+        tint == .brand ? CinechillPalette.light.opacity(0.12) : Ink.ground.opacity(0.12)
     }
 }
 

@@ -59,11 +59,13 @@ private struct PosterSurface: View {
     }
 
     var body: some View {
-        Group {
+        // Le titre est toujours dessous : il tient la place pendant le
+        // chargement et reste lisible si l'affiche n'arrive jamais (404), au
+        // lieu d'une icône générique qui ne distingue aucun film d'un autre.
+        ZStack {
+            fallback
             if url != nil {
-                PosterImageView(url: url)
-            } else {
-                fallback
+                PosterImageView(url: url, showsPlaceholder: false)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
@@ -81,7 +83,7 @@ private struct PosterSurface: View {
             ZStack {
                 Ink.ground3
                 Text(title)
-                    .font(.system(size: max(8, side * 0.11), weight: .medium))
+                    .font(.system(size: max(8, side * 0.11), weight: .medium)) // enfermé dans l'affiche
                     .foregroundStyle(Ink.ink2)
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
@@ -108,6 +110,8 @@ struct PosterCell: View {
 
     /// Hauteur réservée au titre — deux lignes à 11 pt.
     static let titleHeight: CGFloat = 29
+    /// La même, au rythme du texte (Dynamic Type).
+    @ScaledMetric(relativeTo: .caption2) private var titleHeight = PosterCell.titleHeight
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
@@ -118,11 +122,11 @@ struct PosterCell: View {
                 }
 
             Text(title)
-                .font(.system(size: 11))
+                .planFont(11)
                 .foregroundStyle(Ink.ink)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, minHeight: Self.titleHeight, alignment: .topLeading)
+                .frame(maxWidth: .infinity, minHeight: titleHeight, alignment: .topLeading)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
@@ -168,12 +172,15 @@ struct PosterPlate: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 9, weight: .semibold))
+            .planFont(9, weight: .semibold)
             .tracking(1.2)
             .textCase(.uppercase)
             .monospacedDigit()
             .foregroundStyle(Ink.ink)
             .lineLimit(1)
+            // « 3 SAISONS » demande 78 pt à 9 pt espacé : sans réduction
+            // possible, la plaque se coupait sur presque toutes les affiches.
+            .minimumScaleFactor(0.75)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(

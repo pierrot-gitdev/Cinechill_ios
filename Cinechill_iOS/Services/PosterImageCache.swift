@@ -86,11 +86,16 @@ struct PosterImageView: View {
     /// montre l'affiche entière, à ses proportions, et laisse le fond paraître
     /// autour : c'est ce que veut une affiche qu'on regarde pour elle-même.
     private let contentMode: ContentMode
+    /// Faux quand l'appelant dessine son propre repli sous l'affiche (le titre,
+    /// les initiales) : il reste alors visible pendant le chargement, et pour
+    /// de bon si l'affiche ne vient jamais (404).
+    private let showsPlaceholder: Bool
     @State private var image: UIImage?
 
-    init(url: URL?, contentMode: ContentMode = .fill) {
+    init(url: URL?, contentMode: ContentMode = .fill, showsPlaceholder: Bool = true) {
         self.url = url
         self.contentMode = contentMode
+        self.showsPlaceholder = showsPlaceholder
         _image = State(initialValue: PosterImageCache.shared.cached(url))
     }
 
@@ -108,7 +113,7 @@ struct PosterImageView: View {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: contentMode)
-                } else {
+                } else if showsPlaceholder {
                     placeholder
                 }
             }
@@ -126,12 +131,19 @@ struct PosterImageView: View {
     /// emprunts au système dans une application par ailleurs entièrement
     /// dessinée — et sur une carte de « Découvrir », qui se lit en plein écran,
     /// le rectangle gris clair du système sautait aux yeux.
+    ///
+    /// L'icône se règle sur le cadre : à 30 pt fixes, elle était rognée dans
+    /// une vignette de 24 pt ou un logo de plateforme de 20.
     private var placeholder: some View {
-        ZStack {
-            Rectangle().fill(Ink.ground)
-            CinechillHallIconView(.salle)
-                .frame(width: 30, height: 30)
-                .foregroundStyle(Ink.ink3.opacity(0.7))
+        GeometryReader { geo in
+            let side = min(30, min(geo.size.width, geo.size.height) * 0.5)
+            ZStack {
+                Rectangle().fill(Ink.ground)
+                CinechillHallIconView(.salle)
+                    .frame(width: side, height: side)
+                    .foregroundStyle(Ink.ink3.opacity(0.7))
+            }
         }
+        .accessibilityHidden(true)
     }
 }

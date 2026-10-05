@@ -190,12 +190,85 @@ struct PlanScrim: View {
 
 // MARK: - Typographie
 
+/// Une taille de texte qui suit le réglage « Taille du texte » de l'iPhone.
+///
+/// Les tailles du dessin restent celles d'origine à la taille par défaut :
+/// `@ScaledMetric` rend exactement la valeur de base tant que le réglage n'a
+/// pas bougé. Au-delà, le texte grandit sur la courbe du style système le plus
+/// proche (une note de 12 pt grandit comme `.caption`, un titre de 22 pt comme
+/// `.title2`), si bien que petits et grands textes gardent leur rapport.
+///
+/// Tout `.system(size:)` de l'app passe par ici, sauf ce qui est dessiné et non
+/// lu : le logo, l'ouverture, l'écu, la barre d'onglets (qui a sa loupe).
+private struct PlanScaledFont: ViewModifier {
+    @ScaledMetric private var size: CGFloat
+    private let weight: Font.Weight
+    private let design: Font.Design
+    /// Interlettrage en fraction de la taille, pour qu'il grandisse avec elle.
+    private let kerningRatio: CGFloat?
+
+    init(size: CGFloat, weight: Font.Weight, design: Font.Design, kerningRatio: CGFloat?) {
+        _size = ScaledMetric(wrappedValue: size, relativeTo: Self.style(for: size))
+        self.weight = weight
+        self.design = design
+        self.kerningRatio = kerningRatio
+    }
+
+    /// L'interlettrage n'est posé que s'il est demandé : un `kerning(0)` d'office
+    /// écraserait celui qu'un appelant ajoute par-dessus.
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        // `.font(.system(size:))` ici et nulle part ailleurs : c'est la seule
+        // ligne qui pose la police. Écrire `planFont` à sa place ferait
+        // s'appeler le modificateur lui-même, sans fin.
+        if let kerningRatio {
+            content
+                .font(.system(size: size, weight: weight, design: design))
+                .kerning(size * kerningRatio)
+        } else {
+            content.font(.system(size: size, weight: weight, design: design))
+        }
+    }
+
+    /// Le style système dont la courbe de croissance est la plus proche.
+    static func style(for size: CGFloat) -> Font.TextStyle {
+        switch size {
+        case ..<11.5: .caption2
+        case ..<12.5: .caption
+        case ..<14: .footnote
+        case ..<16: .subheadline
+        case ..<18.5: .body
+        case ..<21: .title3
+        case ..<25: .title2
+        case ..<31: .title
+        default: .largeTitle
+        }
+    }
+}
+
 extension View {
+    /// Une planche posée au centre de l'écran, qui défile seulement si elle ne
+    /// tient plus en hauteur : texte agrandi sur un iPhone SE. Tant qu'elle
+    /// tient, rien ne change, pas même le rebond d'un défilement inutile.
+    func planScrollsIfNeeded() -> some View {
+        ViewThatFits(in: .vertical) {
+            self
+            ScrollView { self }
+                .scrollBounceBehavior(.basedOnSize)
+                .scrollIndicators(.hidden)
+        }
+    }
+
+    /// La police système de l'app, à une taille qui suit Dynamic Type.
+    func planFont(_ size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) -> some View {
+        modifier(PlanScaledFont(size: size, weight: weight, design: design, kerningRatio: nil))
+    }
+
     /// Le niveau de service : libellés de section, actions secondaires, unités.
     /// Interlettré parce que des capitales serrées ne se lisent pas, semi-gras
     /// parce qu'à 10 pt une graisse fine disparaît.
     func planLabel() -> some View {
-        self.font(.system(size: 10, weight: .semibold))
+        self.planFont(10, weight: .semibold)
             .tracking(1.8)
             .textCase(.uppercase)
     }
@@ -203,9 +276,9 @@ extension View {
     /// Un titre de planche. La graisse et l'interlettrage sont ceux de
     /// l'authentification — c'est la seule échelle de titre de l'application.
     func planTitle(_ size: CGFloat = 22) -> some View {
-        self.font(.system(size: size, weight: .light))
-            // −0,028 em, la valeur du parcours d'authentification.
-            .kerning(-size * 0.028)
+        // −0,028 em, la valeur du parcours d'authentification, qui suit la
+        // taille réelle quand le texte grandit.
+        modifier(PlanScaledFont(size: size, weight: .light, design: .default, kerningRatio: -0.028))
     }
 }
 
@@ -229,7 +302,7 @@ struct PlanSectionLabel: View {
 
             if let note, !note.isEmpty {
                 Text(note)
-                    .font(.system(size: 12))
+                    .planFont(12)
                     .foregroundStyle(Ink.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -262,13 +335,13 @@ struct PlanButton: View {
     var body: some View {
         Button(action: action) {
             Text(isLoading ? (loadingTitle ?? title) : title)
-                .font(.system(size: 15.5, weight: .semibold))
+                .planFont(15.5, weight: .semibold)
                 .kerning(-0.08)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
                 .foregroundStyle(Ink.ground)
                 .frame(maxWidth: .infinity)
-                .frame(height: height)
+                .frame(minHeight: height)
                 .background(Ink.paper)
                 .overlay(alignment: .bottomLeading) { progress }
                 .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
@@ -314,16 +387,16 @@ struct PlanSecondaryButton: View {
         Button(action: action) {
             HStack(spacing: 9) {
                 if let icon {
-                    icon.font(.system(size: 15, weight: .medium))
+                    icon.planFont(15, weight: .medium)
                 }
                 Text(title)
-                    .font(.system(size: 14.5, weight: .medium))
+                    .planFont(14.5, weight: .medium)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }
             .foregroundStyle(Ink.ink)
             .frame(maxWidth: .infinity)
-            .frame(height: height)
+            .frame(minHeight: height)
             .overlay(
                 RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
                     .stroke(Ink.ruleSet, lineWidth: 1)
@@ -354,7 +427,7 @@ struct PlanChip: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 12.5, weight: isOn ? .semibold : .regular))
+                .planFont(12.5, weight: isOn ? .semibold : .regular)
                 .monospacedDigit()
                 .strikethrough(isExcluded, pattern: .solid, color: Ink.warn)
                 .foregroundStyle(foreground)
@@ -462,7 +535,7 @@ struct PlanEmptyState: View {
                 .padding(.top, 22)
 
             Text(message)
-                .font(.system(size: 13.5))
+                .planFont(13.5)
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
@@ -477,7 +550,7 @@ struct PlanEmptyState: View {
             if let secondaryTitle, let secondaryAction {
                 Button(action: secondaryAction) {
                     Text(secondaryTitle)
-                        .font(.system(size: 13, weight: .medium))
+                        .planFont(13, weight: .medium)
                         .foregroundStyle(Ink.ink2)
                         .overlay(alignment: .bottom) {
                             Rectangle()
@@ -485,9 +558,12 @@ struct PlanEmptyState: View {
                                 .frame(height: 1)
                                 .offset(y: 2)
                         }
+                        // 44 pt de cible pour un lien de 16 pt de haut.
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .padding(.top, 18)
+                .buttonStyle(PressableScaleStyle())
+                .padding(.top, 4)
             }
         }
         .frame(maxWidth: 300)
@@ -549,7 +625,7 @@ struct LibraryMark: View {
                     }
                     PlanProgressRule(fraction: 0.86)
                     Text(verbatim: "Tu en as déjà 214 sur 250.")
-                        .font(.system(size: 12))
+                        .planFont(12)
                         .foregroundStyle(Ink.ink2)
                 }
 

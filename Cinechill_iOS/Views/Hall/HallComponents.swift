@@ -112,7 +112,7 @@ struct HallFollowButton: View {
         Button(action: action) {
             Group {
                 if isBusy {
-                    CinechillSpinner(size: 13, tint: isFollowing ? .brand : .onAccent)
+                    CinechillSpinner(size: 13, tint: isFollowing ? .brand : .onPaper)
                 } else {
                     Text(isFollowing ? String(localized: "Suivi", bundle: .app) : String(localized: "Suivre", bundle: .app))
                         .font(.system(size: 12.5, weight: isFollowing ? .regular : .semibold))

@@ -45,7 +45,7 @@ struct PlatformGrid: View {
                     PosterImageView(url: url)
                 } else {
                     Text(platform.shortLabel)
-                        .font(.system(size: 11, weight: .semibold))
+                        .planFont(11, weight: .semibold)
                         .foregroundStyle(Ink.ink2)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -115,7 +115,7 @@ struct PlatformPickerSheet: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         Text("On ne te proposera que des films disponibles sur tes plateformes. Si tu ne coches rien, on te propose tout.", bundle: .app)
-                            .font(.system(size: 12.5))
+                            .planFont(12.5)
                             .foregroundStyle(Ink.ink2)
                             .fixedSize(horizontal: false, vertical: true)
 
@@ -123,7 +123,7 @@ struct PlatformPickerSheet: View {
                             HStack(spacing: 10) {
                                 CinechillSpinner(size: 18)
                                 Text("Chargement des plateformes…", bundle: .app)
-                                    .font(.system(size: 12.5))
+                                    .planFont(12.5)
                                     .foregroundStyle(Ink.ink3)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)

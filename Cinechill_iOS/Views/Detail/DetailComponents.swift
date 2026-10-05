@@ -368,7 +368,7 @@ struct DetailFloorButton: View {
                     .minimumScaleFactor(0.8)
 
                 if isWaiting {
-                    CinechillSpinner(size: 12, tint: style == .line ? .brand : .onAccent)
+                    CinechillSpinner(size: 12, tint: style == .line ? .brand : .onPaper)
                 } else if mark == .acquired {
                     PlanLight(tint: Ink.ground)
                 } else if mark == .planned {

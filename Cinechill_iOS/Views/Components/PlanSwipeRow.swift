@@ -144,6 +144,7 @@ struct PlanSwipeRow<Content: View>: View {
 
     @State private var offset: CGFloat = 0
     @State private var isArmed = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
@@ -160,6 +161,28 @@ struct PlanSwipeRow<Content: View>: View {
                 onTap: onTap
             )
         )
+        // Le glissement n'existe pas pour VoiceOver : les deux actions de la
+        // ligne passent au rotor, et le tap devient l'action par défaut. Sans
+        // ça, « Vu » et « Retirer » étaient hors d'atteinte.
+        .accessibilityElement(children: isEnabled ? .combine : .contain)
+        .accessibilityAddTraits(isEnabled && onTap != nil ? .isButton : [])
+        .accessibilityAction {
+            if isEnabled { onTap?() }
+        }
+        .accessibilityActions {
+            if isEnabled, let trailing {
+                Button(trailing.label) {
+                    Haptics.success()
+                    trailing.perform()
+                }
+            }
+            if isEnabled, let leading {
+                Button(leading.label) {
+                    Haptics.success()
+                    leading.perform()
+                }
+            }
+        }
     }
 
     // MARK: - Le repère
@@ -219,7 +242,7 @@ struct PlanSwipeRow<Content: View>: View {
         let action = revealed
         let commits = isArmed
         isArmed = false
-        withAnimation(SwipeMotion.recenter) { offset = 0 }
+        withAnimation(reduceMotion ? .easeOut(duration: 0.2) : SwipeMotion.recenter) { offset = 0 }
 
         if commits, let action {
             Haptics.success()
@@ -247,7 +270,7 @@ struct PlanSwipeRow<Content: View>: View {
                     ) {
                         HStack {
                             Text(verbatim: "Film \(index + 1)")
-                                .font(.system(size: 13.5))
+                                .planFont(13.5)
                                 .foregroundStyle(Ink.ink)
                             Spacer()
                         }

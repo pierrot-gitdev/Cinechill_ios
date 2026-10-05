@@ -101,7 +101,7 @@ struct SagaSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(introduction)
-                        .font(.system(size: 12.5))
+                        .planFont(12.5)
                         .foregroundStyle(Ink.ink2)
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -117,7 +117,7 @@ struct SagaSheet: View {
                         HStack(alignment: .top, spacing: 11) {
                             PlanLight(tint: Ink.warn).padding(.top, 6)
                             Text(errorMessage)
-                                .font(.system(size: 12.5))
+                                .planFont(12.5)
                                 .foregroundStyle(Ink.warn)
                                 .fixedSize(horizontal: false, vertical: true)
                             Spacer(minLength: 0)
@@ -164,13 +164,13 @@ struct SagaSheet: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(part.title)
-                        .font(.system(size: 13.5, weight: isOn ? .semibold : .regular))
+                        .planFont(13.5, weight: isOn ? .semibold : .regular)
                         .foregroundStyle(Ink.ink)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
 
                     Text(verbatim: part.displayYear)
-                        .font(.system(size: 10.5))
+                        .planFont(10.5)
                         .monospacedDigit()
                         .foregroundStyle(Ink.ink2)
                 }
@@ -249,7 +249,7 @@ struct SagaSheet: View {
                 Text(isSeries
                      ? String(localized: "Celles que tu ne coches pas restent comme elles sont.", bundle: .app)
                      : String(localized: "Ceux que tu ne coches pas restent comme ils sont.", bundle: .app))
-                    .font(.system(size: 11.5))
+                    .planFont(11.5)
                     .foregroundStyle(Ink.ink3)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 6)
@@ -268,7 +268,7 @@ struct SagaSheet: View {
                 Text(isSeries
                      ? String(localized: "Je n'ai vu que la première", bundle: .app)
                      : String(localized: "Je n'en ai vu aucun", bundle: .app))
-                    .font(.system(size: 13, weight: .medium))
+                    .planFont(13, weight: .medium)
                     .foregroundStyle(Ink.ink2)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -309,7 +309,7 @@ struct SagaSheet: View {
         VStack(spacing: 14) {
             CinechillSpinner(size: 26)
             Text("Chargement…", bundle: .app)
-                .font(.system(size: 12.5))
+                .planFont(12.5)
                 .foregroundStyle(Ink.ink3)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
