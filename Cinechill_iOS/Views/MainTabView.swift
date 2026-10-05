@@ -78,6 +78,10 @@ struct MainTabView: View {
                         }
                     }
                     .frame(width: proxy.size.width, height: proxy.size.height)
+                    // `allowsHitTesting` arrête le doigt, pas VoiceOver : sans
+                    // ceci, la vignette restait actionnable pendant la visite.
+                    // Modificateur à valeur, laissé en place hors visite.
+                    .accessibilityHidden(tour.isRunning)
                     // Pendant la prise en main, l'application devient une
                     // vignette : réduite, cernée d'un filet, posée au-dessus du
                     // cartouche. Le texte ne recouvre plus l'écran qu'il
@@ -98,6 +102,10 @@ struct MainTabView: View {
                     .animation(reduceMotion ? nil : Self.tourMotion, value: scale)
 
                     cartouche
+                        // La moitié de l'écran au plus : en dessous, la
+                        // vignette de l'app atteint sa taille plancher, et le
+                        // cartouche lui passerait dessus.
+                        .frame(maxHeight: proxy.size.height * 0.5, alignment: .bottom)
                         .onGeometryChange(for: CGFloat.self) { geometry in
                             geometry.size.height
                         } action: { height in
@@ -114,6 +122,7 @@ struct MainTabView: View {
             // on ne pilote pas.
             AppTabBar(selectedTab: $selectedTab, litTabs: litTabs, lampOverride: closingLamp)
                 .allowsHitTesting(!tour.isRunning)
+                .accessibilityHidden(tour.isRunning)
         }
         .environment(catalog)
         .environment(badgesModel)

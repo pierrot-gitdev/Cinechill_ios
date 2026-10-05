@@ -26,6 +26,8 @@ struct OnboardingCartouche: View {
     let onNext: () -> Void
     let onSkip: () -> Void
 
+    @AccessibilityFocusState private var titleFocused: Bool
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
@@ -35,9 +37,11 @@ struct OnboardingCartouche: View {
                     .planTitle(22)
                     .foregroundStyle(Ink.ink)
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityFocused($titleFocused)
 
                 Text(step.detail)
-                    .font(.system(size: 13.5))
+                    .planFont(13.5)
                     .foregroundStyle(Ink.ink2)
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -45,6 +49,9 @@ struct OnboardingCartouche: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 12)
+            // Avec un texte très grand, le titre et le détail défilent plutôt
+            // que de repousser le bouton hors de l'écran.
+            .planScrollsIfNeeded()
             .id(step)
             .transition(.opacity)
 
@@ -68,6 +75,14 @@ struct OnboardingCartouche: View {
         .background(Ink.ground)
         .animation(Metrics.shift, value: step)
         .accessibilityElement(children: .contain)
+        // Après « Suivant », VoiceOver resterait sur le bouton sans rien dire
+        // de la nouvelle étape : on le ramène sur son titre.
+        .onChange(of: step) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(100))
+                titleFocused = true
+            }
+        }
     }
 
     // MARK: - Le rang et la sortie
@@ -78,6 +93,10 @@ struct OnboardingCartouche: View {
                 .planLabel()
                 .monospacedDigit()
                 .foregroundStyle(Ink.ink2)
+                .accessibilityLabel(String(
+                    localized: "Étape \(step.rawValue + 1) sur \(OnboardingTour.Step.allCases.count)",
+                    bundle: .app
+                ))
 
             Spacer(minLength: 12)
 
@@ -91,7 +110,7 @@ struct OnboardingCartouche: View {
                         .padding(.vertical, 12)
                         .contentShape(Rectangle().inset(by: -12))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableScaleStyle())
                 .accessibilityLabel(String(localized: "Passer la prise en main", bundle: .app))
             }
         }

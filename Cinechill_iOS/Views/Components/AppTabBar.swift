@@ -22,6 +22,7 @@ import SwiftUI
 ///   mise en page au changement d'onglet.
 struct AppTabBar: View {
     @Binding var selectedTab: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Onglets tenus allumés **en plus** de l'onglet actif.
     ///
@@ -91,8 +92,9 @@ struct AppTabBar: View {
 
                 tabRow
             }
-            .animation(Self.travel, value: selectedTab)
-            .animation(Self.travel, value: lampOverride)
+            // La lampe saute d'onglet en onglet quand le mouvement est réduit.
+            .animation(reduceMotion ? nil : Self.travel, value: selectedTab)
+            .animation(reduceMotion ? nil : Self.travel, value: lampOverride)
         }
         .frame(height: Self.height)
         .background { scrim }
@@ -138,6 +140,8 @@ struct AppTabBar: View {
                 tabButton(index)
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isTabBar)
     }
 
     private func tabButton(_ index: Int) -> some View {
@@ -172,6 +176,12 @@ struct AppTabBar: View {
         .buttonStyle(.plain)
         .accessibilityLabel(item.label)
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+        // Les libellés restent à 8,5 pt, comme ceux des barres d'Apple : la
+        // loupe du « texte plus grand » les montre à l'appui long.
+        .accessibilityShowsLargeContentViewer {
+            CinechillNavIcon(item.icon)
+            Text(item.label)
+        }
     }
 
     private func select(_ index: Int) {

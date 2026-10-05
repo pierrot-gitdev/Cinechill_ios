@@ -106,9 +106,10 @@ struct PlanField<Value: Hashable>: View {
         }
         .animation(AuthMetrics.shift, value: isActive)
         .animation(AuthMetrics.shift, value: hasError)
+        // Pas de valeur : le champ lit déjà la sienne, et un mot de passe ne doit
+        // jamais être prononcé en clair.
         .accessibilityElement(children: .contain)
         .accessibilityLabel(label)
-        .accessibilityValue(error ?? text)
     }
 
     private var header: some View {
@@ -135,26 +136,27 @@ struct PlanField<Value: Hashable>: View {
                 PlanLight()
             }
         }
-        .frame(height: 16)
+        .frame(minHeight: 16)
     }
 
     private var row: some View {
         HStack(spacing: 10) {
             if let prefix, isActive || isSet {
                 Text(prefix)
-                    .font(.system(size: 17))
+                    .planFont(17)
                     .foregroundStyle(AuthInk.ink3)
                     .transition(.opacity)
             }
 
             Group {
                 if isSecure {
-                    SecureField("", text: $text, prompt: prompt)
+                    SecureField(label, text: $text, prompt: prompt)
                 } else {
-                    TextField("", text: $text, prompt: prompt)
+                    TextField(label, text: $text, prompt: prompt)
                 }
             }
-            .font(.system(size: 17))
+            .accessibilityHint(error ?? note ?? "")
+            .planFont(17)
             .kerning(-0.17)
             .foregroundStyle(AuthInk.ink)
             .tint(AuthInk.ink)
@@ -167,7 +169,7 @@ struct PlanField<Value: Hashable>: View {
             .disabled(isDisabled)
             .onSubmit(onSubmit)
         }
-        .frame(height: AuthMetrics.field)
+        .frame(minHeight: AuthMetrics.field)
         // 32 pt font 5,0 mm, soit 54 % de l'aire recommandée au pouce. Le filet
         // reste où il est, la cible descend de 8 pt de part et d'autre. Et le tap
         // donne le focus lui-même : un `contentShape` élargi ne fait pas entrer
@@ -187,7 +189,7 @@ struct PlanField<Value: Hashable>: View {
 
     private func noteText(_ value: String, tint: Color) -> some View {
         Text(.init(value))              // le gras du repli est écrit en Markdown
-            .font(.system(size: 12))
+            .planFont(12)
             .foregroundStyle(tint)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 9)
@@ -226,16 +228,17 @@ struct PlanAlert: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(message)
-                .font(.system(size: 13))
+                .planFont(13)
                 .foregroundStyle(AuthInk.warn)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if let retry {
                 Button(String(localized: "Réessayer", bundle: .app), action: retry)
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressableScaleStyle())
                     .planLabel()
                     .foregroundStyle(AuthInk.ink)
+                    .padding(.vertical, 8)
                     .contentShape(Rectangle().inset(by: -12))
             }
         }
@@ -272,7 +275,7 @@ struct PlanCriteria: View {
             Text(verbatim: "·").foregroundStyle(AuthInk.ink3)
             item(String(localized: "une majuscule ou un chiffre", bundle: .app), met: Self.hasVariety(password))
         }
-        .font(.system(size: 12))
+        .planFont(12)
         .padding(.top, 9)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
@@ -327,8 +330,11 @@ enum PlanHandle {
                 lastWasSeparator = true
             }
         }
-        while let last = out.last, last == "." || last == "_" { out.removeLast() }
-        return String(out.prefix(20))
+        // Après la coupe à 20 aussi : « marie.clementine.de.saint » tronqué
+        // finirait sur un point, et serait refusé à qui n'a rien tapé.
+        var trimmed = String(out.prefix(20))
+        while let last = trimmed.last, last == "." || last == "_" { trimmed.removeLast() }
+        return trimmed
     }
 
     static func isValid(_ handle: String) -> Bool {

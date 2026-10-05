@@ -81,8 +81,8 @@ struct RootView: View {
             _ = GIDSignIn.sharedInstance.handle(url)
 #endif
         }
-        .animation(.easeInOut(duration: 0.45), value: splashFinished)
-        .animation(.easeInOut(duration: 0.45), value: authService.isInitializing)
+        .animation(.easeOut(duration: 0.25), value: splashFinished)
+        .animation(.easeOut(duration: 0.25), value: authService.isInitializing)
         .task(id: authService.isAuthenticated) {
             await preloadHome()
         }

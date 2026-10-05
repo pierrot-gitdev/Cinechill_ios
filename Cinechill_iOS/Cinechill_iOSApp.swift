@@ -63,6 +63,11 @@ struct Cinechill_iOSApp: App {
             // SwiftUI formate lui-même.
             .id(language.selection)
             .environment(\.locale, language.selection.locale)
+            // Le texte suit la taille choisie dans les réglages de l'iPhone,
+            // jusqu'au deuxième cran des tailles d'accessibilité. Au-delà, les
+            // grilles d'affiches et les planches ne tiennent plus sur un écran
+            // de téléphone sans perdre ce qu'elles montrent.
+            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
             // L'identité — étain, cyan, nuit — est dessinée pour le sombre ; le clair n'est
             // qu'un filet de sécurité pour du code encore non porté. On verrouille donc l'app
             // plutôt que de maintenir deux palettes dont une seule est réellement dessinée.

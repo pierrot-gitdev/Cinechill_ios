@@ -44,6 +44,7 @@ struct CineMatchActivityWidget: Widget {
                 CinechillMarkOutline()
                     .foregroundStyle(ActivityInk.ink)
                     .frame(width: 22, height: 22)
+                    .accessibilityLabel(Text(verbatim: "Cinechill"))
             } compactTrailing: {
                 ActivityPoster(fileName: context.state.posterFileName)
                     .frame(width: 23, height: 23)
@@ -51,6 +52,7 @@ struct CineMatchActivityWidget: Widget {
                 CinechillMarkOutline()
                     .foregroundStyle(ActivityInk.ink)
                     .frame(width: 22, height: 22)
+                    .accessibilityLabel(Text(verbatim: "Cinechill"))
             }
         }
     }
@@ -133,11 +135,13 @@ private struct ActivityFilmRow: View {
                     .font(.system(size: titleSize, weight: .regular, design: .serif))
                     .foregroundStyle(ActivityInk.paper)
                     .lineLimit(2)
-                Text(verbatim: attributes.details)
-                    .font(.system(size: 13))
-                    .monospacedDigit()
-                    .foregroundStyle(ActivityInk.ink3)
-                    .lineLimit(1)
+                if !attributes.details.isEmpty {
+                    Text(verbatim: attributes.details)
+                        .font(.system(size: 13))
+                        .monospacedDigit()
+                        .foregroundStyle(ActivityInk.ink3)
+                        .lineLimit(1)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -151,15 +155,20 @@ private struct ActivityPoster: View {
     let fileName: String?
 
     var body: some View {
-        Group {
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                CinechillPalette.nightFloat
+        // Une surface souple d'abord, l'image en calque : c'est le cadre de
+        // l'appelant qui fixe la taille, et le rognage s'y tient. Une image en
+        // `scaledToFill` posée seule débordait de son cadre (23 × 34,5 dans
+        // l'îlot compact).
+        Color.clear
+            .overlay {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    CinechillPalette.nightFloat
+                }
             }
-        }
         // `Metrics.radius`, le seul rayon de l'app, que l'extension ne voit pas.
         .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
         .accessibilityHidden(true)

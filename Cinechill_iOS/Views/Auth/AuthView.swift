@@ -26,6 +26,7 @@ import SwiftUI
 struct AuthView: View {
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var socialStore: SocialStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     enum Step: Equatable {
         case signIn
@@ -54,6 +55,8 @@ struct AuthView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var confirmation = ""
+    /// Le dernier geste qui a appelé le réseau, pour que « Réessayer » le rejoue.
+    @State private var lastAttempt: (() async throws -> Void)?
     @State private var firstName = ""
     @State private var lastName = ""
     @State private var handle = ""
@@ -265,7 +268,7 @@ struct AuthView: View {
 
             if PlanCriteria.isAcceptable(password) {
                 confirmationField
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding(.top, AuthMetrics.formGap)
@@ -280,7 +283,7 @@ struct AuthView: View {
             )
             doors
             Text("En créant un compte, tu acceptes les conditions et la politique de confidentialité.", bundle: .app)
-                .font(.system(size: 11))
+                .planFont(11)
                 .foregroundStyle(AuthInk.ink2)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 8)
@@ -363,7 +366,7 @@ struct AuthView: View {
 
             if PlanCriteria.isAcceptable(password) {
                 confirmationField
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding(.top, AuthMetrics.formGap)
@@ -400,7 +403,7 @@ struct AuthView: View {
 
     private func title(_ value: String, gap: CGFloat, compact: Bool) -> some View {
         Text(value)
-            .font(.system(size: compact ? 28 : 34, weight: .light))
+            .planFont(compact ? 28 : 34, weight: .light)
             .kerning(compact ? -0.78 : -0.95)     // −0,028 em
             .foregroundStyle(AuthInk.ink)
             .fixedSize(horizontal: false, vertical: true)
@@ -410,7 +413,7 @@ struct AuthView: View {
 
     private func say(_ value: String) -> some View {
         Text(value)
-            .font(.system(size: 14.5))
+            .planFont(14.5)
             .foregroundStyle(AuthInk.ink2)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: 300, alignment: .leading)
@@ -433,9 +436,11 @@ struct AuthView: View {
                             .offset(y: 2)
                     }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressableScaleStyle())
+            // 18 pt de texte ne se touchent pas : la cible déborde.
+            .contentShape(Rectangle().inset(by: -13))
         }
-        .font(.system(size: 14.5))
+        .planFont(14.5)
         .padding(.top, 12)
     }
 
@@ -447,11 +452,11 @@ struct AuthView: View {
                 .padding(.top, 9)
             VStack(alignment: .leading, spacing: 12) {
                 Text(headline)
-                    .font(.system(size: 22, weight: .light))
+                    .planFont(22, weight: .light)
                     .kerning(-0.48)
                     .foregroundStyle(AuthInk.ink)
                 Text(detail)
-                    .font(.system(size: 14))
+                    .planFont(14)
                     .foregroundStyle(AuthInk.ink2)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: 290, alignment: .leading)
@@ -467,7 +472,7 @@ struct AuthView: View {
     private func actions<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         VStack(spacing: 8) {
             if let failure, failure.field == .form {
-                PlanAlert(message: failure.message, retry: submit)
+                PlanAlert(message: failure.message, retry: retryAction(for: failure))
                     .padding(.bottom, 16)
                     .transition(.opacity)
             }
@@ -488,7 +493,13 @@ struct AuthView: View {
             ) {
                 Task { await run { try await authService.signInWithApple() } }
             }
-            PlanSecondaryButton(title: String(localized: "Continuer avec Google", bundle: .app), isEnabled: !isWorking) {
+            // Le « G » officiel, tiré du SDK Google Sign-In : la charte de
+            // Google le demande, et le bouton Apple portait déjà le sien.
+            PlanSecondaryButton(
+                title: String(localized: "Continuer avec Google", bundle: .app),
+                icon: Image("google"),
+                isEnabled: !isWorking
+            ) {
                 Task { await run { try await authService.signInWithGoogle() } }
             }
         }
@@ -522,7 +533,8 @@ struct AuthView: View {
                 contentType: .newPassword,
                 error: message(for: .password),
                 isDisabled: isWorking,
-                onSubmit: { focus = .confirmation }
+                // « Suivant » ne mène au champ « Confirmer » que s'il existe.
+                onSubmit: { if PlanCriteria.isAcceptable(password) { focus = .confirmation } else { submit() } }
             )
             if message(for: .password) == nil {
                 PlanCriteria(password: password)
@@ -575,7 +587,9 @@ struct AuthView: View {
                 label: String(localized: "Pseudo", bundle: .app), text: handleEntry, field: .handle, focus: $focus,
                 placeholder: String(localized: "pierre.robert", bundle: .app),
                 prefix: "@",
-                contentType: .username,
+                // `.nickname`, pas `.username` : le trousseau enregistrerait
+                // le pseudo comme identifiant et le proposerait dans le champ Email.
+                contentType: .nickname,
                 accessory: handleAvailability == .free ? .light : .none,
                 error: handleAvailability == .taken
                     ? String(localized: "Ce pseudo est déjà pris.", bundle: .app) : message(for: .handle),
@@ -623,7 +637,7 @@ struct AuthView: View {
                     Haptics.selection()
                 } label: {
                     Text(verbatim: "@\(candidate)")
-                        .font(.system(size: 11.5))
+                        .planFont(11.5)
                         .foregroundStyle(AuthInk.ink)
                         .padding(.horizontal, 11)
                         .padding(.vertical, 5)
@@ -721,6 +735,7 @@ struct AuthView: View {
     /// ne peut oublier l'un des deux.
     private func run(_ work: @escaping () async throws -> Void) async {
         guard !isWorking else { return }
+        lastAttempt = work
         isWorking = true
         failure = nil
         defer { isWorking = false }
@@ -730,8 +745,26 @@ struct AuthView: View {
         } catch let error as AuthFailure {
             report(error)
         } catch {
-            report(.form(error.localizedDescription))
+            report(AuthFailure(field: .form, message: error.localizedDescription, isRetryable: true))
         }
+    }
+
+    /// Une propriété typée plutôt qu'un ternaire mêlant `nil` et une méthode,
+    /// que le solveur de types ne sait pas toujours résoudre dans un `body`.
+    private func retryAction(for failure: AuthFailure) -> (() -> Void)? {
+        guard failure.isRetryable else { return nil }
+        return { retryLast() }
+    }
+
+    /// « Réessayer » rejoue le geste qui a échoué, pas le formulaire : après un
+    /// refus d'Apple, renvoyer un e-mail vide reprocherait une adresse absente.
+    private func retryLast() {
+        guard let lastAttempt else { return }
+        Task { await run(lastAttempt) }
+    }
+
+    private static var passwordRule: String {
+        String(localized: "Il faut 8 caractères et une majuscule ou un chiffre", bundle: .app)
     }
 
     private func perform() async throws {
@@ -775,6 +808,12 @@ struct AuthView: View {
         guard handleAvailability != .taken else {
             throw AuthFailure(field: .handle, message: String(localized: "Ce pseudo est déjà pris.", bundle: .app))
         }
+        // Avant la confirmation : tant que le mot de passe n'est pas conforme,
+        // le champ « Confirmer » n'existe pas, et l'erreur qu'on y poserait
+        // ne s'afficherait nulle part.
+        guard PlanCriteria.isAcceptable(password) else {
+            throw AuthFailure(field: .password, message: Self.passwordRule)
+        }
         guard confirmation == password else {
             // Le seul geste utile : vider la confirmation et y revenir. On
             // ignore laquelle des deux saisies est la bonne.
@@ -809,6 +848,9 @@ struct AuthView: View {
         guard let code = resetCode, !code.isEmpty else {
             throw AuthFailure(field: .form, message: String(localized: "Ce lien a expiré ou a déjà servi.", bundle: .app))
         }
+        guard PlanCriteria.isAcceptable(password) else {
+            throw AuthFailure(field: .password, message: Self.passwordRule)
+        }
         guard confirmation == password else {
             confirmation = ""
             throw AuthFailure(
@@ -838,6 +880,8 @@ struct AuthView: View {
     /// d'affilée se lisent comme une panne de l'appareil.
     private func report(_ error: AuthFailure) {
         Haptics.warning()
+        // Le focus clavier bouge, pas celui de VoiceOver : l'erreur se dit.
+        AccessibilityNotification.Announcement(error.message).post()
         withAnimation(AuthMetrics.shift) { failure = error }
 
         switch error.field {

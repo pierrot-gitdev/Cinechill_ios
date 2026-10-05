@@ -80,6 +80,10 @@ nonisolated struct AuthFailure: LocalizedError, Equatable {
     let field: AuthField
     let message: String
     var repair: AuthRepair?
+    /// Vrai quand recommencer le même geste peut réussir : une panne réseau,
+    /// un refus d'Apple. Faux pour un lien expiré ou un compte désactivé, où
+    /// « Réessayer » ne mènerait nulle part.
+    var isRetryable = false
 
     var errorDescription: String? { message }
 
@@ -93,6 +97,7 @@ nonisolated struct AuthFailure: LocalizedError, Equatable {
         lhs.field == rhs.field
             && lhs.message == rhs.message
             && lhs.repair == rhs.repair
+            && lhs.isRetryable == rhs.isRetryable
     }
 }
 
@@ -326,10 +331,14 @@ final class AuthService: ObservableObject {
             // code 1000 se lit « unknown » mais n'a en pratique que deux causes :
             // la capacité Sign In with Apple absente de la cible, ou aucun
             // compte iCloud sur l'appareil.
-            throw fail(.form(String(
-                localized: "La connexion Apple a échoué. Vérifie que tu es connecté à iCloud sur cet appareil.",
-                bundle: .app
-            )))
+            throw fail(AuthFailure(
+                field: .form,
+                message: String(
+                    localized: "La connexion Apple a échoué. Vérifie que tu es connecté à iCloud sur cet appareil.",
+                    bundle: .app
+                ),
+                isRetryable: true
+            ))
         } catch let failure as AuthFailure {
             throw fail(failure)
         } catch {
@@ -489,10 +498,18 @@ final class AuthService: ObservableObject {
             )
 
         case AuthErrorCode.networkError.rawValue:
-            return AuthFailure(field: .form, message: String(localized: "Connexion au serveur impossible.", bundle: .app))
+            return AuthFailure(
+                field: .form,
+                message: String(localized: "Connexion au serveur impossible.", bundle: .app),
+                isRetryable: true
+            )
 
         default:
-            return AuthFailure(field: .form, message: String(localized: "Connexion au serveur impossible.", bundle: .app))
+            return AuthFailure(
+                field: .form,
+                message: String(localized: "Connexion au serveur impossible.", bundle: .app),
+                isRetryable: true
+            )
         }
 #else
         return sdkMissing

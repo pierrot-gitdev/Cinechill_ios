@@ -41,6 +41,8 @@ struct SplashView: View {
     var onFinished: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Un toucher passe l'ouverture : on la regarde une fois, pas chaque soir.
+    @State private var skipped = false
 
     // La lame qui entre.
     @State private var bladeOffset: CGFloat = 1
@@ -108,7 +110,18 @@ struct SplashView: View {
             .coordinateSpace(.named(Self.space))
         }
         .ignoresSafeArea()
+        .contentShape(Rectangle())
+        .onTapGesture(perform: skip)
+        .accessibilityAction(named: Text("Passer l'ouverture", bundle: .app), skip)
         .task { await run() }
+    }
+
+    /// La main passe tout de suite ; c'est `RootView` qui attend encore
+    /// l'authentification si elle n'a pas répondu.
+    private func skip() {
+        guard !skipped else { return }
+        skipped = true
+        onFinished()
     }
 
     // MARK: Le verrouillage
@@ -380,8 +393,11 @@ struct SplashView: View {
 
     private func run() async {
         guard !reduceMotion else {
-            // Même destination, sans le voyage.
-            withAnimation(.easeOut(duration: 0.3)) {
+            // Même destination, sans le voyage : la composition finale apparaît
+            // d'un coup, et c'est le fondu de `RootView` qui fait la sortie.
+            var still = Transaction()
+            still.disablesAnimations = true
+            withTransaction(still) {
                 boothGlow = 1
                 lightReach = 512
                 screenFlare = 0.34
@@ -397,8 +413,8 @@ struct SplashView: View {
                 handedOver = true
                 lettersIn = lettersIn.map { _ in true }
             }
-            await sleep(900)
-            onFinished()
+            await sleep(700)
+            skip()
             return
         }
 
@@ -491,7 +507,7 @@ struct SplashView: View {
         withAnimation(.easeIn(duration: 0.15)) { glintOpacity = 0 }
         await sleep(150)
 
-        onFinished()
+        skip()
     }
 
     private func sleep(_ milliseconds: UInt64) async {

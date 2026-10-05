@@ -22,6 +22,9 @@ struct OnboardingPlatformsSheet: View {
 
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(MediaCatalog.self) private var catalog
+    /// Le répertoire n'a pas pu arriver : sans ce drapeau, l'attente tournait
+    /// pour toujours et la seule sortie était de déclarer n'avoir rien.
+    @State private var loadFailed = false
 
     private var selection: Binding<Set<String>> {
         Binding(
@@ -43,18 +46,36 @@ struct OnboardingPlatformsSheet: View {
                         .accessibilityAddTraits(.isHeader)
 
                     Text("Coche celles que tu as : on ne te proposera que des films disponibles dessus.", bundle: .app)
-                        .font(.system(size: 13.5))
+                        .planFont(13.5)
                         .foregroundStyle(Ink.ink2)
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 10)
 
                     Group {
-                        if catalog.platforms.isEmpty {
+                        if catalog.platforms.isEmpty, loadFailed {
+                            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                                Text("Impossible de charger les plateformes.", bundle: .app)
+                                    .planFont(13)
+                                    .foregroundStyle(Ink.ink2)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 8)
+                                Button {
+                                    Task { await load() }
+                                } label: {
+                                    Text("Réessayer", bundle: .app)
+                                        .planLabel()
+                                        .foregroundStyle(Ink.ink)
+                                        .frame(minHeight: 44)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(PressableScaleStyle())
+                            }
+                        } else if catalog.platforms.isEmpty {
                             HStack(spacing: 10) {
                                 CinechillSpinner(size: 18)
                                 Text("Chargement des plateformes…", bundle: .app)
-                                    .font(.system(size: 13))
+                                    .planFont(13)
                                     .foregroundStyle(Ink.ink2)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -87,7 +108,7 @@ struct OnboardingPlatformsSheet: View {
                     onContinue()
                 } label: {
                     Text("Je n'ai aucune plateforme", bundle: .app)
-                        .font(.system(size: 13, weight: .medium))
+                        .planFont(13, weight: .medium)
                         .foregroundStyle(Ink.ink2)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -106,6 +127,12 @@ struct OnboardingPlatformsSheet: View {
         .presentationDetents([.large])
         .presentationBackground(Ink.ground)
         .interactiveDismissDisabled()
-        .task { await catalog.loadIfNeeded() }
+        .task { await load() }
+    }
+
+    private func load() async {
+        loadFailed = false
+        await catalog.loadIfNeeded()
+        loadFailed = catalog.platforms.isEmpty
     }
 }
