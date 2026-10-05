@@ -73,7 +73,7 @@ struct SeriesDetailView: View {
                     HStack(alignment: .top, spacing: 11) {
                         PlanLight().padding(.top, 6)
                         Text(remark)
-                            .font(.system(size: 13))
+                            .planFont(13)
                             .foregroundStyle(Ink.ink2)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
@@ -105,7 +105,7 @@ struct SeriesDetailView: View {
 
                 if let errorMessage {
                     Text(errorMessage)
-                        .font(.system(size: 12.5))
+                        .planFont(12.5)
                         .foregroundStyle(Ink.warn)
                         .padding(.horizontal, Metrics.margin)
                         .padding(.top, 24)
@@ -141,7 +141,7 @@ struct SeriesDetailView: View {
                         .foregroundStyle(Ink.ink)
 
                     Text(voteText)
-                        .font(.system(size: 11))
+                        .planFont(11)
                         .foregroundStyle(Ink.ink2)
                 }
 
@@ -177,6 +177,8 @@ struct SeriesDetailView: View {
 
     private var voteText: String {
         guard let count = detail?.voteCount, count > 0 else { return String(localized: "/ 10", bundle: .app) }
+        // Le nombre passe en `%@`, formaté : le catalogue ne peut pas en tirer le pluriel.
+        if count == 1 { return String(localized: "/ 10 · 1 vote", bundle: .app) }
         return String(localized: "/ 10 · \(count.formatted(.number.grouping(.automatic))) votes", bundle: .app)
     }
 
@@ -248,11 +250,11 @@ struct SeriesDetailView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Saison \(season.number)", bundle: .app)
-                    .font(.system(size: 13.5, weight: isInPlay ? .semibold : .regular))
+                    .planFont(13.5, weight: isInPlay ? .semibold : .regular)
                     .foregroundStyle(season.isReleased ? Ink.ink : Ink.ink2)
 
                 Text(seasonLine(season, entry: entry))
-                    .font(.system(size: 10.5))
+                    .planFont(10.5)
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink2)
                     .lineLimit(1)
@@ -297,6 +299,8 @@ struct SeriesDetailView: View {
             }
             return String(localized: "Épisode \(entry.episodeToPlay)", bundle: .app)
         }
+        // Zéro épisode connu n'est pas une donnée : on ne l'écrit pas.
+        guard season.episodeCount > 0 else { return season.year ?? "" }
         let episodes = season.episodeCount == 1
             ? String(localized: "1 épisode", bundle: .app)
             : String(localized: "\(season.episodeCount) épisodes", bundle: .app)
@@ -409,7 +413,11 @@ struct SeriesDetailView: View {
             }
             return String(localized: "Saison \(season.number) · à venir", bundle: .app)
         }
-        return String(localized: "Saison \(season.number) · \(season.episodeCount) épisodes", bundle: .app)
+        switch season.episodeCount {
+        case 0: return String(localized: "Saison \(season.number)", bundle: .app)
+        case 1: return String(localized: "Saison \(season.number) · 1 épisode", bundle: .app)
+        default: return String(localized: "Saison \(season.number) · \(season.episodeCount) épisodes", bundle: .app)
+        }
     }
 
     /// Un épisode de plus. Passé le dernier, il n'y a plus d'épisode à lancer :

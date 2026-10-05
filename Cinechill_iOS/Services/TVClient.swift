@@ -175,7 +175,7 @@ nonisolated enum TVDate {
         parser.timeZone = .current
         parser.dateFormat = "yyyy-MM-dd"
         guard let date = parser.date(from: iso) else { return nil }
-        return date.formatted(.dateTime.day().month(.abbreviated))
+        return date.formatted(.dateTime.day().month(.abbreviated).locale(AppLanguage.current.locale))
     }
 }
 

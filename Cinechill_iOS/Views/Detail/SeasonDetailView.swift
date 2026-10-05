@@ -130,7 +130,7 @@ struct SeasonDetailView: View {
 
                 if let errorMessage {
                     Text(errorMessage)
-                        .font(.system(size: 12.5))
+                        .planFont(12.5)
                         .foregroundStyle(Ink.warn)
                         .padding(.horizontal, Metrics.margin)
                         .padding(.top, 24)
@@ -166,7 +166,7 @@ struct SeasonDetailView: View {
                         .foregroundStyle(Ink.ink)
 
                     Text("/ 10", bundle: .app)
-                        .font(.system(size: 11))
+                        .planFont(11)
                         .foregroundStyle(Ink.ink2)
                 }
 
@@ -204,7 +204,7 @@ struct SeasonDetailView: View {
         NavigationLink(destination: ItemDetailView(item: item.seriesItem)) {
             HStack(spacing: 10) {
                 Text("Toutes les saisons", bundle: .app)
-                    .font(.system(size: 13))
+                    .planFont(13)
                     .foregroundStyle(Ink.ink2)
                 Spacer(minLength: 8)
                 DetailChevron()
@@ -261,14 +261,14 @@ struct SeasonDetailView: View {
                 Text(episode.name.isEmpty
                      ? String(localized: "Épisode \(episode.number)", bundle: .app)
                      : episode.name)
-                    .font(.system(size: 13.5, weight: isNext ? .semibold : .regular))
+                    .planFont(13.5, weight: isNext ? .semibold : .regular)
                     .foregroundStyle(Ink.ink)
                     .lineLimit(1)
 
                 Spacer(minLength: 8)
 
                 Text(episodeNote(episode))
-                    .font(.system(size: 10.5))
+                    .planFont(10.5)
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink2)
 

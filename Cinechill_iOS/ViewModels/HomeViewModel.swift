@@ -111,12 +111,18 @@ final class HomeViewModel {
         rows = fetched
     }
 
-    func loadTopForCategory(_ category: HomeBrowseCategory) async throws -> [MediaItem] {
+    /// Les plateformes passent comme pour « populaire » : la ligne « Mes
+    /// plateformes » du genre promettait un filtre que la requête ne posait pas.
+    func loadTopForCategory(_ category: HomeBrowseCategory, platformIDs: Set<String>) async throws -> [MediaItem] {
+        let providerIDs = availablePlatforms
+            .filter { platformIDs.contains($0.id) }
+            .map(\.providerID)
+            .sorted()
         let items = try await repository.loadPopularTop(
             for: .movie,
             limit: 50,
             genreID: category.id,
-            providerIDs: []
+            providerIDs: providerIDs
         )
         return filteringBannedGenres(items)
     }

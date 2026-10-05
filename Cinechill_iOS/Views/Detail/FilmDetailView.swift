@@ -43,9 +43,30 @@ struct FilmDetailView: View {
     @State private var scrollOffset: CGFloat = 0
 
     private static let heroHeight: CGFloat = 260
+    /// La taille réelle du titre, qui suit Dynamic Type. Le héros grandit du
+    /// surplus de ses trois lignes : à hauteur fixe, un titre agrandi montait
+    /// jusque sous les boutons du haut.
+    @ScaledMetric(relativeTo: .title2) private var heroTitleSize: CGFloat = 24
+    private var heroFrameHeight: CGFloat { Self.heroHeight + max(0, heroTitleSize - 24) * 3 }
 
+    /// Le détail complète l'item sans l'écraser. La réponse détail ne porte
+    /// pas les identifiants de genre : en prendre l'item tel quel envoyait
+    /// `genreIds: []` à l'écriture de « Vu » ou « À voir », et faussait genres
+    /// exclus, badges et profil CinéMatch.
     private var displayItem: MediaItem {
-        detail.map { $0.asMediaItem(mediaType: item.mediaType) } ?? item
+        guard let detail else { return item }
+        let fresh = detail.asMediaItem(mediaType: item.mediaType)
+        return MediaItem(
+            tmdbId: fresh.tmdbId,
+            mediaType: fresh.mediaType,
+            title: fresh.title,
+            posterPath: fresh.posterPath ?? item.posterPath,
+            overview: fresh.overview ?? item.overview,
+            voteAverage: fresh.voteAverage ?? item.voteAverage,
+            voteCount: fresh.voteCount ?? item.voteCount,
+            genreIds: item.genreIds,
+            releaseDate: fresh.releaseDate ?? item.releaseDate
+        )
     }
 
     private var currentStatus: DetailStatus {
@@ -127,7 +148,7 @@ struct FilmDetailView: View {
 
                 if let errorMessage {
                     Text(errorMessage)
-                        .font(.system(size: 12.5))
+                        .planFont(12.5)
                         .foregroundStyle(Ink.warn)
                         .padding(.horizontal, Metrics.margin)
                         .padding(.top, 24)
@@ -152,7 +173,7 @@ struct FilmDetailView: View {
                 glyphButton(.back, label: String(localized: "Retour", bundle: .app)) { dismiss() }
 
                 Text(displayItem.title)
-                    .font(.system(size: 17, weight: .semibold))
+                    .planFont(17, weight: .semibold)
                     .foregroundStyle(Ink.ink)
                     .lineLimit(1)
                     .opacity(ceilingProgress)
@@ -201,7 +222,7 @@ struct FilmDetailView: View {
         ZStack(alignment: .bottomLeading) {
             Color.clear
                 .frame(maxWidth: .infinity)
-                .frame(height: Self.heroHeight)
+                .frame(height: heroFrameHeight)
                 .overlay { backdrop }
                 .clipped()
                 .overlay(scrim)
@@ -222,7 +243,7 @@ struct FilmDetailView: View {
 
                     if let tagline = detail?.tagline, !tagline.isEmpty {
                         Text(tagline)
-                            .font(.system(size: 12))
+                            .planFont(12)
                             .foregroundStyle(Ink.ink2)
                             .lineLimit(2)
                     }
@@ -234,7 +255,7 @@ struct FilmDetailView: View {
             .padding(.horizontal, Metrics.margin)
             .padding(.bottom, 14)
         }
-        .frame(height: Self.heroHeight)
+        .frame(height: heroFrameHeight)
     }
 
     @ViewBuilder
@@ -285,7 +306,7 @@ struct FilmDetailView: View {
                         .foregroundStyle(Ink.ink)
 
                     Text(voteText)
-                        .font(.system(size: 11))
+                        .planFont(11)
                         .foregroundStyle(Ink.ink2)
                 }
 
@@ -314,6 +335,8 @@ struct FilmDetailView: View {
 
     private var voteText: String {
         guard let count = detail?.voteCount, count > 0 else { return String(localized: "/ 10", bundle: .app) }
+        // Le nombre passe en `%@`, formaté : le catalogue ne peut pas en tirer le pluriel.
+        if count == 1 { return String(localized: "/ 10 · 1 vote", bundle: .app) }
         return String(localized: "/ 10 · \(count.formatted(.number.grouping(.automatic))) votes", bundle: .app)
     }
 
@@ -330,7 +353,7 @@ struct FilmDetailView: View {
             PlanLight().padding(.top, 6)
 
             Text(text)
-                .font(.system(size: 13))
+                .planFont(13)
                 .foregroundStyle(Ink.ink2)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -342,7 +365,9 @@ struct FilmDetailView: View {
     }
 
     private var galleryConnection: String? {
-        let gallery = libraryStore.galleryItems
+        // Sans le film lui-même : déjà en galerie, il se comptait, et un
+        // 4ᵉ drame devenait le 5ᵉ.
+        let gallery = libraryStore.galleryItems.filter { $0.id != displayItem.id }
         guard gallery.count >= 3 else { return nil }
 
         // Le réalisateur n'est pas stocké dans les entrées de galerie : le seul
@@ -356,23 +381,31 @@ struct FilmDetailView: View {
                 entry.genreIds.contains(genreID) && decadeOf(entry.releaseDate) == decade
             }.count
             if sameVein >= 2 {
-                // Le rang est écrit dans la phrase plutôt que fabriqué à part :
-                // le suffixe ordinal ne se pose pas de la même façon d'une
-                // langue à l'autre — « 3ᵉ » ici, « 3rd » ailleurs.
-                let rank = sameVein + 1
+                let rank = Self.ordinal(sameVein + 1)
                 if let genreName {
-                    return String(localized: "\(rank)ᵉ \(genreName) des années \(decade) dans ta galerie.", bundle: .app)
+                    return String(localized: "\(rank) \(genreName) des années \(decade) dans ta galerie.", bundle: .app)
                 }
-                return String(localized: "\(rank)ᵉ film de ce genre et de cette décennie dans ta galerie.", bundle: .app)
+                return String(localized: "\(rank) film de ce genre et de cette décennie dans ta galerie.", bundle: .app)
             }
         }
 
         let sameGenre = gallery.filter { $0.genreIds.contains(genreID) }.count
         guard sameGenre >= 3 else { return nil }
         if let genreName {
-            return String(localized: "\(sameGenre + 1)ᵉ \(genreName) de ta galerie.", bundle: .app)
+            return String(localized: "\(Self.ordinal(sameGenre + 1)) \(genreName) de ta galerie.", bundle: .app)
         }
         return String(localized: "Tu as déjà \(sameGenre) films de ce genre dans ta galerie.", bundle: .app)
+    }
+
+    /// Le rang, fabriqué dans le code : le suffixe ne se laisse pas écrire
+    /// dans le catalogue. « 3ᵉ » en français ; en anglais 3rd, 21st, 22nd,
+    /// que la règle « th » du catalogue écrivait 3th, 21th, 22th.
+    private static func ordinal(_ n: Int) -> String {
+        guard AppLanguage.current == .english else { return "\(n)ᵉ" }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .ordinal
+        formatter.locale = Locale(identifier: "en_US")
+        return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 
     private var decadeOfItem: Int? {
@@ -444,7 +477,7 @@ struct FilmDetailView: View {
                     PosterImageView(url: url)
                 } else {
                     Text(provider.providerName.prefix(3).uppercased())
-                        .font(.system(size: 9, weight: .semibold))
+                        .planFont(9, weight: .semibold)
                         .foregroundStyle(Ink.ink2)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Ink.ground3)
@@ -483,7 +516,7 @@ struct FilmDetailView: View {
                     .padding(.bottom, 12)
 
                 Text(text)
-                    .font(.system(size: 14))
+                    .planFont(14)
                     .foregroundStyle(Ink.ink2)
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
@@ -508,7 +541,8 @@ struct FilmDetailView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 14) {
-                    ForEach(cast, id: \.name) { member in
+                    // Par position : un même acteur peut tenir plusieurs rôles.
+                    ForEach(Array(cast.enumerated()), id: \.offset) { _, member in
                         VStack(spacing: 8) {
                             Group {
                                 if let url = member.profileURL {
@@ -523,14 +557,14 @@ struct FilmDetailView: View {
 
                             VStack(spacing: 2) {
                                 Text(member.name)
-                                    .font(.system(size: 10.5, weight: .medium))
+                                    .planFont(10.5, weight: .medium)
                                     .foregroundStyle(Ink.ink)
                                     .multilineTextAlignment(.center)
                                     .lineLimit(2)
 
                                 if let character = member.character, !character.isEmpty {
                                     Text(character)
-                                        .font(.system(size: 9.5))
+                                        .planFont(9.5)
                                         .foregroundStyle(Ink.ink2)
                                         .multilineTextAlignment(.center)
                                         .lineLimit(2)
@@ -661,7 +695,7 @@ struct FilmDetailView: View {
         } label: {
             HStack(spacing: 7) {
                 Text(label)
-                    .font(.system(size: 14, weight: isOn ? .semibold : .regular))
+                    .planFont(14, weight: isOn ? .semibold : .regular)
 
                 // Le point de lumière s'ouvre en faisceau qui tourne : c'est le même signe,
                 // arrêté d'un côté, en train de travailler de l'autre. Le bouton garde sa
@@ -678,7 +712,7 @@ struct FilmDetailView: View {
             }
             .foregroundStyle(isOn ? Ink.ground : Ink.ink)
             .frame(maxWidth: .infinity)
-            .frame(height: Metrics.control)
+            .frame(minHeight: Metrics.control)
             .background {
                 if isOn {
                     RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)

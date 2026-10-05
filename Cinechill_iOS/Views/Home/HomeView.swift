@@ -13,6 +13,11 @@ import SwiftUI
 /// **montre ce qu'elle filtre**, et la vignette d'affiche est désormais celle
 /// que toute l'app partage.
 struct HomeView: View {
+    /// Les deux lignes de titre réservées sous l'affiche, qui grandissent
+    /// avec le texte (Dynamic Type) pour que les rangées restent alignées.
+    @ScaledMetric(relativeTo: .caption2) private var posterTitleHeight = PosterCell.titleHeight
+    /// La hauteur d'une carte « Parcourir », qui suit celle de son titre.
+    @ScaledMetric(relativeTo: .footnote) private var browseRow: CGFloat = 84
     @Bindable var homeModel: HomeViewModel
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var profileStore: UserProfileStore
@@ -24,6 +29,10 @@ struct HomeView: View {
     @State private var showPlatformSheet = false
     @State private var showProfile = false
 
+    private func reload() async {
+        await homeModel.loadAll(preferredPlatformIDs: libraryStore.preferredPlatformIDs)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -31,14 +40,27 @@ struct HomeView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 30) {
-                        if let err = homeModel.errorMessage {
-                            HStack(alignment: .top, spacing: 11) {
-                                PlanLight(tint: Ink.warn).padding(.top, 6)
-                                Text(err)
-                                    .font(.system(size: 13))
+                        // La conséquence, pas le mécanisme : le code HTTP du serveur
+                        // ne dit rien à personne. Et une issue, sans quoi il
+                        // fallait tuer l'app pour réessayer.
+                        if homeModel.errorMessage != nil {
+                            HStack(alignment: .firstTextBaseline, spacing: 11) {
+                                PlanLight(tint: Ink.warn)
+                                Text("Impossible de charger l'accueil. Vérifie ta connexion.", bundle: .app)
+                                    .planFont(13)
                                     .foregroundStyle(Ink.warn)
                                     .fixedSize(horizontal: false, vertical: true)
-                                Spacer(minLength: 0)
+                                Spacer(minLength: 8)
+                                Button {
+                                    Task { await reload() }
+                                } label: {
+                                    Text("Réessayer", bundle: .app)
+                                        .planLabel()
+                                        .foregroundStyle(Ink.ink)
+                                        .frame(minHeight: 44)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(PressableScaleStyle())
                             }
                         }
 
@@ -49,7 +71,9 @@ struct HomeView: View {
                             becauseYouWatchedSection
                             trendingSection
                             popularSection
-                            browseSection
+                            if !homeModel.browseCategories.isEmpty {
+                                browseSection
+                            }
                         }
                     }
                     .padding(.horizontal, Metrics.margin)
@@ -57,6 +81,7 @@ struct HomeView: View {
                     .padding(.bottom, 20)
                 }
                 .scrollIndicators(.hidden)
+                .refreshable { await reload() }
             }
             .safeAreaInset(edge: .top) {
                 AppHeaderView(title: String(localized: "Accueil", bundle: .app), onProfileTap: { showProfile = true })
@@ -100,7 +125,7 @@ struct HomeView: View {
         VStack(spacing: 14) {
             CinechillSpinner(size: 30)
             Text("Chargement…", bundle: .app)
-                .font(.system(size: 12.5))
+                .planFont(12.5)
                 .foregroundStyle(Ink.ink3)
         }
         .frame(maxWidth: .infinity)
@@ -195,12 +220,12 @@ struct HomeView: View {
                                             .monospacedDigit()
                                             .foregroundStyle(Ink.light)
                                         Text(item.title)
-                                            .font(.system(size: 11))
+                                            .planFont(11)
                                             .foregroundStyle(Ink.ink)
                                             .lineLimit(2)
                                             .multilineTextAlignment(.leading)
                                     }
-                                    .frame(width: 104, height: PosterCell.titleHeight, alignment: .topLeading)
+                                    .frame(width: 104, height: posterTitleHeight, alignment: .topLeading)
                                 }
                             }
                             .buttonStyle(PressableScaleStyle(scale: 0.95))
@@ -225,7 +250,7 @@ struct HomeView: View {
 
             if homeModel.popularItems.isEmpty, !homeModel.loading {
                 Text(emptyPopularMessage)
-                    .font(.system(size: 12.5))
+                    .planFont(12.5)
                     .foregroundStyle(Ink.ink2)
             }
         }
@@ -249,7 +274,7 @@ struct HomeView: View {
                     }
                     if selectedPlatforms.count > 4 {
                         Text(verbatim: "+\(selectedPlatforms.count - 4)")
-                            .font(.system(size: 10))
+                            .planFont(10)
                             .monospacedDigit()
                             .foregroundStyle(Ink.ink2)
                     }
@@ -262,7 +287,7 @@ struct HomeView: View {
                 showPlatformSheet = true
             } label: {
                 Text("Modifier", bundle: .app)
-                    .font(.system(size: 12))
+                    .planFont(12)
                     .foregroundStyle(Ink.ink2)
                     .overlay(alignment: .bottom) {
                         Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
@@ -285,7 +310,7 @@ struct HomeView: View {
                 PosterImageView(url: logoURL)
             } else {
                 Text(platform.shortLabel.prefix(2))
-                    .font(.system(size: 8, weight: .semibold))
+                    .planFont(8, weight: .semibold)
                     .foregroundStyle(Ink.ink2)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Ink.ground3)
@@ -315,7 +340,7 @@ struct HomeView: View {
                 Spacer()
                 NavigationLink(destination: HomeGenresListView(categories: homeModel.browseCategories, homeModel: homeModel)) {
                     Text("Tout voir", bundle: .app)
-                        .font(.system(size: 12))
+                        .planFont(12)
                         .foregroundStyle(Ink.ink2)
                         .overlay(alignment: .bottom) {
                             Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
@@ -327,7 +352,7 @@ struct HomeView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHGrid(
-                    rows: [GridItem(.fixed(84), spacing: Metrics.gutter), GridItem(.fixed(84), spacing: Metrics.gutter)],
+                    rows: [GridItem(.fixed(browseRow), spacing: Metrics.gutter), GridItem(.fixed(browseRow), spacing: Metrics.gutter)],
                     spacing: Metrics.gutter
                 ) {
                     ForEach(homeModel.browseCategories) { category in
@@ -341,7 +366,7 @@ struct HomeView: View {
                         .buttonStyle(PressableScaleStyle(scale: 0.96))
                     }
                 }
-                .frame(height: 178)
+                .frame(height: browseRow * 2 + Metrics.gutter)
                 .padding(.horizontal, 1)
             }
             .scrollClipDisabled()
@@ -371,7 +396,7 @@ struct HomeView: View {
                             }
 
                             Text(item.title)
-                                .font(.system(size: 11))
+                                .planFont(11)
                                 .foregroundStyle(Ink.ink)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
@@ -379,7 +404,7 @@ struct HomeView: View {
                                 // hauteur fixe, un titre court et un titre long ne
                                 // donnent pas la même hauteur de cellule, et les
                                 // affiches se désalignent.
-                                .frame(width: 104, height: PosterCell.titleHeight, alignment: .topLeading)
+                                .frame(width: 104, height: posterTitleHeight, alignment: .topLeading)
                         }
                     }
                     .buttonStyle(PressableScaleStyle(scale: 0.95))
@@ -417,6 +442,9 @@ struct HomeView: View {
 /// en paysage ne donnerait qu'une bande horizontale souvent illisible. C'est le
 /// bandeau d'ancienneté, pas le format, qui distingue cette rangée.
 struct TheaterCardView: View {
+    /// Les deux lignes de titre réservées sous l'affiche, qui grandissent
+    /// avec le texte (Dynamic Type) pour que les rangées restent alignées.
+    @ScaledMetric(relativeTo: .caption2) private var posterTitleHeight = PosterCell.titleHeight
     let item: MediaItem
     let inGallery: Bool
     let inWatchlist: Bool
@@ -450,11 +478,11 @@ struct TheaterCardView: View {
             .frame(width: width)
 
             Text(item.title)
-                .font(.system(size: 11))
+                .planFont(11)
                 .foregroundStyle(Ink.ink)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
-                .frame(width: width, height: PosterCell.titleHeight, alignment: .topLeading)
+                .frame(width: width, height: posterTitleHeight, alignment: .topLeading)
         }
     }
 

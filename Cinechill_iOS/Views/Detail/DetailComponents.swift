@@ -18,6 +18,11 @@ import SwiftUI
 /// le plafond mesure pour se poser.
 struct DetailHero: View {
     static let height: CGFloat = 260
+    /// La taille réelle du titre, qui suit Dynamic Type. Le héros grandit du
+    /// surplus de ses trois lignes : à hauteur fixe, un titre agrandi montait
+    /// jusque sous les boutons du haut.
+    @ScaledMetric(relativeTo: .title2) private var heroTitleSize: CGFloat = 24
+    private var heroFrameHeight: CGFloat { Self.height + max(0, heroTitleSize - 24) * 3 }
 
     let backdropURL: URL?
     let posterPath: String?
@@ -32,7 +37,7 @@ struct DetailHero: View {
         ZStack(alignment: .bottomLeading) {
             Color.clear
                 .frame(maxWidth: .infinity)
-                .frame(height: Self.height)
+                .frame(height: heroFrameHeight)
                 .overlay { backdrop }
                 .clipped()
                 .overlay(scrim)
@@ -56,7 +61,7 @@ struct DetailHero: View {
 
                     if let tagline, !tagline.isEmpty {
                         Text(tagline)
-                            .font(.system(size: 12))
+                            .planFont(12)
                             .foregroundStyle(Ink.ink2)
                             .lineLimit(2)
                     }
@@ -68,7 +73,7 @@ struct DetailHero: View {
             .padding(.horizontal, Metrics.margin)
             .padding(.bottom, 14)
         }
-        .frame(height: Self.height)
+        .frame(height: heroFrameHeight)
     }
 
     @ViewBuilder
@@ -112,7 +117,7 @@ struct DetailCeiling: View {
                 glyphButton(.back, label: String(localized: "Retour", bundle: .app), action: onBack)
 
                 Text(title)
-                    .font(.system(size: 17, weight: .semibold))
+                    .planFont(17, weight: .semibold)
                     .foregroundStyle(Ink.ink)
                     .lineLimit(1)
                     .opacity(progress)
@@ -242,7 +247,7 @@ struct DetailProvidersRow: View {
                     PosterImageView(url: url)
                 } else {
                     Text(provider.providerName.prefix(3).uppercased())
-                        .font(.system(size: 9, weight: .semibold))
+                        .planFont(9, weight: .semibold)
                         .foregroundStyle(Ink.ink2)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Ink.ground3)
@@ -284,7 +289,7 @@ struct DetailSynopsis: View {
             DetailSectionHeader(title: String(localized: "Synopsis", bundle: .app))
 
             Text(text)
-                .font(.system(size: 14))
+                .planFont(14)
                 .foregroundStyle(Ink.ink2)
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -304,7 +309,8 @@ struct DetailCast: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 14) {
-                    ForEach(cast, id: \.name) { member in
+                    // Par position : un même acteur peut tenir plusieurs rôles.
+                    ForEach(Array(cast.enumerated()), id: \.offset) { _, member in
                         VStack(spacing: 8) {
                             Group {
                                 if let url = member.profileURL {
@@ -319,14 +325,14 @@ struct DetailCast: View {
 
                             VStack(spacing: 2) {
                                 Text(member.name)
-                                    .font(.system(size: 10.5, weight: .medium))
+                                    .planFont(10.5, weight: .medium)
                                     .foregroundStyle(Ink.ink)
                                     .multilineTextAlignment(.center)
                                     .lineLimit(2)
 
                                 if let character = member.character, !character.isEmpty {
                                     Text(character)
-                                        .font(.system(size: 9.5))
+                                        .planFont(9.5)
                                         .foregroundStyle(Ink.ink2)
                                         .multilineTextAlignment(.center)
                                         .lineLimit(2)
@@ -363,7 +369,7 @@ struct DetailFloorButton: View {
         Button(action: action) {
             HStack(spacing: 7) {
                 Text(title)
-                    .font(.system(size: 14, weight: style == .line ? .regular : .semibold))
+                    .planFont(14, weight: style == .line ? .regular : .semibold)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
 
@@ -377,7 +383,7 @@ struct DetailFloorButton: View {
             }
             .foregroundStyle(style == .line ? Ink.ink : Ink.ground)
             .frame(maxWidth: .infinity)
-            .frame(height: Metrics.control)
+            .frame(minHeight: Metrics.control)
             .background {
                 switch style {
                 case .paper:

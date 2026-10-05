@@ -24,7 +24,15 @@ struct GenrePopularListView: View {
     @Environment(MediaCatalog.self) private var catalog
 
     @State private var items: [MediaItem] = []
-    @State private var loading = false
+    /// Vrai d'entrée : sinon l'état vide « Rien dans cette catégorie »
+    /// clignote une image avant que le chargement ne parte.
+    @State private var loading = true
+    /// « Voir sans filtre » ne vaut que pour cet écran : effacer les
+    /// plateformes de l'utilisateur pour toute l'app depuis un état vide
+    /// défaisait un réglage pris ailleurs, sans prévenir.
+    @State private var ignoresPlatforms = false
+    /// Les plateformes de la dernière requête, pour ne recharger que si elles changent.
+    @State private var loadedPlatformIDs: Set<String>?
     @State private var errorMessage: String?
     @State private var showPlatforms = false
 
@@ -55,7 +63,7 @@ struct GenrePopularListView: View {
                         title: String(localized: "Rien dans cette catégorie", bundle: .app),
                         message: emptyMessage,
                         actionTitle: hasPlatformFilter ? String(localized: "Voir sans filtre", bundle: .app) : nil,
-                        action: hasPlatformFilter ? { libraryStore.setPreferredPlatforms([]) } : nil
+                        action: hasPlatformFilter ? { showWithoutFilter() } : nil
                     )
                     .padding(.top, 60)
                 } else {
@@ -80,7 +88,9 @@ struct GenrePopularListView: View {
         }
         .task(id: category.id) { await load() }
         .task(id: libraryStore.preferredPlatformIDs) {
-            guard !items.isEmpty || errorMessage != nil else { return }
+            // Un réglage changé reprend la main sur « Voir sans filtre ».
+            ignoresPlatforms = false
+            guard let loadedPlatformIDs, loadedPlatformIDs != effectivePlatformIDs else { return }
             await load()
         }
     }
@@ -105,7 +115,7 @@ struct GenrePopularListView: View {
                         }
                         if selectedPlatforms.count > 4 {
                             Text(verbatim: "+\(selectedPlatforms.count - 4)")
-                                .font(.system(size: 10))
+                                .planFont(10)
                                 .monospacedDigit()
                                 .foregroundStyle(Ink.ink2)
                         }
@@ -118,7 +128,7 @@ struct GenrePopularListView: View {
                     showPlatforms = true
                 } label: {
                     Text("Modifier", bundle: .app)
-                        .font(.system(size: 12))
+                        .planFont(12)
                         .foregroundStyle(Ink.ink2)
                         .overlay(alignment: .bottom) {
                             Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
@@ -128,7 +138,7 @@ struct GenrePopularListView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(String(localized: "Modifier mes plateformes", bundle: .app))
             }
-            .frame(height: 44)
+            .frame(minHeight: 44)
             .padding(.horizontal, Metrics.margin)
 
             PlanEdge().padding(.horizontal, Metrics.margin)
@@ -139,8 +149,17 @@ struct GenrePopularListView: View {
         catalog.platforms.filter { libraryStore.preferredPlatformIDs.contains($0.id) }
     }
 
+    private var effectivePlatformIDs: Set<String> {
+        ignoresPlatforms ? [] : libraryStore.preferredPlatformIDs
+    }
+
     private var hasPlatformFilter: Bool {
-        !libraryStore.preferredPlatformIDs.isEmpty
+        !effectivePlatformIDs.isEmpty
+    }
+
+    private func showWithoutFilter() {
+        ignoresPlatforms = true
+        Task { await load() }
     }
 
     private func platformLogo(_ platform: StreamingPlatform) -> some View {
@@ -149,7 +168,7 @@ struct GenrePopularListView: View {
                 PosterImageView(url: url)
             } else {
                 Text(platform.shortLabel.prefix(2))
-                    .font(.system(size: 8, weight: .semibold))
+                    .planFont(8, weight: .semibold)
                     .foregroundStyle(Ink.ink2)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Ink.ground3)
@@ -188,7 +207,7 @@ struct GenrePopularListView: View {
         VStack(spacing: 14) {
             CinechillSpinner(size: 30)
             Text("Chargement…", bundle: .app)
-                .font(.system(size: 12.5))
+                .planFont(12.5)
                 .foregroundStyle(Ink.ink3)
         }
         .frame(maxWidth: .infinity)
@@ -206,7 +225,9 @@ struct GenrePopularListView: View {
         errorMessage = nil
         defer { loading = false }
         do {
-            items = try await homeModel.loadTopForCategory(category)
+            let platformIDs = effectivePlatformIDs
+            loadedPlatformIDs = platformIDs
+            items = try await homeModel.loadTopForCategory(category, platformIDs: platformIDs)
         } catch {
             if error is CancellationError { return }
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
