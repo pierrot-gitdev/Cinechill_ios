@@ -112,7 +112,7 @@ struct SuggestionComposerSheet: View {
                     .foregroundStyle(Ink.ink)
                     .lineLimit(2)
                 Text("À qui l'envoyer ?", bundle: .app)
-                    .font(.system(size: 12))
+                    .planFont(12)
                     .foregroundStyle(Ink.ink2)
             }
             Spacer(minLength: 0)
@@ -142,12 +142,12 @@ struct SuggestionComposerSheet: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(target.displayName)
-                        .font(.system(size: 14, weight: .medium))
+                        .planFont(14, weight: .medium)
                         .foregroundStyle(Ink.ink)
                         .lineLimit(1)
 
                     Text(target.blockedReason ?? handleText(target))
-                        .font(.system(size: 11.5))
+                        .planFont(11.5)
                         .foregroundStyle(target.alreadySeen ? Ink.warn : Ink.ink2)
                         .lineLimit(1)
                 }

@@ -22,7 +22,7 @@ final class UserProfileStore: ObservableObject {
         }
         displayName = user.displayName
             ?? user.email?.components(separatedBy: "@").first
-            ?? "Utilisateur"
+            ?? String(localized: "Utilisateur", bundle: .app)
         googlePhotoURL = user.photoURL
         customPhotoData = UserDefaults.standard.data(forKey: photoKey(uid: user.uid))
     }

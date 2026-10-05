@@ -80,6 +80,11 @@ final class ProfileSearchViewModel {
         guard !pendingFollows.contains(profile.id) else { return }
         pendingFollows.insert(profile.id)
         defer { pendingFollows.remove(profile.id) }
-        try? await store.toggleFollow(uid: profile.id)
+        do {
+            try await store.toggleFollow(uid: profile.id)
+        } catch {
+            // Rien n'a changé : le bouton reste tel quel, la vibration le dit.
+            Haptics.warning()
+        }
     }
 }

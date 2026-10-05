@@ -778,7 +778,7 @@ private extension LibraryStore {
             }
             return Recommender(
                 uid: uid,
-                displayName: (row["displayName"] as? String) ?? "Quelqu'un",
+                displayName: (row["displayName"] as? String) ?? String(localized: "Quelqu'un", bundle: .app),
                 avatarURL: (row["avatarURL"] as? String).flatMap(URL.init(string:)),
                 at: at
             )

@@ -24,8 +24,23 @@ struct NotificationsPanel: View {
     /// Les lignes qui viennent d'être tranchées restent visibles un instant,
     /// le temps de confirmer sur place. Une ligne qui s'évapore sous le doigt
     /// ne laisse aucun moyen de vérifier ce qu'on a fait.
-    @State private var settled: [String: String] = [:]
+    @State private var settled: [String: Settled] = [:]
+    /// La recommandation tranchée, gardée à sa place le temps de la
+    /// confirmation : le magasin la retire tout de suite, et la confirmation
+    /// tombait sinon après toutes les autres, hors de la zone visible.
+    @State private var held: [String: Suggestion] = [:]
     @State private var busy: Set<String> = []
+
+    private enum Settled: Equatable {
+        case added(String)
+        case alreadySeen(String)
+    }
+
+    private var displayedSuggestions: [Suggestion] {
+        let live = socialStore.suggestions
+        let kept = held.values.filter { h in !live.contains { $0.id == h.id } }
+        return (live + kept).sorted { ($0.createdAt, $0.id) > ($1.createdAt, $1.id) }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -49,6 +64,9 @@ struct NotificationsPanel: View {
             RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
                 .strokeBorder(Ink.ruleSet, lineWidth: 1)
         )
+        // Modal pour VoiceOver, et fermé par le geste d'échappement.
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape) { onClose() }
     }
 
     private var header: some View {
@@ -65,6 +83,7 @@ struct NotificationsPanel: View {
                     .contentShape(Rectangle().inset(by: -10))
             }
             .buttonStyle(.plain)
+            .contentShape(Rectangle().inset(by: -16))
             .accessibilityLabel(String(localized: "Fermer", bundle: .app))
         }
     }
@@ -76,10 +95,10 @@ struct NotificationsPanel: View {
                 .foregroundStyle(Ink.ink3)
 
             Text("Aucune notification", bundle: .app)
-                .font(.system(size: 13.5))
+                .planFont(13.5)
                 .foregroundStyle(Ink.ink2)
             Text("Les films qu'on te recommande arriveront ici.", bundle: .app)
-                .font(.system(size: 11.5))
+                .planFont(11.5)
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
         }
@@ -90,15 +109,13 @@ struct NotificationsPanel: View {
     private var rows: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ForEach(socialStore.suggestions) { suggestion in
-                    suggestionRow(suggestion)
-                    Divider()
-                }
-                ForEach(Array(settled.keys.sorted()), id: \.self) { key in
-                    if let title = settled[key] {
-                        settledRow(title)
-                        Divider()
+                ForEach(displayedSuggestions) { suggestion in
+                    if let state = settled[suggestion.id] {
+                        settledRow(state)
+                    } else {
+                        suggestionRow(suggestion)
                     }
+                    Divider()
                 }
                 ForEach(socialStore.recentFollowers) { follower in
                     followerRow(follower)
@@ -131,14 +148,14 @@ struct NotificationsPanel: View {
                 VStack(alignment: .leading, spacing: 3) {
                     (
                         Text(suggestion.fromDisplayName)
-                            .font(.system(size: 13, weight: .semibold))
+                            .fontWeight(.semibold)
                         + Text(" te recommande", bundle: .app)
-                            .font(.system(size: 13))
                     )
+                    .planFont(13)
                     .lineLimit(2)
 
                     Text(verbatim: "\(suggestion.item.title) · \(suggestion.item.displayYear)")
-                        .font(.system(size: 11.5))
+                        .planFont(11.5)
                         .foregroundStyle(Ink.ink2)
                         .lineLimit(2)
                 }
@@ -169,17 +186,33 @@ struct NotificationsPanel: View {
 
     /// La confirmation sur place, avant effacement — l'action reste
     /// vérifiable une seconde et demie.
-    private func settledRow(_ title: String) -> some View {
-        HStack(spacing: 9) {
-            PlanLight()
-                .frame(width: 30, height: 30)
+    private func settledRow(_ state: Settled) -> some View {
+        let title: String
+        let isAdded: Bool
+        switch state {
+        case .added(let value): title = value; isAdded = true
+        case .alreadySeen(let value): title = value; isAdded = false
+        }
+        return HStack(spacing: 9) {
+            Group {
+                if isAdded { PlanLight() } else { PlanLightOutline(tint: Ink.ink3) }
+            }
+            .frame(width: 30, height: 30)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Ajouté à ta watchlist", bundle: .app)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Ink.light)
+                // L'en-tête dit ce qui s'est vraiment passé : « Ajouté » sur un
+                // film déjà vu affirmait le contraire de la ligne d'en dessous.
+                Group {
+                    if isAdded {
+                        Text("Ajouté à ta watchlist", bundle: .app)
+                    } else {
+                        Text("Tu l'avais déjà vu", bundle: .app)
+                    }
+                }
+                .planFont(13, weight: .medium)
+                .foregroundStyle(isAdded ? Ink.light : Ink.ink2)
                 Text(title)
-                    .font(.system(size: 11.5))
+                    .planFont(11.5)
                     .foregroundStyle(Ink.ink2)
                     .lineLimit(1)
             }
@@ -203,10 +236,10 @@ struct NotificationsPanel: View {
 
                 (
                     Text(profile.displayName)
-                        .font(.system(size: 13, weight: .semibold))
+                        .fontWeight(.semibold)
                     + Text(" te suit", bundle: .app)
-                        .font(.system(size: 13))
                 )
+                .planFont(13)
                 .lineLimit(2)
 
                 Spacer(minLength: 0)
@@ -217,8 +250,11 @@ struct NotificationsPanel: View {
             if !socialStore.isFollowing(profile.id) {
                 actionButton(String(localized: "Suivre en retour", bundle: .app), isProminent: false, fullWidth: true) {
                     Haptics.impact(.light)
-                    Task { try? await socialStore.toggleFollow(uid: profile.id) }
+                    Task { await followBack(profile) }
                 }
+                // L'attente se voit : le suivi n'est plus optimiste.
+                .opacity(busy.contains(profile.id) ? 0.5 : 1)
+                .disabled(busy.contains(profile.id))
             }
         }
         .padding(.vertical, 10)
@@ -232,7 +268,7 @@ struct NotificationsPanel: View {
     ) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 12.5, weight: isProminent ? .semibold : .regular))
+                .planFont(12.5, weight: isProminent ? .semibold : .regular)
                 // Le libellé ne se replie jamais : mieux vaut le réduire un
                 // peu que le voir passer sur deux lignes ou se faire couper.
                 .lineLimit(1)
@@ -257,34 +293,52 @@ struct NotificationsPanel: View {
 
     // MARK: - Actions
 
+    private func followBack(_ profile: PublicProfile) async {
+        guard !busy.contains(profile.id) else { return }
+        busy.insert(profile.id)
+        defer { busy.remove(profile.id) }
+        do {
+            try await socialStore.toggleFollow(uid: profile.id)
+        } catch {
+            Haptics.warning()
+        }
+    }
+
     private func respond(_ suggestion: Suggestion, accept: Bool) async {
         guard !busy.contains(suggestion.id) else { return }
         busy.insert(suggestion.id)
         defer { busy.remove(suggestion.id) }
 
         Haptics.impact(accept ? .medium : .light)
-        let alreadySeen = (try? await socialStore.respond(
-            to: suggestion.id, accept: accept
-        )) ?? false
+        held[suggestion.id] = suggestion
+        let alreadySeen: Bool
+        do {
+            alreadySeen = try await socialStore.respond(to: suggestion.id, accept: accept)
+        } catch {
+            // Rien n'a été fait : pas de confirmation. Le magasin a remis la
+            // ligne, elle reste à trancher.
+            held[suggestion.id] = nil
+            Haptics.warning()
+            return
+        }
 
-        guard accept else { return }
+        guard accept else {
+            _ = withAnimation(.easeOut(duration: 0.2)) { held.removeValue(forKey: suggestion.id) }
+            return
+        }
 
-        if alreadySeen {
-            // Vu entretemps par un autre chemin : la recommandation n'a plus
-            // d'objet, et rien n'entre en watchlist.
-            withAnimation(.easeOut(duration: 0.2)) {
-                settled[suggestion.id] = String(localized: "\(suggestion.item.title) : tu l'avais déjà vu", bundle: .app)
-            }
-        } else {
-            onAccepted(suggestion.item.title)
-            withAnimation(.easeOut(duration: 0.2)) {
-                settled[suggestion.id] = suggestion.item.title
-            }
+        // Vu entretemps par un autre chemin : rien n'entre en watchlist.
+        if !alreadySeen { onAccepted(suggestion.item.title) }
+        withAnimation(.easeOut(duration: 0.2)) {
+            settled[suggestion.id] = alreadySeen
+                ? .alreadySeen(suggestion.item.title)
+                : .added(suggestion.item.title)
         }
 
         try? await Task.sleep(for: .milliseconds(1500))
-        _ = withAnimation(.easeOut(duration: 0.25)) {
-            settled.removeValue(forKey: suggestion.id)
+        withAnimation(.easeOut(duration: 0.2)) {
+            settled[suggestion.id] = nil
+            held[suggestion.id] = nil
         }
     }
 }

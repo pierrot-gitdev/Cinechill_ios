@@ -80,7 +80,7 @@ struct PublicProfileView: View {
                     .multilineTextAlignment(.center)
 
                 Text(shown.handleDisplay)
-                    .font(.system(size: 12.5))
+                    .planFont(12.5)
                     .foregroundStyle(Ink.ink2)
             }
 
@@ -123,7 +123,7 @@ struct PublicProfileView: View {
 
     private func statCell(value: Int, label: String) -> some View {
         VStack(spacing: 5) {
-            Text(verbatim: "\(value)")
+            Text(verbatim: value.formatted(.number.locale(AppLanguage.current.locale)))
                 .planTitle(21)
                 .foregroundStyle(Ink.ink)
                 .monospacedDigit()
@@ -137,7 +137,7 @@ struct PublicProfileView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text(verbatim: "\(value) \(label)"))
+        .accessibilityLabel(Text(verbatim: "\(value.formatted(.number.locale(AppLanguage.current.locale))) \(label)"))
     }
 
     // MARK: - Actions
@@ -187,7 +187,7 @@ struct PublicProfileView: View {
                             Text(share.name).foregroundStyle(Ink.ink2)
                             Text(share.percentText).foregroundStyle(Ink.ink).monospacedDigit()
                         }
-                        .font(.system(size: 11))
+                        .planFont(11)
                     }
                 }
             }
@@ -203,7 +203,7 @@ struct PublicProfileView: View {
                 HStack(alignment: .firstTextBaseline) {
                     sectionTitle(String(localized: "Sa galerie", bundle: .app))
                     Spacer()
-                    Text(verbatim: "\(shown.galleryCount)")
+                    Text(verbatim: shown.galleryCount.formatted(.number.locale(AppLanguage.current.locale)))
                         .planLabel()
                         .monospacedDigit()
                         .foregroundStyle(Ink.ink2)

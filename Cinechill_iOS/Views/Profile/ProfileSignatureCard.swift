@@ -41,17 +41,20 @@ struct ProfileSignatureCard: View {
                 badge: displayedBadge
             )
 
+            // Deux lignes : un nom composé à rallonge se coupait au milieu.
             Text(profileStore.displayName)
                 .planTitle(22)
                 .foregroundStyle(Ink.ink)
-                .lineLimit(1)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.9)
 
             // La seule preuve visible, sur tout l'écran, qu'un pseudo a été
             // choisi : sans elle, « Choisir un pseudo » réussit sans que rien ne
             // change à l'écran hormis deux compteurs à 0.
             if let handle = socialStore.myProfile?.handleDisplay {
                 Text(handle)
-                    .font(.system(size: 12.5))
+                    .planFont(12.5)
                     .foregroundStyle(Ink.ink2)
                     .lineLimit(1)
                     .padding(.top, 3)
@@ -67,7 +70,7 @@ struct ProfileSignatureCard: View {
             // objectif, elle se lit au même rang que le reste.
             if let remaining = distinction.remainingText(count: galleryCount) {
                 Text(remaining)
-                    .font(.system(size: 11))
+                    .planFont(11)
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink2)
                     .padding(.top, 5)

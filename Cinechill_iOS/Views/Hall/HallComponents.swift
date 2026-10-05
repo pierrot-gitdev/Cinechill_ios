@@ -51,7 +51,7 @@ struct HallAvatar: View {
                 endPoint: .bottomTrailing
             )
             Text(initial)
-                .font(.system(size: size * 0.40, weight: .semibold))
+                .font(.system(size: size * 0.40, weight: .semibold)) // l'initiale suit l'avatar, pas le texte
                 .foregroundStyle(Ink.ground)
         }
     }
@@ -115,7 +115,7 @@ struct HallFollowButton: View {
                     CinechillSpinner(size: 13, tint: isFollowing ? .brand : .onPaper)
                 } else {
                     Text(isFollowing ? String(localized: "Suivi", bundle: .app) : String(localized: "Suivre", bundle: .app))
-                        .font(.system(size: 12.5, weight: isFollowing ? .regular : .semibold))
+                        .planFont(12.5, weight: isFollowing ? .regular : .semibold)
                 }
             }
             .foregroundStyle(isFollowing ? Ink.ink2 : Ink.ground)
@@ -143,6 +143,9 @@ struct HallFollowButton: View {
 /// Une ligne de profil : avatar, nom, pseudo, et l'action de suivi.
 /// Le nombre de films vus départage deux homonymes mieux qu'un identifiant.
 struct HallProfileRow: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    /// Les tailles d'accessibilité empilent ce qui, à côté, écraserait le texte.
+    private var isLargeType: Bool { typeSize.isAccessibilitySize }
     let profile: PublicProfile
     var showsGalleryCount: Bool = true
     var isFollowing: Bool
@@ -150,7 +153,7 @@ struct HallProfileRow: View {
     let onToggleFollow: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(alignment: isLargeType ? .top : .center, spacing: 10) {
             HallAvatar(
                 seed: profile.id,
                 initial: profile.initials,
@@ -160,18 +163,27 @@ struct HallProfileRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(profile.displayName)
-                    .font(.system(size: 14, weight: .medium))
+                    .planFont(14, weight: .medium)
                     .foregroundStyle(Ink.ink)
-                    .lineLimit(1)
+                    .lineLimit(isLargeType ? 3 : 1)
                 Text(subtitle)
-                    .font(.system(size: 11.5))
+                    .planFont(11.5)
                     .foregroundStyle(Ink.ink2)
-                    .lineLimit(1)
+                    .lineLimit(isLargeType ? 2 : 1)
+
+                // Aux tailles d'accessibilité, « Suivre » passe sous le nom :
+                // à côté, il ne laissait au nom que quelques lettres.
+                if isLargeType {
+                    HallFollowButton(isFollowing: isFollowing, isBusy: isBusy, action: onToggleFollow)
+                        .padding(.top, 6)
+                }
             }
 
             Spacer(minLength: 6)
 
-            HallFollowButton(isFollowing: isFollowing, isBusy: isBusy, action: onToggleFollow)
+            if !isLargeType {
+                HallFollowButton(isFollowing: isFollowing, isBusy: isBusy, action: onToggleFollow)
+            }
         }
         .padding(.vertical, 5)
         .contentShape(Rectangle())
@@ -237,12 +249,12 @@ struct SuggestionOutcomeBanner: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(outcome.title)
-                    .font(.system(size: 13.5, weight: .medium))
+                    .planFont(13.5, weight: .medium)
                     .foregroundStyle(Ink.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 if let message = outcome.message {
                     Text(message)
-                        .font(.system(size: 11.5))
+                        .planFont(11.5)
                         .foregroundStyle(Ink.ink2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -276,7 +288,7 @@ struct HallSearchField: View {
                     .foregroundStyle(isFocused ? Ink.ink : Ink.ink2)
 
                 TextField("", text: $text, prompt: Text(placeholder).foregroundColor(Ink.ink3))
-                    .font(.system(size: 15))
+                    .planFont(15)
                     .foregroundStyle(Ink.ink)
                     .tint(Ink.ink)
                     .textInputAutocapitalization(.never)
@@ -301,7 +313,7 @@ struct HallSearchField: View {
                     .accessibilityLabel(String(localized: "Effacer la recherche", bundle: .app))
                 }
             }
-            .frame(height: Metrics.field)
+            .frame(minHeight: Metrics.field)
             // Même raison que dans `PlanField` : 32 pt ne font que 5,0 mm, et la
             // croix d'effacement garde sa propre cible puisqu'un bouton enfant
             // consomme ses taps avant le geste posé sur la rangée.

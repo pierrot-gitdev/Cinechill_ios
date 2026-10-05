@@ -40,7 +40,7 @@ struct AppHeaderView: View {
                 .frame(width: 26, height: 26)
 
                 Text(title)
-                    .font(.system(size: 17, weight: .semibold))
+                    .planFont(17, weight: .semibold)
                     .foregroundStyle(.primary)
 
                 Spacer(minLength: 8)
@@ -77,10 +77,18 @@ struct AppHeaderView: View {
                             withAnimation(.easeOut(duration: 0.18)) { showNotifications = false }
                         }
                     notificationDropdown
+                        // La hauteur de son contenu, plafonnée par le panneau :
+                        // l'overlay ne lui proposait que celle de l'en-tête.
+                        .fixedSize(horizontal: false, vertical: true)
                         .offset(x: -8, y: 56)
                 }
                 .zIndex(100)
             }
+        }
+        // Les nouveaux abonnés s'acquittent à la fermeture du panneau, pas à
+        // son ouverture : vidés avant le premier rendu, on ne les voyait jamais.
+        .onChange(of: showNotifications) { _, isOpen in
+            if !isOpen { socialStore.acknowledgeFollowers() }
         }
     }
 
@@ -104,7 +112,6 @@ struct AppHeaderView: View {
     private var notificationButton: some View {
         Button {
             withAnimation(.easeOut(duration: 0.18)) { showNotifications.toggle() }
-            if showNotifications { socialStore.acknowledgeFollowers() }
         } label: {
             Image("notification")
                 .renderingMode(.template)
@@ -173,7 +180,7 @@ struct AppHeaderView: View {
 
     private var avatarPlaceholder: some View {
         Image(systemName: "person.fill")
-            .font(.system(size: 13, weight: .medium))
+            .planFont(13, weight: .medium)
             .foregroundStyle(Color.secondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.tertiarySystemFill))
@@ -251,7 +258,7 @@ struct PlanHeader<Trailing: View>: View {
                 leadingButton
 
                 Text(title)
-                    .font(.system(size: 17, weight: .semibold))
+                    .planFont(17, weight: .semibold)
                     .foregroundStyle(Ink.ink)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)

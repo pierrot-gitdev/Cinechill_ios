@@ -208,7 +208,7 @@ struct SettingsView: View {
 
                     if let handle = socialStore.myProfile?.handleDisplay {
                         Text(handle)
-                            .font(.system(size: 12))
+                            .planFont(12)
                             .foregroundStyle(Ink.ink2)
                             .lineLimit(1)
                     }
@@ -220,18 +220,22 @@ struct SettingsView: View {
 
             if let nameError {
                 Text(nameError)
-                    .font(.system(size: 12))
+                    .planFont(12)
                     .foregroundStyle(Ink.warn)
                     .padding(.top, 10)
             }
 
-            HStack(spacing: 10) {
-                Text(String(localized: "\(distinction.label) · \(libraryStore.galleryFilms.count) films", bundle: .app))
-                    .planLabel()
-                    .foregroundStyle(Ink.ink2)
-                    .fixedSize()
-
-                PlanProgressRule(fraction: distinction.progress(count: libraryStore.galleryFilms.count))
+            // Le filet de progression reste lisible : quand le libellé lui
+            // laisse moins de 80 pt, il passe dessous.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    distinctionLabel.fixedSize()
+                    distinctionRule.frame(minWidth: 80)
+                }
+                VStack(alignment: .leading, spacing: 10) {
+                    distinctionLabel
+                    distinctionRule
+                }
             }
             .padding(.top, 18)
 
@@ -241,6 +245,16 @@ struct SettingsView: View {
             guard now != .name else { return }
             Task { await saveNameIfNeeded() }
         }
+    }
+
+    private var distinctionLabel: some View {
+        Text(String(localized: "\(distinction.label) · \(libraryStore.galleryFilms.count) films", bundle: .app))
+            .planLabel()
+            .foregroundStyle(Ink.ink2)
+    }
+
+    private var distinctionRule: some View {
+        PlanProgressRule(fraction: distinction.progress(count: libraryStore.galleryFilms.count))
     }
 
     private var distinction: Distinction { .distinction(for: libraryStore.galleryFilms.count) }
@@ -300,7 +314,7 @@ struct SettingsView: View {
             HStack(spacing: 10) {
                 CinechillSpinner(size: 16)
                 Text("Chargement des plateformes…", bundle: .app)
-                    .font(.system(size: 12.5))
+                    .planFont(12.5)
                     .foregroundStyle(Ink.ink3)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -321,7 +335,7 @@ struct SettingsView: View {
     private var bannedGenres: some View {
         if catalog.genreNames.isEmpty {
             Text("Chargement des genres…", bundle: .app)
-                .font(.system(size: 12.5))
+                .planFont(12.5)
                 .foregroundStyle(Ink.ink2)
         } else {
             FlowLayout(spacing: 7) {
@@ -385,7 +399,7 @@ struct SettingsView: View {
                         .foregroundStyle(Ink.ink3)
                         .frame(width: 14, height: 14)
                 }
-                .frame(height: 52)
+                .frame(minHeight: 52)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -400,7 +414,7 @@ struct SettingsView: View {
             PlanEdge()
 
             Text(appVersion)
-                .font(.system(size: 11))
+                .planFont(11)
                 .foregroundStyle(Ink.ink2)
                 .padding(.top, 16)
 
@@ -409,7 +423,7 @@ struct SettingsView: View {
             // disponibilités, demande d'être cité. C'est une licence, pas une
             // règle App Store.
             Text("Cinechill utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB. Disponibilités sur les plateformes : JustWatch.", bundle: .app)
-                .font(.system(size: 11))
+                .planFont(11)
                 .foregroundStyle(Ink.ink3)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 6)
@@ -451,7 +465,7 @@ struct SettingsView: View {
                 HStack(alignment: .top, spacing: 11) {
                     PlanLight().padding(.top, 6)
                     Text(actionMessage)
-                        .font(.system(size: 12.5))
+                        .planFont(12.5)
                         .foregroundStyle(Ink.ink2)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
@@ -463,7 +477,7 @@ struct SettingsView: View {
                 HStack(spacing: 10) {
                     CinechillSpinner(size: 16)
                     Text("En cours…", bundle: .app)
-                        .font(.system(size: 12.5))
+                        .planFont(12.5)
                         .foregroundStyle(Ink.ink3)
                 }
                 .padding(.bottom, 14)
@@ -478,7 +492,7 @@ struct SettingsView: View {
                 .planLabel()
                 .foregroundStyle(Ink.ink2)
             Text(value)
-                .font(.system(size: 14))
+                .planFont(14)
                 .foregroundStyle(Ink.ink2)
                 .lineLimit(1)
         }
@@ -496,11 +510,11 @@ struct SettingsView: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 14))
+                    .planFont(14)
                     .foregroundStyle(isDestructive ? Ink.warn : Ink.ink)
                 if let note {
                     Text(note)
-                        .font(.system(size: 11.5))
+                        .planFont(11.5)
                         .foregroundStyle(Ink.ink2)
                 }
             }
@@ -522,7 +536,8 @@ struct SettingsView: View {
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-        return String(localized: "Cinéchill · version \(version) (\(build))", bundle: .app)
+        // La marque s'écrit sans accent, et ne se traduit pas.
+        return "Cinechill · " + String(localized: "version \(version) (\(build))", bundle: .app)
     }
 
     // MARK: - Actions

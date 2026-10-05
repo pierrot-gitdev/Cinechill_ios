@@ -66,7 +66,7 @@ struct ClaimHandleSheet: View {
                     Text(isFirstClaim
                          ? String(localized: "C'est ce que tes amis taperont pour te retrouver.", bundle: .app)
                          : String(localized: "Il ne pourra plus être changé après celui-ci.", bundle: .app))
-                        .font(.system(size: 14.5))
+                        .planFont(14.5)
                         .foregroundStyle(isFirstClaim ? Ink.ink2 : Ink.warn)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: 300, alignment: .leading)
@@ -127,7 +127,7 @@ struct ClaimHandleSheet: View {
                     Haptics.selection()
                 } label: {
                     Text(verbatim: "@\(candidate)")
-                        .font(.system(size: 11.5))
+                        .planFont(11.5)
                         .foregroundStyle(Ink.ink)
                         .padding(.horizontal, 11)
                         .padding(.vertical, 5)

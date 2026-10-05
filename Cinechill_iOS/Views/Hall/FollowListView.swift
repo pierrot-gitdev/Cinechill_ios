@@ -192,6 +192,11 @@ struct FollowListView: View {
         guard !pendingFollows.contains(profile.id) else { return }
         pendingFollows.insert(profile.id)
         defer { pendingFollows.remove(profile.id) }
-        try? await socialStore.toggleFollow(uid: profile.id)
+        do {
+            try await socialStore.toggleFollow(uid: profile.id)
+        } catch {
+            // Rien n'a changé : le bouton reste tel quel, la vibration le dit.
+            Haptics.warning()
+        }
     }
 }

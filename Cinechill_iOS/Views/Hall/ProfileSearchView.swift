@@ -61,9 +61,12 @@ struct ProfileSearchView: View {
 
     private var resultsSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            sectionHeader(
-                String(localized: "\(model.results.count) profils", bundle: .app)
-            )
+            // Pas d'en-tête « 0 profil » le temps que la recherche réponde.
+            if !model.results.isEmpty {
+                sectionHeader(
+                    String(localized: "\(model.results.count) profils", bundle: .app)
+                )
+            }
             rows(model.results)
         }
     }

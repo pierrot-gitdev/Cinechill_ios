@@ -136,29 +136,19 @@ final class SocialStore: ObservableObject {
         }
     }
 
-    /// Bascule le suivi. Optimiste : l'état local change d'abord, et n'est
-    /// rétabli qu'en cas d'échec — un bouton de suivi qui attend le réseau
-    /// donne l'impression d'être cassé.
+    /// Bascule le suivi, une fois le serveur d'accord.
+    ///
+    /// Plus de mise à jour optimiste (règle du 11 août 2026) : le bouton
+    /// montre son attente, et l'état ne change qu'une fois le suivi écrit.
+    /// L'écouteur de `following` le confirmera de toute façon ; le poser ici
+    /// évite seulement d'attendre son aller-retour.
     func toggleFollow(uid: String) async throws {
-        let wasFollowing = followingUIDs.contains(uid)
-        if wasFollowing {
+        if followingUIDs.contains(uid) {
+            try await client.unfollow(uid: uid)
             followingUIDs.remove(uid)
         } else {
+            try await client.follow(uid: uid)
             followingUIDs.insert(uid)
-        }
-        do {
-            if wasFollowing {
-                try await client.unfollow(uid: uid)
-            } else {
-                try await client.follow(uid: uid)
-            }
-        } catch {
-            if wasFollowing {
-                followingUIDs.insert(uid)
-            } else {
-                followingUIDs.remove(uid)
-            }
-            throw error
         }
     }
 

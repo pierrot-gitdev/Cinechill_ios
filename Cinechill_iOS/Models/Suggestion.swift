@@ -48,7 +48,7 @@ extension Suggestion {
         self.fromHandle = data["fromHandle"] as? String
         self.fromDisplayName = (data["fromDisplayName"] as? String)
             ?? (data["fromHandle"] as? String)
-            ?? "Quelqu'un"
+            ?? String(localized: "Quelqu'un", bundle: .app)
         self.fromAvatarURL = (data["fromAvatarURL"] as? String)
             .flatMap(URL.init(string:))
         self.item = MediaItem(

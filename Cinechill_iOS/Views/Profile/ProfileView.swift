@@ -150,7 +150,7 @@ struct ProfileView: View {
 
     private func statCell(value: Int, label: String, route: HallRoute? = nil) -> some View {
         let content = VStack(spacing: 5) {
-            Text(verbatim: "\(value)")
+            Text(verbatim: value.formatted(.number.locale(AppLanguage.current.locale)))
                 .planTitle(21)
                 .monospacedDigit()
                 .contentTransition(.numericText())
@@ -174,7 +174,7 @@ struct ProfileView: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text(verbatim: "\(value) \(label)"))
+        .accessibilityLabel(Text(verbatim: "\(value.formatted(.number.locale(AppLanguage.current.locale))) \(label)"))
     }
 
     /// Sans pseudo, on n'est ni trouvable ni suivable : l'invitation remplace
@@ -188,10 +188,10 @@ struct ProfileView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Choisis ton pseudo", bundle: .app)
-                        .font(.system(size: 13, weight: .medium))
+                        .planFont(13, weight: .medium)
                         .foregroundStyle(Ink.ink)
                     Text("Pour qu'on puisse te retrouver et te recommander des films.", bundle: .app)
-                        .font(.system(size: 11.5))
+                        .planFont(11.5)
                         .foregroundStyle(Ink.ink2)
                         .multilineTextAlignment(.leading)
                 }
@@ -222,7 +222,7 @@ struct ProfileView: View {
                             .monospacedDigit()
                             .foregroundStyle(Ink.ink2)
                         Text("Tout voir", bundle: .app)
-                            .font(.system(size: 12))
+                            .planFont(12)
                             .foregroundStyle(Ink.ink2)
                             .overlay(alignment: .bottom) {
                                 Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
@@ -258,10 +258,10 @@ struct ProfileView: View {
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Quinze badges à décrocher", bundle: .app)
-                        .font(.system(size: 13, weight: .medium))
+                        .planFont(13, weight: .medium)
                         .foregroundStyle(Ink.ink)
                     Text("Tu gagnes le premier avec ton premier film.", bundle: .app)
-                        .font(.system(size: 11.5))
+                        .planFont(11.5)
                         .foregroundStyle(Ink.ink2)
                 }
                 Spacer(minLength: 0)
@@ -303,7 +303,7 @@ struct ProfileView: View {
                             Text(share.name).foregroundStyle(Ink.ink2)
                             Text(share.percentText).foregroundStyle(Ink.ink).monospacedDigit()
                         }
-                        .font(.system(size: 11))
+                        .planFont(11)
                     }
                 }
             }
