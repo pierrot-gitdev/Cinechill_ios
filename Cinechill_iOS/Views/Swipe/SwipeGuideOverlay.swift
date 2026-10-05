@@ -62,7 +62,8 @@ struct SwipeGuideOverlay: View {
                 .onTapGesture(perform: onClose)
 
             panel
-                .scaleEffect(isPresented ? 1 : 0.96)
+                .planScrollsIfNeeded()
+                .scaleEffect(isPresented || reduceMotion ? 1 : 0.96)
                 .opacity(isPresented ? 1 : 0)
         }
         .task {
@@ -106,6 +107,10 @@ struct SwipeGuideOverlay: View {
         .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
         .padding(.horizontal, Metrics.margin)
         .accessibilityElement(children: .contain)
+        // Modale pour VoiceOver : sans quoi on naviguait jusqu'au deck derrière
+        // le voile, et le geste d'échappement ne fermait rien.
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape, onClose)
     }
 
     /// La scène. Elle est **clippée** : la carte sort du cadre par le bord vers
@@ -181,7 +186,7 @@ struct SwipeGuideOverlay: View {
                     PlanLightOutline(tint: verdict.tint)
                 }
                 Text(verdict.label)
-                    .font(.system(size: 8, weight: .semibold))
+                    .planFont(8, weight: .semibold)
                     .tracking(1.1)
             }
             .foregroundStyle(verdict.tint)
@@ -231,12 +236,12 @@ struct SwipeGuideOverlay: View {
             Spacer(minLength: 10)
 
             Text(move.outcome)
-                .font(.system(size: 12))
+                .planFont(12)
                 .foregroundStyle(isLit ? Ink.ink : Ink.ink2)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
         }
-        .frame(height: 40)
+        .frame(minHeight: 40)
         .opacity(isLit ? 1 : 0.5)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(move.title). \(move.outcome)")
@@ -319,7 +324,7 @@ struct SwipeGuideOverlay: View {
         // simultanéité qui fait lire le rangement comme la conséquence du geste,
         // et non comme une étape de plus.
         withAnimation(SwipeMotion.lock) { _ = revealed.insert(move) }
-        withAnimation(.easeIn(duration: 0.12).delay(0.14)) { cardOpacity = 0 }
+        withAnimation(.easeOut(duration: 0.12).delay(0.14)) { cardOpacity = 0 }
         try? await Task.sleep(for: .milliseconds(280))
         guard !Task.isCancelled else { return }
 

@@ -131,6 +131,9 @@ final class SwipeDeckViewModel {
         guard newFormat != format else { return }
         commitHeldSwipe()
         format = newFormat
+        // Les paliers comptent un seul format : dix films puis trois séries
+        // ne font pas « 13 séries ajoutées ».
+        addedThisSession = 0
         cards = []
         servedIDs = []
         servedSet = []

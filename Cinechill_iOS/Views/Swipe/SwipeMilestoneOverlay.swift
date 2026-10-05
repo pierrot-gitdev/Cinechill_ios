@@ -12,6 +12,7 @@ import SwiftUI
 /// appuyé de l'application, et il ne disait rien que le chiffre ne disait déjà.
 struct SwipeMilestoneOverlay: View {
     let count: Int
+    var isSeries = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -20,13 +21,15 @@ struct SwipeMilestoneOverlay: View {
                 .monospacedDigit()
                 .foregroundStyle(Ink.ink)
 
-            Text("films ajoutés", bundle: .app)
+            // Le palier compte ce qu'on classe : des séries en mode Séries.
+            Text(isSeries ? String(localized: "séries ajoutées", bundle: .app)
+                          : String(localized: "films ajoutés", bundle: .app))
                 .planLabel()
                 .foregroundStyle(Ink.light)
                 .padding(.top, 10)
 
             Text("Plus ta galerie grandit, plus les suggestions sont justes.", bundle: .app)
-                .font(.system(size: 13))
+                .planFont(13)
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -44,7 +47,13 @@ struct SwipeMilestoneOverlay: View {
                 .strokeBorder(Ink.ruleSet, lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(String(localized: "\(count) films ajoutés à ta galerie", bundle: .app))
+        .accessibilityLabel(Self.spokenText(count: count, isSeries: isSeries))
+    }
+
+    static func spokenText(count: Int, isSeries: Bool) -> String {
+        isSeries
+            ? String(localized: "\(count) séries ajoutées à ta galerie", bundle: .app)
+            : String(localized: "\(count) films ajoutés à ta galerie", bundle: .app)
     }
 }
 

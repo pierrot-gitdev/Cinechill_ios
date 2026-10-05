@@ -51,7 +51,7 @@ struct BadgeView: View {
                 VStack(spacing: 8) {
                     BadgeView(badge: badge, isUnlocked: true, size: 104)
                     Text(badge.name)
-                        .font(.system(size: 11, weight: .medium))
+                        .planFont(11, weight: .medium)
                 }
             }
         }

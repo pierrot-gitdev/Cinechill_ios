@@ -26,7 +26,8 @@ struct AchievementCelebrationOverlay: View {
                 .onTapGesture(perform: onDismiss)
 
             card
-                .scaleEffect(appeared ? 1 : 0.8)
+                .planScrollsIfNeeded()
+                .scaleEffect(appeared || reduceMotion ? 1 : 0.8)
                 .opacity(appeared ? 1 : 0)
         }
         .onAppear {
@@ -67,7 +68,7 @@ struct AchievementCelebrationOverlay: View {
                 .padding(.top, 9)
 
             Text(badge.condition)
-                .font(.system(size: 13))
+                .planFont(13)
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
@@ -83,7 +84,7 @@ struct AchievementCelebrationOverlay: View {
                 .padding(.top, 28)
 
             Button(String(localized: "Plus tard", bundle: .app), action: onDismiss)
-                .font(.system(size: 13))
+                .planFont(13)
                 .foregroundStyle(Ink.ink2)
                 .padding(.top, 16)
         }
@@ -104,7 +105,7 @@ struct AchievementCelebrationOverlay: View {
                 .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
                 .accessibilityHidden(true)
             Text("Débloqué avec « \(trigger.title) »", bundle: .app)
-                .font(.system(size: 13, weight: .medium))
+                .planFont(13, weight: .medium)
                 .foregroundStyle(Ink.ink)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
@@ -151,7 +152,7 @@ struct AchievementCelebrationOverlay: View {
                 .padding(.top, 9)
 
             Text(String(localized: "Pour \(distinction.lowerBound) films dans ta galerie.", bundle: .app))
-                .font(.system(size: 13))
+                .planFont(13)
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

@@ -122,9 +122,17 @@ nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
         return String(releaseDate.prefix(4))
     }
 
+    /// TMDB rend 0 pour un film que personne n'a noté : c'est une absence,
+    /// pas une note, et elle ne s'affiche pas en « 0.0 ».
+    var hasRating: Bool { (voteAverage ?? 0) > 0 && (voteCount ?? 1) > 0 }
+
+    /// Formatée dans la langue de l'app : « 8,4 » en français, « 8.4 » en
+    /// anglais. `String(format:)` écrivait toujours un point.
     var voteAverageText: String {
-        guard let voteAverage else { return "—" }
-        return String(format: "%.1f", voteAverage)
+        guard hasRating, let voteAverage else { return "—" }
+        return voteAverage.formatted(
+            .number.precision(.fractionLength(1)).locale(AppLanguage.current.locale)
+        )
     }
 
     /// Payload envoyé à `recordSwipes` — mêmes clés que `setMediaStatus`, plus

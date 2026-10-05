@@ -50,6 +50,8 @@ struct SwipeDeckView: View {
     @State private var grabbedHigh = true
     /// Le seuil est franchi : lever le doigt tranche.
     @State private var isArmed = false
+    /// Ramené sur la carte suivante après une décision prise par VoiceOver.
+    @AccessibilityFocusState private var isCardFocused: Bool
     /// La démonstration de la prise en main en est au double tap : le cœur est
     /// posé sur la carte, qui ne part pas.
     @State private var isDemoLoving = false
@@ -196,22 +198,24 @@ struct SwipeDeckView: View {
                 Button {
                     undo()
                 } label: {
-                    Text("Annuler", bundle: .app)
-                        .font(.system(size: 12))
+                    // « Revenir », pas « Annuler » : la clé « Annuler » sert aussi
+                    // aux feuilles, et l'anglais lisait « Cancel » pour « Undo ».
+                    Text("Revenir", bundle: .app)
+                        .planFont(12)
                         .foregroundStyle(Ink.ink2)
                         .overlay(alignment: .bottom) {
                             Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
                         }
-                        .contentShape(Rectangle().inset(by: -12))
+                        .contentShape(Rectangle().inset(by: -15))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableScaleStyle())
                 .transition(.opacity)
                 .accessibilityLabel(String(localized: "Annuler le dernier swipe", bundle: .app))
             }
 
             helpButton
         }
-        .frame(height: 34)
+        .frame(minHeight: 34)
         .padding(.horizontal, Metrics.margin)
         // L'écart sous le filet de l'en-tête, le même que dans CinéMatch :
         // collé au filet, l'interrupteur se lisait comme une part du plafond.
@@ -274,7 +278,7 @@ struct SwipeDeckView: View {
             SwipeHelpGlyph()
                 .foregroundStyle(showGuide ? Ink.ink : Ink.ink2)
                 // La cible déborde le tracé : 17 pt ne se touchent pas.
-                .frame(width: 34, height: 34, alignment: .trailing)
+                .frame(width: 44, height: 44, alignment: .trailing)
                 .contentShape(Rectangle())
         }
         .buttonStyle(PressableScaleStyle(scale: 0.9))
@@ -305,6 +309,11 @@ struct SwipeDeckView: View {
                     }
                 }
             }
+            // La carte doit tenir entière sur l'écran : son texte s'arrête au
+            // premier cran des tailles d'accessibilité. Posé sur toute la pile,
+            // pour qu'une carte qui s'envole garde la taille de texte qu'elle
+            // avait sous le doigt.
+            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             .frame(width: proxy.size.width, height: proxy.size.height)
             // Le toast est posé sur le haut du **deck**, et non sur le haut de
             // l'écran : le bandeau au-dessus porte l'annulation, et la masquer
@@ -352,6 +361,9 @@ struct SwipeDeckView: View {
                     .offset(y: Self.deckStep * step)
                     .opacity(Self.deckOpacity(atDepth: step))
                     .allowsHitTesting(false)
+                    // Seule la carte du dessus se lit : les deux dessous
+                    // répétaient titre et consigne.
+                    .accessibilityHidden(true)
                     .transition(.opacity)
             }
 
@@ -377,6 +389,13 @@ struct SwipeDeckView: View {
                 .scaleEffect(demoPress)
                 .offset(x: drag.width + returnOffset.width, y: drag.height + returnOffset.height)
                 .rotationEffect(.degrees(pivot.angle + returnAngle), anchor: pivot.anchor)
+                // Le geste n'existe pas pour VoiceOver ni Switch Control : les
+                // trois issues y sont des actions, sans quoi le deck ne se
+                // tranchait pas du tout.
+                .accessibilityAction(named: Text("Vu", bundle: .app)) { accessibleCommit(.right) }
+                .accessibilityAction(named: Text("Pas vu", bundle: .app)) { accessibleCommit(.left) }
+                .accessibilityAction(named: Text("À voir", bundle: .app)) { accessibleCommit(.up) }
+                .accessibilityFocused($isCardFocused)
                 .gesture(dragGesture(cardHeight: size.height))
                 // Le geste de décision ne part qu'au bout de huit points : il ne
                 // sait donc rien du moment où le doigt se pose, qui est
@@ -445,7 +464,7 @@ struct SwipeDeckView: View {
                 VStack(spacing: 16) {
                     CinechillSpinner(size: 34)
                     Text("On prépare ta sélection…", bundle: .app)
-                        .font(.system(size: 12.5))
+                        .planFont(12.5)
                         .foregroundStyle(Ink.ink3)
                 }
             } else if model.isExhausted {
@@ -463,7 +482,10 @@ struct SwipeDeckView: View {
                     secondaryAction: { Task { await model.restart() } }
                 )
             } else {
-                Color.clear
+                // Un lot vide isolé ne déclare pas l'épuisement : sans relance,
+                // l'écran restait noir pour de bon.
+                CinechillSpinner(size: 34)
+                    .task { await model.start() }
             }
         }
     }
@@ -506,12 +528,15 @@ struct SwipeDeckView: View {
             ZStack {
                 Ink.ground.opacity(0.55)
                     .ignoresSafeArea()
-                SwipeMilestoneOverlay(count: milestone)
+                SwipeMilestoneOverlay(count: milestone, isSeries: format == .series)
             }
-            .transition(.opacity.combined(with: .scale(scale: 0.92)))
+            .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.92)))
             .allowsHitTesting(false)
             .task(id: milestone) {
                 Haptics.success()
+                AccessibilityNotification.Announcement(
+                    SwipeMilestoneOverlay.spokenText(count: milestone, isSeries: format == .series)
+                ).post()
                 try? await Task.sleep(for: .milliseconds(1900))
                 withAnimation(.easeOut(duration: 0.3)) {
                     model.celebratedMilestone = nil
@@ -568,7 +593,7 @@ struct SwipeDeckView: View {
                 guard !Task.isCancelled else { break }
 
                 isArmed = false
-                withAnimation(SwipeMotion.recenter) { drag = .zero }
+                withAnimation(recenterMotion) { drag = .zero }
                 try? await Task.sleep(for: .milliseconds(600))
                 guard !Task.isCancelled else { break }
             }
@@ -592,7 +617,7 @@ struct SwipeDeckView: View {
         isArmed = false
         isDemoLoving = false
         demoPress = 1
-        withAnimation(SwipeMotion.recenter) { drag = .zero }
+        withAnimation(recenterMotion) { drag = .zero }
     }
 
     /// Le tampon de la démonstration : les mots « VU », « PAS VU », « À VOIR »,
@@ -613,7 +638,7 @@ struct SwipeDeckView: View {
                     PlanLightOutline(tint: verdict.tint)
                 }
                 Text(verdict.label)
-                    .font(.system(size: 17, weight: .semibold))
+                    .planFont(17, weight: .semibold)
                     .tracking(2)
             }
             .foregroundStyle(verdict.tint)
@@ -692,7 +717,7 @@ struct SwipeDeckView: View {
                     )
                 } else {
                     isArmed = false
-                    withAnimation(SwipeMotion.recenter) { drag = .zero }
+                    withAnimation(recenterMotion) { drag = .zero }
                 }
             }
     }
@@ -701,8 +726,16 @@ struct SwipeDeckView: View {
     /// autre, plus léger, quand on revient en arrière. Le tampon s'enclenche au
     /// même instant — c'est ce qui rend la limite négociable au doigt, sans
     /// jamais l'écrire.
+    /// Le rappel au centre garde son petit dépassement, sauf quand le
+    /// mouvement est réduit : la carte revient alors sans rebond.
+    private var recenterMotion: Animation {
+        reduceMotion ? .smooth(duration: 0.2) : SwipeMotion.recenter
+    }
+
     private func updateArming() {
-        let armed = (dragProgress >= 1)
+        // Hystérésis : armée à 100 %, désarmée sous 90 %. Un doigt qui tremble
+        // au seuil ne déclenche plus une salve de crans tactiles.
+        let armed = isArmed ? dragProgress >= 0.9 : dragProgress >= 1
         guard armed != isArmed else { return }
         isArmed = armed
         if armed {
@@ -712,19 +745,35 @@ struct SwipeDeckView: View {
         }
     }
 
-    /// Un flick court mais rapide doit valider comme un long glissement : d'où
-    /// la prise en compte de la translation projetée en plus de la réelle.
-    private func resolvedDirection(translation: CGSize, predicted: CGSize) -> SwipeDirection? {
-        let upward = max(-translation.height, -predicted.height)
-        let horizontal = abs(translation.width) >= 24 ? translation.width : predicted.width
-
-        if upward > Self.upThreshold, abs(horizontal) < upward * 0.8 {
+    /// C'est la position projetée qui décide, comme le défilement d'iOS : un
+    /// flick court mais rapide valide, une carte armée puis relancée vers le
+    /// centre revient. La translation réelle ne sert qu'à vérifier que le
+    /// doigt est bien parti dans ce sens. Une carte armée ne se désarme qu'à
+    /// 90 % du seuil, la même règle que `updateArming`.
+    private func resolvedDirection(translation t: CGSize, predicted p: CGSize) -> SwipeDirection? {
+        let side = Self.sideThreshold * (isArmed ? 0.9 : 1)
+        let rise = Self.upThreshold * (isArmed ? 0.9 : 1)
+        let up = -p.height
+        if up > rise, abs(p.width) < up * 0.8, -t.height > 12 {
             return .up
         }
-        if abs(horizontal) > Self.sideThreshold {
-            return horizontal > 0 ? .right : .left
+        if abs(p.width) > side, abs(t.width) > 12, (p.width > 0) == (t.width > 0) {
+            return p.width > 0 ? .right : .left
         }
         return nil
+    }
+
+    /// Une décision prise sans geste (VoiceOver, Switch Control), annoncée
+    /// puisque rien ne se voit partir.
+    private func accessibleCommit(_ direction: SwipeDirection) {
+        guard !tour.isRunning, let card = model.topCard else { return }
+        commit(direction, velocity: .zero)
+        let outcome = direction.confirmation ?? String(localized: "Il reviendra plus tard", bundle: .app)
+        AccessibilityNotification.Announcement("\(card.title). \(outcome)").post()
+        Task {
+            try? await Task.sleep(for: .milliseconds(150))
+            isCardFocused = true
+        }
     }
 
     private func commit(_ direction: SwipeDirection, loved: Bool = false, velocity: CGSize) {
@@ -827,12 +876,16 @@ struct SwipeDeckView: View {
 
         guard let direction = lastCommitted, !reduceMotion else {
             withAnimation(SwipeMotion.advance) { model.undo() }
+            departing.removeAll { $0.card.id == model.topCard?.id }
             return
         }
 
         returnOffset = Self.returnOrigin(for: direction)
         returnAngle = Self.returnAngle(for: direction)
         model.undo()
+        // La carte encore en vol disparaît : sinon on en voyait deux, l'une
+        // qui finissait de sortir pendant que l'autre rentrait.
+        departing.removeAll { $0.card.id == model.topCard?.id }
 
         Task { @MainActor in
             // Une frame de battement, sinon SwiftUI regroupe l'insertion de la
@@ -1058,7 +1111,7 @@ private struct DepartingCardView: View {
             // La carte quitte le cadre avant de s'effacer. L'écran la faisait
             // fondre sur toute sa course, ce qui la faisait disparaître au milieu
             // de l'écran plutôt que sortir par un bord.
-            withAnimation(.easeIn(duration: 0.14).delay(0.16)) { opacity = 0 }
+            withAnimation(.easeOut(duration: 0.12).delay(0.18)) { opacity = 0 }
 
             try? await Task.sleep(for: .milliseconds(340))
             onFinished()

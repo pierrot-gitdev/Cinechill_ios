@@ -22,14 +22,29 @@ struct BadgeGalleryView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                 Section {
-                    LazyVGrid(columns: columns, spacing: 24) {
-                        ForEach(model.filteredBadges) { badge in
-                            cell(badge)
+                    if model.filteredBadges.isEmpty {
+                        // Un filtre sans résultat disait le vide sans un mot.
+                        PlanEmptyState(
+                            icon: .hall,
+                            title: model.filter == .locked
+                                ? String(localized: "Tout est débloqué", bundle: .app)
+                                : String(localized: "Aucun badge pour l'instant", bundle: .app),
+                            message: model.filter == .locked
+                                ? String(localized: "Il ne te reste aucun badge à obtenir.", bundle: .app)
+                                : String(localized: "Ton premier film ajouté t'en donne un.", bundle: .app)
+                        )
+                        .padding(.top, 56)
+                        .padding(.horizontal, Metrics.margin)
+                    } else {
+                        LazyVGrid(columns: columns, spacing: 24) {
+                            ForEach(model.filteredBadges) { badge in
+                                cell(badge)
+                            }
                         }
+                        .padding(.horizontal, Metrics.margin)
+                        .padding(.top, 18)
+                        .padding(.bottom, 28)
                     }
-                    .padding(.horizontal, Metrics.margin)
-                    .padding(.top, 18)
-                    .padding(.bottom, 28)
                 } header: {
                     filterBar
                 }
@@ -92,7 +107,7 @@ struct BadgeGalleryView: View {
                 BadgeView(badge: badge, isUnlocked: state.unlocked, size: 88)
 
                 Text(badge.displayName(unlocked: state.unlocked))
-                    .font(.system(size: 10.5, weight: .medium))
+                    .planFont(10.5, weight: .medium)
                     .foregroundStyle(state.unlocked ? Ink.ink : Ink.ink2)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
@@ -159,7 +174,7 @@ struct BadgeDetailView: View {
                             .padding(.top, 9)
 
                         Text(badge.displayCondition(unlocked: progress.unlocked))
-                            .font(.system(size: 13.5))
+                            .planFont(13.5)
                             .foregroundStyle(Ink.ink2)
                             .multilineTextAlignment(.center)
                             .lineSpacing(2)
@@ -172,7 +187,7 @@ struct BadgeDetailView: View {
                             progressBlock
                         } else if let detail = progress.detail {
                             Text(detail)
-                                .font(.system(size: 12.5))
+                                .planFont(12.5)
                                 .foregroundStyle(Ink.ink2)
                                 .multilineTextAlignment(.center)
                                 .padding(.top, 14)
@@ -227,7 +242,7 @@ struct BadgeDetailView: View {
 
             if missing > 0, progress.current > 0 {
                 Text(String(localized: "Tu en as déjà \(progress.current) sur \(progress.target).", bundle: .app))
-                    .font(.system(size: 12))
+                    .planFont(12)
                     .foregroundStyle(Ink.ink2)
             }
         }

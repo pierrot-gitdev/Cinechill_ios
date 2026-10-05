@@ -137,8 +137,18 @@ struct SwipeCardView: View {
         // les reprendre à son compte, sans quoi VoiceOver n'en verrait aucun.
         .accessibilityAction(.default, onTap)
         .accessibilityAction(named: Text("Coup de cœur", bundle: .app), onDoubleTap)
-        .accessibilityLabel(String(localized: "\(card.title), \(card.displayYear), note \(card.voteAverageText) sur 10", bundle: .app))
+        // Ce qui manque se tait : « tiret » n'est pas une année, ni une note.
+        .accessibilityLabel(accessibilityTitle)
         .accessibilityHint(String(localized: "Glisse à droite si tu l'as vu, à gauche sinon, vers le haut pour l'ajouter à ta watchlist. Touche deux fois l'affiche si tu l'as adoré.", bundle: .app))
+    }
+
+    private var accessibilityTitle: String {
+        var parts = [card.title]
+        if (card.releaseDate?.count ?? 0) >= 4 { parts.append(card.displayYear) }
+        if card.hasRating {
+            parts.append(String(localized: "note \(card.voteAverageText) sur 10", bundle: .app))
+        }
+        return parts.joined(separator: ", ")
     }
 
     // MARK: - L'affiche
@@ -182,7 +192,7 @@ struct SwipeCardView: View {
 
                 if isSynopsisOpen, let overview = card.overview, !overview.isEmpty {
                     Text(overview)
-                        .font(.system(size: 13.5))
+                        .planFont(13.5)
                         .foregroundStyle(Ink.ink2)
                         .lineSpacing(3.5)
                         .lineLimit(7)
@@ -241,7 +251,7 @@ struct SwipeCardView: View {
 
             Spacer(minLength: 0)
 
-            if card.voteAverage != nil { rating }
+            if card.hasRating { rating }
         }
     }
 
@@ -250,7 +260,7 @@ struct SwipeCardView: View {
     private var rating: some View {
         VStack(alignment: .trailing, spacing: 6) {
             Text(card.voteAverageText)
-                .font(.system(size: 13, weight: .semibold))
+                .planFont(13, weight: .semibold)
                 .monospacedDigit()
                 .foregroundStyle(Ink.ink)
 
@@ -285,7 +295,7 @@ struct SwipeCardView: View {
         }
         .foregroundStyle(Ink.ink2)
         .padding(.horizontal, 18)
-        .frame(height: 34)
+        .frame(minHeight: 34)
     }
 
     // MARK: - Verdict
