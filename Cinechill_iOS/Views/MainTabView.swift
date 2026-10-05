@@ -16,9 +16,6 @@ struct MainTabView: View {
     private let catalog: MediaCatalog
     private let homeModel: HomeViewModel
 
-    /// L'ancien moteur reste construit tant qu'il n'est pas retiré du projet,
-    /// mais l'onglet CinéMatch ne le monte plus.
-    @State private var questionnaireModel: QuestionnaireViewModel
     @State private var cineMatchModel = CineMatchViewModel()
     @State private var swipeModel = SwipeDeckViewModel()
     @State private var galleryModel = GalleryViewModel()
@@ -46,10 +43,6 @@ struct MainTabView: View {
     init(catalog: MediaCatalog, homeModel: HomeViewModel) {
         self.catalog = catalog
         self.homeModel = homeModel
-        _questionnaireModel = State(initialValue: QuestionnaireViewModel(
-            recommendationClient: BackendRecommendationClient(),
-            metadataClient: BackendPopularClient()
-        ))
     }
 
     var body: some View {

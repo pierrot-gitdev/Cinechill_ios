@@ -24,27 +24,6 @@ nonisolated enum AdaptiveDimension: CaseIterable, Hashable {
     case storyOrigin, attachment, creditsMoment, lastingTrace
     case elimination, surpriseIntensity
 
-    var questionStep: QuestionStep {
-        switch self {
-        case .posterDuel: .posterDuel
-        case .mindset: .mindset
-        case .dealbreaker: .dealbreaker
-        case .popularity: .popularity
-        case .cast: .cast
-        case .paceWish: .paceWish
-        case .horrorFlavor: .horrorFlavor
-        case .comedyFlavor: .comedyFlavor
-        case .dramaFlavor: .dramaFlavor
-        case .cognitiveMode: .cognitiveMode
-        case .storyOrigin: .storyOrigin
-        case .attachment: .attachment
-        case .creditsMoment: .creditsMoment
-        case .lastingTrace: .lastingTrace
-        case .elimination: .elimination
-        case .surpriseIntensity: .surpriseIntensity
-        }
-    }
-
     /// Les nuances par genre n'ont de sens que si le genre pèse encore dans le vivier
     /// *courant* — et non parce qu'il aurait été coché au départ. C'est plus dynamique,
     /// et ça survit au resserrement du vivier.
