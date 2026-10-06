@@ -80,7 +80,7 @@ struct SettingsView: View {
 
                         declaration(
                             String(localized: "Jamais de…", bundle: .app),
-                            note: String(localized: "Ces genres ne te seront jamais proposés.", bundle: .app)
+                            note: String(localized: "On ne te proposera jamais ces genres.", bundle: .app)
                         ) {
                             bannedGenres
                         }
@@ -115,13 +115,13 @@ struct SettingsView: View {
             Button(String(localized: "Supprimer", bundle: .app), role: .destructive) { profileStore.removeCustomPhoto() }
             Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
-            Text("La photo de profil sera supprimée.", bundle: .app)
+            Text("On supprimera ta photo de profil.", bundle: .app)
         }
         .alert(String(localized: "Remettre les films passés", bundle: .app), isPresented: $showResetSkipsAlert) {
             Button(String(localized: "Réinitialiser", bundle: .app)) { Task { await resetSkips() } }
             Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
-            Text("Les films que tu as écartés au swipe te seront à nouveau proposés.", bundle: .app)
+            Text("On te reproposera les films que tu as écartés au swipe.", bundle: .app)
         }
         .alert(String(localized: "Supprimer ton compte", bundle: .app), isPresented: $showDeleteAccountAlert) {
             Button(String(localized: "Supprimer définitivement", bundle: .app), role: .destructive) {
@@ -129,7 +129,7 @@ struct SettingsView: View {
             }
             Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
-            Text("Ta galerie, ta watchlist et ton profil seront effacés. Cette action est irréversible.", bundle: .app)
+            Text("On effacera ta galerie, ta watchlist et ton profil. Tu ne pourras pas les récupérer.", bundle: .app)
         }
         // La déconnexion ne détruit rien, mais elle renvoie à l'écran de
         // connexion : le message rassure sur ce point plutôt que d'alarmer.
@@ -550,7 +550,7 @@ struct SettingsView: View {
             let deleted = try await libraryStore.resetSwipeSkips()
             pendingSkips = 0
             actionMessage = deleted > 0
-                ? String(localized: "\(deleted) films pourront à nouveau t'être proposés.", bundle: .app)
+                ? String(localized: "On pourra te reproposer \(deleted) films.", bundle: .app)
                 : String(localized: "Il n'y avait aucun film passé.", bundle: .app)
         } catch {
             actionMessage = String(localized: "La réinitialisation a échoué. Réessaie dans un instant.", bundle: .app)

@@ -31,7 +31,7 @@ enum SocialError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return String(localized: "Tu dois être connecté.", bundle: .app)
+            return String(localized: "Tu dois être connecté·e.", bundle: .app)
         case .missingBaseURL:
             return String(localized: "Configuration serveur manquante.", bundle: .app)
         case .handleTaken:

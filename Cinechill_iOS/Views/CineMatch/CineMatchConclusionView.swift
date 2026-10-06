@@ -310,7 +310,7 @@ struct CineMatchConclusionView: View {
 
     private func seriesNote(queued: Bool, state: CineMatchViewModel.GalleryAddState) -> String {
         if queued {
-            return String(localized: "Ta watchlist garde l'épisode à lancer : la suite partira de là.", bundle: .app)
+            return String(localized: "On garde l'épisode à lancer dans ta watchlist.", bundle: .app)
         }
         if state == .failed {
             return String(localized: "La saison 1 n'a pas été ajoutée à ta watchlist. Réessaie.", bundle: .app)

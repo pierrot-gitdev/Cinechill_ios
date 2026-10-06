@@ -1,9 +1,7 @@
 {
   "sourceLanguage" : "fr",
   "strings" : {
-    "" : {
-
-    },
+    "" : {},
     " **Créer un compte** ?" : {
       "localizations" : {
         "en" : {
@@ -1115,7 +1113,7 @@
         }
       }
     },
-    "%lld films pourront à nouveau t'être proposés." : {
+    "On pourra te reproposer %lld films." : {
       "localizations" : {
         "en" : {
           "variations" : {
@@ -1123,13 +1121,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld movie can be suggested to you again."
+                  "value" : "We can suggest %lld movie to you again."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld movies can be suggested to you again."
+                  "value" : "We can suggest %lld movies to you again."
                 }
               }
             }
@@ -1141,13 +1139,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld film pourra à nouveau t'être proposé."
+                  "value" : "On pourra te reproposer %lld film."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld films pourront à nouveau t'être proposés."
+                  "value" : "On pourra te reproposer %lld films."
                 }
               }
             }
@@ -3569,18 +3567,18 @@
         }
       }
     },
-    "Ces genres ne te seront jamais proposés." : {
+    "On ne te proposera jamais ces genres." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "These genres will never be suggested to you."
+            "value" : "We'll never suggest these genres."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ces genres ne te seront jamais proposés."
+            "value" : "On ne te proposera jamais ces genres."
           }
         }
       }
@@ -4888,18 +4886,18 @@
         }
       }
     },
-    "Découvre ici les films actuellement au cinéma, les plus populaires du moment ainsi que les suggestions Cinechill basées sur tes goûts." : {
+    "Les films au cinéma, les plus populaires du moment et nos suggestions d'après tes goûts." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Here you'll find what's in theaters now, what's trending, and Cinechill's picks based on your taste."
+            "value" : "What's in theaters, what's popular right now, and our picks based on your taste."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Découvre ici les films actuellement au cinéma, les plus populaires du moment ainsi que les suggestions Cinechill basées sur tes goûts."
+            "value" : "Les films au cinéma, les plus populaires du moment et nos suggestions d'après tes goûts."
           }
         }
       }
@@ -7133,18 +7131,18 @@
         }
       }
     },
-    "Il ne pourra plus être changé après celui-ci." : {
+    "Tu ne pourras plus le changer ensuite." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "It can't be changed again after this one."
+            "value" : "You won't be able to change it after this."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il ne pourra plus être changé après celui-ci."
+            "value" : "Tu ne pourras plus le changer ensuite."
           }
         }
       }
@@ -7181,18 +7179,18 @@
         }
       }
     },
-    "Il s'ouvre quand tu remplis quelques critères, comme ajouter des films vus à ta galerie." : {
+    "Il s'ouvre après quelques étapes, comme ajouter des films vus à ta galerie." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "It opens once you meet a few criteria, like adding movies you've watched to your gallery."
+            "value" : "It opens after a few steps, like adding movies you've watched to your gallery."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il s'ouvre quand tu remplis quelques critères, comme ajouter des films vus à ta galerie."
+            "value" : "Il s'ouvre après quelques étapes, comme ajouter des films vus à ta galerie."
           }
         }
       }
@@ -8000,18 +7998,18 @@
         }
       }
     },
-    "La photo de profil sera supprimée." : {
+    "On supprimera ta photo de profil." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your profile photo will be deleted."
+            "value" : "We'll delete your profile photo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La photo de profil sera supprimée."
+            "value" : "On supprimera ta photo de profil."
           }
         }
       }
@@ -8371,18 +8369,18 @@
         }
       }
     },
-    "Le lien a été envoyé." : {
+    "Lien envoyé." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The link has been sent."
+            "value" : "Link sent."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le lien a été envoyé."
+            "value" : "Lien envoyé."
           }
         }
       }
@@ -8759,18 +8757,18 @@
         }
       }
     },
-    "Les films qu'on te recommande arrivent ici. Commence par quelqu'un dont tu aimes les goûts." : {
+    "Les films qu'on te recommande arrivent ici. Suis quelqu'un dont tu aimes les goûts." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Movies people recommend to you land here. Start with someone whose taste you like."
+            "value" : "Movies people recommend to you land here. Follow someone whose taste you like."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les films qu'on te recommande arrivent ici. Commence par quelqu'un dont tu aimes les goûts."
+            "value" : "Les films qu'on te recommande arrivent ici. Suis quelqu'un dont tu aimes les goûts."
           }
         }
       }
@@ -8791,18 +8789,18 @@
         }
       }
     },
-    "Les films que tu as écartés au swipe te seront à nouveau proposés." : {
+    "On te reproposera les films que tu as écartés au swipe." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Movies you swiped away will be offered to you again."
+            "value" : "We'll suggest the movies you swiped away again."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les films que tu as écartés au swipe te seront à nouveau proposés."
+            "value" : "On te reproposera les films que tu as écartés au swipe."
           }
         }
       }
@@ -10569,18 +10567,18 @@
         }
       }
     },
-    "Plus besoin de noter quelque part les films à voir : ils sont tous ici." : {
+    "Garde ici tous les films que tu veux voir." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No need to jot down movies to watch somewhere: they're all here."
+            "value" : "Keep every movie you want to watch here."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Plus besoin de noter quelque part les films à voir : ils sont tous ici."
+            "value" : "Garde ici tous les films que tu veux voir."
           }
         }
       }
@@ -10617,18 +10615,18 @@
         }
       }
     },
-    "Plus ta galerie grandit, plus les suggestions sont justes." : {
+    "Chaque ajout compte dans tes suggestions." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The bigger your gallery, the better the suggestions."
+            "value" : "Every addition counts toward your suggestions."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Plus ta galerie grandit, plus les suggestions sont justes."
+            "value" : "Chaque ajout compte dans tes suggestions."
           }
         }
       }
@@ -13462,18 +13460,18 @@
         }
       }
     },
-    "Ta galerie, ta watchlist et ton profil seront effacés. Cette action est irréversible." : {
+    "On effacera ta galerie, ta watchlist et ton profil. Tu ne pourras pas les récupérer." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your gallery, your watchlist and your profile will be erased. This cannot be undone."
+            "value" : "We'll erase your gallery, your watchlist and your profile. You won't be able to get them back."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ta galerie, ta watchlist et ton profil seront effacés. Cette action est irréversible."
+            "value" : "On effacera ta galerie, ta watchlist et ton profil. Tu ne pourras pas les récupérer."
           }
         }
       }
@@ -13511,18 +13509,18 @@
         }
       }
     },
-    "Ta watchlist garde l'épisode à lancer : la suite partira de là." : {
+    "On garde l'épisode à lancer dans ta watchlist." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your watchlist keeps the episode to play: you'll pick up from there."
+            "value" : "We keep the next episode in your watchlist."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ta watchlist garde l'épisode à lancer : la suite partira de là."
+            "value" : "On garde l'épisode à lancer dans ta watchlist."
           }
         }
       }
@@ -14663,7 +14661,7 @@
         }
       }
     },
-    "Tu dois être connecté." : {
+    "Tu dois être connecté·e." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14674,12 +14672,12 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tu dois être connecté."
+            "value" : "Tu dois être connecté·e."
           }
         }
       }
     },
-    "Tu dois être connecté(e) pour découvrir des films." : {
+    "Tu dois être connecté·e pour découvrir des films." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14690,12 +14688,12 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tu dois être connecté(e) pour découvrir des films."
+            "value" : "Tu dois être connecté·e pour découvrir des films."
           }
         }
       }
     },
-    "Tu dois être connecté(e) pour obtenir des recommandations." : {
+    "Tu dois être connecté·e pour obtenir des recommandations." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14706,12 +14704,12 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tu dois être connecté(e) pour obtenir des recommandations."
+            "value" : "Tu dois être connecté·e pour obtenir des recommandations."
           }
         }
       }
     },
-    "Tu dois être connecté(e) pour voir tes suggestions." : {
+    "Tu dois être connecté·e pour voir tes suggestions." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14722,7 +14720,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tu dois être connecté(e) pour voir tes suggestions."
+            "value" : "Tu dois être connecté·e pour voir tes suggestions."
           }
         }
       }

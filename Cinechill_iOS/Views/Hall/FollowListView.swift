@@ -144,7 +144,7 @@ struct FollowListView: View {
                 icon: .hall,
                 title: mode.emptyTitle,
                 message: isOwnList
-                    ? String(localized: "Les films qu'on te recommande arrivent ici. Commence par quelqu'un dont tu aimes les goûts.", bundle: .app)
+                    ? String(localized: "Les films qu'on te recommande arrivent ici. Suis quelqu'un dont tu aimes les goûts.", bundle: .app)
                     : String(localized: "Cette personne ne suit encore personne.", bundle: .app),
                 actionTitle: isOwnList ? String(localized: "Chercher un profil", bundle: .app) : nil,
                 action: isOwnList ? { showsSearch = true } : nil

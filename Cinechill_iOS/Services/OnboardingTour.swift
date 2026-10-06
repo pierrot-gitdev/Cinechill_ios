@@ -83,17 +83,17 @@ final class OnboardingTour {
         var detail: String {
             switch self {
             case .accueil:
-                String(localized: "Découvre ici les films actuellement au cinéma, les plus populaires du moment ainsi que les suggestions Cinechill basées sur tes goûts.", bundle: .app)
+                String(localized: "Les films au cinéma, les plus populaires du moment et nos suggestions d'après tes goûts.", bundle: .app)
             case .cinematch:
                 String(localized: "Réponds à deux questions, compare quelques films que tu as vus, et CinéMatch te propose cinq films pour ce soir.", bundle: .app)
             case .porte:
-                String(localized: "Il s'ouvre quand tu remplis quelques critères, comme ajouter des films vus à ta galerie.", bundle: .app)
+                String(localized: "Il s'ouvre après quelques étapes, comme ajouter des films vus à ta galerie.", bundle: .app)
             case .decouvrir:
                 String(localized: "Indique les films que tu as vus et ajoute ceux que tu veux voir.", bundle: .app)
             case .galerie:
                 String(localized: "Plus tu en ajoutes, mieux Cinechill connaît tes goûts.", bundle: .app)
             case .watchlist:
-                String(localized: "Plus besoin de noter quelque part les films à voir : ils sont tous ici.", bundle: .app)
+                String(localized: "Garde ici tous les films que tu veux voir.", bundle: .app)
             case .sortie:
                 String(localized: "Commence par ajouter les films que tu as vus : c'est la première étape pour débloquer CinéMatch.", bundle: .app)
             }

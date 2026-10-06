@@ -324,7 +324,7 @@ struct AuthView: View {
         // serait une fuite d'information.
         outcome(
             gap: gap,
-            headline: String(localized: "Le lien a été envoyé.", bundle: .app),
+            headline: String(localized: "Lien envoyé.", bundle: .app),
             detail: String(localized: "Si un compte existe pour \(AuthService.normalize(email)), tu recevras un email dans la minute. Pense à regarder dans tes spams.", bundle: .app)
         )
 
