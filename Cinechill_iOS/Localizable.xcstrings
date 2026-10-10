@@ -1221,6 +1221,54 @@
         }
       }
     },
+    "Aucun de ceux-là non plus. Cherche un film que tu as aimé, ou touche ceux que tu connais." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None of those either. Search for a movie you loved, or tap the ones you know."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun de ceux-là non plus. Cherche un film que tu as aimé, ou touche ceux que tu connais."
+          }
+        }
+      }
+    },
+    "Aucun film trouvé." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No movies found."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun film trouvé."
+          }
+        }
+      }
+    },
+    "Aucun de ceux-là" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None of these"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun de ceux-là"
+          }
+        }
+      }
+    },
     "Avant ton premier CinéMatch" : {
       "localizations" : {
         "en" : {
@@ -1761,6 +1809,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les remplacer"
+          }
+        }
+      }
+    },
+    "Lesquels as-tu vus ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which ones have you seen?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesquels as-tu vus ?"
           }
         }
       }
@@ -7431,6 +7495,22 @@
         }
       }
     },
+    "Touche ceux que tu as vus. Ils entrent dans ta galerie, et Découvrir te proposera des films proches." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the ones you've seen. They go into your gallery, and Discover will suggest movies like them."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touche ceux que tu as vus. Ils entrent dans ta galerie, et Découvrir te proposera des films proches."
+          }
+        }
+      }
+    },
     "Touche deux fois l'affiche." : {
       "localizations" : {
         "en" : {
@@ -7459,6 +7539,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trouve ton film avec Cinechill."
+          }
+        }
+      }
+    },
+    "Tu as passé beaucoup de films d'affilée. Touche ceux que tu as vus ici, on cherchera de ce côté." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've passed on a lot of movies in a row. Tap the ones you've seen here and we'll look in that direction."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu as passé beaucoup de films d'affilée. Touche ceux que tu as vus ici, on cherchera de ce côté."
           }
         }
       }
@@ -14088,6 +14184,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un film peu connu"
+          }
+        }
+      }
+    },
+    "Un film que tu as aimé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A movie you loved"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un film que tu as aimé"
           }
         }
       }

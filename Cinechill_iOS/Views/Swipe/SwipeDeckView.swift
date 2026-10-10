@@ -136,6 +136,14 @@ struct SwipeDeckView: View {
                 SagaSheet(offer: offer, onClose: { sagaOffer = nil })
                     .environmentObject(libraryStore)
             }
+            // La mosaïque attend son tour : derrière la planche des gestes à
+            // la première venue, derrière une feuille de saga ouverte.
+            .sheet(item: gridBinding) { kind in
+                ProbeGridSheet(kind: kind, excludedIDs: model.knownIDs) { families in
+                    model.gridRequest = nil
+                    model.gridDidFinish(seenFamilies: families)
+                }
+            }
         }
         .task {
             model.prepare(format: format)
@@ -788,6 +796,14 @@ struct SwipeDeckView: View {
         guard !offeredSagas.contains(offer.id) else { return }
         offeredSagas.insert(offer.id)
         sagaOffer = offer
+    }
+
+    /// La mosaïque à présenter, tenue tant qu'autre chose occupe l'écran.
+    private var gridBinding: Binding<ProbeGridKind?> {
+        Binding(
+            get: { showGuide || sagaOffer != nil ? nil : model.gridRequest },
+            set: { if $0 == nil { model.gridRequest = nil } }
+        )
     }
 
     /// Le retour arrière. La carte rentre par le bord d'où elle est sortie : sans
