@@ -46,6 +46,11 @@ final class SwipeDeckViewModel {
     private(set) var addedThisSession = 0
     /// Palier tout juste franchi, à célébrer puis à remettre à `nil`.
     var celebratedMilestone: Int?
+    /// Les paliers de session ne parlent qu'une fois CinéMatch ouvert. Avant,
+    /// c'est la vue qui fête la galerie entière, rapportée aux films qui
+    /// ouvrent CinéMatch : « 50 films ajoutés » dans la session ne disait pas
+    /// où l'on en était.
+    var sessionMilestonesEnabled = true
     private(set) var canUndo = false
     /// Films ou séries : le profil que le deck remplit en ce moment.
     private(set) var format: MediaFormat = .film
@@ -203,13 +208,20 @@ final class SwipeDeckViewModel {
 
         if direction.decision == .seen {
             addedThisSession += 1
-            if Self.milestones.contains(addedThisSession) {
+            if sessionMilestonesEnabled, Self.milestones.contains(addedThisSession) {
                 celebratedMilestone = addedThisSession
             }
         }
 
         prefetchUpcoming()
         Task { await refillIfNeeded() }
+    }
+
+    /// La carte rangée « vu » qui n'est pas encore partie au serveur : la
+    /// galerie ne la compte pas encore, l'écran si.
+    var heldSeenCard: SwipeCard? {
+        guard let held = heldSwipe, held.decision == .seen else { return nil }
+        return held.card
     }
 
     func undo() {

@@ -82,6 +82,16 @@ struct SwipeDeckView: View {
     /// reste à un tap dans le plafond pour tout le reste de la vie de
     /// l'application.
     @AppStorage("swipe.guideSeen") private var guideSeen = false
+
+
+    /// Le palier de la galerie tant que CinéMatch est fermé.
+    @State private var goalMilestone: Int?
+    /// La galerie au moment du premier film rangé de la session : le palier se
+    /// compte à partir d'elle, plus les films rangés depuis. La galerie seule
+    /// retarde d'une carte (la dernière décision reste en main jusqu'à la
+    /// suivante) et peut sauter d'un coup à son chargement, ce qui ferait
+    /// fêter un palier qu'aucun geste n'a franchi.
+    @State private var goalBase: Int?
     /// Films ou séries : le réglage que Découvrir partage avec CinéMatch.
     @AppStorage(MediaFormat.storageKey) private var formatRaw = MediaFormat.film.rawValue
 
@@ -103,6 +113,7 @@ struct SwipeDeckView: View {
             }
             .navigationBarHidden(true)
             .overlay { milestoneOverlay }
+            .overlay { goalMilestoneOverlay }
             .overlay { guideOverlay }
             .fullScreenCover(isPresented: $showProfile) {
                 ProfileView(badgesModel: badgesModel)
@@ -545,6 +556,30 @@ struct SwipeDeckView: View {
         }
     }
 
+    @ViewBuilder
+    private var goalMilestoneOverlay: some View {
+        if let milestone = goalMilestone, let target = memoryArtifact?.target {
+            ZStack {
+                Ink.ground.opacity(0.55)
+                    .ignoresSafeArea()
+                SwipeGoalMilestoneOverlay(count: milestone, target: target, isSeries: format == .series)
+            }
+            .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.96)))
+            .allowsHitTesting(false)
+            .task(id: milestone) {
+                Haptics.success()
+                AccessibilityNotification.Announcement(
+                    SwipeGoalMilestoneOverlay.spokenText(count: milestone, target: target, isSeries: format == .series)
+                ).post()
+                // Plus long que le palier de session : il y a une phrase à lire.
+                try? await Task.sleep(for: .milliseconds(2600))
+                withAnimation(.easeOut(duration: 0.25)) {
+                    goalMilestone = nil
+                }
+            }
+        }
+    }
+
     // MARK: - Geste
 
     /// Avancement du geste en cours vers son seuil, entre 0 et 1.
@@ -800,7 +835,11 @@ struct SwipeDeckView: View {
         drag = .zero
         isArmed = false
         isSynopsisOpen = false
+        model.sessionMilestonesEnabled = memoryIsDone
         model.swipe(direction, loved: loved)
+        if case .right = direction {
+            checkGoalMilestone()
+        }
 
         // La feuille de saga passe avant le toast : quand elle s'ouvre, c'est
         // elle qui accuse réception, et un toast qui descend pendant qu'elle
@@ -811,7 +850,7 @@ struct SwipeDeckView: View {
         // franchi : la célébration plein écran dit déjà que le film est rangé, et
         // deux accusés de réception pour le même geste en font un de trop.
         if let confirmation = direction.confirmation, model.celebratedMilestone == nil,
-           sagaOffer == nil {
+           goalMilestone == nil, sagaOffer == nil {
             toast = ToastMark(
                 title: card.title,
                 // Le cœur s'ajoute à la destination, il ne la remplace pas :
@@ -850,7 +889,7 @@ struct SwipeDeckView: View {
         guard case .right = direction else { return }
         // Un palier occupe déjà l'écran : deux planches l'une sur l'autre ne
         // se lisent pas, et la saga passe son tour.
-        guard !tour.isRunning, model.celebratedMilestone == nil else { return }
+        guard !tour.isRunning, model.celebratedMilestone == nil, goalMilestone == nil else { return }
 
         let offer: SagaOffer
         if card.hasSeasonsToOffer {
@@ -932,6 +971,48 @@ struct SwipeDeckView: View {
         // allumée sur la suivante.
         releasePress()
         commit(.right, loved: true, velocity: CGSize(width: 240, height: 0))
+    }
+
+    // MARK: - Le palier de la galerie
+
+    private var memoryArtifact: DoorArtifact? {
+        doorStore.door(for: format).artifact(.memoire)
+    }
+
+    private var memoryIsDone: Bool { memoryArtifact?.done == true }
+
+    /// Ce que la Porte compte, d'après la bibliothèque locale : des films, ou
+    /// des séries distinctes. La carte encore en main compte déjà.
+    private var localMemoryCount: Int {
+        let held = model.heldSeenCard
+        if format == .series {
+            var ids = Set(libraryStore.gallerySeasons.map(\.tmdbId))
+            if let held, held.isSeries { ids.insert(held.tmdbId) }
+            return ids.count
+        }
+        let films = libraryStore.galleryFilms
+        guard let held, !held.isSeries, !films.contains(where: { $0.tmdbId == held.tmdbId }) else {
+            return films.count
+        }
+        return films.count + 1
+    }
+
+    /// Le palier franchi par ce « vu », s'il y en a un, une fois par palier et
+    /// par format dans la vie du compte : annuler puis reranger ne le refête pas.
+    private func checkGoalMilestone() {
+        guard !memoryIsDone, !tour.isRunning, let target = memoryArtifact?.target, target > 0 else { return }
+        if model.addedThisSession <= 1 || goalBase == nil {
+            goalBase = localMemoryCount - model.addedThisSession
+        }
+        let count = (goalBase ?? 0) + model.addedThisSession
+        let storageKey = "swipe.goalMilestones.\(format.rawValue)"
+        var celebrated = Set(UserDefaults.standard.array(forKey: storageKey) as? [Int] ?? [])
+        guard let step = SwipeGoalMilestoneOverlay.steps(for: target).last(where: { $0 <= count }),
+              count - step < 3, !celebrated.contains(step)
+        else { return }
+        celebrated.insert(step)
+        UserDefaults.standard.set(Array(celebrated).sorted(), forKey: storageKey)
+        goalMilestone = step
     }
 
     private func toggleSynopsis() {

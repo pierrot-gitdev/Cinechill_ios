@@ -129,6 +129,38 @@
         }
       }
     },
+    "%lld films vus sur %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld movies seen out of %2$lld."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld films vus sur %lld."
+          }
+        }
+      }
+    },
+    "%lld séries vues sur %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld shows seen out of %2$lld."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld séries vues sur %lld."
+          }
+        }
+      }
+    },
     ", dans ta watchlist" : {
       "localizations" : {
         "en" : {
@@ -1073,6 +1105,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Elle s'ouvre quand les 4 autres étapes sont validées."
+          }
+        }
+      }
+    },
+    "Encore %lld films et CinéMatch s'ouvre. Il te proposera le film de ce soir, d'après tes goûts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld more movies and CinéMatch opens. It will suggest tonight's movie, based on your taste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encore %lld films et CinéMatch s'ouvre. Il te proposera le film de ce soir, d'après tes goûts."
+          }
+        }
+      }
+    },
+    "Encore %lld séries et CinéMatch des séries s'ouvre." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld more shows and CinéMatch for shows opens."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encore %lld séries et CinéMatch des séries s'ouvre."
+          }
+        }
+      }
+    },
+    "Encore 1 film et CinéMatch s'ouvre. Il te proposera le film de ce soir, d'après tes goûts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 more movie and CinéMatch opens. It will suggest tonight's movie, based on your taste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encore 1 film et CinéMatch s'ouvre. Il te proposera le film de ce soir, d'après tes goûts."
+          }
+        }
+      }
+    },
+    "Encore 1 série et CinéMatch des séries s'ouvre." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 more show and CinéMatch for shows opens."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encore 1 série et CinéMatch des séries s'ouvre."
           }
         }
       }
@@ -6675,6 +6771,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Question 2 sur 2 : le film que tu aimes le moins, parmi quatre autres. Tu as préféré %@."
+          }
+        }
+      }
+    },
+    "séries vues" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "shows seen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "séries vues"
+          }
+        }
+      }
+    },
+    "sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "of %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sur %lld"
           }
         }
       }
