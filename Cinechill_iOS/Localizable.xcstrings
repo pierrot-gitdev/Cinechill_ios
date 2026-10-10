@@ -1077,6 +1077,70 @@
         }
       }
     },
+    "Et celle que tu aimes **le moins** ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "And which one do you like **the least**?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et celle que tu aimes **le moins** ?"
+          }
+        }
+      }
+    },
+    "Et celle que tu aimes le moins, parmi quatre autres séries ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "And which one do you like the least, out of four other shows?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et celle que tu aimes le moins, parmi quatre autres séries ?"
+          }
+        }
+      }
+    },
+    "Et celui que tu aimes **le moins** ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "And which one do you like **the least**?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et celui que tu aimes **le moins** ?"
+          }
+        }
+      }
+    },
+    "Et celui que tu aimes le moins, parmi quatre autres films ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "And which one do you like the least, out of four other movies?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et celui que tu aimes le moins, parmi quatre autres films ?"
+          }
+        }
+      }
+    },
     "Il te propose le film de ce soir, d'après tes goûts." : {
       "localizations" : {
         "en" : {
@@ -1105,6 +1169,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il te propose une série à commencer, d'après tes goûts."
+          }
+        }
+      }
+    },
+    "La moins aimée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liked least"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La moins aimée"
+          }
+        }
+      }
+    },
+    "Le moins aimé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liked least"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le moins aimé"
+          }
+        }
+      }
+    },
+    "Moins aimé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liked least"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moins aimé"
           }
         }
       }
@@ -5591,38 +5703,6 @@
         }
       }
     },
-    "Et celle que tu aimes le moins ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "And the one you like least?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Et celle que tu aimes le moins ?"
-          }
-        }
-      }
-    },
-    "Et celui que tu aimes le moins ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "And the one you like least?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Et celui que tu aimes le moins ?"
-          }
-        }
-      }
-    },
     "Et laquelle tu n'as pas du tout envie de recommencer ?" : {
       "localizations" : {
         "en" : {
@@ -6483,6 +6563,118 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plus que %lld étapes avant que CinéMatch s'ouvre. Il te proposera alors une série à commencer, d'après tes goûts."
+          }
+        }
+      }
+    },
+    "Préféré" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorite"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Préféré"
+          }
+        }
+      }
+    },
+    "Quatre autres films" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Four other movies"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quatre autres films"
+          }
+        }
+      }
+    },
+    "Quatre autres séries" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Four other shows"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quatre autres séries"
+          }
+        }
+      }
+    },
+    "Question 1 sur 2 : la série que tu préfères" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question 1 of 2: the show you like best"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question 1 sur 2 : la série que tu préfères"
+          }
+        }
+      }
+    },
+    "Question 1 sur 2 : le film que tu préfères" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question 1 of 2: the movie you like best"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question 1 sur 2 : le film que tu préfères"
+          }
+        }
+      }
+    },
+    "Question 2 sur 2 : la série que tu aimes le moins, parmi quatre autres. Tu as préféré %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question 2 of 2: the show you like least, out of four others. You picked %@ as your favorite."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question 2 sur 2 : la série que tu aimes le moins, parmi quatre autres. Tu as préféré %@."
+          }
+        }
+      }
+    },
+    "Question 2 sur 2 : le film que tu aimes le moins, parmi quatre autres. Tu as préféré %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question 2 of 2: the movie you like least, out of four others. You picked %@ as your favorite."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question 2 sur 2 : le film que tu aimes le moins, parmi quatre autres. Tu as préféré %@."
           }
         }
       }
