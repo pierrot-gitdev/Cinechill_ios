@@ -7,8 +7,14 @@ import Foundation
 
 /// Les cinq artéfacts de la porte, de bas en haut sur le montant : la jauge se
 /// remplit en montant.
+///
+/// « Tes préférences » (clé `horizons`) ferme la marche : les comparaisons ne
+/// s'ouvrent qu'une fois les quatre autres étapes validées, elles sont donc la
+/// dernière chose qu'on fait et le dernier médaillon de la porte. L'ordre des
+/// cas est cet ordre-là : la jauge, le rang « Étape n sur 5 » et le conduit le
+/// lisent tous ici.
 nonisolated enum DoorArtifactKey: String, Codable, CaseIterable, Sendable {
-    case memoire, eventail, coeur, horizons, promesse
+    case memoire, eventail, coeur, promesse, horizons
 
     /// Le PNG du médaillon, exporté à 1200 comme les badges : monture d'or,
     /// champ émaillé, emblème et halo intégrés. L'état éteint se dérive en
@@ -92,10 +98,29 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
         artifacts.first { $0.key == key.rawValue }
     }
 
-    /// Les comparaisons de « Tes préférences » n'ouvrent qu'après la Mémoire :
+    /// Les étapes à valider avant les comparaisons : toutes les autres.
+    static let stepsBeforeComparison = DoorArtifactKey.allCases.filter { $0 != .horizons }
+
+    /// Les comparaisons de « Tes préférences » n'ouvrent qu'une fois les quatre
+    /// autres étapes validées. La Mémoire d'abord, pour une raison de données :
     /// sous ce nombre de films, les mêmes affiches reviendraient d'un tour à
-    /// l'autre et le choix ne dirait plus rien. Le serveur tient la même règle.
-    var canCompare: Bool { artifact(.memoire)?.done == true }
+    /// l'autre, et le serveur tient cette règle-là. Les trois autres pour une
+    /// raison de parcours : la comparaison est la dernière marche, celle qu'on
+    /// propose de faire tout de suite quand le reste est fait, au lieu d'une
+    /// étape qu'on croise au hasard sans savoir à quoi elle sert.
+    var canCompare: Bool { missingBeforeComparison.isEmpty }
+
+    /// Les étapes qui manquent encore avant les comparaisons, dans l'ordre de
+    /// la porte.
+    var missingBeforeComparison: [DoorArtifactKey] {
+        Self.stepsBeforeComparison.filter { artifact($0)?.done != true }
+    }
+
+    /// Les quatre premières étapes sont faites et il ne reste que les
+    /// comparaisons : le moment de les proposer directement.
+    var onlyComparisonLeft: Bool {
+        canCompare && artifact(.horizons)?.done != true
+    }
 
     /// La porte d'un compte que le serveur n'a pas encore raconté : tout à
     /// zéro, tout éteint. C'est l'état honnête d'un profil inconnu, et il

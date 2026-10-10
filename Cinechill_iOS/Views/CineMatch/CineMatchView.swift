@@ -117,6 +117,21 @@ struct CineMatchView: View {
         .task {
             viewModel.setFormat(format)
             syncPlatforms()
+            handleDoorRequest()
+        }
+        // La planche d'une étape, affichée au-dessus de n'importe quel onglet,
+        // envoie ici : montrer la Porte, ou ouvrir les comparaisons.
+        .onChange(of: doorStore.request) { _, _ in
+            handleDoorRequest()
+        }
+    }
+
+    private func handleDoorRequest() {
+        guard let request = doorStore.consumeRequest() else { return }
+        // La planche parle d'une Porte précise : l'interrupteur la suit.
+        if request.format != format { formatRaw = request.format.rawValue }
+        if case .compare = request, doorStore.door(for: request.format).canCompare {
+            showDoorComparison = true
         }
     }
 

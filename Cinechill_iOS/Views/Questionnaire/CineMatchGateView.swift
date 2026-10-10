@@ -146,9 +146,12 @@ struct CineMatchGateView: View {
             onDismiss: {
                 guard let key = pendingDetailAction else { return }
                 pendingDetailAction = nil
-                switch key {
+                // Une étape verrouillée renvoie vers la première qui manque :
+                // c'est elle qui ouvre la suite.
+                let route = key == .horizons ? door.missingBeforeComparison.first ?? key : key
+                switch route {
                 case .coeur: onLovePicker()
-                case .horizons where door.canCompare: onCompare()
+                case .horizons: onCompare()
                 default: onDiscover()
                 }
             }
@@ -162,7 +165,9 @@ struct CineMatchGateView: View {
                     detailArtifact = nil
                 }
             )
-            .presentationDetents([.medium])
+            // La fiche verrouillée des préférences porte la liste des quatre
+            // étapes : elle ne tient pas dans une demi-hauteur au grand texte.
+            .presentationDetents(key == .horizons && !door.canCompare ? [.medium, .large] : [.medium])
             .presentationDragIndicator(.visible)
         }
         // Rien ne répond pendant que les battants tournent : c'est la seule
@@ -436,13 +441,15 @@ private struct DoorSceneView: View {
     /// Le repère de conception, hérité des maquettes.
     private static let design = CGSize(width: 390, height: 404)
 
-    /// Centre vertical et rayon de monture de chaque médaillon, de bas en haut.
+    /// Centre vertical et rayon de monture de chaque médaillon, de bas en haut,
+    /// dans l'ordre de `DoorArtifactKey` : « Tes préférences », dernière étape,
+    /// tient le sommet du montant.
     private static let seats: [(key: DoorArtifactKey, y: CGFloat, r: CGFloat)] = [
         (.memoire, 324, 24),
         (.eventail, 262, 20),
         (.coeur, 202, 20),
-        (.horizons, 142, 20),
-        (.promesse, 86, 17),
+        (.promesse, 142, 20),
+        (.horizons, 86, 17),
     ]
 
     /// Les segments du conduit, de bas en haut : un par artéfact, puis la
@@ -501,6 +508,15 @@ private struct DoorSceneView: View {
                 .saturation(lit ? 1 : 0)
                 .brightness(lit ? 0 : -0.42)
                 .shadow(color: Color(hex: seat.key.halo).opacity(lit ? 0.45 : 0), radius: seat.r * 0.55 * s)
+                // La dernière étape attend les quatre autres : un cadenas le
+                // dit sur la pierre, avant même qu'on touche le médaillon.
+                .overlay {
+                    if seat.key == .horizons, !lit, !door.canCompare {
+                        DoorLockGlyph()
+                            .stroke(Ink.ink2, style: StrokeStyle(lineWidth: 1.2, lineJoin: .round))
+                            .frame(width: 10 * s, height: 12 * s)
+                    }
+                }
                 .overlay(alignment: .bottom) {
                     if isNext {
                         // Le prochain à viser : le point de lumière, seul emploi
@@ -924,22 +940,16 @@ private struct DoorArtifactSheet: View {
     private var target: Int { artifact?.target ?? 0 }
     private var isDone: Bool { artifact?.done == true || (target > 0 && current >= target) }
 
-    /// « Tes préférences » avant la Mémoire : les comparaisons n'ont pas encore
-    /// de quoi se jouer, la feuille le dit et renvoie là où la galerie se remplit.
-    private var waitsForMemory: Bool { artifactKey == .horizons && !door.canCompare }
+    /// « Tes préférences » tant que les quatre autres étapes ne sont pas
+    /// faites : la feuille dit ce qui manque et renvoie vers la première.
+    private var isWaiting: Bool { artifactKey == .horizons && !door.canCompare }
 
-    private var consequence: String {
-        guard waitsForMemory else { return artifactKey.consequence(series: door.series) }
-        let memoryTarget = door.artifact(.memoire)?.target ?? 0
-        return door.series
-            ? String(localized: "Ajoute d'abord \(memoryTarget) séries à ta galerie pour pouvoir comparer.", bundle: .app)
-            : String(localized: "Ajoute d'abord \(memoryTarget) films à ta galerie pour pouvoir comparer.", bundle: .app)
-    }
+    /// La première étape qui manque, celle vers laquelle le bouton renvoie.
+    private var nextStep: DoorArtifactKey? { door.missingBeforeComparison.first }
 
     private var actionTitle: String {
-        waitsForMemory
-            ? String(localized: "Ouvrir Découvrir", bundle: .app)
-            : artifactKey.actionTitle(series: door.series)
+        guard isWaiting, let nextStep else { return artifactKey.actionTitle(series: door.series) }
+        return nextStep.actionTitle(series: door.series)
     }
 
     private var rank: Int {
@@ -969,21 +979,32 @@ private struct DoorArtifactSheet: View {
                 Spacer(minLength: 0)
             }
 
-            Text(artifactKey.condition(in: door))
-                .planFont(15, weight: .medium)
-                .foregroundStyle(Ink.ink)
-                .padding(.top, 22)
+            if isWaiting {
+                Text("Elle s'ouvre quand les 4 autres étapes sont validées.", bundle: .app)
+                    .planFont(15, weight: .medium)
+                    .foregroundStyle(Ink.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 22)
 
-            HStack(spacing: 12) {
-                tintedRule
-                Text(progressText)
-                    .planLabel()
-                    .monospacedDigit()
-                    .foregroundStyle(Ink.ink2)
+                checklist
+                    .padding(.top, 12)
+            } else {
+                Text(artifactKey.condition(in: door))
+                    .planFont(15, weight: .medium)
+                    .foregroundStyle(Ink.ink)
+                    .padding(.top, 22)
+
+                HStack(spacing: 12) {
+                    tintedRule
+                    Text(progressText)
+                        .planLabel()
+                        .monospacedDigit()
+                        .foregroundStyle(Ink.ink2)
+                }
+                .padding(.top, 12)
             }
-            .padding(.top, 12)
 
-            Text(consequence)
+            Text(artifactKey.consequence(series: door.series))
                 .planFont(13.5)
                 .foregroundStyle(Ink.ink2)
                 .lineSpacing(2)
@@ -1029,6 +1050,42 @@ private struct DoorArtifactSheet: View {
 
     private var progressText: String {
         String(localized: "\(min(current, target)) sur \(target)", bundle: .app)
+    }
+
+    /// Les quatre étapes qui ouvrent les comparaisons, avec leur compte. Le
+    /// point plein dit « fait », le point creux « à faire » : la grammaire de
+    /// l'accent partout ailleurs, lisible en niveaux de gris.
+    private var checklist: some View {
+        VStack(spacing: 0) {
+            ForEach(DoorState.stepsBeforeComparison, id: \.self) { key in
+                let step = door.artifact(key)
+                let shown = key == .coeur ? max(lovedCount, step?.current ?? 0) : step?.current ?? 0
+                let total = step?.target ?? 0
+                let done = step?.done == true
+
+                HStack(spacing: 12) {
+                    Group {
+                        if done { PlanLight() } else { PlanLightOutline(tint: Ink.ink3) }
+                    }
+                    .frame(width: 8)
+                    Text(key.displayName(series: door.series))
+                        .planFont(14)
+                        .foregroundStyle(done ? Ink.ink2 : Ink.ink)
+                    Spacer(minLength: 8)
+                    Text(String(localized: "\(min(shown, total)) sur \(total)", bundle: .app))
+                        .planFont(13)
+                        .monospacedDigit()
+                        .foregroundStyle(Ink.ink2)
+                }
+                .frame(minHeight: 40)
+                .overlay(alignment: .top) { Rectangle().fill(Ink.rule).frame(height: 1) }
+                .accessibilityElement(children: .combine)
+                .accessibilityValue(done
+                    ? String(localized: "validée", bundle: .app)
+                    : String(localized: "à faire", bundle: .app))
+            }
+        }
+        .overlay(alignment: .bottom) { Rectangle().fill(Ink.rule).frame(height: 1) }
     }
 }
 

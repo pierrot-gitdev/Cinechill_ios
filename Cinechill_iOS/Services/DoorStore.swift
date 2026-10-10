@@ -38,6 +38,34 @@ final class DoorStore {
     /// L'étape gagnée l'a été sur la Porte des séries.
     private(set) var celebrationIsSeries = false
 
+    /// Ce que la planche d'une étape demande à l'onglet CinéMatch : montrer la
+    /// Porte, ou ouvrir tout de suite les comparaisons. La planche s'affiche à
+    /// la racine, au-dessus de n'importe quel onglet ; c'est l'onglet CinéMatch
+    /// qui sait ouvrir sa Porte et ses comparaisons, et il lit la demande dès
+    /// qu'il est monté.
+    enum Request: Equatable {
+        case showDoor(MediaFormat)
+        case compare(MediaFormat)
+
+        var format: MediaFormat {
+            switch self {
+            case .showDoor(let format), .compare(let format): format
+            }
+        }
+    }
+
+    private(set) var request: Request?
+
+    func post(_ request: Request) {
+        self.request = request
+    }
+
+    /// L'onglet a pris la demande en charge.
+    func consumeRequest() -> Request? {
+        defer { request = nil }
+        return request
+    }
+
     /// La Porte dont l'étape vient d'être gagnée : c'est elle que la planche
     /// raconte, avec ses mots à elle.
     var celebrationDoor: DoorState { celebrationIsSeries ? seriesDoor : door }

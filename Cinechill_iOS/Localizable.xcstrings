@@ -81,6 +81,54 @@
         }
       }
     },
+    "%@ : étape validée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: step done"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ : étape validée"
+          }
+        }
+      }
+    },
+    "%lld étape sur 5" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld step of 5"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld étape sur 5"
+          }
+        }
+      }
+    },
+    "%lld étapes sur 5" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld steps of 5"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld étapes sur 5"
+          }
+        }
+      }
+    },
     ", dans ta watchlist" : {
       "localizations" : {
         "en" : {
@@ -189,38 +237,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ : c'est fait."
-          }
-        }
-      }
-    },
-    "%@ : c'est fait. %lld étape sur 5." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@: done. %2$lld of 5 steps."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ : c'est fait. %2$lld étape sur 5."
-          }
-        }
-      }
-    },
-    "%@ : c'est fait. %lld étapes sur 5." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@: done. %2$lld steps of 5."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ : c'est fait. %lld étapes sur 5."
           }
         }
       }
@@ -1013,6 +1029,86 @@
         }
       }
     },
+    "Compare des films que tu as vus, %lld fois. Ça prend deux minutes, et CinéMatch s'ouvre juste après." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare movies you've seen, %lld times. It takes two minutes, and CinéMatch opens right after."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare des films que tu as vus, %lld fois. Ça prend deux minutes, et CinéMatch s'ouvre juste après."
+          }
+        }
+      }
+    },
+    "Compare des séries que tu as vues, %lld fois. Ça prend deux minutes, et CinéMatch des séries s'ouvre juste après." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare shows you've seen, %lld times. It takes two minutes, and CinéMatch for shows opens right after."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare des séries que tu as vues, %lld fois. Ça prend deux minutes, et CinéMatch des séries s'ouvre juste après."
+          }
+        }
+      }
+    },
+    "Elle s'ouvre quand les 4 autres étapes sont validées." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It opens once the 4 other steps are done."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elle s'ouvre quand les 4 autres étapes sont validées."
+          }
+        }
+      }
+    },
+    "Il te propose le film de ce soir, d'après tes goûts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It suggests tonight's movie, based on your taste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il te propose le film de ce soir, d'après tes goûts."
+          }
+        }
+      }
+    },
+    "Il te propose une série à commencer, d'après tes goûts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It suggests a show to start, based on your taste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il te propose une série à commencer, d'après tes goûts."
+          }
+        }
+      }
+    },
     "On pourra te reproposer %lld films." : {
       "localizations" : {
         "en" : {
@@ -1281,22 +1377,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld sur %lld séries"
-          }
-        }
-      }
-    },
-    "%lld sur 5" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld of 5"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld sur 5"
           }
         }
       }
@@ -6323,6 +6403,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il n'y avait aucun film passé."
+          }
+        }
+      }
+    },
+    "Ouvrir CinéMatch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open CinéMatch"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir CinéMatch"
+          }
+        }
+      }
+    },
+    "Plus qu'une étape" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One step left"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus qu'une étape"
+          }
+        }
+      }
+    },
+    "Plus qu'une étape avant que CinéMatch s'ouvre : %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One step left before CinéMatch opens: %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus qu'une étape avant que CinéMatch s'ouvre : %@."
+          }
+        }
+      }
+    },
+    "Plus que %lld étapes avant que CinéMatch s'ouvre. Il te proposera alors le film de ce soir, d'après tes goûts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld steps left before CinéMatch opens. Then it will suggest tonight's movie, based on your taste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus que %lld étapes avant que CinéMatch s'ouvre. Il te proposera alors le film de ce soir, d'après tes goûts."
+          }
+        }
+      }
+    },
+    "Plus que %lld étapes avant que CinéMatch s'ouvre. Il te proposera alors une série à commencer, d'après tes goûts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld steps left before CinéMatch opens. Then it will suggest a show to start, based on your taste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus que %lld étapes avant que CinéMatch s'ouvre. Il te proposera alors une série à commencer, d'après tes goûts."
           }
         }
       }
@@ -13640,6 +13800,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vider une watchlist d'au moins 15 films."
+          }
+        }
+      }
+    },
+    "Voir ce qu'il reste" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See what's left"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir ce qu'il reste"
           }
         }
       }

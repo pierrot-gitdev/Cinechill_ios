@@ -316,18 +316,31 @@ struct MainTabView: View {
     @ViewBuilder
     private var doorOverlay: some View {
         if let key = doorStore.celebration, badgesModel.currentCelebration == nil {
+            let format: MediaFormat = doorStore.celebrationDoor.series ? .series : .film
             DoorCelebrationOverlay(
                 door: doorStore.celebrationDoor,
                 unlocked: key,
-                onDismiss: {
-                    withAnimation(.easeOut(duration: 0.22)) {
-                        doorStore.dismissCelebration()
-                    }
+                onDismiss: dismissDoorCelebration,
+                onShowDoor: {
+                    dismissDoorCelebration()
+                    doorStore.post(.showDoor(format))
+                    selectedTab = 1
+                },
+                onCompare: {
+                    dismissDoorCelebration()
+                    doorStore.post(.compare(format))
+                    selectedTab = 1
                 }
             )
             .id(key)
             .transition(.opacity)
             .zIndex(11)
+        }
+    }
+
+    private func dismissDoorCelebration() {
+        withAnimation(.easeOut(duration: 0.22)) {
+            doorStore.dismissCelebration()
         }
     }
 
