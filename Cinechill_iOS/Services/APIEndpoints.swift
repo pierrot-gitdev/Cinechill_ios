@@ -157,6 +157,16 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "recordswipes", queryItems: [])
     }
 
+    static func probeGrid() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getprobegrid", queryItems: [])
+    }
+
+    static func deckSheet() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getdecksheet", queryItems: [])
+    }
+
     static func homeRows() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "gethomerows", queryItems: [])

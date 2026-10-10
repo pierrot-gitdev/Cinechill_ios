@@ -20,6 +20,8 @@ actor SwipeDecisionQueue {
 
     private let client: any SwipeFeedFetching
     private var pending: [PendingSwipe] = []
+    /// Le paquet en cours d'envoi : parti, mais pas encore arrivé.
+    private var sending: [PendingSwipe] = []
     private var flushTask: Task<Void, Never>?
     private var isFlushing = false
     private var consecutiveFailures = 0
@@ -37,6 +39,13 @@ actor SwipeDecisionQueue {
         // restent groupées.
         let urgent = swipe.decision == .seen || pending.count >= Self.flushThreshold
         scheduleFlush(after: urgent ? .zero : Self.debounce)
+    }
+
+    /// Ce que le serveur n'a peut-être pas encore reçu : le paquet en route
+    /// et ce qui attend derrière lui. Le deck le joint à sa demande de lot,
+    /// pour que les refus des dernières secondes comptent tout de suite.
+    func undelivered() -> [PendingSwipe] {
+        sending + pending
     }
 
     /// Vide la file sans attendre le debounce — à appeler quand le deck
@@ -63,6 +72,7 @@ actor SwipeDecisionQueue {
         isFlushing = true
         let batch = pending
         pending = []
+        sending = batch
 
         do {
             try await client.record(batch)
@@ -72,6 +82,7 @@ actor SwipeDecisionQueue {
             consecutiveFailures += 1
         }
 
+        sending = []
         isFlushing = false
 
         guard !pending.isEmpty else { return }

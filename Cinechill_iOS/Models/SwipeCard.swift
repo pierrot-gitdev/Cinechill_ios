@@ -41,6 +41,12 @@ nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
     /// La saison que range une décision. `nil` sur une carte du deck, qui
     /// range toujours la première ; renseignée par la feuille des saisons.
     let season: Int?
+    /// Langue d'origine (`ja`, `ko`…) : c'est elle qui distingue un anime d'un
+    /// Pixar, et le serveur la relit dans chaque décision.
+    var originalLanguage: String? = nil
+    /// Ce que le serveur a dit de la carte en la servant, renvoyé tel quel
+    /// avec la décision pour le journal du deck.
+    var serving: SwipeServing? = nil
 
     /// Explicite, et non synthétisé : les deux champs de saga sont arrivés
     /// après les autres, et leur valeur par défaut évite de reprendre les cinq
@@ -59,7 +65,9 @@ nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
         collectionCount: Int? = nil,
         mediaType: MediaType = .movie,
         seasonCount: Int? = nil,
-        season: Int? = nil
+        season: Int? = nil,
+        originalLanguage: String? = nil,
+        serving: SwipeServing? = nil
     ) {
         self.tmdbId = tmdbId
         self.title = title
@@ -75,7 +83,15 @@ nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
         self.mediaType = mediaType
         self.seasonCount = seasonCount
         self.season = season
+        self.originalLanguage = originalLanguage
+        self.serving = serving
     }
+
+    /// Les familles de films auxquelles le serveur rattache la carte.
+    var families: [String] { serving?.families ?? [] }
+
+    /// La probabilité, estimée par le serveur, que la personne ait vu le film.
+    var pSeen: Double? { serving?.pSeen }
 
     /// L'identité de la carte dans le deck : `movie-603`, `tv-1399`. Le format
     /// en fait partie, parce que les identifiants TMDB des films et des séries
@@ -153,8 +169,51 @@ nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
             "voteCount": voteCount as Any,
             "genreIds": genreIds,
             "releaseDate": releaseDate as Any,
+            "originalLanguage": originalLanguage as Any,
         ]
     }
+}
+
+/// Ce que le serveur a dit d'une carte en la servant : sa probabilité d'être
+/// vue, ses familles, ce qu'elle venait chercher, et d'où dans le lot.
+///
+/// L'app ne s'en sert que pour deux choses : choisir une carte de réserve
+/// après une série de refus, et le renvoyer avec la décision, pour que le
+/// journal du deck dise ce qui a été servi et ce qui en est sorti.
+nonisolated struct SwipeServing: Hashable, Sendable {
+    let pSeen: Double?
+    let families: [String]
+    let kind: String?
+    let lotID: String?
+    let phase: String?
+    let mode: String?
+    let position: Int?
+
+    var jsonPayload: [String: Any] {
+        [
+            "pSeen": pSeen as Any,
+            "families": families,
+            "kind": kind as Any,
+            "lotId": lotID as Any,
+            "phase": phase as Any,
+            "mode": mode as Any,
+            "position": position as Any,
+        ]
+    }
+}
+
+/// D'où vient une décision. Seules celles du deck et de sa réserve disent si
+/// le deck sert bien : le serveur n'en compte pas d'autres dans son
+/// rendement.
+nonisolated enum SwipeVia: String, Sendable, Hashable {
+    case deck
+    case reserve
+    /// Une mosaïque « lesquels as-tu vus ? ».
+    case grid
+    /// Une feuille « dans la même veine » ou du réalisateur.
+    case sheet
+    /// La feuille de saga.
+    case saga
 }
 
 /// Le verdict porté sur une carte. `skipped` n'est pas un rejet de goût : il dit
@@ -174,18 +233,37 @@ nonisolated struct PendingSwipe: Sendable, Hashable {
     /// Le double tap sur l'affiche : vu ET adoré. Un modificateur de
     /// `seen`, jamais un quatrième verbe — le serveur garde sa liste fermée.
     let loved: Bool
+    let via: SwipeVia
+    /// Une case laissée vide dans une mosaïque ou une feuille. Le serveur
+    /// l'apprend comme un demi-« pas vu », sans rien écrire : personne n'a
+    /// rien répondu, et la bibliothèque n'en garde aucune trace.
+    let soft: Bool
 
-    init(card: SwipeCard, decision: SwipeDecision, loved: Bool = false) {
+    init(
+        card: SwipeCard,
+        decision: SwipeDecision,
+        loved: Bool = false,
+        via: SwipeVia = .deck,
+        soft: Bool = false
+    ) {
         self.card = card
         self.decision = decision
         self.loved = loved && decision == .seen
+        self.via = via
+        self.soft = soft && decision == .skipped
     }
 
     var jsonPayload: [String: Any] {
-        [
+        var payload: [String: Any] = [
             "decision": decision.rawValue,
             "loved": loved,
+            "via": via.rawValue,
+            "soft": soft,
             "item": card.jsonPayload(for: decision),
         ]
+        if let serving = card.serving {
+            payload["log"] = serving.jsonPayload
+        }
+        return payload
     }
 }
