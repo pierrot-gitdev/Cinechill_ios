@@ -24,7 +24,6 @@ struct WatchlistView: View {
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(MediaCatalog.self) private var catalog
-    @Environment(OnboardingTour.self) private var tour
 
     @State private var showProfile = false
     @State private var showPlatformSheet = false
@@ -36,7 +35,7 @@ struct WatchlistView: View {
             ZStack {
                 Ink.ground.ignoresSafeArea()
 
-                if displayedEntries.isEmpty {
+                if libraryStore.watchlistItems.isEmpty {
                     emptyState.padding(.horizontal, 34)
                 } else {
                     content
@@ -64,7 +63,7 @@ struct WatchlistView: View {
         }
         .onAppear {
             model.prepare(
-                entries: displayedEntries,
+                entries: libraryStore.watchlistItems,
                 preferredPlatformIDs: libraryStore.preferredPlatformIDs,
                 platforms: catalog.platforms
             )
@@ -76,22 +75,13 @@ struct WatchlistView: View {
         .onChange(of: libraryStore.watchlistItems) { _, _ in Task { await syncModel() } }
         .onChange(of: libraryStore.preferredPlatformIDs) { _, _ in Task { await syncModel() } }
         .onChange(of: catalog.platforms) { _, _ in Task { await syncModel() } }
-        .onChange(of: tour.isRunning) { _, _ in Task { await syncModel() } }
-    }
-
-    /// Ce que la liste range. Pendant la prise en main, trois films d'exemple :
-    /// l'étape a le tri par temps disponible à montrer, et un écran vide ne
-    /// montre aucun tri. Rien n'est écrit nulle part.
-    private var displayedEntries: [WatchlistEntry] {
-        tour.isRunning ? OnboardingShowcase.watchlist : libraryStore.watchlistItems
     }
 
     private func syncModel() async {
         await model.update(
-            entries: displayedEntries,
+            entries: libraryStore.watchlistItems,
             preferredPlatformIDs: libraryStore.preferredPlatformIDs,
-            platforms: catalog.platforms,
-            enrich: !tour.isRunning
+            platforms: catalog.platforms
         )
     }
 

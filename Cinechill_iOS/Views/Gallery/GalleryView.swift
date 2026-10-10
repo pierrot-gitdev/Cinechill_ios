@@ -23,7 +23,6 @@ struct GalleryView: View {
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(MediaCatalog.self) private var catalog
-    @Environment(OnboardingTour.self) private var tour
 
     @State private var showProfile = false
     @State private var composerItem: MediaItem?
@@ -34,7 +33,7 @@ struct GalleryView: View {
             ZStack {
                 Ink.ground.ignoresSafeArea()
 
-                if displayedEntries.isEmpty {
+                if libraryStore.galleryItems.isEmpty {
                     emptyState.padding(.horizontal, 34)
                 } else {
                     content
@@ -73,21 +72,10 @@ struct GalleryView: View {
         }
         .onChange(of: libraryStore.galleryItems) { _, _ in syncModel() }
         .onChange(of: catalog.genreNames) { _, _ in syncModel() }
-        .onChange(of: tour.isRunning) { _, _ in syncModel() }
-    }
-
-    /// Ce que la frise range.
-    ///
-    /// Pendant la prise en main, ce sont les films d'exemple : un compte qui
-    /// vient d'être créé a une galerie vide, et présenter « votre collection »
-    /// devant un état vide n'explique rien du tout. Ces entrées ne sont écrites
-    /// nulle part — la visite ne laisse aucune trace dans la bibliothèque.
-    private var displayedEntries: [GalleryEntry] {
-        tour.isRunning ? OnboardingShowcase.gallery : libraryStore.galleryItems
     }
 
     private func syncModel() {
-        model.update(entries: displayedEntries, genreNames: catalog.genreNames)
+        model.update(entries: libraryStore.galleryItems, genreNames: catalog.genreNames)
     }
 
     @ViewBuilder

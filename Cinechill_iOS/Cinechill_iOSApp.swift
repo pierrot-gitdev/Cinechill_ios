@@ -32,14 +32,14 @@ struct Cinechill_iOSApp: App {
     @State private var language = LanguageStore.shared
 
     /// L'ouverture est-elle allée jusqu'au bout. Tenue ici, et non dans `RootView` à qui elle
-    /// appartient pourtant, pour la même raison que la prise en main : changer de langue
+    /// appartient pourtant, pour la même raison que l'onboarding : changer de langue
     /// rebâtit tout l'écran (`.id` plus bas), et rejouer sept secondes d'animation pour un
     /// réglage serait une punition.
     @State private var splashFinished = false
 
-    /// La prise en main. Tenue à la racine, et non dans `MainTabView`, pour une
+    /// L'onboarding. Tenu à la racine, et non dans `MainTabView`, pour une
     /// raison précise : changer de langue rebâtit tout l'écran (`.id` plus bas),
-    /// et une visite en cours ne doit pas repartir de zéro pour autant. L'état
+    /// et un onboarding en cours ne doit pas repartir de zéro pour autant. L'état
     /// de la vue ne survivrait pas ; celui de l'application, si.
     @State private var tour = OnboardingTour()
 

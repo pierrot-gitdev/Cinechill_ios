@@ -15,7 +15,6 @@ struct SwipeDeckView: View {
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(MediaCatalog.self) private var catalog
-    @Environment(OnboardingTour.self) private var tour
     @Environment(DoorStore.self) private var doorStore
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -52,11 +51,6 @@ struct SwipeDeckView: View {
     @State private var isArmed = false
     /// Ramené sur la carte suivante après une décision prise par VoiceOver.
     @AccessibilityFocusState private var isCardFocused: Bool
-    /// La démonstration de la prise en main en est au double tap : le cœur est
-    /// posé sur la carte, qui ne part pas.
-    @State private var isDemoLoving = false
-    /// L'enfoncement de la carte sous les deux taps de la démonstration.
-    @State private var demoPress: CGFloat = 1
     @State private var departing: [DepartingCard] = []
     /// L'accusé de réception du dernier classement. Un seul à la fois : le
     /// suivant remplace le précédent plutôt que de s'empiler, sinon swiper vite
@@ -175,8 +169,8 @@ struct SwipeDeckView: View {
             // L'arrivée sur l'onglet est le seul moment où la planche peut
             // s'ouvrir. Le `.task` de la vue ne suffit pas : l'onglet reste
             // monté une fois quitté, donc il ne se rejoue jamais — et c'est
-            // précisément par une arrivée que la visite guidée se termine,
-            // puisqu'elle dépose ici en se refermant.
+            // précisément par une arrivée que l'onboarding se termine,
+            // puisqu'il dépose ici en se refermant.
             guard tab != 2 else {
                 Task { await openGuideOnFirstVisit() }
                 arrival &+= 1
@@ -190,7 +184,7 @@ struct SwipeDeckView: View {
         // boussole à montrer — et les cinq secondes s'écoulaient dans le vide.
         // L'apparition de la première carte vaut donc arrivée, au même titre
         // qu'un retour sur l'onglet.
-        .onChange(of: displayedCards.isEmpty) { wasEmpty, isEmpty in
+        .onChange(of: model.cards.isEmpty) { wasEmpty, isEmpty in
             guard wasEmpty, !isEmpty else { return }
             arrival &+= 1
         }
@@ -198,8 +192,6 @@ struct SwipeDeckView: View {
         // le suivant : sans ça, deux allers-retours rapides sur l'onglet
         // laisseraient deux comptes à rebours se marcher dessus.
         .task(id: arrival) { await playReminder() }
-        // La prise en main montre les trois gestes sur la carte elle-même.
-        .task(id: isShowingTourDemo) { await playTourDemo() }
         .onDisappear {
             Task { await model.flushPending() }
         }
@@ -211,7 +203,7 @@ struct SwipeDeckView: View {
         HStack(spacing: 14) {
             // L'interrupteur prend la place du compte de session : ce qu'on
             // remplit compte plus que ce qu'on a fait depuis l'ouverture.
-            FormatSwitch(isEnabled: !tour.isRunning)
+            FormatSwitch()
 
             Spacer()
 
@@ -255,7 +247,7 @@ struct SwipeDeckView: View {
     @ViewBuilder
     private var goalLine: some View {
         let door = doorStore.door(for: format)
-        if !door.unlocked, !tour.isRunning, let memory = door.artifact(.memoire) {
+        if !door.unlocked, let memory = door.artifact(.memoire) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(format == .series
@@ -317,7 +309,7 @@ struct SwipeDeckView: View {
             let card = cardSize(in: proxy.size)
 
             ZStack {
-                if displayedCards.isEmpty {
+                if model.cards.isEmpty {
                     placeholderState
                         .padding(.horizontal, 32)
                 } else {
@@ -358,19 +350,9 @@ struct SwipeDeckView: View {
         return CGSize(width: width, height: width * Self.cardRatio)
     }
 
-    /// Les cartes affichées.
-    ///
-    /// Pendant la prise en main, ce sont trois films d'exemple : le deck réel
-    /// arrive par le réseau, et l'étape qui explique les trois gestes ne peut
-    /// pas se jouer devant une roue de chargement ou un message d'erreur. Le
-    /// vrai deck continue de se remplir derrière — il sera prêt à la sortie.
-    private var displayedCards: [SwipeCard] {
-        tour.isRunning ? OnboardingShowcase.deck : model.cards
-    }
-
     private func cardStack(size: CGSize) -> some View {
         // Les deux cartes qu'on voit dépasser sous celle du dessus.
-        let backing = Array(displayedCards.dropFirst().prefix(2))
+        let backing = Array(model.cards.dropFirst().prefix(2))
 
         return ZStack {
             ForEach(Array(backing.enumerated()).reversed(), id: \.element.id) { index, card in
@@ -388,7 +370,7 @@ struct SwipeDeckView: View {
                     .transition(.opacity)
             }
 
-            if let card = displayedCards.first {
+            if let card = model.cards.first {
                 let pivot = SwipeMotion.pivot(for: drag, grabbedHigh: grabbedHigh)
 
                 SwipeCardView(
@@ -400,13 +382,10 @@ struct SwipeDeckView: View {
                     isSynopsisOpen: isSynopsisOpen,
                     parallax: reduceMotion ? .zero : SwipeMotion.parallax(for: drag),
                     showsCompass: (isPressing || showsReminder) && !isSynopsisOpen,
-                    compassEnabled: !isShowingTourDemo,
                     onTap: toggleSynopsis,
                     onDoubleTap: love
                 )
                 .frame(width: size.width, height: size.height)
-                .overlay { if isShowingTourDemo { tourStamp } }
-                .overlay { SwipeLoveBurst(isOn: isDemoLoving) }
                 .overlay {
                     if showsLoveHint {
                         SwipeLoveHint()
@@ -419,7 +398,6 @@ struct SwipeDeckView: View {
                             }
                     }
                 }
-                .scaleEffect(demoPress)
                 .offset(x: drag.width + returnOffset.width, y: drag.height + returnOffset.height)
                 .rotationEffect(.degrees(pivot.angle + returnAngle), anchor: pivot.anchor)
                 // Le geste n'existe pas pour VoiceOver ni Switch Control : les
@@ -456,7 +434,7 @@ struct SwipeDeckView: View {
         // refermer le synopsis se fait à la première image d'un glissement, et
         // un ressort posé à cette hauteur ferait traîner la carte derrière le
         // doigt pendant toute sa détente.
-        .animation(SwipeMotion.advance, value: displayedCards.first?.id)
+        .animation(SwipeMotion.advance, value: model.cards.first?.id)
     }
 
     /// La profondeur d'une carte du dessous, en crans, **avancement du geste
@@ -609,123 +587,6 @@ struct SwipeDeckView: View {
         currentVerdict.map { CGFloat($0.intensity) } ?? 0
     }
 
-    // MARK: - La démonstration de la prise en main
-
-    /// L'étape « Découvrir » de la visite est à l'écran.
-    private var isShowingTourDemo: Bool {
-        tour.step == .decouvrir && selectedTab == 2
-    }
-
-    /// Les gestes, joués sur la carte du dessus au lieu d'être écrits.
-    ///
-    /// La carte penche vers chaque direction jusqu'au seuil, le tampon
-    /// s'allume, puis elle revient au centre. Le tour se termine par le double
-    /// tap : la carte bat deux fois et le cœur s'y pose. **Elle ne part jamais** : rien
-    /// n'est classé, et `commit` n'est jamais appelé. Le mouvement passe par
-    /// `drag`, la même valeur que le doigt : inclinaison, parallaxe et tampon
-    /// sont exactement ceux du vrai geste. Aucune vibration, elles ne partent
-    /// que du geste réel.
-    ///
-    /// Sans danger ici, alors que `SwipeGuideOverlay` a renoncé à animer la
-    /// vraie carte : pendant la visite l'application est inerte, réduite en
-    /// vignette, et la carte est un film d'exemple.
-    private func playTourDemo() async {
-        guard isShowingTourDemo, !reduceMotion else { return }
-        grabbedHigh = true
-        try? await Task.sleep(for: .milliseconds(600))
-
-        while !Task.isCancelled {
-            for direction in [SwipeDirection.right, .left, .up] {
-                let target: CGSize = switch direction {
-                case .right: CGSize(width: Self.sideThreshold + 16, height: 0)
-                case .left: CGSize(width: -(Self.sideThreshold + 16), height: 0)
-                case .up: CGSize(width: 0, height: -(Self.upThreshold + 12))
-                }
-                withAnimation(.easeInOut(duration: 0.55)) { drag = target }
-                try? await Task.sleep(for: .milliseconds(550))
-                guard !Task.isCancelled else { break }
-
-                withAnimation(SwipeMotion.lock) { isArmed = true }
-                try? await Task.sleep(for: .milliseconds(750))
-                guard !Task.isCancelled else { break }
-
-                isArmed = false
-                withAnimation(recenterMotion) { drag = .zero }
-                try? await Task.sleep(for: .milliseconds(600))
-                guard !Task.isCancelled else { break }
-            }
-            guard !Task.isCancelled else { break }
-
-            // Le double tap : deux battements de la carte, le cœur s'y pose,
-            // puis s'efface. La carte reste au centre.
-            for _ in 0 ..< 2 {
-                withAnimation(.easeOut(duration: 0.08)) { demoPress = 0.96 }
-                try? await Task.sleep(for: .milliseconds(90))
-                withAnimation(.spring(response: 0.22, dampingFraction: 0.6)) { demoPress = 1 }
-                try? await Task.sleep(for: .milliseconds(110))
-            }
-            withAnimation(SwipeLoveBurst.pop) { isDemoLoving = true }
-            try? await Task.sleep(for: .milliseconds(1100))
-            withAnimation(.easeOut(duration: 0.25)) { isDemoLoving = false }
-            try? await Task.sleep(for: .milliseconds(700))
-        }
-
-        // L'étape a changé en plein mouvement : la carte revient au centre.
-        isArmed = false
-        isDemoLoving = false
-        demoPress = 1
-        withAnimation(recenterMotion) { drag = .zero }
-    }
-
-    /// Le tampon de la démonstration : les mots « VU », « PAS VU », « À VOIR »,
-    /// posés sur la carte du côté d'où elle part.
-    ///
-    /// Le dessin est celui de `SwipeGuideOverlay` (point plein pour l'acquis,
-    /// creux pour le prévu, liseré à la teinte du verdict), en plus grand : la
-    /// carte est réduite dans la vignette, et les repères de 10 pt de la boussole
-    /// ne s'y lisaient plus.
-    @ViewBuilder
-    private var tourStamp: some View {
-        if let current = currentVerdict {
-            let verdict = current.verdict
-            HStack(spacing: 8) {
-                if verdict.isFilled {
-                    PlanLight(tint: verdict.tint)
-                } else {
-                    PlanLightOutline(tint: verdict.tint)
-                }
-                Text(verdict.label)
-                    .planFont(17, weight: .semibold)
-                    .tracking(2)
-            }
-            .foregroundStyle(verdict.tint)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 9)
-            .background(
-                Ink.ground.opacity(0.92),
-                in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-                    .strokeBorder(verdict.tint.opacity(isArmed ? 1 : 0.7), lineWidth: isArmed ? 1.5 : 1)
-            )
-            .scaleEffect(isArmed ? 1.06 : 1)
-            .padding(18)
-            // « À VOIR » au milieu de la carte, pas en haut : la carte monte, et
-            // son bord haut passe sous l'en-tête de la vignette avec le tampon.
-            // Les deux autres partent de côté, leurs coins hauts restent visibles.
-            .frame(
-                maxWidth: .infinity,
-                maxHeight: .infinity,
-                alignment: verdict == .watchlist ? .center : verdict.alignment
-            )
-            .opacity(min(1, current.intensity * 1.4))
-            .animation(SwipeMotion.lock, value: isArmed)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-        }
-    }
-
     private var currentVerdict: (verdict: SwipeVerdict, intensity: Double)? {
         let translation = drag
         let upward = -translation.height
@@ -823,7 +684,7 @@ struct SwipeDeckView: View {
     /// Une décision prise sans geste (VoiceOver, Switch Control), annoncée
     /// puisque rien ne se voit partir.
     private func accessibleCommit(_ direction: SwipeDirection) {
-        guard !tour.isRunning, let card = model.topCard else { return }
+        guard let card = model.topCard else { return }
         commit(direction, velocity: .zero)
         let outcome = direction.confirmation ?? String(localized: "Il reviendra plus tard", bundle: .app)
         AccessibilityNotification.Announcement("\(card.title). \(outcome)").post()
@@ -914,7 +775,7 @@ struct SwipeDeckView: View {
         guard case .right = direction else { return }
         // Un palier occupe déjà l'écran : deux planches l'une sur l'autre ne
         // se lisent pas, et la saga passe son tour.
-        guard !tour.isRunning, model.celebratedMilestone == nil, goalMilestone == nil else { return }
+        guard model.celebratedMilestone == nil, goalMilestone == nil else { return }
 
         let offer: SagaOffer
         if card.hasSeasonsToOffer {
@@ -990,7 +851,7 @@ struct SwipeDeckView: View {
     /// destination, il ne la remplace pas. Elle marque d'abord un temps sur
     /// place, le cœur posé dessus — voir `DepartingCardView`.
     private func love() {
-        guard !tour.isRunning, drag == .zero, model.topCard != nil else { return }
+        guard drag == .zero, model.topCard != nil else { return }
         // La carte part sous le doigt : le geste de contact, lié à son
         // identité, ne recevrait jamais sa fin, et la boussole resterait
         // allumée sur la suivante.
@@ -1016,7 +877,7 @@ struct SwipeDeckView: View {
         guard seenWithoutLove >= Self.loveHintStreak,
               doubleTapLoves < Self.loveHintRetiredAfter,
               loveHintDay != today,
-              guideSeen, !tour.isRunning
+              guideSeen
         else { return }
         seenWithoutLove = 0
         loveHintDay = today
@@ -1055,7 +916,7 @@ struct SwipeDeckView: View {
     /// Le palier franchi par ce « vu », s'il y en a un, une fois par palier et
     /// par format dans la vie du compte : annuler puis reranger ne le refête pas.
     private func checkGoalMilestone() {
-        guard !memoryIsDone, !tour.isRunning, let target = memoryArtifact?.target, target > 0 else { return }
+        guard !memoryIsDone, let target = memoryArtifact?.target, target > 0 else { return }
         if model.addedThisSession <= 1 || goalBase == nil {
             goalBase = localMemoryCount - model.addedThisSession
         }
@@ -1091,14 +952,11 @@ struct SwipeDeckView: View {
     /// La courte attente laisse la bascule d'onglet se terminer — une planche qui
     /// arrive dans le même mouvement que l'écran se lit comme un raté d'animation.
     ///
-    /// Pendant la visite guidée, elle ne s'ouvre pas : une planche par-dessus
-    /// recouvrirait la carte qu'on est en train de présenter. Elle s'ouvre en
-    /// revanche à la fin, quand la visite dépose sur cet onglet — le cartouche
-    /// vient de nommer « Découvrir », la planche montre comment s'en servir.
-    /// Marquer la planche comme vue au passage de l'étape, ce qui se faisait
-    /// avant, revenait à ne jamais la montrer à personne.
+    /// L'onboarding montre déjà les quatre gestes : il marque la planche comme
+    /// vue en se fermant (`OnboardingTour.finish`), et elle ne s'ouvre alors
+    /// plus d'elle-même. Elle sert aux comptes qui n'ont pas eu d'onboarding.
     private func openGuideOnFirstVisit() async {
-        guard !guideSeen, !tour.isRunning else { return }
+        guard !guideSeen else { return }
         try? await Task.sleep(for: .milliseconds(280))
         guard !guideSeen, selectedTab == 2 else { return }
         guideSeen = true
@@ -1115,25 +973,24 @@ struct SwipeDeckView: View {
 
     /// Le rappel des trois issues : cinq secondes à l'arrivée, puis il s'efface.
     ///
-    /// La planche des gestes ne s'ouvre qu'une fois dans une vie, et le
-    /// cartouche de la visite guidée non plus. Ce rappel-ci revient à chaque
+    /// La planche des gestes ne s'ouvre qu'une fois dans une vie, et
+    /// l'onboarding non plus. Ce rappel-ci revient à chaque
     /// visite parce qu'il ne coûte rien : il ne demande aucun geste, ne
     /// recouvre pas la carte et part tout seul. Il tient la même place que la
     /// boussole du contact, si bien qu'on ne lit jamais deux dispositifs pour
     /// la même chose.
     ///
-    /// Il se tait pendant la visite guidée et derrière la planche, qui disent
-    /// déjà les trois gestes, et il laisse la bascule d'onglet se terminer :
+    /// Il se tait derrière la planche, qui dit déjà les gestes, et il laisse
+    /// la bascule d'onglet se terminer :
     /// un rappel qui arrive dans le même mouvement que l'écran se lit comme un
     /// raté d'animation.
     private func playReminder() async {
-        guard !tour.isRunning else { return }
         try? await Task.sleep(for: .milliseconds(420))
-        guard !showGuide, !tour.isRunning, selectedTab == 2 else { return }
+        guard !showGuide, selectedTab == 2 else { return }
 
         // Sans carte de tête, la boussole n'a aucun support : mieux vaut ne
         // rien jouer que consommer le rappel à vide.
-        guard !displayedCards.isEmpty else { return }
+        guard !model.cards.isEmpty else { return }
 
         withAnimation(SwipeMotion.unfold) { showsReminder = true }
         try? await Task.sleep(for: .seconds(5))

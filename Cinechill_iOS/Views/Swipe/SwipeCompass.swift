@@ -17,8 +17,8 @@ import SwiftUI
 /// c'est la carte qui réagit, pas une quatrième étiquette.
 ///
 /// Elle n'apparaît qu'au contact ou à l'arrivée sur l'écran, jamais en
-/// permanence : la planche des gestes s'ouvre une fois dans une vie et le
-/// cartouche de la visite guidée aussi, restait le trou entre les deux. Elle ne
+/// permanence : la planche des gestes s'ouvre une fois dans une vie et
+/// l'onboarding aussi, restait le trou entre les deux. Elle ne
 /// demande aucun geste, ne recouvre pas la carte et part toute seule.
 struct SwipeCompass: View {
     /// Le verdict que le geste en cours désigne, s'il y en a un.

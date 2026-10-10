@@ -21,11 +21,6 @@ import SwiftUI
 struct CineMatchHomeView: View {
     let viewModel: CineMatchViewModel
     let onProfileTap: () -> Void
-    /// `false` dans la vignette de la prise en main : réduit, le bandeau ne se
-    /// lit plus et encombre le haut de la pièce. La télé monte à sa place.
-    var showsScenario = true
-    /// L'interrupteur Films · Séries sous l'en-tête, absent de la prise en main.
-    var showsFormatSwitch = true
 
     private var isSeries: Bool { viewModel.format == .series }
 
@@ -62,8 +57,8 @@ struct CineMatchHomeView: View {
     /// remontait sous l'en-tête de toute la hauteur de la barre d'état.
     ///
     /// Pas l'espace global non plus : il tient compte des transformations des
-    /// parents. Dans la vignette de la prise en main, l'app est réduite, l'écart
-    /// mesuré l'était d'autant, et le bandeau repassait sous l'en-tête.
+    /// parents : une échelle posée plus haut réduirait l'écart mesuré d'autant,
+    /// et le bandeau repasserait sous l'en-tête.
     @State private var headerBottom: CGFloat = SalonGeometry.typicalChromeBottom
     @State private var stripHeight: CGFloat = SalonGeometry.typicalStripHeight
 
@@ -76,7 +71,7 @@ struct CineMatchHomeView: View {
                 width: proxy.size.width,
                 height: proxy.size.height,
                 chromeBottom: chromeBottom,
-                stripHeight: showsScenario ? stripHeight : 0
+                stripHeight: stripHeight
             )
             let stripWidth = max(0, proxy.size.width - 2 * Metrics.margin)
 
@@ -85,16 +80,14 @@ struct CineMatchHomeView: View {
                     .frame(width: proxy.size.width, height: proxy.size.height)
                     .accessibilityHidden(true)
 
-                if showsScenario {
-                    scenarioStrip(width: stripWidth)
-                        .frame(width: stripWidth)
-                        .onGeometryChange(for: CGFloat.self) { geometry in
-                            geometry.size.height
-                        } action: { height in
-                            stripHeight = height
-                        }
-                        .offset(x: Metrics.margin, y: chromeBottom + 6)
-                }
+                scenarioStrip(width: stripWidth)
+                    .frame(width: stripWidth)
+                    .onGeometryChange(for: CGFloat.self) { geometry in
+                        geometry.size.height
+                    } action: { height in
+                        stripHeight = height
+                    }
+                    .offset(x: Metrics.margin, y: chromeBottom + 6)
 
                 tvScreen(room)
                     .frame(width: room.screenWidth, height: room.screenHeight)
@@ -112,13 +105,11 @@ struct CineMatchHomeView: View {
                     title: String(localized: "CinéMatch", bundle: .app),
                     onProfileTap: onProfileTap
                 )
-                if showsFormatSwitch {
-                    FormatSwitch(isEnabled: pendingEntry == nil)
-                        .padding(.horizontal, Metrics.margin)
-                        // Détaché du filet de l'en-tête, comme dans Découvrir.
-                        .padding(.top, 12)
-                        .padding(.bottom, 6)
-                }
+                FormatSwitch(isEnabled: pendingEntry == nil)
+                    .padding(.horizontal, Metrics.margin)
+                    // Détaché du filet de l'en-tête, comme dans Découvrir.
+                    .padding(.top, 12)
+                    .padding(.bottom, 6)
             }
             .onGeometryChange(for: CGFloat.self) { geometry in
                 geometry.frame(in: .named(Self.space)).maxY

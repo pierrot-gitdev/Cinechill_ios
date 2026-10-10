@@ -58,9 +58,6 @@ struct CineMatchGateView: View {
     /// Une célébration d'artéfact occupe l'écran : la porte attend son tour
     /// plutôt que de jouer son ouverture derrière une planche.
     var isCelebrating = false
-    /// L'interrupteur Films · Séries sous l'en-tête. Absent de la prise en
-    /// main, qui montre la porte sans la servir.
-    var showsFormatSwitch = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var detailArtifact: DoorArtifactKey?
@@ -111,14 +108,12 @@ struct CineMatchGateView: View {
                     title: String(localized: "CinéMatch", bundle: .app),
                     onProfileTap: onProfileTap
                 )
-                if showsFormatSwitch {
-                    FormatSwitch(isEnabled: !isOpening)
-                        .padding(.horizontal, Metrics.margin)
-                        // Détaché du filet de l'en-tête, comme dans Découvrir.
-                        .padding(.top, 12)
-                        .padding(.bottom, 6)
-                        .opacity(1 - openProgress)
-                }
+                FormatSwitch(isEnabled: !isOpening)
+                    .padding(.horizontal, Metrics.margin)
+                    // Détaché du filet de l'en-tête, comme dans Découvrir.
+                    .padding(.top, 12)
+                    .padding(.bottom, 6)
+                    .opacity(1 - openProgress)
             }
             .onGeometryChange(for: CGFloat.self) { geometry in
                 geometry.frame(in: .global).maxY

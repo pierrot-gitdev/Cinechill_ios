@@ -76,18 +76,12 @@ final class WatchlistViewModel {
 
     // MARK: - Entrées
 
-    /// - Parameter enrich: `false` pendant la prise en main. Les films
-    ///   d'exemple sont rangés tout de suite et ne vont pas chercher leurs
-    ///   durées : une réponse du serveur arrivant pendant l'étape réordonnait la
-    ///   liste sous les yeux.
     func update(
         entries: [WatchlistEntry],
         preferredPlatformIDs: Set<String>,
-        platforms: [StreamingPlatform],
-        enrich: Bool = true
+        platforms: [StreamingPlatform]
     ) async {
-        guard prepare(entries: entries, preferredPlatformIDs: preferredPlatformIDs, platforms: platforms),
-              enrich else { return }
+        guard prepare(entries: entries, preferredPlatformIDs: preferredPlatformIDs, platforms: platforms) else { return }
         await enrichMissing()
     }
 

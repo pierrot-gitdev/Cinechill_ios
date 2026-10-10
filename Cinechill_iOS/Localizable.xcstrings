@@ -1189,6 +1189,86 @@
         }
       }
     },
+    "100 films vus pour ouvrir CinéMatch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "100 movies seen to open CinéMatch"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "100 films vus pour ouvrir CinéMatch"
+          }
+        }
+      }
+    },
+    "Animation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animation"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animation"
+          }
+        }
+      }
+    },
+    "Avant ton premier CinéMatch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Before your first CinéMatch"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avant ton premier CinéMatch"
+          }
+        }
+      }
+    },
+    "C'est parti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Let's go"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C'est parti"
+          }
+        }
+      }
+    },
+    "Cinechill choisit d'après les films que tu as vus. CinéMatch s'ouvre quand ta galerie en compte 100." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cinechill picks based on the movies you've seen. CinéMatch opens once your gallery has 100."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cinechill choisit d'après les films que tu as vus. CinéMatch s'ouvre quand ta galerie en compte 100."
+          }
+        }
+      }
+    },
     "Compare des films que tu as vus, %lld fois. Ça prend deux minutes, et CinéMatch s'ouvre juste après." : {
       "localizations" : {
         "en" : {
@@ -1217,6 +1297,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Compare des séries que tu as vues, %lld fois. Ça prend deux minutes, et CinéMatch des séries s'ouvre juste après."
+          }
+        }
+      }
+    },
+    "D'abord, Cinechill doit connaître tes goûts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First, Cinechill needs to know your taste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "D'abord, Cinechill doit connaître tes goûts."
           }
         }
       }
@@ -1429,6 +1525,70 @@
         }
       }
     },
+    "Glisse à droite" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe right"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glisse à droite"
+          }
+        }
+      }
+    },
+    "Glisse à gauche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe left"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glisse à gauche"
+          }
+        }
+      }
+    },
+    "Glisse vers le haut" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe up"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glisse vers le haut"
+          }
+        }
+      }
+    },
+    "Il devrait te plaire." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You should like it."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il devrait te plaire."
+          }
+        }
+      }
+    },
     "Il te propose le film de ce soir, d'après tes goûts." : {
       "localizations" : {
         "en" : {
@@ -1541,6 +1701,22 @@
         }
       }
     },
+    "Le film de ce soir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tonight's movie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le film de ce soir"
+          }
+        }
+      }
+    },
     "Le moins aimé" : {
       "localizations" : {
         "en" : {
@@ -1605,6 +1781,22 @@
         }
       }
     },
+    "Ne laisse plus ton plat refroidir pendant que tu choisis un film, en 60 sec Cinechill te propose la pépite que tu cherches." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop letting your dinner go cold while you pick a movie: in 60 seconds, Cinechill finds the gem you're looking for."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne laisse plus ton plat refroidir pendant que tu choisis un film, en 60 sec Cinechill te propose la pépite que tu cherches."
+          }
+        }
+      }
+    },
     "Nouveau" : {
       "localizations" : {
         "en" : {
@@ -1665,6 +1857,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On n'a pas d'autre série à te proposer ce soir."
+          }
+        }
+      }
+    },
+    "On ne te propose que ce que tu peux regarder." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We only suggest what you can actually watch."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On ne te propose que ce que tu peux regarder."
           }
         }
       }
@@ -4357,22 +4565,6 @@
         }
       }
     },
-    "CinéMatch se débloque" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CinéMatch needs unlocking"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CinéMatch se débloque"
-          }
-        }
-      }
-    },
     "CinéMatch verrouillé, %lld étape sur 5 validée" : {
       "localizations" : {
         "en" : {
@@ -4421,22 +4613,6 @@
         }
       }
     },
-    "Coche celles que tu as : on ne te proposera que des films disponibles dessus." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tick the ones you have: we'll only suggest movies available on them."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coche celles que tu as : on ne te proposera que des films disponibles dessus."
-          }
-        }
-      }
-    },
     "Cœur d'Acier" : {
       "localizations" : {
         "en" : {
@@ -4481,38 +4657,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Comédie"
-          }
-        }
-      }
-    },
-    "Commence par ajouter les films que tu as vus : c'est la première étape pour débloquer CinéMatch." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start by adding the movies you've watched: it's the first step to unlock CinéMatch."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Commence par ajouter les films que tu as vus : c'est la première étape pour débloquer CinéMatch."
-          }
-        }
-      }
-    },
-    "Commencer" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Commencer"
           }
         }
       }
@@ -5075,22 +5219,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Découverte"
-          }
-        }
-      }
-    },
-    "Les films au cinéma, les plus populaires du moment et nos suggestions d'après tes goûts." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What's in theaters, what's popular right now, and our picks based on your taste."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les films au cinéma, les plus populaires du moment et nos suggestions d'après tes goûts."
           }
         }
       }
@@ -6935,6 +7063,22 @@
         }
       }
     },
+    "On te montre des films un par un. Tu nous dis lesquels tu as vus." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We show you movies one at a time. You tell us which ones you've seen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On te montre des films un par un. Tu nous dis lesquels tu as vus."
+          }
+        }
+      }
+    },
     "Ouvrir CinéMatch" : {
       "localizations" : {
         "en" : {
@@ -7027,6 +7171,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Préféré"
+          }
+        }
+      }
+    },
+    "Progression" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progress"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progression"
           }
         }
       }
@@ -7239,6 +7399,38 @@
         }
       }
     },
+    "Swipe pour remplir ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe to fill your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe pour remplir ta galerie."
+          }
+        }
+      }
+    },
+    "Ton film du soir, **en une minute.**" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tonight's movie, **in one minute.**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton film du soir, **en une minute.**"
+          }
+        }
+      }
+    },
     "Touche deux fois l'affiche." : {
       "localizations" : {
         "en" : {
@@ -7251,6 +7443,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Touche deux fois l'affiche."
+          }
+        }
+      }
+    },
+    "Trouve ton film avec Cinechill." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find your movie with Cinechill."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve ton film avec Cinechill."
+          }
+        }
+      }
+    },
+    "Tu auras ensuite quatre étapes plus courtes à valider." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Then you'll have four shorter steps to complete."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu auras ensuite quatre étapes plus courtes à valider."
+          }
+        }
+      }
+    },
+    "Tu l'as adoré" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You loved it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu l'as adoré"
           }
         }
       }
@@ -7303,6 +7543,22 @@
         }
       }
     },
+    "Tu ne l'as pas vu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You haven't seen it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu ne l'as pas vu"
+          }
+        }
+      }
+    },
     "Tu ne pourras plus le changer ensuite." : {
       "localizations" : {
         "en" : {
@@ -7347,22 +7603,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il reviendra plus tard"
-          }
-        }
-      }
-    },
-    "Il s'ouvre après quelques étapes, comme ajouter des films vus à ta galerie." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "It opens after a few steps, like adding movies you've watched to your gallery."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il s'ouvre après quelques étapes, comme ajouter des films vus à ta galerie."
           }
         }
       }
@@ -7587,22 +7827,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Inception"
-          }
-        }
-      }
-    },
-    "Indique les films que tu as vus et ajoute ceux que tu veux voir." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mark the movies you've watched and add the ones you want to see."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Indique les films que tu as vus et ajoute ceux que tu veux voir."
           }
         }
       }
@@ -7927,22 +8151,6 @@
         }
       }
     },
-    "L'accueil" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Home"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'accueil"
-          }
-        }
-      }
-    },
     "L'envie d'en voir plus tout de suite" : {
       "localizations" : {
         "en" : {
@@ -8067,22 +8275,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La connexion Apple a échoué. Vérifie que tu es connecté à iCloud sur cet appareil."
-          }
-        }
-      }
-    },
-    "La liste des films à regarder" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your list of movies to watch"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La liste des films à regarder"
           }
         }
       }
@@ -8947,38 +9139,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Marathon"
-          }
-        }
-      }
-    },
-    "Marre de perdre 30 min à trouver un film ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tired of losing 30 minutes just picking a movie?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Marre de perdre 30 min à trouver un film ?"
-          }
-        }
-      }
-    },
-    "Marty McFly, 17 ans, est propulsé trente ans en arrière par la machine à voyager dans le temps d'un savant excentrique. Il y croise ses parents adolescents et compromet sans le vouloir leur rencontre." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seventeen-year-old Marty McFly is thrown thirty years into the past by an eccentric scientist's time machine. There he runs into his teenage parents and accidentally jeopardises their first meeting."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Marty McFly, 17 ans, est propulsé trente ans en arrière par la machine à voyager dans le temps d'un savant excentrique. Il y croise ses parents adolescents et compromet sans le vouloir leur rencontre."
           }
         }
       }
@@ -10087,22 +10247,6 @@
         }
       }
     },
-    "Passer la prise en main" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Skip the walkthrough"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Passer la prise en main"
-          }
-        }
-      }
-    },
     "Personne" : {
       "localizations" : {
         "en" : {
@@ -10263,22 +10407,6 @@
         }
       }
     },
-    "Garde ici tous les films que tu veux voir." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keep every movie you want to watch here."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Garde ici tous les films que tu veux voir."
-          }
-        }
-      }
-    },
     "Plus de films pour l'instant" : {
       "localizations" : {
         "en" : {
@@ -10371,22 +10499,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plus tu ajoutes de séries que tu as vues, mieux on connaît tes goûts."
-          }
-        }
-      }
-    },
-    "Plus tu en ajoutes, mieux Cinechill connaît tes goûts." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The more you add, the better Cinechill knows your taste."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plus tu en ajoutes, mieux Cinechill connaît tes goûts."
           }
         }
       }
@@ -10723,22 +10835,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quelle durée pour un épisode ?"
-          }
-        }
-      }
-    },
-    "Quelles plateformes as-tu ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Which platforms do you have?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quelles plateformes as-tu ?"
           }
         }
       }
@@ -11243,22 +11339,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Replié"
-          }
-        }
-      }
-    },
-    "Réponds à deux questions, compare quelques films que tu as vus, et CinéMatch te propose cinq films pour ce soir." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Answer two questions, compare a few movies you've watched, and CinéMatch suggests five movies for tonight."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réponds à deux questions, compare quelques films que tu as vus, et CinéMatch te propose cinq films pour ce soir."
           }
         }
       }
@@ -12411,22 +12491,6 @@
         }
       }
     },
-    "Suivant" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Next"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suivant"
-          }
-        }
-      }
-    },
     "Suivi" : {
       "localizations" : {
         "en" : {
@@ -12647,22 +12711,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "SUR TES PLATEFORMES"
-          }
-        }
-      }
-    },
-    "Swipe pour remplir ta galerie de films" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swipe to fill your gallery with movies"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swipe pour remplir ta galerie de films"
           }
         }
       }
@@ -13291,22 +13339,6 @@
         }
       }
     },
-    "Tous les films que tu as vus" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Every movie you've watched"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tous les films que tu as vus"
-          }
-        }
-      }
-    },
     "Tout décocher" : {
       "localizations" : {
         "en" : {
@@ -13916,6 +13948,22 @@
         }
       }
     },
+    "Tu regardes sur quelles plateformes ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which platforms do you watch on?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu regardes sur quelles plateformes ?"
+          }
+        }
+      }
+    },
     "Tu retrouveras ta galerie et ta watchlist à la prochaine connexion." : {
       "localizations" : {
         "en" : {
@@ -13976,6 +14024,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu veux en parler tout de suite"
+          }
+        }
+      }
+    },
+    "Tu veux le voir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You want to watch it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu veux le voir"
           }
         }
       }
