@@ -177,6 +177,21 @@ nonisolated struct CineMatchFiveResponse: Equatable, Sendable {
     let films: [CineMatchFilm]
     /// `nil` : rien n'a été élargi.
     let widening: CineMatchWidening?
+    /// La séance écrite côté serveur : un remplacement s'y raccroche.
+    var sessionID: String? = nil
+}
+
+/// Remplacer les films déjà vus d'une proposition, en un seul calcul.
+///
+/// On peut avoir vu plusieurs des cinq : chacun se marque d'abord, sans rien
+/// recalculer, et le calcul part une fois, pour tous. Les films gardés restent
+/// à leur place ; le serveur ne renvoie que les remplaçants, un par film vu.
+nonisolated struct CineMatchReplacement: Equatable, Sendable {
+    let sessionID: String?
+    /// Les films restés dans la proposition : ils ne doivent pas revenir.
+    let keepIDs: [Int]
+    /// Les films déjà vus, à remplacer.
+    let seenIDs: [Int]
 }
 
 nonisolated enum CineMatchExposureKind: String, Sendable {

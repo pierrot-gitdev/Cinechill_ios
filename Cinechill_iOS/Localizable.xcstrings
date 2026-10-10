@@ -129,6 +129,38 @@
         }
       }
     },
+    "%lld films déjà vus sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld movies already seen out of %2$lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld films déjà vus sur %lld"
+          }
+        }
+      }
+    },
+    "%lld films remplacés. Ceux que tu as vus sont dans ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld movies replaced. The ones you've seen are in your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld films remplacés. Ceux que tu as vus sont dans ta galerie."
+          }
+        }
+      }
+    },
     "%lld films vus sur %lld." : {
       "localizations" : {
         "en" : {
@@ -141,6 +173,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld films vus sur %lld."
+          }
+        }
+      }
+    },
+    "%lld séries déjà vues sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld shows already seen out of %2$lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld séries déjà vues sur %lld"
+          }
+        }
+      }
+    },
+    "%lld séries remplacées. Celles que tu as vues sont dans ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld shows replaced. The ones you've seen are in your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld séries remplacées. Celles que tu as vues sont dans ta galerie."
           }
         }
       }
@@ -1061,6 +1125,70 @@
         }
       }
     },
+    "1 film déjà vu sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 movie already seen out of %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 film déjà vu sur %lld"
+          }
+        }
+      }
+    },
+    "1 film remplacé. Celui que tu as vu est dans ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 movie replaced. The one you've seen is in your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 film remplacé. Celui que tu as vu est dans ta galerie."
+          }
+        }
+      }
+    },
+    "1 série déjà vue sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 show already seen out of %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 série déjà vue sur %lld"
+          }
+        }
+      }
+    },
+    "1 série remplacée. Celle que tu as vue est dans ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 show replaced. The one you've seen is in your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 série remplacée. Celle que tu as vue est dans ta galerie."
+          }
+        }
+      }
+    },
     "Compare des films que tu as vus, %lld fois. Ça prend deux minutes, et CinéMatch s'ouvre juste après." : {
       "localizations" : {
         "en" : {
@@ -1089,6 +1217,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Compare des séries que tu as vues, %lld fois. Ça prend deux minutes, et CinéMatch des séries s'ouvre juste après."
+          }
+        }
+      }
+    },
+    "déjà vu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "already seen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "déjà vu"
+          }
+        }
+      }
+    },
+    "Déjà vu · coup de cœur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already seen · Favorite"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déjà vu · coup de cœur"
           }
         }
       }
@@ -1253,6 +1413,22 @@
         }
       }
     },
+    "Film suivant à droite" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next movie on the right"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Film suivant à droite"
+          }
+        }
+      }
+    },
     "Il te propose le film de ce soir, d'après tes goûts." : {
       "localizations" : {
         "en" : {
@@ -1281,6 +1457,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il te propose une série à commencer, d'après tes goûts."
+          }
+        }
+      }
+    },
+    "Je l'ai déjà vu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I've already seen it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je l'ai déjà vu"
+          }
+        }
+      }
+    },
+    "Je l'ai déjà vue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I've already seen it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je l'ai déjà vue"
+          }
+        }
+      }
+    },
+    "Je ne l'ai pas vu, en fait" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actually, I haven't seen it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je ne l'ai pas vu, en fait"
+          }
+        }
+      }
+    },
+    "Je ne l'ai pas vue, en fait" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actually, I haven't seen it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je ne l'ai pas vue, en fait"
           }
         }
       }
@@ -1317,6 +1557,38 @@
         }
       }
     },
+    "Le remplacement n'a pas abouti. Réessaie dans un instant." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The replacement didn't go through. Try again in a moment."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le remplacement n'a pas abouti. Réessaie dans un instant."
+          }
+        }
+      }
+    },
+    "Les remplacer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace them"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les remplacer"
+          }
+        }
+      }
+    },
     "Moins aimé" : {
       "localizations" : {
         "en" : {
@@ -1329,6 +1601,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Moins aimé"
+          }
+        }
+      }
+    },
+    "Nouveau" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau"
+          }
+        }
+      }
+    },
+    "On cherche…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searching…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On cherche…"
+          }
+        }
+      }
+    },
+    "On n'a pas d'autre film à te proposer ce soir." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We have no other movie to suggest tonight."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On n'a pas d'autre film à te proposer ce soir."
+          }
+        }
+      }
+    },
+    "On n'a pas d'autre série à te proposer ce soir." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We have no other show to suggest tonight."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On n'a pas d'autre série à te proposer ce soir."
           }
         }
       }
@@ -6791,6 +7127,86 @@
         }
       }
     },
+    "Remplacer ce film" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace this movie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remplacer ce film"
+          }
+        }
+      }
+    },
+    "Remplacer ces %lld films" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace these %lld movies"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remplacer ces %lld films"
+          }
+        }
+      }
+    },
+    "Remplacer ces %lld séries" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace these %lld shows"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remplacer ces %lld séries"
+          }
+        }
+      }
+    },
+    "Remplacer cette série" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace this show"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remplacer cette série"
+          }
+        }
+      }
+    },
+    "Série suivante à droite" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next show on the right"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Série suivante à droite"
+          }
+        }
+      }
+    },
     "séries vues" : {
       "localizations" : {
         "en" : {
@@ -6851,6 +7267,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu l'as adoré ?"
+          }
+        }
+      }
+    },
+    "Tu l'as aimé ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Did you like it?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu l'as aimé ?"
+          }
+        }
+      }
+    },
+    "Tu l'as aimée ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Did you like it?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu l'as aimée ?"
           }
         }
       }
@@ -14280,6 +14728,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "VU"
+          }
+        }
+      }
+    },
+    "Vu, sans plus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seen, nothing more"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vu, sans plus"
           }
         }
       }

@@ -86,6 +86,28 @@ final class CineMatchViewModel {
     /// Non nil : la vue affiche `PlanEmptyState` et « Réessayer ».
     private(set) var errorMessage: String?
 
+    // MARK: Déjà vus
+
+    /// Ce qui est arrivé au dernier remplacement des films déjà vus.
+    enum ReplaceOutcome: Equatable {
+        /// `count` films remplacés, `dropped` sans remplaçant (et retirés).
+        case replaced(count: Int, dropped: Int)
+        case failed
+    }
+
+    /// Les films de la proposition marqués « déjà vu », et s'ils ont été
+    /// adorés. Marquer ne recalcule rien : on peut en avoir vu plusieurs, et
+    /// le calcul ne part qu'une fois, pour tous (`replaceSeen`).
+    private(set) var seenFilms: [Int: Bool] = [:]
+    /// Les films arrivés au dernier remplacement.
+    private(set) var freshFilmIDs: Set<Int> = []
+    private(set) var isReplacing = false
+    private(set) var replaceOutcome: ReplaceOutcome?
+    /// La séance écrite par le serveur pour ces cinq films.
+    private var sessionID: String?
+
+    var seenCount: Int { films.filter { seenFilms[$0.id] != nil }.count }
+
     // MARK: La séance (privé)
 
     /// Tous les films montrés en comparaison dans cette séance, remplaçants
@@ -289,6 +311,71 @@ final class CineMatchViewModel {
         galleryAddState = success ? .added : .failed
     }
 
+    // MARK: - Déjà vus
+
+    func markSeen(_ film: CineMatchFilm, loved: Bool) {
+        guard step == .five, films.contains(where: { $0.id == film.id }) else { return }
+        seenFilms[film.id] = loved
+        replaceOutcome = nil
+    }
+
+    func unmarkSeen(_ film: CineMatchFilm) {
+        seenFilms[film.id] = nil
+        replaceOutcome = nil
+    }
+
+    /// Un seul calcul pour tous les films marqués. Les autres gardent leur
+    /// place : on ne perd pas ce qu'on a déjà regardé. Chaque film vu cède la
+    /// sienne à un remplaçant, dans l'ordre ; s'il en manque, la place
+    /// disparaît plutôt que de garder un film qu'on a déjà vu.
+    func replaceSeen() async {
+        guard step == .five, !isReplacing, let want else { return }
+        let seen = films.filter { seenFilms[$0.id] != nil }
+        guard !seen.isEmpty else { return }
+        let keepIDs = films.filter { seenFilms[$0.id] == nil }.map(\.id)
+
+        isReplacing = true
+        replaceOutcome = nil
+        defer { isReplacing = false }
+        do {
+            let response = try await client.five(
+                situation: situation, want: want, energy: energy, engagement: engagement,
+                comparisons: history, hesitations: 0, format: format,
+                replacing: CineMatchReplacement(sessionID: sessionID, keepIDs: keepIDs, seenIDs: seen.map(\.id))
+            )
+            guard !Task.isCancelled, step == .five else { return }
+            var spares = response.films
+                .filter { !keepIDs.contains($0.id) && seenFilms[$0.id] == nil }
+                .makeIterator()
+            var next: [CineMatchFilm] = []
+            var arrived: Set<Int> = []
+            for film in films {
+                if seenFilms[film.id] == nil {
+                    next.append(film)
+                } else if let spare = spares.next() {
+                    next.append(spare)
+                    arrived.insert(spare.id)
+                }
+            }
+            // Plus rien à proposer : on garde la proposition et ses marques,
+            // l'écran le dit.
+            guard !next.isEmpty else {
+                replaceOutcome = .replaced(count: 0, dropped: seen.count)
+                return
+            }
+            let firstArrival = next.firstIndex { arrived.contains($0.id) }
+            films = next
+            seenFilms = [:]
+            freshFilmIDs = arrived
+            replaceOutcome = .replaced(count: arrived.count, dropped: seen.count - arrived.count)
+            currentIndex = firstArrival ?? min(currentIndex, next.count - 1)
+            queueFiveExposure(films[currentIndex].id)
+        } catch {
+            if error is CancellationError || Task.isCancelled { return }
+            replaceOutcome = .failed
+        }
+    }
+
     /// Conclusion, proposition du jour ou erreur → accueil. Quitter une
     /// proposition ou des questions sans erreur compte comme une hésitation ;
     /// sortir d'une erreur ou d'une conclusion, non.
@@ -380,7 +467,7 @@ final class CineMatchViewModel {
         do {
             let response = try await client.five(
                 situation: situation, want: want, energy: energy, engagement: engagement,
-                comparisons: history, hesitations: hesitations, format: format
+                comparisons: history, hesitations: hesitations, format: format, replacing: nil
             )
             guard !Task.isCancelled else { return }
             guard !response.films.isEmpty else {
@@ -389,6 +476,10 @@ final class CineMatchViewModel {
             }
             hesitations = 0
             films = response.films
+            sessionID = response.sessionID
+            seenFilms = [:]
+            freshFilmIDs = []
+            replaceOutcome = nil
             widening = response.widening
             currentIndex = 0
             pendingFiveExposure = []
@@ -469,6 +560,10 @@ final class CineMatchViewModel {
         history = []
         errorMessage = nil
         lastFailedAction = nil
+        seenFilms = [:]
+        freshFilmIDs = []
+        replaceOutcome = nil
+        isReplacing = false
     }
 
     private func appendShown(_ ids: [Int]) {

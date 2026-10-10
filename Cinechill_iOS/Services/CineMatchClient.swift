@@ -41,10 +41,11 @@ protocol CineMatchFetching: Sendable {
     func comparisonRound(round: Int, shownIDs: [Int], history: [CineMatchComparison], forDoor: Bool,
                          format: MediaFormat) async throws -> CineMatchComparisonRound
     /// `energy` pour un film, `engagement` pour une série : l'une remplace
-    /// l'autre, jamais les deux.
+    /// l'autre, jamais les deux. Avec `replacing`, le serveur ne renvoie que
+    /// les remplaçants des films déjà vus.
     func five(situation: CineMatchSituation, want: CineMatchWant, energy: CineMatchEnergy?,
               engagement: CineMatchEngagement?, comparisons: [CineMatchComparison], hesitations: Int,
-              format: MediaFormat) async throws -> CineMatchFiveResponse
+              format: MediaFormat, replacing: CineMatchReplacement?) async throws -> CineMatchFiveResponse
     /// `nil` quand aucun film ne correspond au scénario.
     func daily(situation: CineMatchSituation, format: MediaFormat) async throws -> CineMatchFilm?
     func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int], format: MediaFormat) async throws
@@ -71,7 +72,7 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
 
     func five(situation: CineMatchSituation, want: CineMatchWant, energy: CineMatchEnergy?,
               engagement: CineMatchEngagement?, comparisons: [CineMatchComparison], hesitations: Int,
-              format: MediaFormat) async throws -> CineMatchFiveResponse {
+              format: MediaFormat, replacing: CineMatchReplacement?) async throws -> CineMatchFiveResponse {
         var body: [String: Any] = [
             "situation": Self.payload(for: situation),
             "want": want.rawValue,
@@ -81,6 +82,14 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         ]
         if let energy { body["energy"] = energy.rawValue }
         if let engagement { body["engagement"] = engagement.rawValue }
+        if let replacing {
+            var replace: [String: Any] = [
+                "keepIds": replacing.keepIDs,
+                "seenIds": replacing.seenIDs,
+            ]
+            if let sessionID = replacing.sessionID { replace["sessionId"] = sessionID }
+            body["replace"] = replace
+        }
         let data: Data
         do {
             data = try await post(to: APIEndpoints.cineMatchFive(), body: body)
@@ -92,7 +101,8 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
             films: decoded.films.map(\.film),
             widening: decoded.widened.map {
                 CineMatchWidening(duration: $0.duration ?? false, platforms: $0.platforms ?? false)
-            }
+            },
+            sessionID: decoded.sessionId
         )
     }
 
