@@ -49,6 +49,13 @@ struct SagaSheet: View {
         return false
     }
 
+    /// La liste du deck : les autres films d'un réalisateur, ou des films
+    /// proches. Elle n'est pas une saga, mais elle se coche pareil.
+    private var picks: DeckSheetOffer? {
+        if case .picks(let picks) = offer.source { return picks }
+        return nil
+    }
+
     var body: some View {
         ZStack {
             Ink.ground.ignoresSafeArea()
@@ -72,7 +79,11 @@ struct SagaSheet: View {
     }
 
     private var headerTitle: String {
-        saga?.displayName ?? (isSeries ? offer.title : String(localized: "La saga", bundle: .app))
+        if let picks {
+            if picks.kind == .director, let name = picks.name { return name }
+            return String(localized: "Dans la même veine", bundle: .app)
+        }
+        return saga?.displayName ?? (isSeries ? offer.title : String(localized: "La saga", bundle: .app))
     }
 
     // MARK: - Les opus
@@ -135,7 +146,10 @@ struct SagaSheet: View {
     }
 
     private var introduction: String {
-        isSeries
+        if let picks, picks.kind == .director, let name = picks.name {
+            return String(localized: "\(name) a aussi réalisé ces films. Coche ceux que tu as vus, ils entrent dans ta galerie.", bundle: .app)
+        }
+        return isSeries
             ? String(localized: "Tu as vu la saison 1. Coche celles que tu as vues aussi, elles entrent dans ta galerie.", bundle: .app)
             : String(localized: "Tu as vu « \(offer.title) ». Coche ceux que tu as vus aussi, ils entrent dans ta galerie.", bundle: .app)
     }
@@ -340,10 +354,14 @@ struct SagaSheet: View {
             Spacer(minLength: 0)
             PlanEmptyState(
                 icon: .hall,
-                title: isSeries
+                title: picks != nil
+                    ? String(localized: "Tu les as tous", bundle: .app)
+                    : isSeries
                     ? String(localized: "Tu as toutes ses saisons", bundle: .app)
                     : String(localized: "Tu as toute la saga", bundle: .app),
-                message: isSeries
+                message: picks != nil
+                    ? String(localized: "Ils sont tous dans ta galerie.", bundle: .app)
+                    : isSeries
                     ? String(localized: "Elles sont toutes dans ta galerie.", bundle: .app)
                     : String(localized: "Elle est entière dans ta galerie.", bundle: .app),
                 actionTitle: String(localized: "Fermer", bundle: .app),
@@ -365,6 +383,8 @@ struct SagaSheet: View {
                 saga = try await client.saga(id: id)
             case .series(let id):
                 saga = sagaOfSeasons(try await tvClient.series(id: id))
+            case .picks(let picks):
+                saga = Saga(id: 0, name: picks.name ?? "", parts: picks.cards.map(SagaPart.init(card:)))
             }
         } catch is CancellationError {
             return
@@ -382,8 +402,16 @@ struct SagaSheet: View {
         isSaving = true
         errorMessage = nil
 
-        let decisions = seen.map { PendingSwipe(card: $0.swipeCard, decision: .seen) }
-            + skipped.map { PendingSwipe(card: $0.swipeCard, decision: .skipped) }
+        // Une liste du deck n'est pas une saga : « je n'en ai vu aucun » n'y
+        // vaut qu'un demi-« pas vu », appris par le serveur sans rien écarter.
+        // Ce n'est pas la suite d'un film qu'on vient de voir, on a pu passer
+        // à côté de l'un d'eux en lisant vite.
+        let isPicks = picks != nil
+        let decisions = seen.map {
+            PendingSwipe(card: card(for: $0), decision: .seen, via: isPicks ? .sheet : .saga)
+        } + skipped.map {
+            PendingSwipe(card: card(for: $0), decision: .skipped, via: isPicks ? .sheet : .saga, soft: isPicks)
+        }
 
         Task {
             do {
@@ -402,6 +430,12 @@ struct SagaSheet: View {
                     ?? error.localizedDescription
             }
         }
+    }
+
+    /// La carte d'origine d'une ligne quand la liste vient du deck : elle porte
+    /// ce que le serveur a dit du film en la servant, et le journal le relit.
+    private func card(for part: SagaPart) -> SwipeCard {
+        picks?.cards.first(where: { $0.id == part.libraryID }) ?? part.swipeCard
     }
 
     /// Une série est une saga de saisons : ses saisons sorties, chacune comme
@@ -432,6 +466,9 @@ struct SagaSheet: View {
 enum SagaSource: Hashable {
     case collection(Int)
     case series(Int)
+    /// Une liste servie par le deck après un « vu » : réalisateur ou films
+    /// proches.
+    case picks(DeckSheetOffer)
 }
 
 /// Ce qu'il faut pour ouvrir la feuille, et qui sert de déclencheur à
@@ -450,6 +487,7 @@ struct SagaOffer: Identifiable, Equatable {
         switch source {
         case .collection(let id): "collection-\(id)"
         case .series(let id): "series-\(id)"
+        case .picks(let picks): "picks-\(picks.kind.rawValue)-\(originID)"
         }
     }
 }

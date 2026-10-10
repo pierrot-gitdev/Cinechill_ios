@@ -85,3 +85,20 @@ nonisolated struct Saga: Hashable, Sendable {
         return trimmed.isEmpty ? name : trimmed
     }
 }
+
+extension SagaPart {
+    /// Une carte du deck, en ligne de feuille. Dans une extension, pour que
+    /// le struct garde son initialiseur membre à membre.
+    init(card: SwipeCard) {
+        self.init(
+            tmdbId: card.tmdbId,
+            title: card.title,
+            posterPath: card.posterPath,
+            overview: card.overview,
+            voteAverage: card.voteAverage,
+            voteCount: card.voteCount,
+            genreIds: card.genreIds,
+            releaseDate: card.releaseDate
+        )
+    }
+}

@@ -97,6 +97,22 @@
         }
       }
     },
+    "%@ a aussi réalisé ces films. Coche ceux que tu as vus, ils entrent dans ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ also directed these movies. Tick the ones you've seen, they'll join your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ a aussi réalisé ces films. Coche ceux que tu as vus, ils entrent dans ta galerie."
+          }
+        }
+      }
+    },
     "%lld étape sur 5" : {
       "localizations" : {
         "en" : {
@@ -1365,6 +1381,22 @@
         }
       }
     },
+    "Dans la même veine" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Along the same lines"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans la même veine"
+          }
+        }
+      }
+    },
     "déjà vu" : {
       "localizations" : {
         "en" : {
@@ -1665,6 +1697,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il te propose une série à commencer, d'après tes goûts."
+          }
+        }
+      }
+    },
+    "Ils sont tous dans ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "They're all in your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ils sont tous dans ta galerie."
           }
         }
       }
@@ -7635,6 +7683,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu l'as aimée ?"
+          }
+        }
+      }
+    },
+    "Tu les as tous" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have them all"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu les as tous"
           }
         }
       }

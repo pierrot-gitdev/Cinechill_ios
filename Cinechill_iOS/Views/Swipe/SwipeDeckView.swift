@@ -160,6 +160,10 @@ struct SwipeDeckView: View {
         .onChange(of: libraryIDs) { _, ids in
             model.syncLibrary(ids)
         }
+        .onChange(of: model.pendingSheet) { _, sheet in
+            guard sheet != nil else { return }
+            presentPendingSheetIfIdle()
+        }
         // L'interrupteur a pu basculer ici ou dans CinéMatch : le deck suit.
         .onChange(of: formatRaw) { _, _ in
             toast = nil
@@ -739,6 +743,9 @@ struct SwipeDeckView: View {
         // elle qui accuse réception, et un toast qui descend pendant qu'elle
         // monte ferait deux accusés pour un geste.
         offerSagaIfAny(for: card, direction: direction)
+        // Une feuille « dans la même veine » arrivée pendant un geste attend
+        // le geste suivant, entre deux cartes.
+        presentPendingSheetIfIdle()
 
         // Après `swipe`, parce que c'est lui qui sait si un palier vient d'être
         // franchi : la célébration plein écran dit déjà que le film est rangé, et
@@ -804,6 +811,28 @@ struct SwipeDeckView: View {
             get: { showGuide || sagaOffer != nil ? nil : model.gridRequest },
             set: { if $0 == nil { model.gridRequest = nil } }
         )
+    }
+
+    /// La feuille des autres films du réalisateur, ou des films proches.
+    ///
+    /// Elle arrive du serveur une seconde après le « vu » qui l'a demandée :
+    /// le doigt peut déjà être sur la carte suivante. Elle ne s'ouvre donc
+    /// qu'entre deux gestes, et se perd si une autre feuille ou un palier
+    /// occupe déjà l'écran : elle n'est qu'un raccourci.
+    private func presentPendingSheetIfIdle() {
+        guard let pending = model.pendingSheet, drag == .zero, !isPressing else { return }
+        model.pendingSheet = nil
+        guard sagaOffer == nil, model.gridRequest == nil, !showGuide,
+              model.celebratedMilestone == nil, goalMilestone == nil else { return }
+        let offer = SagaOffer(
+            source: .picks(pending.offer),
+            originID: pending.originID,
+            title: pending.originTitle
+        )
+        guard !offeredSagas.contains(offer.id) else { return }
+        offeredSagas.insert(offer.id)
+        toast = nil
+        sagaOffer = offer
     }
 
     /// Le retour arrière. La carte rentre par le bord d'où elle est sortie : sans
