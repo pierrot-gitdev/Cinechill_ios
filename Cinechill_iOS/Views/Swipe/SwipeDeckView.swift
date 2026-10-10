@@ -83,6 +83,16 @@ struct SwipeDeckView: View {
     /// l'application.
     @AppStorage("swipe.guideSeen") private var guideSeen = false
 
+    /// Le rappel du coup de cœur. La planche des gestes ne s'ouvre qu'une fois,
+    /// et le double tap est le seul geste qu'on ne devine pas : on le rappelle
+    /// sur la carte à qui range des films vus à la file sans jamais en adorer
+    /// un. Une fois par jour au plus, et plus du tout une fois le geste pris.
+    @AppStorage("swipe.loveHint.doubleTaps") private var doubleTapLoves = 0
+    @AppStorage("swipe.loveHint.day") private var loveHintDay = ""
+    @State private var seenWithoutLove = 0
+    @State private var showsLoveHint = false
+    private static let loveHintStreak = 8
+    private static let loveHintRetiredAfter = 5
 
     /// Le palier de la galerie tant que CinéMatch est fermé.
     @State private var goalMilestone: Int?
@@ -397,6 +407,18 @@ struct SwipeDeckView: View {
                 .frame(width: size.width, height: size.height)
                 .overlay { if isShowingTourDemo { tourStamp } }
                 .overlay { SwipeLoveBurst(isOn: isDemoLoving) }
+                .overlay {
+                    if showsLoveHint {
+                        SwipeLoveHint()
+                            .padding(.horizontal, 16)
+                            .offset(y: -size.height * 0.06)
+                            .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.96)))
+                            .task {
+                                try? await Task.sleep(for: .seconds(5))
+                                withAnimation(.easeOut(duration: 0.2)) { showsLoveHint = false }
+                            }
+                    }
+                }
                 .scaleEffect(demoPress)
                 .offset(x: drag.width + returnOffset.width, y: drag.height + returnOffset.height)
                 .rotationEffect(.degrees(pivot.angle + returnAngle), anchor: pivot.anchor)
@@ -839,6 +861,9 @@ struct SwipeDeckView: View {
         model.swipe(direction, loved: loved)
         if case .right = direction {
             checkGoalMilestone()
+            updateLoveHint(loved: loved)
+        } else if showsLoveHint {
+            withAnimation(.easeOut(duration: 0.15)) { showsLoveHint = false }
         }
 
         // La feuille de saga passe avant le toast : quand elle s'ouvre, c'est
@@ -970,7 +995,37 @@ struct SwipeDeckView: View {
         // identité, ne recevrait jamais sa fin, et la boussole resterait
         // allumée sur la suivante.
         releasePress()
+        doubleTapLoves += 1
         commit(.right, loved: true, velocity: CGSize(width: 240, height: 0))
+    }
+
+    // MARK: - Le rappel du coup de cœur
+
+    /// Après un « vu » : le rappel part si l'on range des films à la file sans
+    /// en adorer un, et s'efface au geste suivant, quel qu'il soit.
+    private func updateLoveHint(loved: Bool) {
+        if showsLoveHint {
+            withAnimation(.easeOut(duration: 0.15)) { showsLoveHint = false }
+        }
+        guard !loved else {
+            seenWithoutLove = 0
+            return
+        }
+        seenWithoutLove += 1
+        let today = Date.now.formatted(.iso8601.year().month().day())
+        guard seenWithoutLove >= Self.loveHintStreak,
+              doubleTapLoves < Self.loveHintRetiredAfter,
+              loveHintDay != today,
+              guideSeen, !tour.isRunning
+        else { return }
+        seenWithoutLove = 0
+        loveHintDay = today
+        // La carte suivante finit d'arriver avant que le rappel s'y pose.
+        Task {
+            try? await Task.sleep(for: .milliseconds(320))
+            guard model.topCard != nil else { return }
+            withAnimation(.easeOut(duration: 0.22)) { showsLoveHint = true }
+        }
     }
 
     // MARK: - Le palier de la galerie

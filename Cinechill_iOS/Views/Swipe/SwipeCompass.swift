@@ -36,6 +36,9 @@ struct SwipeCompass: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             marker(.right)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+            // Le quatrième geste n'a pas de direction : il se pose au centre,
+            // là où on touche, et s'efface dès que la carte part d'un côté.
+            loveMarker
         }
         .padding(16)
         // Purement indicative : la carte porte déjà son indice d'accessibilité,
@@ -82,6 +85,25 @@ struct SwipeCompass: View {
         .opacity(presence(isEngaged: isEngaged))
     }
 
+    private var loveMarker: some View {
+        VStack(spacing: 6) {
+            SwipeDoubleTapGlyph(side: 14)
+            Text("Coup de cœur", bundle: .app).planLabel()
+            Text("Deux touches", bundle: .app)
+                .planFont(11)
+                .foregroundStyle(Ink.ink2)
+        }
+        .foregroundStyle(Ink.ink)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(Ink.ground.opacity(0.82), in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                .strokeBorder(Ink.rule, lineWidth: 1)
+        )
+        .opacity(engaged == nil ? 1 : max(0, 1 - intensity / 0.25))
+    }
+
     private func borderTint(isEngaged: Bool, of direction: SwipeDirection) -> Color {
         guard isEngaged else { return Ink.rule }
         return direction.verdict.tint.opacity(isArmed ? 1 : 0.35 + 0.5 * intensity)
@@ -92,6 +114,38 @@ struct SwipeCompass: View {
     private func presence(isEngaged: Bool) -> Double {
         guard engaged != nil else { return 1 }
         return isEngaged ? 1 : max(0, 1 - intensity / 0.4)
+    }
+}
+
+/// Le rappel du coup de cœur, posé sur l'affiche : une plaque de la boussole,
+/// en plus grand, avec ce qu'on gagne à toucher deux fois. Il ne prend aucun
+/// toucher : le double tap qu'il réclame passe à travers lui.
+struct SwipeLoveHint: View {
+    var body: some View {
+        HStack(spacing: 14) {
+            SwipeDoubleTapGlyph(side: 26)
+                .foregroundStyle(Ink.ink)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Tu l'as adoré ?", bundle: .app)
+                    .planFont(14.5, weight: .medium)
+                    .foregroundStyle(Ink.ink)
+                Text("Touche deux fois l'affiche.", bundle: .app)
+                    .planFont(13)
+                    .foregroundStyle(Ink.ink2)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(Ink.ground.opacity(0.94), in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                .strokeBorder(Ink.ruleSet, lineWidth: 1)
+        )
+        .allowsHitTesting(false)
+        // La carte porte déjà l'indice VoiceOver et l'action « Coup de cœur ».
+        .accessibilityHidden(true)
     }
 }
 

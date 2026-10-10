@@ -1093,6 +1093,22 @@
         }
       }
     },
+    "Deux touches" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Two taps"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deux touches"
+          }
+        }
+      }
+    },
     "Elle s'ouvre quand les 4 autres étapes sont validées." : {
       "localizations" : {
         "en" : {
@@ -6803,6 +6819,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "sur %lld"
+          }
+        }
+      }
+    },
+    "Touche deux fois l'affiche." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the poster twice."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touche deux fois l'affiche."
+          }
+        }
+      }
+    },
+    "Tu l'as adoré ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Did you love it?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu l'as adoré ?"
           }
         }
       }
