@@ -21,30 +21,58 @@ nonisolated enum CineMatchDuration: String, CaseIterable, Codable, Sendable {
     case short, medium, long, any
 }
 
-/// Le scénario de la soirée : ce qui ne change pas d'une question à l'autre.
+/// Le scénario de la soirée : ce qui vaut pour toute la recherche, réglé
+/// depuis « Ce soir ».
 nonisolated struct CineMatchSituation: Equatable, Codable, Sendable {
     var company: CineMatchCompany = .alone
     var duration: CineMatchDuration = .any
     /// Les ids provider TMDB en chaîne (« 8 », « 119 »…). Vide : pas de filtre.
     var platformIDs: [String] = []
+    /// Séries seulement. Le serveur l'ignore pour un film.
+    var engagement: CineMatchEngagement = .any
 }
 
-/// La question 1. `everyone` n'a de sens qu'à plusieurs : le serveur l'ignore
-/// pour quelqu'un seul, et le ViewModel ne la propose pas.
-nonisolated enum CineMatchWant: String, CaseIterable, Sendable {
-    case light, soft, suspense, think, feelgood, everyone
-}
-
-/// La question 2. Elle ne règle que l'exigence et la part de découverte.
-nonisolated enum CineMatchEnergy: String, CaseIterable, Sendable {
-    case low, high
-}
-
-/// La question 2 des séries, à la place de l'énergie : le temps total qu'on
-/// accepte de donner. Une série ne se choisit pas pour une soirée, on choisit
-/// dans quoi s'engager. Le serveur en fait un filtre souple, jamais un mur.
-nonisolated enum CineMatchEngagement: String, CaseIterable, Sendable {
+/// Le temps total qu'on accepte de donner à une série. Une série ne se
+/// choisit pas pour une soirée, on choisit dans quoi s'engager. Le serveur en
+/// fait un filtre souple, jamais un mur.
+///
+/// C'était la seconde question du parcours ; elle vit depuis le lot 1 dans
+/// « Ce soir », à côté de la durée d'un épisode : elle décrit la soirée, pas
+/// l'envie.
+nonisolated enum CineMatchEngagement: String, CaseIterable, Codable, Sendable {
     case mini, season, long, any
+}
+
+/// Les dix styles de l'écran de départ, dans l'ordre du serveur
+/// (`fiche.STYLES`). Un film appartient à chaque style dont il porte un
+/// genre : Heat est à la fois un thriller et un film d'action.
+///
+/// Le style ne retire aucun candidat des cinq : il choisit seulement les six
+/// films qu'on propose comme point de départ.
+nonisolated enum CineMatchStyle: String, CaseIterable, Hashable, Sendable {
+    case thriller, action, scifi, comedy, drama, romance, horror, animation, history, documentary
+}
+
+/// Une tuile de l'écran de départ : un style, le nombre de films de la
+/// galerie qui en sont, et trois de leurs affiches.
+nonisolated struct CineMatchStyleTile: Identifiable, Hashable, Sendable {
+    let style: CineMatchStyle
+    let count: Int
+    let films: [CineMatchGalleryFilm]
+
+    var id: CineMatchStyle { style }
+}
+
+/// Six films d'un style, proposés comme point de départ.
+nonisolated struct CineMatchStarterPage: Equatable, Sendable {
+    let style: CineMatchStyle
+    /// La page rendue : le serveur revient à la première une fois le style
+    /// parcouru.
+    let page: Int
+    let films: [CineMatchGalleryFilm]
+    /// Faux quand le style tient sur une page : « Pas ceux-là » ramènerait
+    /// les mêmes.
+    let hasMore: Bool
 }
 
 /// Où en est l'histoire d'une série proposée. La carte l'écrit toujours :
@@ -53,7 +81,8 @@ nonisolated enum CineMatchSeriesStatus: String, Sendable {
     case ended, returning, canceled
 }
 
-/// Un film de la galerie, montré en affiche pendant les comparaisons.
+/// Un film de la galerie, montré en affiche : dans les comparaisons de la
+/// Porte, sur les tuiles et parmi les films de départ.
 nonisolated struct CineMatchGalleryFilm: Identifiable, Hashable, Sendable {
     let id: Int
     let title: String
@@ -67,8 +96,8 @@ nonisolated struct CineMatchGalleryFilm: Identifiable, Hashable, Sendable {
     }
 }
 
-/// Une comparaison telle que le serveur la prépare : quatre affiches pour la
-/// première question, quatre autres pour la seconde.
+/// Une comparaison de la Porte telle que le serveur la prépare : quatre
+/// affiches pour la première question, quatre autres pour la seconde.
 nonisolated struct CineMatchComparisonRound: Equatable, Sendable {
     /// Le nombre de comparaisons de la séance (0 à 4). Ignoré par la Porte.
     let total: Int
@@ -181,17 +210,21 @@ nonisolated struct CineMatchFiveResponse: Equatable, Sendable {
     var sessionID: String? = nil
 }
 
-/// Remplacer les films déjà vus d'une proposition, en un seul calcul.
+/// Remplacer les films déjà vus ou écartés d'une proposition, en un seul
+/// calcul.
 ///
-/// On peut avoir vu plusieurs des cinq : chacun se marque d'abord, sans rien
-/// recalculer, et le calcul part une fois, pour tous. Les films gardés restent
-/// à leur place ; le serveur ne renvoie que les remplaçants, un par film vu.
+/// On peut en marquer plusieurs des cinq : chacun se marque d'abord, sans
+/// rien recalculer, et le calcul part une fois, pour tous. Les films gardés
+/// restent à leur place ; le serveur ne renvoie que les remplaçants, un par
+/// film marqué.
 nonisolated struct CineMatchReplacement: Equatable, Sendable {
     let sessionID: String?
     /// Les films restés dans la proposition : ils ne doivent pas revenir.
     let keepIDs: [Int]
     /// Les films déjà vus, à remplacer.
     let seenIDs: [Int]
+    /// Les films écartés (« Pas celui-là »), à remplacer.
+    var refusedIDs: [Int] = []
 }
 
 nonisolated enum CineMatchExposureKind: String, Sendable {

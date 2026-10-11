@@ -5,34 +5,42 @@
 
 import Foundation
 
-/// Le parcours CinéMatch v2 : deux questions, jusqu'à quatre comparaisons entre
-/// films vus, puis cinq films. Ou, en un geste, la proposition du jour.
+/// Le parcours CinéMatch : un style, un de ses films comme point de départ,
+/// puis cinq films proches de lui. Ou, en un geste, la proposition du jour.
 ///
-/// Le même parcours sert les séries, sur l'autre profil : la seconde question
-/// y demande l'engagement au lieu de l'énergie, les comparaisons portent sur
-/// des séries vues, et les cinq sont des séries à commencer.
+/// Les deux questions et les quatre comparaisons du soir ont laissé la place
+/// à ces deux touchers (lot 1, octobre 2026). Mesurées, les questions ne
+/// départageaient presque rien. Un film qu'on aime dit d'un coup ce qu'on
+/// cherche ce soir, et le moteur sait trouver ce qui lui ressemble.
+///
+/// Le même parcours sert les séries, sur l'autre profil.
 ///
 /// Le moteur est sur le serveur. Ce ViewModel ne classe rien : il tient la
-/// séance (ce qui a été montré, ce qui a été choisi, combien de fois on a
-/// hésité) et la transmet. Aucune mise à jour optimiste : chaque attente est un
-/// état visible (`isLoadingRound`, `.loadingFive`, `.daily` sans film), et
-/// l'écran ne change qu'une fois la réponse arrivée.
+/// séance (le style, le film de départ, les films marqués parmi les cinq) et
+/// la transmet. Aucune mise à jour optimiste : chaque attente est un état
+/// visible (`isLoadingStyles`, `pendingStyle`, `isLoadingStarters`,
+/// `.loadingFive`, `.daily` sans film), et l'écran ne change qu'une fois la
+/// réponse arrivée.
 @Observable
 @MainActor
 final class CineMatchViewModel {
-    /// `.energy` est la seconde question : l'énergie pour un film,
-    /// l'engagement pour une série.
-    enum Step: Equatable { case home, want, energy, comparison, loadingFive, five, daily, conclusion }
-    enum ComparisonStage: Equatable { case keep, exclude }
+    /// `.style` et `.anchor` sont les deux écrans du départ ; `.loadingFive`
+    /// est l'attente des cinq.
+    enum Step: Equatable { case home, style, anchor, loadingFive, five, daily, conclusion }
     enum GalleryAddState: Equatable { case idle, adding, added, failed }
+
+    /// Ce qu'on a dit d'un des cinq. Un film marqué ne se lance plus : il se
+    /// remplace, avec les autres films marqués, en un seul calcul.
+    enum Mark: Equatable {
+        case seen(loved: Bool)
+        /// « Pas celui-là ».
+        case refused
+    }
 
     private let client: any CineMatchFetching
 
     private(set) var step: Step = .home
     var situation: CineMatchSituation
-    private(set) var want: CineMatchWant?
-    private(set) var energy: CineMatchEnergy?
-    private(set) var engagement: CineMatchEngagement?
     /// Films ou séries : le profil sur lequel le parcours travaille.
     private(set) var format: MediaFormat = .film
     /// La durée retenue pour l'autre format. Une durée de film et une durée
@@ -40,39 +48,42 @@ final class CineMatchViewModel {
     /// la compagnie et les plateformes restent communes.
     private var parkedDurations: [MediaFormat: CineMatchDuration] = [:]
 
-    // MARK: Questionnaire
+    // MARK: Le départ
 
-    /// Le nombre de comparaisons annoncé (0 à 4). Connu à la réponse du
-    /// premier tour : tant qu'il n'est pas arrivé, l'écran reste sur la
-    /// question 2 avec `isLoadingRound`.
-    private(set) var comparisonTotal = 0
-    /// 1-based.
-    private(set) var comparisonRound = 0
-    private(set) var comparisonStage: ComparisonStage = .keep
-    /// Les affiches affichées. Pendant le chargement du tour suivant, celles
-    /// du tour joué restent en place : la vue peut y marquer l'écarté.
-    private(set) var displayedFilms: [CineMatchGalleryFilm] = []
-    /// L'affiche qui vient de prendre la place de la gardée (fondu).
-    private(set) var freshFilmID: Int?
-    private(set) var isLoadingRound = false
+    /// Les styles chargés, par format, et quand. Un format n'emprunte jamais
+    /// les styles de l'autre.
+    private var styleCache: [MediaFormat: StyleCacheEntry] = [:]
+    private(set) var isLoadingStyles = false
+    /// L'accueil prépare les styles en silence (`prepareStyles`).
+    private var isPreparingStyles = false
+    /// Le style touché, le temps que ses films arrivent : sa tuile le dit.
+    private(set) var pendingStyle: CineMatchStyle?
+    /// Le style des films de départ affichés. `nil` après « Peu importe ».
+    private(set) var selectedStyle: CineMatchStyle?
+    /// Les six films de départ affichés.
+    private(set) var starterPage: CineMatchStarterPage?
+    /// « Pas ceux-là » : la page suivante se charge, les six restent en place.
+    private(set) var isLoadingStarters = false
+    /// Le film de départ des cinq. `nil` après « Peu importe ».
+    private(set) var anchor: CineMatchGalleryFilm?
 
-    var progressTotal: Int { 2 + comparisonTotal }
+    /// Les styles du format courant, du plus présent dans la galerie au moins
+    /// présent. Vide tant qu'ils n'ont pas été chargés.
+    var styleTiles: [CineMatchStyleTile] { styleCache[format]?.tiles ?? [] }
 
-    var progressIndex: Int {
-        switch step {
-        case .home: return 0
-        case .want: return 1
-        case .energy: return 2
-        case .comparison: return min(2 + comparisonRound, progressTotal)
-        case .loadingFive, .five, .daily, .conclusion: return progressTotal
-        }
+    /// Les six tuiles de l'écran : les styles les plus présents dans la
+    /// galerie, parmi ceux qui en ont au moins un film. Une galerie qui n'a
+    /// encore aucun film classé les montre tous : le serveur complète alors
+    /// chaque style avec ses films les plus connus.
+    var mainStyles: [CineMatchStyleTile] {
+        let present = styleTiles.filter { $0.count > 0 }
+        return present.isEmpty ? styleTiles : Array(present.prefix(Self.mainStyleCount))
     }
 
-    /// « Un film qui plaît à tout le monde » n'a pas de sens pour quelqu'un seul.
-    var availableWants: [CineMatchWant] {
-        situation.company == .alone
-            ? CineMatchWant.allCases.filter { $0 != .everyone }
-            : CineMatchWant.allCases
+    /// Les styles de « Un autre style », dans le même ordre.
+    var otherStyles: [CineMatchStyleTile] {
+        let main = Set(mainStyles.map(\.style))
+        return styleTiles.filter { !main.contains($0.style) }
     }
 
     // MARK: Résultats
@@ -86,51 +97,59 @@ final class CineMatchViewModel {
     /// Non nil : la vue affiche `PlanEmptyState` et « Réessayer ».
     private(set) var errorMessage: String?
 
-    // MARK: Déjà vus
+    // MARK: Films marqués
 
-    /// Ce qui est arrivé au dernier remplacement des films déjà vus.
+    /// Ce qui est arrivé au dernier remplacement des films marqués.
     enum ReplaceOutcome: Equatable {
         /// `count` films remplacés, `dropped` sans remplaçant (et retirés).
-        case replaced(count: Int, dropped: Int)
+        /// `seen` : combien des films partis étaient déjà vus. Eux seuls sont
+        /// entrés en galerie, et la phrase le dit.
+        case replaced(count: Int, dropped: Int, seen: Int)
         case failed
     }
 
-    /// Les films de la proposition marqués « déjà vu », et s'ils ont été
-    /// adorés. Marquer ne recalcule rien : on peut en avoir vu plusieurs, et
-    /// le calcul ne part qu'une fois, pour tous (`replaceSeen`).
-    private(set) var seenFilms: [Int: Bool] = [:]
+    /// Les films de la proposition marqués « déjà vu » ou « pas celui-là ».
+    /// Marquer ne recalcule rien : on peut en marquer plusieurs, et le calcul
+    /// ne part qu'une fois, pour tous (`replaceMarked`).
+    private(set) var marks: [Int: Mark] = [:]
     /// Les films arrivés au dernier remplacement.
     private(set) var freshFilmIDs: Set<Int> = []
     private(set) var isReplacing = false
     private(set) var replaceOutcome: ReplaceOutcome?
     /// La séance écrite par le serveur pour ces cinq films.
     private var sessionID: String?
+    /// Le film de départ et le style des cinq affichés : un remplacement se
+    /// calcule sur les mêmes.
+    private var fiveAnchorID: Int?
+    private var fiveStyle: CineMatchStyle?
 
-    var seenCount: Int { films.filter { seenFilms[$0.id] != nil }.count }
+    var markedCount: Int { films.filter { marks[$0.id] != nil }.count }
 
     // MARK: La séance (privé)
 
-    /// Tous les films montrés en comparaison dans cette séance, remplaçants
-    /// compris, dans l'ordre d'apparition et sans doublon.
-    private var shownIDs: [Int] = []
-    /// Les comparaisons jouées, dans l'ordre.
-    private var history: [CineMatchComparison] = []
-    /// Les « Annuler » et les retours. Ils survivent à `startGuided` : une
-    /// hésitation n'a de valeur que pour la séance **suivante**, celle qui
-    /// aboutit. Remis à zéro une fois transmis avec les cinq.
-    private var hesitations = 0
-    private var currentRoundData: CineMatchComparisonRound?
-    private(set) var keptFilm: CineMatchGalleryFilm?
-    /// L'instant où les affiches (ou le remplaçant) sont apparues : l'origine
-    /// de la latence d'une comparaison.
-    private var appearedAt = ContinuousClock.now
+    /// Les films de départ montrés depuis qu'on est sur leur écran, toutes
+    /// pages confondues. Ils partent comme affiches vues **en quittant
+    /// l'écran**, pas à leur arrivée : le serveur repousse en fin d'ordre
+    /// les affiches vues ces quatorze derniers jours, et noter la première
+    /// page dès son arrivée aurait décalé l'ordre sous « Pas ceux-là ». Dans
+    /// un petit style, la page suivante aurait ramené les six mêmes.
+    private var visitStarterIDs: [Int] = []
     /// L'exposition des cinq, accumulée carte par carte, envoyée par
     /// `flushExposure`.
     private var pendingFiveExposure: [Int] = []
-    /// La requête en cours. `cancel()` et `backToHome()` l'annulent : sa
+    /// La requête en cours. `goBack()` et `backToHome()` l'annulent : sa
     /// réponse, si elle arrive quand même, ne touche plus à l'écran.
     private var inflight: Task<Void, Never>?
     private var lastFailedAction: (@MainActor () async -> Void)?
+
+    private static let mainStyleCount = 6
+    /// Au-delà, l'écran des styles se recharge : la galerie a pu bouger.
+    private static let styleFreshness: Duration = .seconds(600)
+
+    private struct StyleCacheEntry {
+        let tiles: [CineMatchStyleTile]
+        let loadedAt: ContinuousClock.Instant
+    }
 
     init(client: any CineMatchFetching = BackendCineMatchClient(), platformIDs: [String] = []) {
         self.client = client
@@ -145,16 +164,15 @@ final class CineMatchViewModel {
 
     /// L'interrupteur a basculé. Il ne se montre qu'à l'accueil et devant la
     /// Porte, jamais au milieu d'une recherche : la séance en cours, s'il en
-    /// reste une, est abandonnée sans compter d'hésitation, puisqu'elle ne
-    /// parlait pas du même profil.
+    /// reste une, est abandonnée, puisqu'elle ne parlait pas du même profil.
     func setFormat(_ newFormat: MediaFormat) {
         guard newFormat != format else { return }
+        recordStarterExposure()
         stopInflight()
         resetSession()
         parkedDurations[format] = situation.duration
         situation.duration = parkedDurations[newFormat] ?? .any
         format = newFormat
-        hesitations = 0
         films = []
         currentIndex = 0
         widening = nil
@@ -165,8 +183,20 @@ final class CineMatchViewModel {
         step = .home
     }
 
-    /// Accueil → question 1. Repart d'une séance vierge, hésitations exceptées.
-    func startGuided() {
+    /// L'accueil prépare l'écran des styles pendant qu'on le regarde :
+    /// « Trouver mon film » s'ouvre alors sans attente. Un échec ici ne se
+    /// montre pas ; l'écran des styles réessaiera, et lui le dira.
+    func prepareStyles() async {
+        guard step == .home, !stylesAreFresh, !isPreparingStyles else { return }
+        let format = format
+        isPreparingStyles = true
+        defer { isPreparingStyles = false }
+        guard let tiles = try? await client.styles(format: format) else { return }
+        styleCache[format] = StyleCacheEntry(tiles: tiles, loadedAt: .now)
+    }
+
+    /// Accueil → l'écran des styles. Repart d'une séance vierge.
+    func startGuided() async {
         stopInflight()
         resetSession()
         films = []
@@ -174,98 +204,76 @@ final class CineMatchViewModel {
         widening = nil
         concludedFilm = nil
         galleryAddState = .idle
-        step = .want
+        step = .style
+        guard !stylesAreFresh else { return }
+        // Posé avant la tâche : entre les deux, l'écran des styles se serait
+        // cru chargé et vide.
+        isLoadingStyles = true
+        await perform { [weak self] in await self?.loadStyles() }
     }
 
-    // MARK: - Questions
+    // MARK: - Le départ
 
-    func chooseWant(_ w: CineMatchWant) {
-        guard step == .want else { return }
-        want = w
-        step = .energy
+    /// Un style touché : ses six films arrivent, puis l'écran change.
+    func chooseStyle(_ style: CineMatchStyle) async {
+        guard step == .style, pendingStyle == nil, !isLoadingStyles, errorMessage == nil else { return }
+        pendingStyle = style
+        await perform { [weak self] in await self?.loadStarters(style: style, page: 0) }
     }
 
-    /// Question 2 → premier tour de comparaison, ou directement les cinq quand
-    /// la galerie ne permet aucune comparaison.
-    func chooseEnergy(_ e: CineMatchEnergy) async {
-        guard step == .energy, format == .film, !isLoadingRound else { return }
-        energy = e
-        await perform { [weak self] in await self?.loadRound(1) }
-    }
-
-    /// La question 2 des séries : même suite que l'énergie.
-    func chooseEngagement(_ e: CineMatchEngagement) async {
-        guard step == .energy, format == .series, !isLoadingRound else { return }
-        engagement = e
-        await perform { [weak self] in await self?.loadRound(1) }
-    }
-
-    // MARK: - Comparaisons
-
-    /// Le premier geste : on garde un film, et la seconde question arrive sur
-    /// quatre autres. Garder les trois restants et n'en changer qu'un faisait
-    /// passer le changement de question inaperçu.
-    ///
-    /// Une galerie trop courte pour huit films n'en a pas d'autres : la gardée
-    /// cède alors sa place à son remplaçant (ou disparaît si la galerie est
-    /// épuisée), comme avant.
-    func keep(_ film: CineMatchGalleryFilm) {
-        guard step == .comparison, comparisonStage == .keep, !isLoadingRound,
-              errorMessage == nil,
-              let index = displayedFilms.firstIndex(where: { $0.id == film.id })
+    /// « Pas ceux-là » : les six suivants du même style.
+    func moreStarters() async {
+        guard step == .anchor, !isLoadingStarters, errorMessage == nil,
+              let page = starterPage, page.hasMore
         else { return }
-        keptFilm = film
-        if let others = currentRoundData?.excludeFilms, others.count >= 3 {
-            displayedFilms = others
-            freshFilmID = nil
-            let ids = others.map(\.id)
-            appendShown(ids)
-            recordPosterExposure(ids)
-        } else if let replacement = currentRoundData?.replacements[film.id] {
-            displayedFilms[index] = replacement
-            freshFilmID = replacement.id
-            appendShown([replacement.id])
-            recordPosterExposure([replacement.id])
-        } else {
-            displayedFilms.remove(at: index)
-            freshFilmID = nil
+        await perform { [weak self] in await self?.loadStarters(style: page.style, page: page.page + 1) }
+    }
+
+    /// Un film de départ touché : les cinq se calculent autour de lui.
+    func chooseAnchor(_ film: CineMatchGalleryFilm) async {
+        guard step == .anchor, !isLoadingStarters, errorMessage == nil,
+              starterPage?.films.contains(where: { $0.id == film.id }) == true
+        else { return }
+        recordStarterExposure()
+        anchor = film
+        await perform { [weak self] in await self?.loadFive() }
+    }
+
+    /// « Peu importe, propose-moi » : pas de film de départ, les cinq
+    /// viennent des coups de cœur et de la réception des films.
+    func chooseAnyStyle() async {
+        guard step == .style, pendingStyle == nil, errorMessage == nil else { return }
+        anchor = nil
+        selectedStyle = nil
+        await perform { [weak self] in await self?.loadFive() }
+    }
+
+    /// « Retour » : une marche en arrière. Des cinq (ou de leur attente) aux
+    /// films de départ, des films de départ aux styles, des styles à
+    /// l'accueil. Ce qu'on retrouve est ce qu'on avait laissé : les mêmes six
+    /// films, sans nouveau chargement.
+    func goBack() {
+        switch step {
+        case .loadingFive, .five:
+            stopInflight()
+            flushExposureInBackground()
+            clearFive()
+            errorMessage = nil
+            lastFailedAction = nil
+            let hadAnchor = anchor != nil
+            anchor = nil
+            step = hadAnchor && starterPage != nil ? .anchor : .style
+        case .anchor:
+            recordStarterExposure()
+            stopInflight()
+            errorMessage = nil
+            lastFailedAction = nil
+            starterPage = nil
+            selectedStyle = nil
+            step = .style
+        case .style, .home, .daily, .conclusion:
+            backToHome()
         }
-        comparisonStage = .exclude
-        appearedAt = .now
-    }
-
-    /// Le second geste : la comparaison est jouée. Le duel part au serveur sans
-    /// qu'on l'attende (son échec est sans conséquence pour la séance, qui
-    /// transmet elle-même son historique), puis le tour suivant se charge.
-    func exclude(_ film: CineMatchGalleryFilm) async {
-        guard step == .comparison, comparisonStage == .exclude, !isLoadingRound,
-              errorMessage == nil,
-              let kept = keptFilm, kept.id != film.id,
-              displayedFilms.contains(where: { $0.id == film.id })
-        else { return }
-        history.append(.pick(keptID: kept.id, excludedID: film.id, latencyMs: elapsedMs()))
-        let client = client
-        let format = format
-        Task { try? await client.recordDuel(winnerID: kept.id, loserID: film.id, format: format) }
-        await advanceAfterComparison()
-    }
-
-    /// « Aucun des quatre ce soir » : rien ne tente parmi les affiches
-    /// affichées. Avant comme après une garde, on passe au tour suivant.
-    func noneOfThese() async {
-        guard step == .comparison, !isLoadingRound, errorMessage == nil,
-              !displayedFilms.isEmpty
-        else { return }
-        history.append(.none(shownIDs: displayedFilms.map(\.id)))
-        await advanceAfterComparison()
-    }
-
-    /// « Annuler » : retour à l'accueil, compté comme une hésitation.
-    func cancel() {
-        hesitations += 1
-        stopInflight()
-        resetSession()
-        step = .home
     }
 
     // MARK: - Résultats
@@ -311,46 +319,62 @@ final class CineMatchViewModel {
         galleryAddState = success ? .added : .failed
     }
 
-    // MARK: - Déjà vus
+    // MARK: - Films marqués
 
     func markSeen(_ film: CineMatchFilm, loved: Bool) {
         guard step == .five, films.contains(where: { $0.id == film.id }) else { return }
-        seenFilms[film.id] = loved
+        marks[film.id] = .seen(loved: loved)
         replaceOutcome = nil
     }
 
-    func unmarkSeen(_ film: CineMatchFilm) {
-        seenFilms[film.id] = nil
+    /// « Pas celui-là ». Le refus part au serveur tout de suite, sans être
+    /// attendu : c'est le refus d'un film précis, dans cette séance, et il
+    /// compte même si l'on ne remplace rien. Revenir dessus (« Je le garde,
+    /// en fait ») ne l'efface pas : l'hésitation reste un signal.
+    func markRefused(_ film: CineMatchFilm) {
+        guard step == .five, films.contains(where: { $0.id == film.id }) else { return }
+        marks[film.id] = .refused
+        replaceOutcome = nil
+        let client = client
+        let format = format
+        Task { try? await client.recordPass(tmdbID: film.id, format: format) }
+    }
+
+    func unmark(_ film: CineMatchFilm) {
+        marks[film.id] = nil
         replaceOutcome = nil
     }
 
     /// Un seul calcul pour tous les films marqués. Les autres gardent leur
-    /// place : on ne perd pas ce qu'on a déjà regardé. Chaque film vu cède la
-    /// sienne à un remplaçant, dans l'ordre ; s'il en manque, la place
-    /// disparaît plutôt que de garder un film qu'on a déjà vu.
-    func replaceSeen() async {
-        guard step == .five, !isReplacing, let want else { return }
-        let seen = films.filter { seenFilms[$0.id] != nil }
-        guard !seen.isEmpty else { return }
-        let keepIDs = films.filter { seenFilms[$0.id] == nil }.map(\.id)
+    /// place : on ne perd pas ce qu'on a déjà regardé. Chaque film marqué cède
+    /// la sienne à un remplaçant, dans l'ordre ; s'il en manque, la place
+    /// disparaît plutôt que de garder un film qu'on a déjà vu ou écarté.
+    func replaceMarked() async {
+        guard step == .five, !isReplacing else { return }
+        let marked = films.filter { marks[$0.id] != nil }
+        guard !marked.isEmpty else { return }
+        let keepIDs = films.filter { marks[$0.id] == nil }.map(\.id)
+        let refusedIDs = marked.filter { marks[$0.id] == .refused }.map(\.id)
+        let seenIDs = marked.filter { marks[$0.id] != .refused }.map(\.id)
 
         isReplacing = true
         replaceOutcome = nil
         defer { isReplacing = false }
         do {
-            let response = try await client.five(
-                situation: situation, want: want, energy: energy, engagement: engagement,
-                comparisons: history, hesitations: 0, format: format,
-                replacing: CineMatchReplacement(sessionID: sessionID, keepIDs: keepIDs, seenIDs: seen.map(\.id))
+            let response = try await client.picks(
+                situation: situation, anchorID: fiveAnchorID, style: fiveStyle, format: format,
+                replacing: CineMatchReplacement(
+                    sessionID: sessionID, keepIDs: keepIDs, seenIDs: seenIDs, refusedIDs: refusedIDs
+                )
             )
             guard !Task.isCancelled, step == .five else { return }
             var spares = response.films
-                .filter { !keepIDs.contains($0.id) && seenFilms[$0.id] == nil }
+                .filter { !keepIDs.contains($0.id) && marks[$0.id] == nil }
                 .makeIterator()
             var next: [CineMatchFilm] = []
             var arrived: Set<Int> = []
             for film in films {
-                if seenFilms[film.id] == nil {
+                if marks[film.id] == nil {
                     next.append(film)
                 } else if let spare = spares.next() {
                     next.append(spare)
@@ -360,14 +384,14 @@ final class CineMatchViewModel {
             // Plus rien à proposer : on garde la proposition et ses marques,
             // l'écran le dit.
             guard !next.isEmpty else {
-                replaceOutcome = .replaced(count: 0, dropped: seen.count)
+                replaceOutcome = .replaced(count: 0, dropped: marked.count, seen: seenIDs.count)
                 return
             }
             let firstArrival = next.firstIndex { arrived.contains($0.id) }
             films = next
-            seenFilms = [:]
+            marks = [:]
             freshFilmIDs = arrived
-            replaceOutcome = .replaced(count: arrived.count, dropped: seen.count - arrived.count)
+            replaceOutcome = .replaced(count: arrived.count, dropped: marked.count - arrived.count, seen: seenIDs.count)
             currentIndex = firstArrival ?? min(currentIndex, next.count - 1)
             queueFiveExposure(films[currentIndex].id)
         } catch {
@@ -376,13 +400,9 @@ final class CineMatchViewModel {
         }
     }
 
-    /// Conclusion, proposition du jour ou erreur → accueil. Quitter une
-    /// proposition ou des questions sans erreur compte comme une hésitation ;
-    /// sortir d'une erreur ou d'une conclusion, non.
+    /// Conclusion, proposition du jour, erreur ou « Annuler » → accueil.
     func backToHome() {
-        if errorMessage == nil, [.want, .energy, .comparison, .five, .daily].contains(step) {
-            hesitations += 1
-        }
+        if step == .anchor { recordStarterExposure() }
         stopInflight()
         resetSession()
         step = .home
@@ -408,76 +428,66 @@ final class CineMatchViewModel {
 
     // MARK: - Chargements
 
-    private func loadRound(_ round: Int) async {
-        isLoadingRound = true
+    private var stylesAreFresh: Bool {
+        guard let entry = styleCache[format] else { return false }
+        return entry.loadedAt.duration(to: .now) < Self.styleFreshness
+    }
+
+    private func loadStyles() async {
+        isLoadingStyles = true
         errorMessage = nil
+        let format = format
         do {
-            let result = try await client.comparisonRound(
-                round: round, shownIDs: shownIDs, history: history, forDoor: false, format: format
-            )
+            let tiles = try await client.styles(format: format)
             guard !Task.isCancelled else { return }
-            isLoadingRound = false
-            if round == 1 { comparisonTotal = max(0, min(4, result.total)) }
-            // Deux affiches au moins : garder puis écarter en demande deux.
-            guard round <= result.total, round <= comparisonTotal, result.films.count >= 2 else {
-                // La barre ne doit pas annoncer des comparaisons qui n'auront
-                // pas lieu.
-                comparisonTotal = min(comparisonTotal, round - 1)
-                await loadFive()
-                return
-            }
-            present(result, round: round)
+            isLoadingStyles = false
+            styleCache[format] = StyleCacheEntry(tiles: tiles, loadedAt: .now)
         } catch {
-            isLoadingRound = false
-            fail(error) { [weak self] in await self?.loadRound(round) }
+            isLoadingStyles = false
+            fail(error) { [weak self] in await self?.loadStyles() }
         }
     }
 
-    private func present(_ result: CineMatchComparisonRound, round: Int) {
-        currentRoundData = result
-        comparisonRound = round
-        comparisonStage = .keep
-        keptFilm = nil
-        freshFilmID = nil
-        displayedFilms = result.films
-        let ids = result.films.map(\.id)
-        appendShown(ids)
-        recordPosterExposure(ids)
-        step = .comparison
-        appearedAt = .now
-    }
-
-    private func advanceAfterComparison() async {
-        let next = comparisonRound + 1
-        if next <= comparisonTotal {
-            await perform { [weak self] in await self?.loadRound(next) }
-        } else {
-            await perform { [weak self] in await self?.loadFive() }
+    private func loadStarters(style: CineMatchStyle, page: Int) async {
+        isLoadingStarters = true
+        errorMessage = nil
+        do {
+            let result = try await client.starters(style: style, page: page, format: format)
+            guard !Task.isCancelled else { return }
+            isLoadingStarters = false
+            pendingStyle = nil
+            selectedStyle = style
+            starterPage = result
+            for id in result.films.map(\.id) where !visitStarterIDs.contains(id) {
+                visitStarterIDs.append(id)
+            }
+            step = .anchor
+        } catch {
+            isLoadingStarters = false
+            pendingStyle = nil
+            fail(error) { [weak self] in await self?.loadStarters(style: style, page: page) }
         }
     }
 
     private func loadFive() async {
-        guard let want else { return }
-        switch format {
-        case .film: guard energy != nil else { return }
-        case .series: guard engagement != nil else { return }
-        }
+        let anchorID = anchor?.id
+        let style = anchor == nil ? nil : selectedStyle
         step = .loadingFive
         errorMessage = nil
         do {
-            let response = try await client.five(
-                situation: situation, want: want, energy: energy, engagement: engagement,
-                comparisons: history, hesitations: hesitations, format: format, replacing: nil
+            let response = try await client.picks(
+                situation: situation, anchorID: anchorID, style: style, format: format, replacing: nil
             )
             guard !Task.isCancelled else { return }
             guard !response.films.isEmpty else {
                 fail(CineMatchClientError.noCandidates(for: format)) { [weak self] in await self?.loadFive() }
                 return
             }
-            hesitations = 0
             films = response.films
             sessionID = response.sessionID
-            seenFilms = [:]
+            fiveAnchorID = anchorID
+            fiveStyle = style
+            marks = [:]
             freshFilmIDs = []
             replaceOutcome = nil
             widening = response.widening
@@ -512,7 +522,7 @@ final class CineMatchViewModel {
 
     // MARK: - Mécanique
 
-    /// Lance le travail dans une tâche gardée, pour que `cancel()` puisse
+    /// Lance le travail dans une tâche gardée, pour que `goBack()` puisse
     /// l'interrompre, et l'attend : l'appelant reste `async` jusqu'au bout.
     private func perform(_ work: @escaping @MainActor () async -> Void) async {
         inflight?.cancel()
@@ -524,11 +534,13 @@ final class CineMatchViewModel {
     private func stopInflight() {
         inflight?.cancel()
         inflight = nil
-        isLoadingRound = false
+        isLoadingStyles = false
+        isLoadingStarters = false
+        pendingStyle = nil
     }
 
-    /// L'échec vient du scénario, pas du réseau : réessayer n'y changerait
-    /// rien, seul un réglage de la soirée le peut.
+    /// L'échec vient de la soirée, pas du réseau : réessayer n'y changerait
+    /// rien, seul un réglage de « Ce soir » le peut.
     private(set) var failureIsNoCandidates = false
 
     private func fail(_ error: Error, retry: @escaping @MainActor () async -> Void) {
@@ -559,30 +571,27 @@ final class CineMatchViewModel {
     }
 
     private func resetSession() {
-        want = nil
-        energy = nil
-        engagement = nil
-        comparisonTotal = 0
-        comparisonRound = 0
-        comparisonStage = .keep
-        displayedFilms = []
-        freshFilmID = nil
-        currentRoundData = nil
-        keptFilm = nil
-        shownIDs = []
-        history = []
+        pendingStyle = nil
+        selectedStyle = nil
+        starterPage = nil
+        isLoadingStarters = false
+        anchor = nil
+        visitStarterIDs = []
         errorMessage = nil
         lastFailedAction = nil
-        seenFilms = [:]
+        clearFive()
+    }
+
+    /// Les cinq et leurs marques. Les films eux-mêmes restent, le temps du
+    /// fondu de sortie.
+    private func clearFive() {
+        marks = [:]
         freshFilmIDs = []
         replaceOutcome = nil
         isReplacing = false
-    }
-
-    private func appendShown(_ ids: [Int]) {
-        for id in ids where !shownIDs.contains(id) {
-            shownIDs.append(id)
-        }
+        sessionID = nil
+        fiveAnchorID = nil
+        fiveStyle = nil
     }
 
     private func queueFiveExposure(_ id: Int) {
@@ -590,10 +599,12 @@ final class CineMatchViewModel {
         pendingFiveExposure.append(id)
     }
 
-    /// Les affiches de comparaison partent tout de suite : une séance annulée
-    /// ne passe jamais par `flushExposure`, et une affiche vue reste vue.
-    private func recordPosterExposure(_ ids: [Int]) {
-        guard !ids.isEmpty else { return }
+    /// Les films de départ vus pendant la visite de leur écran partent comme
+    /// affiches vues, sans être attendus. Voir `visitStarterIDs`.
+    private func recordStarterExposure() {
+        guard !visitStarterIDs.isEmpty else { return }
+        let ids = visitStarterIDs
+        visitStarterIDs = []
         let client = client
         let format = format
         Task { try? await client.recordExposure(kind: .poster, tmdbIDs: ids, format: format) }
@@ -602,11 +613,5 @@ final class CineMatchViewModel {
     private func flushExposureInBackground() {
         guard !pendingFiveExposure.isEmpty else { return }
         Task { [weak self] in await self?.flushExposure() }
-    }
-
-    private func elapsedMs() -> Int {
-        let components = appearedAt.duration(to: .now).components
-        let ms = components.seconds * 1000 + components.attoseconds / 1_000_000_000_000_000
-        return max(0, Int(ms))
     }
 }

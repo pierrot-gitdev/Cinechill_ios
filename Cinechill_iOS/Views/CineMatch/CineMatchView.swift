@@ -13,8 +13,8 @@ import SwiftUI
 /// préférences » ouvre les comparaisons entre films vus.
 ///
 /// Passé le seuil, l'écran n'a plus de décor commun : chaque étape porte le sien
-/// (le salon à l'accueil, une page plate pour les questions, la planche des
-/// cinq). Le conteneur ne fait qu'aiguiller sur `viewModel.step`.
+/// (le salon à l'accueil, une page plate pour le départ, la planche des cinq).
+/// Le conteneur ne fait qu'aiguiller sur `viewModel.step`.
 ///
 /// L'interrupteur Films · Séries est celui de Découvrir : le même réglage, lu
 /// ici. Chaque format a sa Porte, et la franchir pour l'un ne l'ouvre pas pour
@@ -177,12 +177,13 @@ struct CineMatchView: View {
         }
     }
 
-    /// Les écrans, regroupés : les questions s'enchaînent dans une même vue,
-    /// qui ne doit pas se reconstruire d'une question à l'autre.
+    /// Les écrans, regroupés : le style, le film de départ et l'attente des
+    /// cinq s'enchaînent dans une même vue, qui ne doit pas se reconstruire
+    /// d'un écran à l'autre.
     private var stage: Int {
         switch viewModel.step {
         case .home: 0
-        case .want, .energy, .comparison, .loadingFive: 1
+        case .style, .anchor, .loadingFive: 1
         case .five: 2
         case .daily: 3
         case .conclusion: 4
@@ -194,8 +195,8 @@ struct CineMatchView: View {
         switch viewModel.step {
         case .home:
             CineMatchHomeView(viewModel: viewModel, onProfileTap: { showProfile = true })
-        case .want, .energy, .comparison, .loadingFive:
-            CineMatchQuizView(viewModel: viewModel)
+        case .style, .anchor, .loadingFive:
+            CineMatchStartView(viewModel: viewModel)
         case .five:
             CineMatchFiveView(viewModel: viewModel, mode: .five)
                 // L'exposition s'accumule pendant qu'on fait défiler les cartes

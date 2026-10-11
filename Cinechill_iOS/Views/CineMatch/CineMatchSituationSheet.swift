@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// La feuille du scénario de la soirée : avec qui, combien de temps, sur
-/// quelles plateformes.
+/// quelles plateformes. Pour une série, aussi : combien de saisons on accepte.
 ///
 /// Chaque réponse s'applique **au tap**, comme dans les réglages : refermer la
 /// feuille d'un geste garde ce qu'on a choisi. « C'est bon » ne fait que la
@@ -81,6 +81,26 @@ struct CineMatchSituationSheet: View {
                     }
                 }
                 .padding(.top, 9)
+
+                // L'ancienne seconde question des séries. Elle décrit la
+                // soirée, pas l'envie : elle se règle ici, une fois, et vaut
+                // pour toutes les recherches qui suivent.
+                if isSeries {
+                    question(String(localized: "Tu t'engages pour combien de temps ?", bundle: .app))
+                        .padding(.top, 16)
+
+                    FlowLayout(spacing: 6) {
+                        ForEach(CineMatchEngagement.allCases, id: \.self) { engagement in
+                            PlanChip(
+                                title: engagement.scenarioLabel,
+                                isOn: viewModel.situation.engagement == engagement
+                            ) {
+                                apply { $0.engagement = engagement }
+                            }
+                        }
+                    }
+                    .padding(.top, 9)
+                }
 
                 question(String(localized: "Tes plateformes", bundle: .app))
                     .padding(.top, 16)
@@ -185,6 +205,18 @@ extension CineMatchCompany {
         case .alone: String(localized: "Seul", bundle: .app)
         case .duo: String(localized: "À plusieurs", bundle: .app)
         case .family: String(localized: "En famille", bundle: .app)
+        }
+    }
+}
+
+extension CineMatchEngagement {
+    /// Le libellé de la puce, repris mot pour mot dans le bandeau de l'accueil.
+    var scenarioLabel: String {
+        switch self {
+        case .mini: String(localized: "Mini-série", bundle: .app)
+        case .season: String(localized: "Une saison", bundle: .app)
+        case .long: String(localized: "Plusieurs saisons", bundle: .app)
+        case .any: String(localized: "Peu importe", bundle: .app)
         }
     }
 }

@@ -792,38 +792,6 @@
         }
       }
     },
-    "%@, écarté" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, set aside"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, écarté"
-          }
-        }
-      }
-    },
-    "%@, écartée" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, set aside"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, écartée"
-          }
-        }
-      }
-    },
     "%@. %@" : {
       "localizations" : {
         "en" : {
@@ -1108,6 +1076,22 @@
         }
       }
     },
+    "%lld films à remplacer sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld movies to replace out of %2$lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld films à remplacer sur %lld"
+          }
+        }
+      }
+    },
     "%lld films ajoutés à ta galerie" : {
       "localizations" : {
         "en" : {
@@ -1152,22 +1136,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld films dans ta watchlist"
-          }
-        }
-      }
-    },
-    "%lld films déjà vus sur %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld movies already seen out of %2$lld"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld films déjà vus sur %lld"
           }
         }
       }
@@ -1436,6 +1404,22 @@
         }
       }
     },
+    "%lld séries à remplacer sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld shows to replace out of %2$lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld séries à remplacer sur %lld"
+          }
+        }
+      }
+    },
     "%lld séries ajoutées à ta galerie" : {
       "localizations" : {
         "en" : {
@@ -1464,22 +1448,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld séries dans ta galerie"
-          }
-        }
-      }
-    },
-    "%lld séries déjà vues sur %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld shows already seen out of %2$lld"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld séries déjà vues sur %lld"
           }
         }
       }
@@ -1672,18 +1640,18 @@
         }
       }
     },
-    "1 film déjà vu sur %lld" : {
+    "1 film à remplacer sur %lld" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 movie already seen out of %lld"
+            "value" : "1 movie to replace out of %lld"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 film déjà vu sur %lld"
+            "value" : "1 film à remplacer sur %lld"
           }
         }
       }
@@ -1736,18 +1704,18 @@
         }
       }
     },
-    "1 série déjà vue sur %lld" : {
+    "1 série à remplacer sur %lld" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 show already seen out of %lld"
+            "value" : "1 show to replace out of %lld"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 série déjà vue sur %lld"
+            "value" : "1 série à remplacer sur %lld"
           }
         }
       }
@@ -2608,6 +2576,22 @@
         }
       }
     },
+    "Action et aventure" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Action and adventure"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Action et aventure"
+          }
+        }
+      }
+    },
     "Affiché sur ton profil" : {
       "localizations" : {
         "en" : {
@@ -2992,6 +2976,22 @@
         }
       }
     },
+    "Animation et famille" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animation and family"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animation et famille"
+          }
+        }
+      }
+    },
     "Annulée avant la fin : l'histoire reste en suspens." : {
       "localizations" : {
         "en" : {
@@ -3184,50 +3184,18 @@
         }
       }
     },
-    "Aucun des quatre" : {
+    "Aucun film dans ce style" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "None of the four"
+            "value" : "No movies in this style"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aucun des quatre"
-          }
-        }
-      }
-    },
-    "Aucun des quatre ce soir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "None of the four tonight"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun des quatre ce soir"
-          }
-        }
-      }
-    },
-    "Aucun des trois" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "None of the three"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun des trois"
+            "value" : "Aucun film dans ce style"
           }
         }
       }
@@ -3276,6 +3244,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun film de ces pays ne correspond au reste de tes critères. Essaie d'ajouter un pays, ou de changer de genre."
+          }
+        }
+      }
+    },
+    "Aucun film de ta galerie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None from your gallery"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun film de ta galerie"
           }
         }
       }
@@ -3392,50 +3376,18 @@
         }
       }
     },
-    "Aucune des quatre" : {
+    "Aucun style à proposer" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "None of the four"
+            "value" : "No styles to show"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aucune des quatre"
-          }
-        }
-      }
-    },
-    "Aucune des quatre ce soir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "None of the four tonight"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune des quatre ce soir"
-          }
-        }
-      }
-    },
-    "Aucune des trois" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "None of the three"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune des trois"
+            "value" : "Aucun style à proposer"
           }
         }
       }
@@ -3456,6 +3408,22 @@
         }
       }
     },
+    "Aucune série dans ce style" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No series in this style"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune série dans ce style"
+          }
+        }
+      }
+    },
     "Aucune série dans ta galerie" : {
       "localizations" : {
         "en" : {
@@ -3468,6 +3436,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucune série dans ta galerie"
+          }
+        }
+      }
+    },
+    "Aucune série de ta galerie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None from your gallery"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune série de ta galerie"
           }
         }
       }
@@ -4320,6 +4304,22 @@
         }
       }
     },
+    "Choisir un autre style" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick another style"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir un autre style"
+          }
+        }
+      }
+    },
     "Choisis au moins une personne" : {
       "localizations" : {
         "en" : {
@@ -4380,6 +4380,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choisis ton pseudo"
+          }
+        }
+      }
+    },
+    "Choisis un autre style, ou touche « Peu importe, propose-moi »." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick another style, or tap “Doesn't matter, you pick”."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis un autre style, ou touche « Peu importe, propose-moi »."
           }
         }
       }
@@ -4572,6 +4588,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Comédie"
+          }
+        }
+      }
+    },
+    "Comédies" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comedies"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comédies"
           }
         }
       }
@@ -5482,38 +5514,6 @@
         }
       }
     },
-    "Des films faciles à suivre, plutôt des valeurs sûres" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Easy-to-follow movies, mostly safe bets"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Des films faciles à suivre, plutôt des valeurs sûres"
-          }
-        }
-      }
-    },
-    "Des films plus prenants, et des découvertes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "More gripping movies, and some discoveries"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Des films plus prenants, et des découvertes"
-          }
-        }
-      }
-    },
     "Des questions sans réponse" : {
       "localizations" : {
         "en" : {
@@ -5578,6 +5578,22 @@
         }
       }
     },
+    "Documentaires" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documentaries"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documentaires"
+          }
+        }
+      }
+    },
     "dont %lld ce mois" : {
       "localizations" : {
         "en" : {
@@ -5610,18 +5626,18 @@
         }
       }
     },
-    "Du suspense" : {
+    "Drames" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Some suspense"
+            "value" : "Dramas"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Du suspense"
+            "value" : "Drames"
           }
         }
       }
@@ -5658,6 +5674,22 @@
         }
       }
     },
+    "écarté" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "set aside"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "écarté"
+          }
+        }
+      }
+    },
     "Écarté" : {
       "localizations" : {
         "en" : {
@@ -5670,6 +5702,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Écarté"
+          }
+        }
+      }
+    },
+    "écartée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "set aside"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "écartée"
           }
         }
       }
@@ -5946,22 +5994,6 @@
         }
       }
     },
-    "En forme" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Full of energy"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En forme"
-          }
-        }
-      }
-    },
     "Encore %lld films et CinéMatch s'ouvre. Il te proposera le film de ce soir, d'après tes goûts." : {
       "localizations" : {
         "en" : {
@@ -6118,22 +6150,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Entrer"
-          }
-        }
-      }
-    },
-    "Envie" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Up for it"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Envie"
           }
         }
       }
@@ -6507,38 +6523,6 @@
         }
       }
     },
-    "Et laquelle tu n'as pas du tout envie de recommencer ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "And which one would you rather not start over?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Et laquelle tu n'as pas du tout envie de recommencer ?"
-          }
-        }
-      }
-    },
-    "Et lequel tu n'as pas du tout envie de revoir ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "And which one would you rather not see again?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Et lequel tu n'as pas du tout envie de revoir ?"
-          }
-        }
-      }
-    },
     "Étape %lld sur %lld" : {
       "localizations" : {
         "en" : {
@@ -6567,70 +6551,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Étape %lld sur 5"
-          }
-        }
-      }
-    },
-    "Étape 1 sur 2 : la série que tu reprendrais du début" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Step 1 of 2: the series you'd start over"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Étape 1 sur 2 : la série que tu reprendrais du début"
-          }
-        }
-      }
-    },
-    "Étape 1 sur 2 : le film que tu reverrais" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Step 1 of 2: the movie you'd rewatch"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Étape 1 sur 2 : le film que tu reverrais"
-          }
-        }
-      }
-    },
-    "Étape 2 sur 2 : la série que tu ne veux pas. Tu as gardé %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Step 2 of 2: the series you don't want. You kept %@."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Étape 2 sur 2 : la série que tu ne veux pas. Tu as gardé %@."
-          }
-        }
-      }
-    },
-    "Étape 2 sur 2 : le film que tu ne veux pas. Tu as gardé %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Step 2 of 2: the movie you don't want. You kept %@."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Étape 2 sur 2 : le film que tu ne veux pas. Tu as gardé %@."
           }
         }
       }
@@ -7195,22 +7115,6 @@
         }
       }
     },
-    "Grand public, tout le monde sera d'accord" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crowd-pleaser, everyone will agree"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grand public, tout le monde sera d'accord"
-          }
-        }
-      }
-    },
     "Grinçante, qui ne s'interdit rien" : {
       "localizations" : {
         "en" : {
@@ -7223,6 +7127,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Grinçante, qui ne s'interdit rien"
+          }
+        }
+      }
+    },
+    "Guerre et histoire" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "War and history"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guerre et histoire"
           }
         }
       }
@@ -7867,6 +7787,38 @@
         }
       }
     },
+    "Je la garde, en fait" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actually, I'll keep it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je la garde, en fait"
+          }
+        }
+      }
+    },
+    "Je le garde, en fait" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actually, I'll keep it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je le garde, en fait"
+          }
+        }
+      }
+    },
     "Je le regarde" : {
       "localizations" : {
         "en" : {
@@ -8315,22 +8267,6 @@
         }
       }
     },
-    "Laquelle tu recommencerais bien ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Which one would you happily start over?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Laquelle tu recommencerais bien ?"
-          }
-        }
-      }
-    },
     "Le %@" : {
       "localizations" : {
         "en" : {
@@ -8699,22 +8635,6 @@
         }
       }
     },
-    "Lequel tu reverrais bien ce soir ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Which one would you happily watch again tonight?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lequel tu reverrais bien ce soir ?"
-          }
-        }
-      }
-    },
     "Les deux mots de passe ne correspondent pas." : {
       "localizations" : {
         "en" : {
@@ -8939,6 +8859,22 @@
         }
       }
     },
+    "Longueur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Length"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Longueur"
+          }
+        }
+      }
+    },
     "Ma génération" : {
       "localizations" : {
         "en" : {
@@ -9083,6 +9019,22 @@
         }
       }
     },
+    "Mini-série" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miniseries"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-série"
+          }
+        }
+      }
+    },
     "Modifier" : {
       "localizations" : {
         "en" : {
@@ -9131,18 +9083,18 @@
         }
       }
     },
-    "Modifier ta soirée. Avec qui : %@. Par épisode : %@. Plateformes : %@." : {
+    "Modifier ta soirée. Avec qui : %@. Par épisode : %@. Longueur : %@. Plateformes : %@." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edit your evening. Who with: %1$@. Per episode: %2$@. Platforms: %3$@."
+            "value" : "Edit your evening. Who with: %1$@. Per episode: %2$@. Length: %3$@. Platforms: %4$@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Modifier ta soirée. Avec qui : %@. Par épisode : %@. Plateformes : %@."
+            "value" : "Modifier ta soirée. Avec qui : %@. Par épisode : %@. Longueur : %@. Plateformes : %@."
           }
         }
       }
@@ -9703,6 +9655,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On a été plus souple sur la durée"
+          }
+        }
+      }
+    },
+    "On cherche des films proches de %@…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finding movies like %@…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On cherche des films proches de %@…"
+          }
+        }
+      }
+    },
+    "On cherche des séries proches de %@…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finding series like %@…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On cherche des séries proches de %@…"
           }
         }
       }
@@ -10283,6 +10267,38 @@
         }
       }
     },
+    "On peut quand même te proposer cinq films." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We can still suggest five movies."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On peut quand même te proposer cinq films."
+          }
+        }
+      }
+    },
+    "On peut quand même te proposer cinq séries." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We can still suggest five series."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On peut quand même te proposer cinq séries."
+          }
+        }
+      }
+    },
     "On pourra aussi te proposer des films de ta watchlist." : {
       "localizations" : {
         "en" : {
@@ -10367,22 +10383,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On prépare ta sélection…"
-          }
-        }
-      }
-    },
-    "On regarde ce qui vient" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Whatever comes up"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On regarde ce qui vient"
           }
         }
       }
@@ -10659,6 +10659,22 @@
         }
       }
     },
+    "Pas celle-là" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not this one"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas celle-là"
+          }
+        }
+      }
+    },
     "Pas celui-là" : {
       "localizations" : {
         "en" : {
@@ -10671,6 +10687,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pas celui-là"
+          }
+        }
+      }
+    },
+    "Pas ceux-là" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not these"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas ceux-là"
           }
         }
       }
@@ -10719,38 +10751,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pas encore de compte ?"
-          }
-        }
-      }
-    },
-    "Pas envie" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not up for it"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pas envie"
-          }
-        }
-      }
-    },
-    "Pas trop en forme" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not really up for much"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pas trop en forme"
           }
         }
       }
@@ -10927,6 +10927,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Peu importe"
+          }
+        }
+      }
+    },
+    "Peu importe, propose-moi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doesn't matter, you pick"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peu importe, propose-moi"
           }
         }
       }
@@ -11123,18 +11139,18 @@
         }
       }
     },
-    "Plusieurs saisons, de quoi tenir des semaines" : {
+    "Plusieurs saisons" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Several seasons, enough to last for weeks"
+            "value" : "Several seasons"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Plusieurs saisons, de quoi tenir des semaines"
+            "value" : "Plusieurs saisons"
           }
         }
       }
@@ -11295,22 +11311,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pour savoir ce que tu peux regarder tout de suite."
-          }
-        }
-      }
-    },
-    "Pour te remonter le moral" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To lift your spirits"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pour te remonter le moral"
           }
         }
       }
@@ -11539,38 +11539,6 @@
         }
       }
     },
-    "Quelque chose de doux" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Something gentle"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quelque chose de doux"
-          }
-        }
-      }
-    },
-    "Quelque chose de léger" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Something light"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quelque chose de léger"
-          }
-        }
-      }
-    },
     "Quels films as-tu adorés ?" : {
       "localizations" : {
         "en" : {
@@ -11583,22 +11551,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quels films as-tu adorés ?"
-          }
-        }
-      }
-    },
-    "Question %lld sur 2" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Question %lld of 2"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Question %lld sur 2"
           }
         }
       }
@@ -12475,6 +12427,22 @@
         }
       }
     },
+    "Romances" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Romance"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Romances"
+          }
+        }
+      }
+    },
     "Ruban de soie" : {
       "localizations" : {
         "en" : {
@@ -12519,22 +12487,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rythme trop lent"
-          }
-        }
-      }
-    },
-    "Rythmé, sans prise de tête" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upbeat, nothing too taxing"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rythmé, sans prise de tête"
           }
         }
       }
@@ -12951,6 +12903,22 @@
         }
       }
     },
+    "Science-fiction et fantastique" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sci-fi and fantasy"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Science-fiction et fantastique"
+          }
+        }
+      }
+    },
     "SDK Firebase manquant dans la cible iOS." : {
       "localizations" : {
         "en" : {
@@ -13252,22 +13220,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Seul·e"
-          }
-        }
-      }
-    },
-    "Si elle prend, il y a la suite" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "If it grabs you, there's more"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si elle prend, il y a la suite"
           }
         }
       }
@@ -14344,22 +14296,6 @@
         }
       }
     },
-    "Tranquille, sans tension, qui finit bien" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calm, no tension, a happy ending"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tranquille, sans tension, qui finit bien"
-          }
-        }
-      }
-    },
     "Trop de tentatives. Réessaie dans quelques minutes." : {
       "localizations" : {
         "en" : {
@@ -15129,22 +15065,6 @@
         }
       }
     },
-    "Tu te sens comment ce soir ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "How are you feeling tonight?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu te sens comment ce soir ?"
-          }
-        }
-      }
-    },
     "Tu veux en parler tout de suite" : {
       "localizations" : {
         "en" : {
@@ -15173,6 +15093,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu veux le voir"
+          }
+        }
+      }
+    },
+    "Un autre style" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Another style"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un autre style"
           }
         }
       }
@@ -15209,6 +15145,38 @@
         }
       }
     },
+    "Un film proche de %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A movie like %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un film proche de %@"
+          }
+        }
+      }
+    },
+    "Un film proche de… ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A movie like…?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un film proche de… ?"
+          }
+        }
+      }
+    },
     "Un film que tu as aimé" : {
       "localizations" : {
         "en" : {
@@ -15221,54 +15189,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un film que tu as aimé"
-          }
-        }
-      }
-    },
-    "Un film qui fait du bien" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A feel-good movie"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un film qui fait du bien"
-          }
-        }
-      }
-    },
-    "Un film qui fait réfléchir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A movie that makes you think"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un film qui fait réfléchir"
-          }
-        }
-      }
-    },
-    "Un film qui marque" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A movie that stays with you"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un film qui marque"
           }
         }
       }
@@ -15301,38 +15221,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un film qui me fait ressentir"
-          }
-        }
-      }
-    },
-    "Un film qui plaît à tout le monde" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A movie everyone will enjoy"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un film qui plaît à tout le monde"
-          }
-        }
-      }
-    },
-    "Un film qui te tient en haleine" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A movie that keeps you on the edge of your seat"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un film qui te tient en haleine"
           }
         }
       }
@@ -15481,22 +15369,6 @@
         }
       }
     },
-    "Une histoire qui finit en moins de huit heures" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A story that ends in under eight hours"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une histoire qui finit en moins de huit heures"
-          }
-        }
-      }
-    },
     "Une histoire vraie" : {
       "localizations" : {
         "en" : {
@@ -15509,22 +15381,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Une histoire vraie"
-          }
-        }
-      }
-    },
-    "Une longue histoire" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A long story"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une longue histoire"
           }
         }
       }
@@ -15545,22 +15401,6 @@
         }
       }
     },
-    "Une mini-série" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A miniseries"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une mini-série"
-          }
-        }
-      }
-    },
     "Une partie des envois a échoué. Réessaie." : {
       "localizations" : {
         "en" : {
@@ -15577,98 +15417,50 @@
         }
       }
     },
-    "Une saison, pour voir" : {
+    "Une saison" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "One season, to try it out"
+            "value" : "One season"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Une saison, pour voir"
+            "value" : "Une saison"
           }
         }
       }
     },
-    "Une série qui fait du bien" : {
+    "Une série proche de %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A feel-good series"
+            "value" : "A series like %@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Une série qui fait du bien"
+            "value" : "Une série proche de %@"
           }
         }
       }
     },
-    "Une série qui fait réfléchir" : {
+    "Une série proche de… ?" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A series that makes you think"
+            "value" : "A series like…?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Une série qui fait réfléchir"
-          }
-        }
-      }
-    },
-    "Une série qui marque" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A series that stays with you"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une série qui marque"
-          }
-        }
-      }
-    },
-    "Une série qui plaît à tout le monde" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A series everyone will enjoy"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une série qui plaît à tout le monde"
-          }
-        }
-      }
-    },
-    "Une série qui te tient en haleine" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A series that keeps you on the edge of your seat"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une série qui te tient en haleine"
+            "value" : "Une série proche de… ?"
           }
         }
       }

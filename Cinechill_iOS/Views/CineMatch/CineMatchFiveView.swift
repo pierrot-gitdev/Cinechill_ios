@@ -176,6 +176,26 @@ struct CineMatchFiveView: View {
             HStack(spacing: 10) {
                 switch mode {
                 case .five:
+                    // Un pas en arrière : les six films de départ, ou les
+                    // styles après « Peu importe ». Choisir un autre film de
+                    // départ vaut mieux que de tout reprendre à l'accueil.
+                    Button {
+                        viewModel.goBack()
+                    } label: {
+                        Text("Retour", bundle: .app)
+                            .planFont(13, weight: .medium)
+                            .foregroundStyle(Ink.ink2)
+                            .padding(.trailing, 12)
+                            .frame(minHeight: Metrics.control)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PressableScaleStyle(scale: 0.96))
+                    // Le bouton garde sa cible de 44 pt sans pousser la carte.
+                    .padding(.vertical, -14)
+                    .disabled(viewModel.isReplacing)
+
+                    Spacer(minLength: 0)
+
                     if films.count > 1 { dots }
                     if !films.isEmpty {
                         Text(String(localized: "\(index + 1) sur \(films.count)", bundle: .app))
@@ -193,10 +213,24 @@ struct CineMatchFiveView: View {
                     }
                     .planLabel()
                     .foregroundStyle(Ink.ink2)
+
+                    Spacer(minLength: 0)
                 }
-                Spacer(minLength: 0)
             }
             .frame(minHeight: 16)
+
+            // Le film touché à l'écran précédent. Sans cette ligne, rien ne
+            // disait plus pourquoi ces cinq-là : on les avait demandés deux
+            // touchers plus tôt. Absente après « Peu importe ».
+            if mode == .five, let anchor = viewModel.anchor {
+                Text(isSeries
+                     ? String(localized: "Une série proche de \(anchor.title)", bundle: .app)
+                     : String(localized: "Un film proche de \(anchor.title)", bundle: .app))
+                    .planFont(13)
+                    .foregroundStyle(Ink.ink2)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             if mode == .five, let outcome = viewModel.replaceOutcome {
                 replaceLine(outcome)
@@ -215,12 +249,12 @@ struct CineMatchFiveView: View {
         }
     }
 
-    /// Un point par film ; creux pour un film marqué « déjà vu ».
+    /// Un point par film ; creux pour un film marqué « déjà vu » ou écarté.
     private var dots: some View {
         HStack(spacing: 5) {
             ForEach(films.indices, id: \.self) { position in
                 let tint = position == index ? Ink.ink : Ink.ink3
-                if viewModel.seenFilms[films[position].id] != nil {
+                if viewModel.marks[films[position].id] != nil {
                     Rectangle()
                         .strokeBorder(tint, lineWidth: 1)
                         .frame(width: 6, height: 6)
@@ -238,11 +272,11 @@ struct CineMatchFiveView: View {
     @ViewBuilder
     private func replaceLine(_ outcome: CineMatchViewModel.ReplaceOutcome) -> some View {
         switch outcome {
-        case .replaced(let count, let dropped):
+        case .replaced(let count, let dropped, let seen):
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 PlanLight()
                     .alignmentGuide(.firstTextBaseline) { $0[.bottom] - 1 }
-                Text(Self.replacedText(count: count, dropped: dropped, isSeries: isSeries))
+                Text(Self.replacedText(count: count, dropped: dropped, seen: seen, isSeries: isSeries))
                     .planFont(13)
                     .foregroundStyle(Ink.ink2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -253,7 +287,7 @@ struct CineMatchFiveView: View {
     }
 
     private var replaceFailedText: String {
-        if viewModel.seenCount > 1 {
+        if viewModel.markedCount > 1 {
             return String(localized: "On n'a pas pu les remplacer. Réessaie dans un instant.", bundle: .app)
         }
         return isSeries
@@ -261,7 +295,10 @@ struct CineMatchFiveView: View {
             : String(localized: "On n'a pas pu le remplacer. Réessaie dans un instant.", bundle: .app)
     }
 
-    static func replacedText(count: Int, dropped: Int, isSeries: Bool) -> String {
+    /// `seen` : combien des films partis étaient déjà vus. Seuls ceux-là
+    /// sont entrés en galerie ; un film écarté n'y va pas, et la phrase ne le
+    /// prétend pas.
+    static func replacedText(count: Int, dropped: Int, seen: Int, isSeries: Bool) -> String {
         if count == 0 {
             return isSeries
                 ? String(localized: "On n'a pas d'autre série à te proposer ce soir.", bundle: .app)
@@ -270,25 +307,28 @@ struct CineMatchFiveView: View {
         // Deux phrases accordées chacune à son compte : deux films vus et un
         // seul remplaçant donnaient « 1 film remplacé. Celui que tu as vu… »,
         // alors que les deux étaient partis en galerie.
-        let seen = count + dropped
         let replaced: String
-        let kept: String
+        let kept: String?
         if isSeries {
             replaced = count == 1
                 ? String(localized: "1 série remplacée.", bundle: .app)
                 : String(localized: "\(count) séries remplacées.", bundle: .app)
-            kept = seen == 1
-                ? String(localized: "Celle que tu as vue est dans ta galerie.", bundle: .app)
-                : String(localized: "Celles que tu as vues sont dans ta galerie.", bundle: .app)
+            kept = switch seen {
+            case 0: nil
+            case 1: String(localized: "Celle que tu as vue est dans ta galerie.", bundle: .app)
+            default: String(localized: "Celles que tu as vues sont dans ta galerie.", bundle: .app)
+            }
         } else {
             replaced = count == 1
                 ? String(localized: "1 film remplacé.", bundle: .app)
                 : String(localized: "\(count) films remplacés.", bundle: .app)
-            kept = seen == 1
-                ? String(localized: "Celui que tu as vu est dans ta galerie.", bundle: .app)
-                : String(localized: "Ceux que tu as vus sont dans ta galerie.", bundle: .app)
+            kept = switch seen {
+            case 0: nil
+            case 1: String(localized: "Celui que tu as vu est dans ta galerie.", bundle: .app)
+            default: String(localized: "Ceux que tu as vus sont dans ta galerie.", bundle: .app)
+            }
         }
-        return replaced + " " + kept
+        return [replaced, kept].compactMap { $0 }.joined(separator: " ")
     }
 
     private func wideningLine(_ text: String) -> some View {
@@ -344,19 +384,19 @@ struct CineMatchFiveView: View {
         let isCompact = size.height < 380
         let shape = RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
 
-        let seen = mode == .five ? viewModel.seenFilms[film.id] : nil
+        let mark = mode == .five ? viewModel.marks[film.id] : nil
 
         return VStack(spacing: 0) {
             PosterImageView(url: film.item.posterURL, contentMode: .fit)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.vertical, 9)
                 .offset(x: max(-9, min(9, -dragOffset * 0.05)))
-                .opacity(seen == nil ? 1 : 0.3)
-                .overlay(alignment: .topLeading) { cardTag(for: film, seen: seen) }
+                .opacity(mark == nil ? 1 : 0.3)
+                .overlay(alignment: .topLeading) { cardTag(for: film, mark: mark) }
                 .accessibilityHidden(true)
 
             plate(film, isCompact: isCompact)
-                .opacity(seen == nil ? 1 : 0.55)
+                .opacity(mark == nil ? 1 : 0.55)
         }
         .frame(width: size.width, height: size.height)
         .background(Ink.ground)
@@ -375,13 +415,17 @@ struct CineMatchFiveView: View {
         .accessibilityAction(named: String(localized: "Synopsis", bundle: .app)) { openSynopsis(film) }
     }
 
-    /// « Déjà vu » sur un film marqué, « Nouveau » sur un remplaçant.
+    /// « Déjà vu » ou « Écarté » sur un film marqué, « Nouveau » sur un
+    /// remplaçant.
     @ViewBuilder
-    private func cardTag(for film: CineMatchFilm, seen: Bool?) -> some View {
-        let text: String? = if let seen {
-            seen
-                ? String(localized: "Déjà vu · coup de cœur", bundle: .app)
-                : String(localized: "Déjà vu", bundle: .app)
+    private func cardTag(for film: CineMatchFilm, mark: CineMatchViewModel.Mark?) -> some View {
+        let text: String? = if let mark {
+            switch mark {
+            case .seen(loved: true): String(localized: "Déjà vu · coup de cœur", bundle: .app)
+            case .seen(loved: false): String(localized: "Déjà vu", bundle: .app)
+            case .refused where isSeries: String(localized: "Écartée", bundle: .app)
+            case .refused: String(localized: "Écarté", bundle: .app)
+            }
         } else if mode == .five, viewModel.freshFilmIDs.contains(film.id) {
             String(localized: "Nouveau", bundle: .app)
         } else {
@@ -617,8 +661,16 @@ struct CineMatchFiveView: View {
     private func cardAccessibilityValue(_ film: CineMatchFilm) -> String {
         guard mode == .five else { return "" }
         let position = String(localized: "\(index + 1) sur \(films.count)", bundle: .app)
-        guard viewModel.seenFilms[film.id] != nil else { return position }
-        return position + ", " + String(localized: "déjà vu", bundle: .app)
+        switch viewModel.marks[film.id] {
+        case nil:
+            return position
+        case .seen:
+            return position + ", " + String(localized: "déjà vu", bundle: .app)
+        case .refused:
+            return position + ", " + (isSeries
+                ? String(localized: "écartée", bundle: .app)
+                : String(localized: "écarté", bundle: .app))
+        }
     }
 
     @ViewBuilder
@@ -626,19 +678,19 @@ struct CineMatchFiveView: View {
         Group {
             if mode == .five, askingSeenID == film.id {
                 seenQuestion(for: film)
-            } else if mode == .five, viewModel.seenFilms[film.id] != nil {
-                seenActions(for: film)
+            } else if mode == .five, let mark = viewModel.marks[film.id] {
+                markedActions(for: film, mark: mark)
             } else {
                 regularActions(for: film)
             }
         }
         .animation(.easeOut(duration: 0.2), value: askingSeenID)
-        .animation(.easeOut(duration: 0.2), value: viewModel.seenFilms)
+        .animation(.easeOut(duration: 0.2), value: viewModel.marks)
     }
 
     private func regularActions(for film: CineMatchFilm) -> some View {
         VStack(spacing: 7) {
-            if mode == .five, viewModel.seenCount > 0 {
+            if mode == .five, viewModel.markedCount > 0 {
                 replaceBar
             }
 
@@ -657,9 +709,24 @@ struct CineMatchFiveView: View {
                 ) {
                     openTrailer(film)
                 }
-                alreadySeenLink(for: film)
+                markLinks(for: film)
             case .daily:
                 backLink
+            }
+        }
+    }
+
+    /// Les deux façons de dire non à un film, côte à côte, l'une sous l'autre
+    /// quand le texte agrandi ne tient plus sur une ligne.
+    private func markLinks(for film: CineMatchFilm) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 0) {
+                alreadySeenLink(for: film)
+                refuseLink(for: film)
+            }
+            VStack(spacing: 0) {
+                alreadySeenLink(for: film)
+                refuseLink(for: film)
             }
         }
     }
@@ -678,8 +745,37 @@ struct CineMatchFiveView: View {
                      ? String(localized: "Je l'ai déjà vue", bundle: .app)
                      : String(localized: "Je l'ai déjà vu", bundle: .app))
                     .planFont(14, weight: .medium)
+                    .fixedSize()
             }
             .foregroundStyle(Ink.ink)
+            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: Metrics.control)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.97))
+        .disabled(viewModel.isReplacing)
+    }
+
+    /// « Pas celui-là » : le film ne tente pas, sans qu'on l'ait vu. Il se
+    /// marque comme un film vu, et part avec eux au remplacement.
+    private func refuseLink(for film: CineMatchFilm) -> some View {
+        Button {
+            viewModel.markRefused(film)
+            replaceIfAllMarked()
+        } label: {
+            HStack(spacing: 8) {
+                FiveCloseGlyph()
+                    .stroke(style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
+                    .frame(width: 14, height: 14)
+                Text(isSeries
+                     ? String(localized: "Pas celle-là", bundle: .app)
+                     : String(localized: "Pas celui-là", bundle: .app))
+                    .planFont(14, weight: .medium)
+                    .fixedSize()
+            }
+            .foregroundStyle(Ink.ink)
+            .padding(.horizontal, 8)
             .frame(maxWidth: .infinity)
             .frame(minHeight: Metrics.control)
             .contentShape(Rectangle())
@@ -737,7 +833,7 @@ struct CineMatchFiveView: View {
 
     /// Un film marqué : il ne se lance plus, il se remplace, avec tous les
     /// autres films marqués, en un seul calcul.
-    private func seenActions(for film: CineMatchFilm) -> some View {
+    private func markedActions(for film: CineMatchFilm, mark: CineMatchViewModel.Mark) -> some View {
         VStack(spacing: 7) {
             // Côte à côte tant que ça tient, l'un sous l'autre au grand texte :
             // le compteur et l'indication se coupaient mutuellement.
@@ -760,15 +856,13 @@ struct CineMatchFiveView: View {
                 loadingTitle: String(localized: "On cherche…", bundle: .app),
                 isLoading: viewModel.isReplacing
             ) {
-                Task { await viewModel.replaceSeen() }
+                Task { await viewModel.replaceMarked() }
             }
 
             Button {
-                unmarkSeen(film)
+                unmark(film)
             } label: {
-                Text(isSeries
-                     ? String(localized: "Je ne l'ai pas vue, en fait", bundle: .app)
-                     : String(localized: "Je ne l'ai pas vu, en fait", bundle: .app))
+                Text(unmarkTitle(mark))
                     .planFont(13.5, weight: .medium)
                     .foregroundStyle(Ink.ink2)
                     .frame(maxWidth: .infinity)
@@ -781,8 +875,17 @@ struct CineMatchFiveView: View {
         .transition(.opacity)
     }
 
+    private func unmarkTitle(_ mark: CineMatchViewModel.Mark) -> String {
+        switch (mark, isSeries) {
+        case (.seen, false): String(localized: "Je ne l'ai pas vu, en fait", bundle: .app)
+        case (.seen, true): String(localized: "Je ne l'ai pas vue, en fait", bundle: .app)
+        case (.refused, false): String(localized: "Je le garde, en fait", bundle: .app)
+        case (.refused, true): String(localized: "Je la garde, en fait", bundle: .app)
+        }
+    }
+
     private var seenSummaryText: some View {
-        Text(seenSummary)
+        Text(markedSummary)
             .planFont(13.5)
             .foregroundStyle(Ink.ink2)
             .fixedSize(horizontal: false, vertical: true)
@@ -807,12 +910,12 @@ struct CineMatchFiveView: View {
     /// de regarder les autres, et on remplace quand on a fini.
     private var replaceBar: some View {
         HStack(spacing: 12) {
-            Text(seenSummary)
+            Text(markedSummary)
                 .planFont(13.5)
                 .foregroundStyle(Ink.ink2)
             Spacer(minLength: 8)
             Button {
-                Task { await viewModel.replaceSeen() }
+                Task { await viewModel.replaceMarked() }
             } label: {
                 Text(viewModel.isReplacing
                      ? String(localized: "On cherche…", bundle: .app)
@@ -839,20 +942,21 @@ struct CineMatchFiveView: View {
         .padding(.bottom, 6)
     }
 
-    private var seenSummary: String {
-        let count = viewModel.seenCount
+    /// Vus ou écartés, ils ont le même sort : on les compte ensemble.
+    private var markedSummary: String {
+        let count = viewModel.markedCount
         if isSeries {
             return count == 1
-                ? String(localized: "1 série déjà vue sur \(films.count)", bundle: .app)
-                : String(localized: "\(count) séries déjà vues sur \(films.count)", bundle: .app)
+                ? String(localized: "1 série à remplacer sur \(films.count)", bundle: .app)
+                : String(localized: "\(count) séries à remplacer sur \(films.count)", bundle: .app)
         }
         return count == 1
-            ? String(localized: "1 film déjà vu sur \(films.count)", bundle: .app)
-            : String(localized: "\(count) films déjà vus sur \(films.count)", bundle: .app)
+            ? String(localized: "1 film à remplacer sur \(films.count)", bundle: .app)
+            : String(localized: "\(count) films à remplacer sur \(films.count)", bundle: .app)
     }
 
     private var replaceTitle: String {
-        let count = viewModel.seenCount
+        let count = viewModel.markedCount
         if isSeries {
             return count <= 1
                 ? String(localized: "Remplacer cette série", bundle: .app)
@@ -887,19 +991,27 @@ struct CineMatchFiveView: View {
                     try? await Task.sleep(for: .milliseconds(150))
                 }
                 // Rien n'a été annulé entre-temps.
-                guard viewModel.seenFilms[film.id] == true else { return }
+                guard viewModel.marks[film.id] == .seen(loved: true) else { return }
                 libraryStore.setLove(item, loved: true)
             }
         }
-        // Tout est déjà vu : il n'y a plus rien à regarder ici, le calcul part.
-        if viewModel.seenCount == films.count {
-            Task { await viewModel.replaceSeen() }
-        }
+        replaceIfAllMarked()
     }
 
-    private func unmarkSeen(_ film: CineMatchFilm) {
-        viewModel.unmarkSeen(film)
-        libraryStore.removeFromGallery(galleryItem(for: film))
+    /// Tout est marqué : il n'y a plus rien à regarder ici, le calcul part.
+    private func replaceIfAllMarked() {
+        guard viewModel.markedCount == films.count else { return }
+        Task { await viewModel.replaceMarked() }
+    }
+
+    /// Un film vu sort de la galerie où il venait d'entrer ; un film écarté
+    /// n'y était jamais allé.
+    private func unmark(_ film: CineMatchFilm) {
+        let wasSeen = if case .seen = viewModel.marks[film.id] { true } else { false }
+        viewModel.unmark(film)
+        if wasSeen {
+            libraryStore.removeFromGallery(galleryItem(for: film))
+        }
     }
 
     private var backLink: some View {

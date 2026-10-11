@@ -126,6 +126,9 @@ struct CineMatchHomeView: View {
                 .environment(catalog)
         }
         .task { await catalog.loadIfNeeded() }
+        // Les styles se chargent pendant qu'on regarde l'accueil : l'écran
+        // des styles s'ouvre ensuite sans attente. Un format, des styles.
+        .task(id: viewModel.format) { await viewModel.prepareStyles() }
     }
 
     // MARK: - Le scénario de la soirée
@@ -134,7 +137,8 @@ struct CineMatchHomeView: View {
     /// porte « Modifier », puis trois colonnes nommées. Trois valeurs séparées
     /// par des points ne disaient pas à quoi chacune se rapportait.
     private func scenarioStrip(width: CGFloat) -> some View {
-        let columnWidth = width / 3
+        // Une série ajoute sa longueur : combien de saisons on accepte.
+        let columnWidth = width / (isSeries ? 4 : 3)
 
         return Button {
             showSituation = true
@@ -166,6 +170,11 @@ struct CineMatchHomeView: View {
                     }
                     scenarioColumn(durationColumnTitle, width: columnWidth, showsRule: true) {
                         scenarioValue(viewModel.situation.duration.scenarioLabel(series: isSeries))
+                    }
+                    if isSeries {
+                        scenarioColumn(String(localized: "Longueur", bundle: .app), width: columnWidth, showsRule: true) {
+                            scenarioValue(viewModel.situation.engagement.scenarioLabel)
+                        }
                     }
                     scenarioColumn(String(localized: "Plateformes", bundle: .app), width: columnWidth, showsRule: false) {
                         platformsValue
@@ -244,15 +253,17 @@ struct CineMatchHomeView: View {
     }
 
     /// Jusqu'à trois logos ; au-delà, deux logos et « +N », pour ne jamais
-    /// rogner la colonne.
+    /// rogner la colonne. Dans la colonne plus étroite des séries, deux logos,
+    /// ou un seul et « +N ».
     @ViewBuilder
     private var platformsValue: some View {
         let chosen = chosenPlatforms
+        let room = isSeries ? 2 : 3
         // Aucune plateforme choisie, c'est aucun filtre : on cherche partout.
         if chosen.isEmpty {
             scenarioValue(String(localized: "Toutes", bundle: .app))
         } else {
-            let shown = chosen.count > 3 ? Array(chosen.prefix(2)) : chosen
+            let shown = chosen.count > room ? Array(chosen.prefix(room - 1)) : chosen
             HStack(spacing: 3) {
                 ForEach(shown, id: \.id) { entry in
                     ScenarioPlatformLogo(platform: entry.platform)
@@ -277,8 +288,9 @@ struct CineMatchHomeView: View {
         let company = viewModel.situation.company.scenarioLabel
         let duration = viewModel.situation.duration.scenarioLabel(series: isSeries)
         if isSeries {
+            let length = viewModel.situation.engagement.scenarioLabel
             return String(
-                localized: "Modifier ta soirée. Avec qui : \(company). Par épisode : \(duration). Plateformes : \(platforms).",
+                localized: "Modifier ta soirée. Avec qui : \(company). Par épisode : \(duration). Longueur : \(length). Plateformes : \(platforms).",
                 bundle: .app
             )
         }
@@ -392,7 +404,7 @@ struct CineMatchHomeView: View {
             try? await Task.sleep(for: .milliseconds(160))
             switch entry {
             case .guided:
-                viewModel.startGuided()
+                await viewModel.startGuided()
             case .daily:
                 await viewModel.openDaily()
             }

@@ -132,9 +132,14 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "getcinematchcomparison", queryItems: [])
     }
 
-    static func cineMatchFive() -> URL? {
+    static func cineMatchStarters() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
-        return buildURL(baseURL: baseURL, functionName: "getcinematchfive", queryItems: [])
+        return buildURL(baseURL: baseURL, functionName: "getcinematchstarters", queryItems: [])
+    }
+
+    static func cineMatchPicks() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getcinematchpicks", queryItems: [])
     }
 
     static func cineMatchDaily() -> URL? {

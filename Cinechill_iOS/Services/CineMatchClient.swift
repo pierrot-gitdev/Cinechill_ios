@@ -6,7 +6,7 @@
 import Foundation
 import FirebaseAuth
 
-/// Les erreurs propres à CinéMatch v2. Le reste passe par
+/// Les erreurs propres à CinéMatch. Le reste passe par
 /// `RecommendationClientError`, dont les messages valent aussi ici.
 nonisolated enum CineMatchClientError: LocalizedError {
     /// 409 `no_candidates` : aucun film, même après tous les élargissements.
@@ -29,28 +29,33 @@ nonisolated enum CineMatchClientError: LocalizedError {
     }
 }
 
-/// Le moteur de CinéMatch v2 vit sur le serveur : l'app pose les questions,
-/// transmet les réponses, et affiche ce qui revient.
+/// Le moteur de CinéMatch vit sur le serveur : l'app transmet le style, le
+/// film de départ et la soirée, et affiche ce qui revient.
 ///
 /// Chaque appel porte son format. Films et séries sont deux profils que le
 /// serveur tient à part (galerie, duels, exposition, historique), et leurs
 /// identifiants TMDB se recoupent : un appel sans format parlerait de films.
 protocol CineMatchFetching: Sendable {
-    /// `forDoor` : les comparaisons de la Porte. Le serveur lève alors la
-    /// limite de `total` et recycle les films les moins récemment montrés.
+    /// Les comparaisons de la Porte. `forDoor` lève la limite de `total` et
+    /// fait recycler les films les moins récemment montrés.
     func comparisonRound(round: Int, shownIDs: [Int], history: [CineMatchComparison], forDoor: Bool,
                          format: MediaFormat) async throws -> CineMatchComparisonRound
-    /// `energy` pour un film, `engagement` pour une série : l'une remplace
-    /// l'autre, jamais les deux. Avec `replacing`, le serveur ne renvoie que
-    /// les remplaçants des films déjà vus.
-    func five(situation: CineMatchSituation, want: CineMatchWant, energy: CineMatchEnergy?,
-              engagement: CineMatchEngagement?, comparisons: [CineMatchComparison], hesitations: Int,
-              format: MediaFormat, replacing: CineMatchReplacement?) async throws -> CineMatchFiveResponse
+    /// Les dix styles, du plus présent dans la galerie au moins présent.
+    func styles(format: MediaFormat) async throws -> [CineMatchStyleTile]
+    /// Six films d'un style. `page` passe aux six suivants.
+    func starters(style: CineMatchStyle, page: Int, format: MediaFormat) async throws -> CineMatchStarterPage
+    /// Les cinq, proches de `anchorID`, ou d'après les coups de cœur sans
+    /// film de départ. Avec `replacing`, le serveur ne renvoie que les
+    /// remplaçants des films marqués.
+    func picks(situation: CineMatchSituation, anchorID: Int?, style: CineMatchStyle?,
+               format: MediaFormat, replacing: CineMatchReplacement?) async throws -> CineMatchFiveResponse
     /// `nil` quand aucun film ne correspond au scénario.
     func daily(situation: CineMatchSituation, format: MediaFormat) async throws -> CineMatchFilm?
     func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int], format: MediaFormat) async throws
     func recordDuel(winnerID: Int, loserID: Int, format: MediaFormat) async throws
     func recordLaunch(tmdbID: Int, format: MediaFormat) async throws
+    /// « Pas celui-là » : le refus d'un des cinq, noté dans sa séance.
+    func recordPass(tmdbID: Int, format: MediaFormat) async throws
 }
 
 nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
@@ -70,29 +75,58 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         return try decode(ComparisonResponseDTO.self, from: data).roundValue
     }
 
-    func five(situation: CineMatchSituation, want: CineMatchWant, energy: CineMatchEnergy?,
-              engagement: CineMatchEngagement?, comparisons: [CineMatchComparison], hesitations: Int,
-              format: MediaFormat, replacing: CineMatchReplacement?) async throws -> CineMatchFiveResponse {
+    func styles(format: MediaFormat) async throws -> [CineMatchStyleTile] {
+        #if DEBUG
+        if let fixture = DebugFixtures.cineMatchStyles(format: format) { return fixture }
+        #endif
+        let data = try await post(to: APIEndpoints.cineMatchStarters(), body: [
+            "format": format.rawValue,
+        ])
+        return try decode(StylesResponseDTO.self, from: data).tiles
+    }
+
+    func starters(style: CineMatchStyle, page: Int, format: MediaFormat) async throws -> CineMatchStarterPage {
+        #if DEBUG
+        if let fixture = DebugFixtures.cineMatchStarters(style: style, page: page, format: format) {
+            return fixture
+        }
+        #endif
+        let data = try await post(to: APIEndpoints.cineMatchStarters(), body: [
+            "format": format.rawValue,
+            "style": style.rawValue,
+            "page": page,
+        ])
+        let decoded = try decode(StartersResponseDTO.self, from: data)
+        return CineMatchStarterPage(
+            // Le serveur renvoie le style demandé ; on garde le nôtre s'il en
+            // parle autrement.
+            style: CineMatchStyle(rawValue: decoded.style ?? "") ?? style,
+            page: decoded.page ?? page,
+            films: decoded.films.map(\.film),
+            hasMore: decoded.hasMore ?? false
+        )
+    }
+
+    func picks(situation: CineMatchSituation, anchorID: Int?, style: CineMatchStyle?,
+               format: MediaFormat, replacing: CineMatchReplacement?) async throws -> CineMatchFiveResponse {
         var body: [String: Any] = [
             "situation": Self.payload(for: situation),
-            "want": want.rawValue,
-            "comparisons": comparisons.map(Self.payload(for:)),
-            "hesitations": hesitations,
             "format": format.rawValue,
         ]
-        if let energy { body["energy"] = energy.rawValue }
-        if let engagement { body["engagement"] = engagement.rawValue }
+        if let anchorID { body["anchorId"] = anchorID }
+        if let style { body["style"] = style.rawValue }
         if let replacing {
             var replace: [String: Any] = [
                 "keepIds": replacing.keepIDs,
                 "seenIds": replacing.seenIDs,
+                "refusedIds": replacing.refusedIDs,
             ]
             if let sessionID = replacing.sessionID { replace["sessionId"] = sessionID }
             body["replace"] = replace
         }
         let data: Data
         do {
-            data = try await post(to: APIEndpoints.cineMatchFive(), body: body)
+            data = try await post(to: APIEndpoints.cineMatchPicks(), body: body)
         } catch CineMatchClientError.noCandidates {
             throw CineMatchClientError.noCandidates(for: format)
         }
@@ -140,6 +174,12 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         ])
     }
 
+    func recordPass(tmdbID: Int, format: MediaFormat) async throws {
+        _ = try await post(to: APIEndpoints.sessionOutcome(), body: [
+            "kind": "pass", "tmdbId": tmdbID, "format": format.rawValue,
+        ])
+    }
+
     // MARK: - Corps de requête
 
     static func payload(for situation: CineMatchSituation) -> [String: Any] {
@@ -148,6 +188,7 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
             "duration": situation.duration.rawValue,
             "platformIds": situation.platformIDs.sorted(),
             "watchRegion": "FR",
+            "engagement": situation.engagement.rawValue,
         ]
     }
 
@@ -167,7 +208,7 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
 
     /// Même mécanique que `BackendRecommendationClient.post`, qui est privée.
     /// Seul le 409 `no_candidates` reçoit ici son propre message : celui du
-    /// questionnaire parle de « critères », CinéMatch v2 parle de scénario.
+    /// questionnaire parle de « critères », CinéMatch parle de la soirée.
     private func post(to url: URL?, body: [String: Any]) async throws -> Data {
         guard BackendConfiguration.baseURL != nil else {
             throw RecommendationClientError.missingBaseURL
@@ -246,6 +287,33 @@ private nonisolated struct GalleryFilmDTO: Decodable, Sendable {
             genreIDs: genreIds ?? []
         )
     }
+}
+
+private nonisolated struct StyleTileDTO: Decodable, Sendable {
+    let key: String
+    let count: Int?
+    let films: [GalleryFilmDTO]?
+}
+
+private nonisolated struct StylesResponseDTO: Decodable, Sendable {
+    let styles: [StyleTileDTO]
+
+    /// Un style que l'app ne connaît pas (ajouté au serveur après elle) est
+    /// laissé de côté plutôt que de faire échouer l'écran.
+    var tiles: [CineMatchStyleTile] {
+        styles.compactMap { tile in
+            CineMatchStyle(rawValue: tile.key).map {
+                CineMatchStyleTile(style: $0, count: max(0, tile.count ?? 0), films: (tile.films ?? []).map(\.film))
+            }
+        }
+    }
+}
+
+private nonisolated struct StartersResponseDTO: Decodable, Sendable {
+    let style: String?
+    let page: Int?
+    let films: [GalleryFilmDTO]
+    let hasMore: Bool?
 }
 
 private nonisolated struct ComparisonResponseDTO: Decodable, Sendable {
