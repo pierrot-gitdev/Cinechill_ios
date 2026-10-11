@@ -105,13 +105,28 @@ final class SocialStore: ObservableObject {
         try await client.claimHandle(handle)
 
         guard let uid = myUID else { return }
-        let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = Self.publicName(displayName)
         guard !trimmed.isEmpty else { return }
 
         try? await db.collection("publicProfiles").document(uid).setData([
             "displayName": trimmed,
             "displayNameNormalized": Self.normalize(trimmed),
         ], merge: true)
+    }
+
+    /// Le nom public, tel que les règles Firestore l'acceptent : sans blancs
+    /// autour, et pas plus de 60 caractères Unicode. On coupe entre deux
+    /// caractères affichés, pour ne jamais laisser un emoji à moitié.
+    nonisolated static func publicName(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        var kept = ""
+        var scalars = 0
+        for character in trimmed {
+            scalars += character.unicodeScalars.count
+            guard scalars <= 60 else { break }
+            kept.append(character)
+        }
+        return kept
     }
 
     /// Garde `publicProfiles.displayName` en phase avec le nom déclaré dans
@@ -124,7 +139,7 @@ final class SocialStore: ObservableObject {
     /// été choisi — rien à synchroniser avant qu'un profil public existe.
     func syncDisplayName(_ name: String) async {
         guard let uid = myUID, myProfile != nil else { return }
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = Self.publicName(name)
         guard !trimmed.isEmpty else { return }
         do {
             try await db.collection("publicProfiles").document(uid).setData([
