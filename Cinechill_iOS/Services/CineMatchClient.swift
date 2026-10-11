@@ -46,11 +46,16 @@ protocol CineMatchFetching: Sendable {
     /// films déjà montrés, sont écartés quel que soit l'ordre du serveur.
     func starters(style: CineMatchStyle, page: Int, shownIDs: [Int],
                   format: MediaFormat) async throws -> CineMatchStarterPage
-    /// Les cinq, proches de `anchorID`, ou d'après les coups de cœur sans
-    /// film de départ. Avec `replacing`, le serveur ne renvoie que les
-    /// remplaçants des films marqués.
-    func picks(situation: CineMatchSituation, anchorID: Int?, style: CineMatchStyle?,
-               format: MediaFormat, replacing: CineMatchReplacement?) async throws -> CineMatchFiveResponse
+    /// Les films de la galerie proches de `anchorID`, et les retouches qui
+    /// ont un sens pour lui.
+    func near(anchorID: Int, format: MediaFormat) async throws -> CineMatchNearPage
+    /// Les cinq, proches de `anchorID` (et de `secondID`, retouchés par
+    /// `tweak`), ou d'après les coups de cœur sans film de départ. Avec
+    /// `replacing`, le serveur ne renvoie que les remplaçants des films
+    /// marqués.
+    func picks(situation: CineMatchSituation, anchorID: Int?, secondID: Int?, tweak: CineMatchTweak?,
+               style: CineMatchStyle?, format: MediaFormat,
+               replacing: CineMatchReplacement?) async throws -> CineMatchFiveResponse
     /// `nil` quand aucun film ne correspond au scénario.
     func daily(situation: CineMatchSituation, format: MediaFormat) async throws -> CineMatchFilm?
     func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int], format: MediaFormat) async throws
@@ -113,13 +118,33 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         )
     }
 
-    func picks(situation: CineMatchSituation, anchorID: Int?, style: CineMatchStyle?,
-               format: MediaFormat, replacing: CineMatchReplacement?) async throws -> CineMatchFiveResponse {
+    func near(anchorID: Int, format: MediaFormat) async throws -> CineMatchNearPage {
+        #if DEBUG
+        if let fixture = DebugFixtures.cineMatchNear(anchorID: anchorID, format: format) { return fixture }
+        #endif
+        let data = try await post(to: APIEndpoints.cineMatchStarters(), body: [
+            "format": format.rawValue,
+            "nearId": anchorID,
+        ])
+        let decoded = try decode(NearResponseDTO.self, from: data)
+        return CineMatchNearPage(
+            anchorID: anchorID,
+            films: (decoded.films ?? []).map(\.film),
+            // Une retouche que l'app ne connaît pas est laissée de côté.
+            tweaks: (decoded.tweaks ?? []).compactMap(CineMatchTweak.init(rawValue:))
+        )
+    }
+
+    func picks(situation: CineMatchSituation, anchorID: Int?, secondID: Int?, tweak: CineMatchTweak?,
+               style: CineMatchStyle?, format: MediaFormat,
+               replacing: CineMatchReplacement?) async throws -> CineMatchFiveResponse {
         var body: [String: Any] = [
             "situation": Self.payload(for: situation),
             "format": format.rawValue,
         ]
         if let anchorID { body["anchorId"] = anchorID }
+        if let secondID { body["secondId"] = secondID }
+        if let tweak { body["tweak"] = tweak.rawValue }
         if let style { body["style"] = style.rawValue }
         if let replacing {
             var replace: [String: Any] = [
@@ -321,6 +346,11 @@ private nonisolated struct StartersResponseDTO: Decodable, Sendable {
     let films: [GalleryFilmDTO]
     let hasMore: Bool?
     let restarted: Bool?
+}
+
+private nonisolated struct NearResponseDTO: Decodable, Sendable {
+    let films: [GalleryFilmDTO]?
+    let tweaks: [String]?
 }
 
 private nonisolated struct ComparisonResponseDTO: Decodable, Sendable {

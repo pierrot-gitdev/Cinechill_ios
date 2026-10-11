@@ -106,6 +106,24 @@ nonisolated enum DebugFixtures {
         }
     }
 
+    /// Les voisins du film choisi. Le pire cas : six films aux titres longs
+    /// ou absents d'affiche, et les quatre retouches. Le vide : ni voisin ni
+    /// retouche, les deux écrans sont passés.
+    static func cineMatchNear(anchorID: Int, format: MediaFormat) -> CineMatchNearPage? {
+        switch mode {
+        case nil:
+            return nil
+        case .empty:
+            return CineMatchNearPage(anchorID: anchorID, films: [], tweaks: [])
+        case .worst:
+            return CineMatchNearPage(
+                anchorID: anchorID,
+                films: Array(worstStarters.filter { $0.id != anchorID }.suffix(6)),
+                tweaks: CineMatchTweak.allCases
+            )
+        }
+    }
+
     // MARK: - Les données
 
     private static func profile(_ id: String, _ handle: String, _ name: String?, seen: Int) -> PublicProfile {

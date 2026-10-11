@@ -53,6 +53,23 @@ nonisolated enum CineMatchStyle: String, CaseIterable, Hashable, Sendable {
     case thriller, action, scifi, comedy, drama, romance, horror, animation, history, documentary
 }
 
+/// « Comme Heat, mais… ? » : ce qu'on change au film choisi. Le serveur ne
+/// propose que celles qui ont un sens pour lui : rien de plus récent qu'un
+/// film de 2023, rien de moins connu qu'un film confidentiel.
+nonisolated enum CineMatchTweak: String, CaseIterable, Hashable, Sendable {
+    case recent, lesser, lighter, darker
+}
+
+/// L'écran « Plutôt du côté de… ? » : les films de la galerie proches du
+/// film choisi, et les retouches qui ont un sens pour lui.
+nonisolated struct CineMatchNearPage: Equatable, Sendable {
+    let anchorID: Int
+    /// Six au plus, le plus proche d'abord. Moins de deux : l'écran est passé.
+    let films: [CineMatchGalleryFilm]
+    /// Vide : l'écran « Comme Heat, mais… ? » est passé.
+    let tweaks: [CineMatchTweak]
+}
+
 /// Une tuile de l'écran de départ : un style, le nombre de films de la
 /// galerie qui en sont, et trois de leurs affiches.
 nonisolated struct CineMatchStyleTile: Identifiable, Hashable, Sendable {

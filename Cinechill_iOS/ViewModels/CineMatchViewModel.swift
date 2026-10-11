@@ -6,7 +6,9 @@
 import Foundation
 
 /// Le parcours CinéMatch : un style, un de ses films comme point de départ,
-/// puis cinq films proches de lui. Ou, en un geste, la proposition du jour.
+/// un second film pour préciser la direction, une retouche (« Comme Heat,
+/// mais… ? »), puis cinq films proches. Ou, en un geste, la proposition du
+/// jour.
 ///
 /// Les deux questions et les quatre comparaisons du soir ont laissé la place
 /// à ces deux touchers (lot 1, octobre 2026). Mesurées, les questions ne
@@ -24,9 +26,14 @@ import Foundation
 @Observable
 @MainActor
 final class CineMatchViewModel {
-    /// `.style` et `.anchor` sont les deux écrans du départ ; `.loadingFive`
-    /// est l'attente des cinq.
-    enum Step: Equatable { case home, style, anchor, loadingFive, five, daily, conclusion }
+    /// `.style` et `.anchor` sont les deux écrans du départ ; `.refine`
+    /// (« Plutôt du côté de… ? ») et `.tweak` (« Comme Heat, mais… ? »)
+    /// affinent, et se passent quand le serveur n'a rien à y proposer ;
+    /// `.loadingFive` est l'attente des cinq.
+    ///
+    /// Deux touchers ne suffisaient pas (retour de Pierre, 12 octobre) : le
+    /// film choisi dit le genre d'histoire, pas la direction ni le ton.
+    enum Step: Equatable { case home, style, anchor, refine, tweak, loadingFive, five, daily, conclusion }
     enum GalleryAddState: Equatable { case idle, adding, added, failed }
 
     /// Ce qu'on a dit d'un des cinq. Un film marqué ne se lance plus : il se
@@ -66,6 +73,15 @@ final class CineMatchViewModel {
     private(set) var isLoadingStarters = false
     /// Le film de départ des cinq. `nil` après « Peu importe ».
     private(set) var anchor: CineMatchGalleryFilm?
+    /// Les voisins du film de départ et les retouches qui ont un sens pour
+    /// lui. `nil` tant qu'ils ne sont pas arrivés.
+    private(set) var nearPage: CineMatchNearPage?
+    /// Le film de départ touché, le temps que ses voisins arrivent.
+    private(set) var isLoadingNear = false
+    /// Le second film (« Plutôt du côté de… ? »). `nil` : « Pile comme ».
+    private(set) var secondFilm: CineMatchGalleryFilm?
+    /// La retouche (« Comme Heat, mais… ? »). `nil` : « Pareil ».
+    private(set) var chosenTweak: CineMatchTweak?
 
     /// Les styles du format courant, du plus présent dans la galerie au moins
     /// présent. Vide tant qu'ils n'ont pas été chargés.
@@ -121,6 +137,8 @@ final class CineMatchViewModel {
     /// Le film de départ et le style des cinq affichés : un remplacement se
     /// calcule sur les mêmes.
     private var fiveAnchorID: Int?
+    private var fiveSecondID: Int?
+    private var fiveTweak: CineMatchTweak?
     private var fiveStyle: CineMatchStyle?
 
     var markedCount: Int { films.filter { marks[$0.id] != nil }.count }
@@ -238,14 +256,63 @@ final class CineMatchViewModel {
         }
     }
 
-    /// Un film de départ touché : les cinq se calculent autour de lui.
+    /// Un film de départ touché : ses voisins arrivent, puis l'écran passe
+    /// à « Plutôt du côté de… ? », ou directement à la suite s'il n'y a rien
+    /// à y proposer.
     func chooseAnchor(_ film: CineMatchGalleryFilm) async {
-        guard step == .anchor, !isLoadingStarters, errorMessage == nil,
+        guard step == .anchor, !isLoadingStarters, !isLoadingNear, errorMessage == nil,
               starterPage?.films.contains(where: { $0.id == film.id }) == true
         else { return }
         recordStarterExposure()
         anchor = film
+        secondFilm = nil
+        chosenTweak = nil
+        nearPage = nil
+        await perform { [weak self] in await self?.loadNear(for: film) }
+    }
+
+    /// « Plutôt du côté de… ? » : un second film touché.
+    func chooseSecond(_ film: CineMatchGalleryFilm) async {
+        guard step == .refine, nearPage?.films.contains(where: { $0.id == film.id }) == true else { return }
+        secondFilm = film
+        await advanceAfterRefine()
+    }
+
+    /// « Pile comme Heat » : pas de second film.
+    func skipSecond() async {
+        guard step == .refine else { return }
+        secondFilm = nil
+        await advanceAfterRefine()
+    }
+
+    /// « Comme Heat, mais… ? » : une retouche, ou `nil` pour « Pareil ».
+    func chooseTweak(_ tweak: CineMatchTweak?) async {
+        guard step == .tweak else { return }
+        if let tweak, nearPage?.tweaks.contains(tweak) != true { return }
+        chosenTweak = tweak
         await perform { [weak self] in await self?.loadFive() }
+    }
+
+    /// Assez de voisins pour que choisir parmi eux veuille dire quelque chose.
+    private var hasNearFilms: Bool { (nearPage?.films.count ?? 0) >= 2 }
+    private var hasTweaks: Bool { !(nearPage?.tweaks.isEmpty ?? true) }
+
+    private func advanceAfterAnchor() async {
+        if hasNearFilms {
+            step = .refine
+        } else if hasTweaks {
+            step = .tweak
+        } else {
+            await loadFive()
+        }
+    }
+
+    private func advanceAfterRefine() async {
+        if hasTweaks {
+            step = .tweak
+        } else {
+            await perform { [weak self] in await self?.loadFive() }
+        }
     }
 
     /// « Peu importe, propose-moi » : pas de film de départ, les cinq
@@ -253,14 +320,17 @@ final class CineMatchViewModel {
     func chooseAnyStyle() async {
         guard step == .style, pendingStyle == nil, errorMessage == nil else { return }
         anchor = nil
+        secondFilm = nil
+        chosenTweak = nil
+        nearPage = nil
         selectedStyle = nil
         await perform { [weak self] in await self?.loadFive() }
     }
 
-    /// « Retour » : une marche en arrière. Des cinq (ou de leur attente) aux
-    /// films de départ, des films de départ aux styles, des styles à
-    /// l'accueil. Ce qu'on retrouve est ce qu'on avait laissé : les mêmes six
-    /// films, sans nouveau chargement.
+    /// « Retour » : une marche en arrière, jusqu'au dernier écran où l'on a
+    /// répondu. Des cinq à la retouche, de la retouche au second film, du
+    /// second film aux films de départ, puis aux styles et à l'accueil. Ce
+    /// qu'on retrouve est ce qu'on avait laissé, sans nouveau chargement.
     func goBack() {
         switch step {
         case .loadingFive, .five:
@@ -269,9 +339,31 @@ final class CineMatchViewModel {
             clearFive()
             errorMessage = nil
             lastFailedAction = nil
-            let hadAnchor = anchor != nil
-            anchor = nil
-            step = hadAnchor && starterPage != nil ? .anchor : .style
+            chosenTweak = nil
+            if anchor == nil {
+                step = .style
+            } else if hasTweaks {
+                step = .tweak
+            } else if hasNearFilms {
+                secondFilm = nil
+                step = .refine
+            } else {
+                leaveRefinement()
+            }
+        case .tweak:
+            errorMessage = nil
+            lastFailedAction = nil
+            chosenTweak = nil
+            if hasNearFilms {
+                secondFilm = nil
+                step = .refine
+            } else {
+                leaveRefinement()
+            }
+        case .refine:
+            errorMessage = nil
+            lastFailedAction = nil
+            leaveRefinement()
         case .anchor:
             recordStarterExposure()
             stopInflight()
@@ -284,6 +376,16 @@ final class CineMatchViewModel {
         case .style, .home, .daily, .conclusion:
             backToHome()
         }
+    }
+
+    /// Retour aux films de départ : le film touché ne l'est plus.
+    private func leaveRefinement() {
+        stopInflight()
+        anchor = nil
+        secondFilm = nil
+        chosenTweak = nil
+        nearPage = nil
+        step = starterPage != nil ? .anchor : .style
     }
 
     // MARK: - Résultats
@@ -372,7 +474,8 @@ final class CineMatchViewModel {
         defer { isReplacing = false }
         do {
             let response = try await client.picks(
-                situation: situation, anchorID: fiveAnchorID, style: fiveStyle, format: format,
+                situation: situation, anchorID: fiveAnchorID, secondID: fiveSecondID, tweak: fiveTweak,
+                style: fiveStyle, format: format,
                 replacing: CineMatchReplacement(
                     sessionID: sessionID, keepIDs: keepIDs, seenIDs: seenIDs, refusedIDs: refusedIDs
                 )
@@ -481,14 +584,33 @@ final class CineMatchViewModel {
         }
     }
 
+    /// Les voisins du film de départ. Ils décident des deux écrans suivants.
+    private func loadNear(for film: CineMatchGalleryFilm) async {
+        isLoadingNear = true
+        errorMessage = nil
+        do {
+            let page = try await client.near(anchorID: film.id, format: format)
+            guard !Task.isCancelled else { return }
+            isLoadingNear = false
+            nearPage = page
+            await advanceAfterAnchor()
+        } catch {
+            isLoadingNear = false
+            fail(error) { [weak self] in await self?.loadNear(for: film) }
+        }
+    }
+
     private func loadFive() async {
         let anchorID = anchor?.id
+        let secondID = anchor == nil ? nil : secondFilm?.id
+        let tweak = anchor == nil ? nil : chosenTweak
         let style = anchor == nil ? nil : selectedStyle
         step = .loadingFive
         errorMessage = nil
         do {
             let response = try await client.picks(
-                situation: situation, anchorID: anchorID, style: style, format: format, replacing: nil
+                situation: situation, anchorID: anchorID, secondID: secondID, tweak: tweak,
+                style: style, format: format, replacing: nil
             )
             guard !Task.isCancelled else { return }
             guard !response.films.isEmpty else {
@@ -498,6 +620,8 @@ final class CineMatchViewModel {
             films = response.films
             sessionID = response.sessionID
             fiveAnchorID = anchorID
+            fiveSecondID = secondID
+            fiveTweak = tweak
             fiveStyle = style
             marks = [:]
             freshFilmIDs = []
@@ -548,6 +672,7 @@ final class CineMatchViewModel {
         inflight = nil
         isLoadingStyles = false
         isLoadingStarters = false
+        isLoadingNear = false
         pendingStyle = nil
     }
 
@@ -588,6 +713,10 @@ final class CineMatchViewModel {
         starterPage = nil
         isLoadingStarters = false
         anchor = nil
+        nearPage = nil
+        isLoadingNear = false
+        secondFilm = nil
+        chosenTweak = nil
         visitStarterIDs = []
         cycleStarterIDs = []
         errorMessage = nil
@@ -604,6 +733,8 @@ final class CineMatchViewModel {
         isReplacing = false
         sessionID = nil
         fiveAnchorID = nil
+        fiveSecondID = nil
+        fiveTweak = nil
         fiveStyle = nil
     }
 

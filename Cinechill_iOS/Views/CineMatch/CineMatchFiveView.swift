@@ -219,13 +219,11 @@ struct CineMatchFiveView: View {
             }
             .frame(minHeight: 16)
 
-            // Le film touché à l'écran précédent. Sans cette ligne, rien ne
-            // disait plus pourquoi ces cinq-là : on les avait demandés deux
-            // touchers plus tôt. Absente après « Peu importe ».
-            if mode == .five, let anchor = viewModel.anchor {
-                Text(isSeries
-                     ? String(localized: "Une série proche de \(anchor.title)", bundle: .app)
-                     : String(localized: "Un film proche de \(anchor.title)", bundle: .app))
+            // Ce qu'on a demandé, en une ligne : le film touché, le second
+            // film, la retouche. Sans elle, rien ne disait plus pourquoi ces
+            // cinq-là. Absente après « Peu importe ».
+            if mode == .five, let line = requestLine {
+                Text(line)
                     .planFont(13)
                     .foregroundStyle(Ink.ink2)
                     .lineLimit(2)
@@ -247,6 +245,23 @@ struct CineMatchFiveView: View {
                 }
             }
         }
+    }
+
+    /// « Un film proche de Heat et Drive, plus récent ».
+    private var requestLine: String? {
+        guard let anchor = viewModel.anchor else { return nil }
+        let base: String = switch (viewModel.secondFilm, isSeries) {
+        case (let second?, false):
+            String(localized: "Un film proche de \(anchor.title) et \(second.title)", bundle: .app)
+        case (let second?, true):
+            String(localized: "Une série proche de \(anchor.title) et \(second.title)", bundle: .app)
+        case (nil, false):
+            String(localized: "Un film proche de \(anchor.title)", bundle: .app)
+        case (nil, true):
+            String(localized: "Une série proche de \(anchor.title)", bundle: .app)
+        }
+        guard let tweak = viewModel.chosenTweak else { return base }
+        return base + ", " + tweak.suffix(series: isSeries)
     }
 
     /// Un point par film ; creux pour un film marqué « déjà vu » ou écarté.

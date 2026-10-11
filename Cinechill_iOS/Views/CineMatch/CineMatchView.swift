@@ -183,7 +183,7 @@ struct CineMatchView: View {
     private var stage: Int {
         switch viewModel.step {
         case .home: 0
-        case .style, .anchor, .loadingFive: 1
+        case .style, .anchor, .refine, .tweak, .loadingFive: 1
         case .five: 2
         case .daily: 3
         case .conclusion: 4
@@ -195,7 +195,7 @@ struct CineMatchView: View {
         switch viewModel.step {
         case .home:
             CineMatchHomeView(viewModel: viewModel, onProfileTap: { showProfile = true })
-        case .style, .anchor, .loadingFive:
+        case .style, .anchor, .refine, .tweak, .loadingFive:
             CineMatchStartView(viewModel: viewModel)
         case .five:
             CineMatchFiveView(viewModel: viewModel, mode: .five)

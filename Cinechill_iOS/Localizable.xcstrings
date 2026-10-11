@@ -2120,6 +2120,22 @@
         }
       }
     },
+    "Au plus près de %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As close to %@ as possible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Au plus près de %@"
+          }
+        }
+      }
+    },
     "Aucun compte bloqué" : {
       "localizations" : {
         "en" : {
@@ -2180,6 +2196,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autre chose"
+          }
+        }
+      }
+    },
+    "Avec plus d'humour ou de douceur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With more humor or gentleness"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec plus d'humour ou de douceur"
+          }
+        }
+      }
+    },
+    "Avec plus de tension ou de noirceur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With more tension or darkness"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec plus de tension ou de noirceur"
           }
         }
       }
@@ -5872,6 +5920,22 @@
         }
       }
     },
+    "Comme %@, mais… ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Like %@, but…?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comme %@, mais… ?"
+          }
+        }
+      }
+    },
     "Commencer à swiper" : {
       "localizations" : {
         "en" : {
@@ -6778,6 +6842,38 @@
         }
       }
     },
+    "Des films plus récents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More recent movies"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des films plus récents"
+          }
+        }
+      }
+    },
+    "Des films moins vus que %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Movies fewer people have seen than %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des films moins vus que %@"
+          }
+        }
+      }
+    },
     "Des questions sans réponse" : {
       "localizations" : {
         "en" : {
@@ -6806,6 +6902,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Des séries de %lld genres différents"
+          }
+        }
+      }
+    },
+    "Des séries plus récentes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More recent series"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des séries plus récentes"
+          }
+        }
+      }
+    },
+    "Des séries moins vues que %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Series fewer people have seen than %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des séries moins vues que %@"
           }
         }
       }
@@ -10379,6 +10507,70 @@
         }
       }
     },
+    "Moins connu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Less known"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moins connu"
+          }
+        }
+      }
+    },
+    "Moins connue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Less known"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moins connue"
+          }
+        }
+      }
+    },
+    "moins connu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "less known"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "moins connu"
+          }
+        }
+      }
+    },
+    "moins connue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "less known"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "moins connue"
+          }
+        }
+      }
+    },
     "Moins de 6" : {
       "localizations" : {
         "en" : {
@@ -11891,6 +12083,22 @@
         }
       }
     },
+    "Pareil" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The same"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pareil"
+          }
+        }
+      }
+    },
     "Pas assez de films vus" : {
       "localizations" : {
         "en" : {
@@ -12243,6 +12451,22 @@
         }
       }
     },
+    "Pile comme %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Just like %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pile comme %@"
+          }
+        }
+      }
+    },
     "Plateformes" : {
       "localizations" : {
         "en" : {
@@ -12287,6 +12511,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plus de séries pour l'instant"
+          }
+        }
+      }
+    },
+    "Plus léger" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lighter"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus léger"
+          }
+        }
+      }
+    },
+    "Plus légère" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lighter"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus légère"
+          }
+        }
+      }
+    },
+    "plus léger" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lighter"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "plus léger"
+          }
+        }
+      }
+    },
+    "plus légère" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lighter"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "plus légère"
           }
         }
       }
@@ -12355,6 +12643,102 @@
         }
       }
     },
+    "Plus récent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More recent"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus récent"
+          }
+        }
+      }
+    },
+    "Plus récente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More recent"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus récente"
+          }
+        }
+      }
+    },
+    "Plus sombre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darker"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus sombre"
+          }
+        }
+      }
+    },
+    "plus récent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "more recent"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "plus récent"
+          }
+        }
+      }
+    },
+    "plus récente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "more recent"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "plus récente"
+          }
+        }
+      }
+    },
+    "plus sombre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "darker"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "plus sombre"
+          }
+        }
+      }
+    },
     "Plus tard" : {
       "localizations" : {
         "en" : {
@@ -12415,6 +12799,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plusieurs saisons"
+          }
+        }
+      }
+    },
+    "Plutôt du côté de… ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More like…?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plutôt du côté de… ?"
           }
         }
       }
@@ -12639,6 +13039,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Prochaine étape : %@"
+          }
+        }
+      }
+    },
+    "Proche de %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close to %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proche de %@"
+          }
+        }
+      }
+    },
+    "Proche de %@ et %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close to %1$@ and %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proche de %@ et %@"
           }
         }
       }
@@ -14516,6 +14948,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Signature"
+          }
+        }
+      }
+    },
+    "Sorties à partir de %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Released from %@ on"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sorties à partir de %@"
+          }
+        }
+      }
+    },
+    "Sortis à partir de %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Released from %@ on"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sortis à partir de %@"
           }
         }
       }
@@ -16425,6 +16889,22 @@
         }
       }
     },
+    "Un film proche de %@ et %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A movie like %1$@ and %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un film proche de %@ et %@"
+          }
+        }
+      }
+    },
     "Un film proche de… ?" : {
       "localizations" : {
         "en" : {
@@ -16709,6 +17189,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Une série proche de %@"
+          }
+        }
+      }
+    },
+    "Une série proche de %@ et %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A series like %1$@ and %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une série proche de %@ et %@"
           }
         }
       }

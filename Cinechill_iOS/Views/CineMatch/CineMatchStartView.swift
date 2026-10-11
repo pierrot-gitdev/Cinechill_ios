@@ -5,8 +5,10 @@
 
 import SwiftUI
 
-/// Le départ de CinéMatch : un style, puis un de ses films comme point de
-/// départ. Deux touchers, rien à écrire.
+/// Le départ de CinéMatch : un style, un de ses films comme point de départ,
+/// un second film pour préciser la direction, puis « Comme Heat, mais… ? ».
+/// Quatre touchers au plus, rien à écrire ; les deux derniers se passent
+/// d'un toucher (« Pile comme Heat », « Pareil »).
 ///
 /// Il remplace les deux questions et les quatre comparaisons (lot 1,
 /// octobre 2026). L'écran des styles ne montre que ceux de la galerie, illustrés
@@ -26,9 +28,12 @@ struct CineMatchStartView: View {
     /// « Un autre style » a été touché : les styles restants s'affichent sous
     /// les six.
     @State private var showsOtherStyles = false
-    /// Le film de départ touché. Il s'allume avant qu'on parte, pour qu'il soit
-    /// vu comme pris : sans ce temps, la page change sous le doigt.
-    @State private var pressedAnchorID: Int?
+    /// Le film touché (de départ ou second). Il s'allume avant qu'on parte,
+    /// pour qu'il soit vu comme pris : sans ce temps, la page change sous le
+    /// doigt.
+    @State private var pressedFilmID: Int?
+    /// La retouche touchée, `nil` dans la clé pour « Pareil ».
+    @State private var pressedTweak: String?
     /// La hauteur du titre sous l'affiche suit la taille du texte : à 30 pt
     /// fixes, deux lignes agrandies étaient coupées à mi-hauteur.
     @ScaledMetric(relativeTo: .caption) private var captionHeight: CGFloat = 30
@@ -50,7 +55,8 @@ struct CineMatchStartView: View {
         .background(Ink.ground)
         .animation(.easeOut(duration: 0.2), value: pageKey)
         .onChange(of: viewModel.step) { _, _ in
-            pressedAnchorID = nil
+            pressedFilmID = nil
+            pressedTweak = nil
         }
         .onChange(of: viewModel.format) { _, _ in
             showsOtherStyles = false
@@ -63,6 +69,8 @@ struct CineMatchStartView: View {
         switch viewModel.step {
         case .style: return "style-\(viewModel.styleTiles.isEmpty)-\(failed)"
         case .anchor: return "anchor-\(failed)"
+        case .refine: return "refine-\(failed)"
+        case .tweak: return "tweak-\(failed)"
         default: return "\(viewModel.step)-\(failed)"
         }
     }
@@ -123,6 +131,10 @@ struct CineMatchStartView: View {
                 stylesPage
             case .anchor:
                 anchorPage
+            case .refine:
+                refinePage
+            case .tweak:
+                tweakPage
             case .loadingFive:
                 waiting
             default:
@@ -326,7 +338,9 @@ struct CineMatchStartView: View {
                         .foregroundStyle(Ink.ink2)
                         .padding(.top, 6)
 
-                    anchorGrid(starters.films)
+                    posterGrid(starters.films, from: .anchor) { film in
+                        await viewModel.chooseAnchor(film)
+                    }
                         .id(starters.page)
                         .transition(.opacity)
                         .padding(.top, 16)
@@ -360,7 +374,7 @@ struct CineMatchStartView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PressableScaleStyle(scale: 0.97))
-                    .disabled(viewModel.isLoadingStarters || pressedAnchorID != nil)
+                    .disabled(viewModel.isLoadingStarters || pressedFilmID != nil)
                     .accessibilityLabel(
                         viewModel.isLoadingStarters
                             ? String(localized: "Chargement…", bundle: .app)
@@ -389,31 +403,44 @@ struct CineMatchStartView: View {
         PosterImageCache.shared.prefetch((viewModel.starterPage?.films ?? []).map(\.posterURL))
     }
 
-    private func anchorGrid(_ films: [CineMatchGalleryFilm]) -> some View {
+    /// La grille d'affiches des films de départ et des seconds films. `step`
+    /// est l'écran qu'elle sert : si le modèle n'en part pas, le geste a été
+    /// refusé et l'affiche touchée ne reste pas prise.
+    private func posterGrid(
+        _ films: [CineMatchGalleryFilm],
+        from step: CineMatchViewModel.Step,
+        choose: @escaping (CineMatchGalleryFilm) async -> Void
+    ) -> some View {
         let columns = Array(
             repeating: GridItem(.flexible(), spacing: Metrics.gutter, alignment: .top),
             count: anchorColumns
         )
         return LazyVGrid(columns: columns, alignment: .leading, spacing: 14) {
             ForEach(films) { film in
-                anchorTile(film)
+                posterTile(film, from: step, choose: choose)
             }
         }
     }
 
-    private func anchorTile(_ film: CineMatchGalleryFilm) -> some View {
-        let isPressed = pressedAnchorID == film.id
+    private func posterTile(
+        _ film: CineMatchGalleryFilm,
+        from step: CineMatchViewModel.Step,
+        choose: @escaping (CineMatchGalleryFilm) async -> Void
+    ) -> some View {
+        let isPressed = pressedFilmID == film.id
+        // Les voisins du film de départ arrivent : l'affiche prise le dit.
+        let isWaiting = isPressed && viewModel.isLoadingNear
         let shape = RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
 
         return Button {
-            guard pressedAnchorID == nil, !viewModel.isLoadingStarters else { return }
-            pressedAnchorID = film.id
+            guard pressedFilmID == nil, !viewModel.isLoadingStarters else { return }
+            pressedFilmID = film.id
             Task {
                 // Le temps de voir l'affiche prise, puis on part.
                 try? await Task.sleep(for: .milliseconds(150))
-                await viewModel.chooseAnchor(film)
+                await choose(film)
                 // Le modèle a refusé le geste : l'affiche ne reste pas prise.
-                if viewModel.step == .anchor { pressedAnchorID = nil }
+                if viewModel.step == step { pressedFilmID = nil }
             }
         } label: {
             VStack(alignment: .leading, spacing: 6) {
@@ -437,6 +464,14 @@ struct CineMatchStartView: View {
                                 .padding(6)
                         }
                     }
+                    .overlay {
+                        if isWaiting {
+                            CinechillSpinner(size: 18)
+                                .frame(width: 34, height: 34)
+                                .background(Ink.ground.opacity(0.8), in: Circle())
+                                .transition(.opacity)
+                        }
+                    }
 
                 Text(film.title)
                     .planFont(12)
@@ -447,11 +482,160 @@ struct CineMatchStartView: View {
             }
             .contentShape(Rectangle())
             .animation(.easeOut(duration: 0.12), value: isPressed)
+            .animation(.easeOut(duration: 0.15), value: isWaiting)
         }
         .buttonStyle(PressableScaleStyle(scale: 0.97))
-        .disabled(pressedAnchorID != nil && !isPressed)
+        .disabled(pressedFilmID != nil && !isPressed)
         .accessibilityLabel(film.title)
+        .accessibilityValue(isWaiting ? String(localized: "Chargement…", bundle: .app) : "")
         .accessibilityAddTraits(isPressed ? [.isSelected] : [])
+    }
+
+    // MARK: Le second film
+
+    /// « Plutôt du côté de… ? » : six films de la galerie proches du film de
+    /// départ, qui tirent chacun dans une direction. « Pile comme Heat » passe
+    /// l'écran.
+    @ViewBuilder
+    private var refinePage: some View {
+        if let anchor = viewModel.anchor, let near = viewModel.nearPage {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    questionTitle(String(localized: "Plutôt du côté de… ?", bundle: .app))
+
+                    Text(String(localized: "Proche de \(anchor.title)", bundle: .app))
+                        .planFont(12.5)
+                        .foregroundStyle(Ink.ink2)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 6)
+
+                    posterGrid(near.films, from: .refine) { film in
+                        await viewModel.chooseSecond(film)
+                    }
+                    .padding(.top, 16)
+                }
+                .padding(.bottom, 12)
+            }
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                textLink(String(localized: "Pile comme \(anchor.title)", bundle: .app), tint: Ink.ink) {
+                    Task { await viewModel.skipSecond() }
+                }
+                .disabled(pressedFilmID != nil)
+                .padding(.top, 6)
+                .background(Ink.ground)
+            }
+            .onAppear { PosterImageCache.shared.prefetch(near.films.map(\.posterURL)) }
+        }
+    }
+
+    // MARK: La retouche
+
+    /// « Comme Heat, mais… ? » : ce qu'on change au film de départ. Chaque
+    /// réponse dit ce qu'elle fait, et seules celles qui ont un sens pour ce
+    /// film sont là. « Pareil » passe l'écran.
+    @ViewBuilder
+    private var tweakPage: some View {
+        if let anchor = viewModel.anchor, let near = viewModel.nearPage {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    questionTitle(String(localized: "Comme \(anchor.title), mais… ?", bundle: .app))
+
+                    if let second = viewModel.secondFilm {
+                        Text(String(localized: "Proche de \(anchor.title) et \(second.title)", bundle: .app))
+                            .planFont(12.5)
+                            .foregroundStyle(Ink.ink2)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 6)
+                    }
+
+                    VStack(spacing: 7) {
+                        tweakRow(nil, anchor: anchor)
+                        ForEach(near.tweaks, id: \.self) { tweak in
+                            tweakRow(tweak, anchor: anchor)
+                        }
+                    }
+                    .padding(.top, 18)
+                }
+                .padding(.bottom, 12)
+            }
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
+        }
+    }
+
+    private func tweakRow(_ tweak: CineMatchTweak?, anchor: CineMatchGalleryFilm) -> some View {
+        let key = tweak?.rawValue ?? "same"
+        let isOn = pressedTweak == key
+        let title = tweak?.title(series: isSeries) ?? String(localized: "Pareil", bundle: .app)
+        let consequence = tweakConsequence(tweak, anchor: anchor)
+        let shape = RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+
+        return Button {
+            guard pressedTweak == nil else { return }
+            pressedTweak = key
+            Task {
+                // La ligne s'allume, puis on part : la réponse est vue prise.
+                try? await Task.sleep(for: .milliseconds(150))
+                await viewModel.chooseTweak(tweak)
+                if viewModel.step == .tweak { pressedTweak = nil }
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .planFont(15, weight: .medium)
+                    .foregroundStyle(isOn ? Ink.ground : Ink.ink)
+                Text(consequence)
+                    .planFont(12)
+                    .foregroundStyle(isOn ? Ink.ground.opacity(0.62) : Ink.ink2)
+            }
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(minHeight: 56)
+            .background(isOn ? Ink.ink : Ink.ground2, in: shape)
+            .overlay(shape.strokeBorder(isOn ? Ink.ink : Ink.ruleSet, lineWidth: 1))
+            .contentShape(shape)
+            .animation(.easeOut(duration: 0.12), value: isOn)
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.985))
+        .disabled(pressedTweak != nil && !isOn)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isOn ? [.isSelected] : [])
+    }
+
+    /// Ce que fait la réponse, dit avec le film de départ : « Sortis à partir
+    /// de 2000 » plutôt que « plus récents ».
+    private func tweakConsequence(_ tweak: CineMatchTweak?, anchor: CineMatchGalleryFilm) -> String {
+        switch tweak {
+        case nil:
+            return String(localized: "Au plus près de \(anchor.title)", bundle: .app)
+        case .recent:
+            guard let year = anchor.releaseDate.flatMap({ Int($0.prefix(4)) }) else {
+                return isSeries
+                    ? String(localized: "Des séries plus récentes", bundle: .app)
+                    : String(localized: "Des films plus récents", bundle: .app)
+            }
+            // La décennie suivante : c'est ce que le serveur exige. En texte,
+            // pour qu'une année ne prenne pas d'espace de milliers.
+            let from = String(year / 10 * 10 + 10)
+            return isSeries
+                ? String(localized: "Sorties à partir de \(from)", bundle: .app)
+                : String(localized: "Sortis à partir de \(from)", bundle: .app)
+        case .lesser:
+            return isSeries
+                ? String(localized: "Des séries moins vues que \(anchor.title)", bundle: .app)
+                : String(localized: "Des films moins vus que \(anchor.title)", bundle: .app)
+        case .lighter:
+            return String(localized: "Avec plus d'humour ou de douceur", bundle: .app)
+        case .darker:
+            return String(localized: "Avec plus de tension ou de noirceur", bundle: .app)
+        }
     }
 
     // MARK: L'attente et l'échec
@@ -549,6 +733,37 @@ private struct StyleTilePosters: View {
         }
         .frame(maxWidth: Self.maxWidth, alignment: .leading)
         .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Les retouches
+
+extension CineMatchTweak {
+    /// Le nom de la réponse, accordé au film ou à la série.
+    func title(series: Bool) -> String {
+        switch (self, series) {
+        case (.recent, false): String(localized: "Plus récent", bundle: .app)
+        case (.recent, true): String(localized: "Plus récente", bundle: .app)
+        case (.lesser, false): String(localized: "Moins connu", bundle: .app)
+        case (.lesser, true): String(localized: "Moins connue", bundle: .app)
+        case (.lighter, false): String(localized: "Plus léger", bundle: .app)
+        case (.lighter, true): String(localized: "Plus légère", bundle: .app)
+        case (.darker, _): String(localized: "Plus sombre", bundle: .app)
+        }
+    }
+
+    /// La même, en fin de la ligne des cinq : « Un film proche de Heat,
+    /// plus récent ».
+    func suffix(series: Bool) -> String {
+        switch (self, series) {
+        case (.recent, false): String(localized: "plus récent", bundle: .app)
+        case (.recent, true): String(localized: "plus récente", bundle: .app)
+        case (.lesser, false): String(localized: "moins connu", bundle: .app)
+        case (.lesser, true): String(localized: "moins connue", bundle: .app)
+        case (.lighter, false): String(localized: "plus léger", bundle: .app)
+        case (.lighter, true): String(localized: "plus légère", bundle: .app)
+        case (.darker, _): String(localized: "plus sombre", bundle: .app)
+        }
     }
 }
 
