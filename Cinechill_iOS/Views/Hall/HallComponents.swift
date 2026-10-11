@@ -104,6 +104,9 @@ struct HallFollowButton: View {
     let isFollowing: Bool
     var isBusy: Bool = false
     var fullWidth: Bool = false
+    /// Toute la largeur, à la hauteur compacte : la carte d'un profil à suivre
+    /// n'a pas la place du bouton de 42 pt du profil public.
+    var stretches: Bool = false
     let action: () -> Void
 
     var body: some View {
@@ -117,8 +120,8 @@ struct HallFollowButton: View {
                 }
             }
             .foregroundStyle(isFollowing ? Ink.ink2 : Ink.ground)
-            .frame(maxWidth: fullWidth ? .infinity : nil)
-            .padding(.horizontal, fullWidth ? 0 : 14)
+            .frame(maxWidth: fullWidth || stretches ? .infinity : nil)
+            .padding(.horizontal, fullWidth || stretches ? 0 : 14)
             .padding(.vertical, fullWidth ? 13 : 7)
             .background {
                 if isFollowing {
@@ -342,7 +345,7 @@ struct HallSearchField: View {
 }
 
 /// La croix d'effacement, dans l'écriture de la famille.
-private struct PlanClearGlyph: Shape {
+struct PlanClearGlyph: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         path.move(to: CGPoint(x: rect.minX, y: rect.minY))

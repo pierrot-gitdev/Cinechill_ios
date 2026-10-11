@@ -106,6 +106,9 @@ protocol SocialServicing: Sendable {
     func publicProfileDetail(uid: String) async throws -> PublicProfileDetail
     /// Écrit le nom public et ses préfixes de recherche. Exige un pseudo.
     func setPublicName(_ name: String) async throws
+    func followSuggestions() async throws -> FollowSuggestionsPage
+    /// Retire un profil des propositions, pour de bon.
+    func dismissFollowSuggestion(uid: String) async throws
 }
 
 nonisolated struct SocialClient: SocialServicing, Sendable {
@@ -162,6 +165,15 @@ nonisolated struct SocialClient: SocialServicing, Sendable {
 
     func setPublicName(_ name: String) async throws {
         _ = try await post(to: APIEndpoints.setPublicName(), body: ["displayName": name])
+    }
+
+    func followSuggestions() async throws -> FollowSuggestionsPage {
+        let data = try await post(to: APIEndpoints.followSuggestions(), body: [:])
+        return try JSONDecoder().decode(FollowSuggestionsDTO.self, from: data).page
+    }
+
+    func dismissFollowSuggestion(uid: String) async throws {
+        _ = try await post(to: APIEndpoints.dismissFollowSuggestion(), body: ["targetUid": uid])
     }
 
     // MARK: - Transport
@@ -273,6 +285,52 @@ private nonisolated struct PublicProfileDetailDTO: Decodable {
             },
             posters: posters.map {
                 PublicPoster(posterPath: $0.posterPath, title: $0.title ?? "")
+            }
+        )
+    }
+}
+
+private nonisolated struct FollowSuggestionsDTO: Decodable {
+    let followingCount: Int?
+    let suggestions: [Row]
+
+    nonisolated struct Row: Decodable {
+        let uid: String
+        let handle: String?
+        let displayName: String?
+        let avatarURL: String?
+        let galleryCount: Int?
+        let followerCount: Int?
+        let followingCount: Int?
+        let followsYou: Bool?
+        let mutualCount: Int?
+        let mutualName: String?
+        let commonCount: Int?
+    }
+
+    var page: FollowSuggestionsPage {
+        FollowSuggestionsPage(
+            followingCount: followingCount ?? 0,
+            // Un profil sans pseudo n'est pas affichable : mieux vaut une carte
+            // de moins qu'une carte blanche.
+            suggestions: suggestions.compactMap { row in
+                guard let handle = row.handle, !handle.isEmpty else { return nil }
+                return FollowSuggestion(
+                    profile: PublicProfile(
+                        id: row.uid,
+                        handle: handle,
+                        displayName: PublicProfile.nameOrHandle(row.displayName, handle),
+                        avatarURL: PublicProfile.trustedAvatarURL(row.avatarURL),
+                        badgeSignature: nil,
+                        followerCount: row.followerCount ?? 0,
+                        followingCount: row.followingCount ?? 0,
+                        galleryCount: row.galleryCount ?? 0
+                    ),
+                    followsYou: row.followsYou ?? false,
+                    mutualCount: row.mutualCount ?? 0,
+                    mutualName: row.mutualName,
+                    commonCount: row.commonCount ?? 0
+                )
             }
         )
     }

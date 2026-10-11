@@ -24,6 +24,9 @@ import SwiftUI
 struct ClaimHandleSheet: View {
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(\.dismiss) private var dismiss
+    /// Ce qui attendait le pseudo : un Suivre touché sans en avoir. Il part
+    /// tout seul une fois le pseudo pris, sans second toucher.
+    var onClaimed: () -> Void = {}
 
     private enum Field: Hashable { case handle }
 
@@ -140,6 +143,7 @@ struct ClaimHandleSheet: View {
         do {
             try await socialStore.claimHandle(handle)
             Haptics.success()
+            onClaimed()
             dismiss()
         } catch {
             Haptics.warning()

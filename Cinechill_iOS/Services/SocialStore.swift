@@ -29,6 +29,26 @@ final class SocialStore: ObservableObject {
     @Published private(set) var hasLoadedProfileOnce = false
     @Published private(set) var errorMessage: String?
 
+    /// Les profils à suivre, tels que chargés. Un profil suivi entretemps y
+    /// reste, en « Suivi » : sa carte ne doit pas partir sous le doigt. Il
+    /// disparaît au chargement suivant, que le serveur filtre.
+    @Published private(set) var followSuggestions: [FollowSuggestion] = []
+    @Published private(set) var followSuggestionsPhase: FollowSuggestionsPhase = .idle
+    /// Le nombre de personnes suivies au moment du chargement : la place de
+    /// la rangée sur l'accueil en dépend, et ne doit pas bouger ensuite.
+    @Published private(set) var followingCountAtLoad = 0
+    /// La rangée de l'accueil : présente seulement si le chargement a rendu
+    /// trois profils au moins, et en tête tant qu'on suit peu de monde ou que
+    /// quelqu'un nous suit sans retour. Décidé au chargement, pour qu'un suivi
+    /// ou une carte retirée ne déplace jamais la rangée sous le doigt.
+    @Published private(set) var followSuggestionsOnHome = false
+    @Published private(set) var followSuggestionsLeadHome = false
+    /// Les suivis et les retraits en cours d'écriture, pour que chaque bouton
+    /// tourne seul, où qu'il soit affiché : une même personne peut l'être à la
+    /// fois sur l'accueil et dans la recherche.
+    @Published private(set) var followsInFlight: Set<String> = []
+    @Published private(set) var dismissalsInFlight: Set<String> = []
+
     private let client: any SocialServicing
 
     private var authHandle: AuthStateDidChangeListenerHandle?
@@ -40,6 +60,7 @@ final class SocialStore: ObservableObject {
     /// Lu à chaque snapshot plutôt que capturé à la création du listener :
     /// sans ça, les abonnés acquittés réapparaîtraient au snapshot suivant.
     private var followersSeenAt: Date = .distantPast
+    private var followSuggestionsLoadedAt: Date?
     /// Vrai quand mon profil porte déjà ses préfixes de recherche. Un profil
     /// créé avant leur arrivée ne les a pas : le prochain passage par
     /// `syncDisplayName` les fait écrire, sans attendre le rattrapage.
@@ -164,6 +185,22 @@ final class SocialStore: ObservableObject {
         } else {
             try await client.follow(uid: uid)
             followingUIDs.insert(uid)
+        }
+    }
+
+    /// Suit ou ne suit plus, en tenant le bouton occupé le temps de l'écriture.
+    /// Rend `false` si l'écriture a échoué : à l'appelant de le dire. Un
+    /// second toucher pendant l'écriture n'est pas un échec, il est ignoré.
+    @discardableResult
+    func toggleFollowTracked(uid: String) async -> Bool {
+        guard !followsInFlight.contains(uid) else { return true }
+        followsInFlight.insert(uid)
+        defer { followsInFlight.remove(uid) }
+        do {
+            try await toggleFollow(uid: uid)
+            return true
+        } catch {
+            return false
         }
     }
 
@@ -321,6 +358,77 @@ final class SocialStore: ObservableObject {
         }
     }
 
+    // MARK: - Profils à suivre
+
+    /// Charge les profils à suivre. Sans `force`, un chargement de moins d'une
+    /// heure suffit : l'accueil et la recherche le partagent, et le serveur
+    /// garde de toute façon son calcul douze heures.
+    func loadFollowSuggestions(force: Bool = false) async {
+        if case .loading = followSuggestionsPhase { return }
+        if !force, let loadedAt = followSuggestionsLoadedAt,
+           Date().timeIntervalSince(loadedAt) < 3600 {
+            return
+        }
+        followSuggestionsPhase = .loading
+        do {
+            let page: FollowSuggestionsPage
+            #if DEBUG
+            if let fixture = DebugFixtures.followSuggestions {
+                page = fixture
+            } else {
+                page = try await client.followSuggestions()
+            }
+            #else
+            page = try await client.followSuggestions()
+            #endif
+            let me = myUID
+            followSuggestions = page.suggestions.filter { $0.id != me }
+            followingCountAtLoad = page.followingCount
+            followSuggestionsOnHome = followSuggestions.count >= Self.homeRowMinimum
+            followSuggestionsLeadHome = page.followingCount < Self.fewFollowings
+                || followSuggestions.contains(where: \.followsYou)
+            followSuggestionsLoadedAt = Date()
+            followSuggestionsPhase = .loaded
+        } catch is CancellationError {
+            followSuggestionsPhase = followSuggestionsLoadedAt == nil ? .idle : .loaded
+        } catch {
+            // Ce qui était déjà affiché reste : une erreur ne vide pas une
+            // rangée qui marchait.
+            followSuggestionsPhase = .failed(Self.message(for: error))
+        }
+    }
+
+    /// Retire un profil des propositions, une fois le serveur d'accord.
+    /// Rend `false` si l'écriture a échoué : la carte reste alors en place.
+    @discardableResult
+    func dismissFollowSuggestion(uid: String) async -> Bool {
+        guard !dismissalsInFlight.contains(uid) else { return true }
+        dismissalsInFlight.insert(uid)
+        defer { dismissalsInFlight.remove(uid) }
+        do {
+            #if DEBUG
+            if DebugFixtures.followSuggestions == nil {
+                try await client.dismissFollowSuggestion(uid: uid)
+            }
+            #else
+            try await client.dismissFollowSuggestion(uid: uid)
+            #endif
+            followSuggestions.removeAll { $0.id == uid }
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Moins de trois cartes ne font pas une rangée : rien plutôt qu'un vide.
+    private static let homeRowMinimum = 3
+    /// En dessous, on suit trop peu de monde pour que l'accueil le taise.
+    private static let fewFollowings = 5
+
+    private static func message(for error: any Error) -> String {
+        (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+    }
+
     func profile(uid: String) async throws -> PublicProfile? {
         do {
             let snapshot = try await db.collection("publicProfiles").document(uid).getDocument()
@@ -412,6 +520,12 @@ final class SocialStore: ObservableObject {
                 self.suggestions = []
                 self.recentFollowers = []
                 self.hasLoadedProfileOnce = false
+                self.followSuggestions = []
+                self.followSuggestionsPhase = .idle
+                self.followSuggestionsLoadedAt = nil
+                self.followingCountAtLoad = 0
+                self.followSuggestionsOnHome = false
+                self.followSuggestionsLeadHome = false
 
                 guard let uid = user?.uid else { return }
                 self.startProfileListener(uid: uid)
@@ -535,3 +649,10 @@ final class SocialStore: ObservableObject {
     }
 }
 
+/// Où en est le chargement des profils à suivre.
+enum FollowSuggestionsPhase: Equatable {
+    case idle
+    case loading
+    case loaded
+    case failed(String)
+}

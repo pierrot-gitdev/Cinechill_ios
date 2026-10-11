@@ -242,6 +242,16 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "setpublicname", queryItems: [])
     }
 
+    static func followSuggestions() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getfollowsuggestions", queryItems: [])
+    }
+
+    static func dismissFollowSuggestion() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "dismissfollowsuggestion", queryItems: [])
+    }
+
     private static func buildURL(baseURL: URL, functionName: String, queryItems: [URLQueryItem]) -> URL? {
         guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
             return nil

@@ -31,9 +31,12 @@ struct HomeView: View {
     /// Le temps d'un « Réessayer » : `loadAll` efface l'erreur dès son départ,
     /// et le bandeau disparaissait sans que rien ne dise qu'on cherchait.
     @State private var isRetrying = false
+    @State private var openedProfile: PublicProfile?
 
     private func reload() async {
-        await homeModel.loadAll(preferredPlatformIDs: libraryStore.preferredPlatformIDs)
+        async let rows: Void = homeModel.loadAll(preferredPlatformIDs: libraryStore.preferredPlatformIDs)
+        async let people: Void = socialStore.loadFollowSuggestions(force: true)
+        _ = await (rows, people)
     }
 
     var body: some View {
@@ -81,9 +84,18 @@ struct HomeView: View {
                             loadingState
                         } else {
                             inTheatersSection
+                            // En tête tant qu'on suit peu de monde, ou que
+                            // quelqu'un nous suit sans retour ; sinon après
+                            // « Populaire ». Décidé au chargement.
+                            if socialStore.followSuggestionsLeadHome {
+                                followSuggestionsSection
+                            }
                             becauseYouWatchedSection
                             trendingSection
                             popularSection
+                            if !socialStore.followSuggestionsLeadHome {
+                                followSuggestionsSection
+                            }
                             if !homeModel.browseCategories.isEmpty {
                                 browseSection
                             }
@@ -106,6 +118,9 @@ struct HomeView: View {
             .navigationDestination(for: HomeBrowseCategory.self) { category in
                 GenrePopularListView(category: category, homeModel: homeModel)
             }
+            .navigationDestination(item: $openedProfile) { profile in
+                PublicProfileView(profile: profile)
+            }
             .sheet(isPresented: $showPlatformSheet) {
                 PlatformPickerSheet()
                     .environmentObject(libraryStore)
@@ -123,6 +138,9 @@ struct HomeView: View {
                 // `RootView` a normalement déjà tout demandé pendant l'ouverture ; cet appel
                 // ne sert qu'aux cas où le préchargement n'a pas eu lieu ou n'a pas abouti.
                 await homeModel.loadAllIfNeeded(preferredPlatformIDs: libraryStore.preferredPlatformIDs)
+            }
+            .task {
+                await socialStore.loadFollowSuggestions()
             }
             .task(id: libraryStore.preferredPlatformIDs) {
                 guard homeModel.hasLoadedOnce else { return }
@@ -173,6 +191,16 @@ struct HomeView: View {
                 }
                 .scrollClipDisabled()
             }
+        }
+    }
+
+    // MARK: - Profils à suivre
+
+    @ViewBuilder
+    private var followSuggestionsSection: some View {
+        if socialStore.followSuggestionsOnHome, !socialStore.followSuggestions.isEmpty {
+            FollowSuggestionsSection(onOpen: { openedProfile = $0 })
+                .transition(.opacity)
         }
     }
 
