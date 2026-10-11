@@ -243,7 +243,7 @@ private nonisolated struct PublicProfileDetailDTO: Decodable {
                 id: uid,
                 handle: handle ?? "",
                 displayName: displayName ?? handle ?? String(localized: "Sans nom", bundle: .app),
-                avatarURL: avatarURL.flatMap(URL.init(string:)),
+                avatarURL: PublicProfile.trustedAvatarURL(avatarURL),
                 badgeSignature: badgeSignature,
                 followerCount: followerCount,
                 followingCount: followingCount,
@@ -277,7 +277,7 @@ private nonisolated struct TargetDTO: Decodable {
             id: uid,
             handle: handle,
             displayName: displayName ?? handle ?? String(localized: "Sans nom", bundle: .app),
-            avatarURL: avatarURL.flatMap(URL.init(string:)),
+            avatarURL: PublicProfile.trustedAvatarURL(avatarURL),
             alreadySeen: alreadySeen,
             alreadySuggested: alreadySuggested,
             suggestedAt: suggestedAt.flatMap {

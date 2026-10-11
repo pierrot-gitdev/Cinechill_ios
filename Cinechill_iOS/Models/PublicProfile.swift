@@ -57,6 +57,30 @@ nonisolated struct PublicProfileDetail: Hashable, Sendable {
 }
 
 extension PublicProfile {
+    /// Les hôtes d'où l'app accepte de charger un avatar : les photos de
+    /// compte Google, le stockage de l'app, TMDB.
+    ///
+    /// Un avatar s'affiche chez tous ceux qui croisent le profil, dans la
+    /// recherche, les listes d'abonnés, les notifications. Une URL vers
+    /// n'importe quel serveur donnait à son propriétaire l'adresse IP et
+    /// l'heure de passage de chacun, et pouvait servir une image piégée.
+    /// Les règles Firestore ne laissent plus écrire ce champ ; ce filtre
+    /// couvre les valeurs écrites avant, et toute route qu'on aurait oubliée.
+    private static let avatarHosts = [
+        "googleusercontent.com", "firebasestorage.googleapis.com", "image.tmdb.org",
+    ]
+
+    /// Une URL d'avatar en `https` sur un hôte connu, ou rien.
+    nonisolated static func trustedAvatarURL(_ raw: Any?) -> URL? {
+        guard let string = raw as? String,
+              let url = URL(string: string),
+              url.scheme?.lowercased() == "https",
+              let host = url.host?.lowercased(),
+              avatarHosts.contains(where: { host == $0 || host.hasSuffix("." + $0) })
+        else { return nil }
+        return url
+    }
+
     /// Décode un document `publicProfiles`. Renvoie `nil` si l'identité de base
     /// manque : un profil sans pseudo n'est pas affichable, et vaut mieux être
     /// absent de la liste qu'y figurer en blanc.
@@ -67,7 +91,7 @@ extension PublicProfile {
         self.id = id
         self.handle = handle
         self.displayName = (data["displayName"] as? String) ?? handle
-        self.avatarURL = (data["avatarURL"] as? String).flatMap(URL.init(string:))
+        self.avatarURL = PublicProfile.trustedAvatarURL(data["avatarURL"])
         self.badgeSignature = data["badgeSignature"] as? String
         self.followerCount = (data["followerCount"] as? Int) ?? 0
         self.followingCount = (data["followingCount"] as? Int) ?? 0

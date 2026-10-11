@@ -49,8 +49,7 @@ extension Suggestion {
         self.fromDisplayName = (data["fromDisplayName"] as? String)
             ?? (data["fromHandle"] as? String)
             ?? String(localized: "Quelqu'un", bundle: .app)
-        self.fromAvatarURL = (data["fromAvatarURL"] as? String)
-            .flatMap(URL.init(string:))
+        self.fromAvatarURL = PublicProfile.trustedAvatarURL(data["fromAvatarURL"])
         self.item = MediaItem(
             tmdbId: tmdbId,
             mediaType: mediaType,
