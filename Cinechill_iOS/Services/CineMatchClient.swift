@@ -42,8 +42,10 @@ protocol CineMatchFetching: Sendable {
                          format: MediaFormat) async throws -> CineMatchComparisonRound
     /// Les dix styles, du plus présent dans la galerie au moins présent.
     func styles(format: MediaFormat) async throws -> [CineMatchStyleTile]
-    /// Six films d'un style. `page` passe aux six suivants.
-    func starters(style: CineMatchStyle, page: Int, format: MediaFormat) async throws -> CineMatchStarterPage
+    /// Six films d'un style. `page` passe aux six suivants ; `shownIDs`, les
+    /// films déjà montrés, sont écartés quel que soit l'ordre du serveur.
+    func starters(style: CineMatchStyle, page: Int, shownIDs: [Int],
+                  format: MediaFormat) async throws -> CineMatchStarterPage
     /// Les cinq, proches de `anchorID`, ou d'après les coups de cœur sans
     /// film de départ. Avec `replacing`, le serveur ne renvoie que les
     /// remplaçants des films marqués.
@@ -85,17 +87,20 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         return try decode(StylesResponseDTO.self, from: data).tiles
     }
 
-    func starters(style: CineMatchStyle, page: Int, format: MediaFormat) async throws -> CineMatchStarterPage {
+    func starters(style: CineMatchStyle, page: Int, shownIDs: [Int],
+                  format: MediaFormat) async throws -> CineMatchStarterPage {
         #if DEBUG
         if let fixture = DebugFixtures.cineMatchStarters(style: style, page: page, format: format) {
             return fixture
         }
         #endif
-        let data = try await post(to: APIEndpoints.cineMatchStarters(), body: [
+        var body: [String: Any] = [
             "format": format.rawValue,
             "style": style.rawValue,
             "page": page,
-        ])
+        ]
+        if !shownIDs.isEmpty { body["shownIds"] = shownIDs }
+        let data = try await post(to: APIEndpoints.cineMatchStarters(), body: body)
         let decoded = try decode(StartersResponseDTO.self, from: data)
         return CineMatchStarterPage(
             // Le serveur renvoie le style demandé ; on garde le nôtre s'il en
@@ -103,7 +108,8 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
             style: CineMatchStyle(rawValue: decoded.style ?? "") ?? style,
             page: decoded.page ?? page,
             films: decoded.films.map(\.film),
-            hasMore: decoded.hasMore ?? false
+            hasMore: decoded.hasMore ?? false,
+            restarted: decoded.restarted ?? false
         )
     }
 
@@ -314,6 +320,7 @@ private nonisolated struct StartersResponseDTO: Decodable, Sendable {
     let page: Int?
     let films: [GalleryFilmDTO]
     let hasMore: Bool?
+    let restarted: Bool?
 }
 
 private nonisolated struct ComparisonResponseDTO: Decodable, Sendable {

@@ -134,6 +134,12 @@ final class CineMatchViewModel {
     /// page dès son arrivée aurait décalé l'ordre sous « Pas ceux-là ». Dans
     /// un petit style, la page suivante aurait ramené les six mêmes.
     private var visitStarterIDs: [Int] = []
+    /// Les films de départ montrés depuis le dernier retour au début du
+    /// style. « Pas ceux-là » les envoie : le serveur les écarte des six
+    /// suivants. Compter les pages ne suffisait pas : l'ordre du serveur
+    /// bouge tant que les fiches du style entrent en cache, et la deuxième
+    /// page remontrait des films de la première.
+    private var cycleStarterIDs: [Int] = []
     /// L'exposition des cinq, accumulée carte par carte, envoyée par
     /// `flushExposure`.
     private var pendingFiveExposure: [Int] = []
@@ -218,7 +224,7 @@ final class CineMatchViewModel {
     func chooseStyle(_ style: CineMatchStyle) async {
         guard step == .style, pendingStyle == nil, !isLoadingStyles, errorMessage == nil else { return }
         pendingStyle = style
-        await perform { [weak self] in await self?.loadStarters(style: style, page: 0) }
+        await perform { [weak self] in await self?.loadStarters(style: style, page: 0, shownIDs: []) }
     }
 
     /// « Pas ceux-là » : les six suivants du même style.
@@ -226,7 +232,10 @@ final class CineMatchViewModel {
         guard step == .anchor, !isLoadingStarters, errorMessage == nil,
               let page = starterPage, page.hasMore
         else { return }
-        await perform { [weak self] in await self?.loadStarters(style: page.style, page: page.page + 1) }
+        let shown = cycleStarterIDs
+        await perform { [weak self] in
+            await self?.loadStarters(style: page.style, page: page.page + 1, shownIDs: shown)
+        }
     }
 
     /// Un film de départ touché : les cinq se calculent autour de lui.
@@ -270,6 +279,7 @@ final class CineMatchViewModel {
             lastFailedAction = nil
             starterPage = nil
             selectedStyle = nil
+            cycleStarterIDs = []
             step = .style
         case .style, .home, .daily, .conclusion:
             backToHome()
@@ -448,24 +458,26 @@ final class CineMatchViewModel {
         }
     }
 
-    private func loadStarters(style: CineMatchStyle, page: Int) async {
+    private func loadStarters(style: CineMatchStyle, page: Int, shownIDs: [Int]) async {
         isLoadingStarters = true
         errorMessage = nil
         do {
-            let result = try await client.starters(style: style, page: page, format: format)
+            let result = try await client.starters(style: style, page: page, shownIDs: shownIDs, format: format)
             guard !Task.isCancelled else { return }
             isLoadingStarters = false
             pendingStyle = nil
             selectedStyle = style
             starterPage = result
-            for id in result.films.map(\.id) where !visitStarterIDs.contains(id) {
+            let ids = result.films.map(\.id)
+            for id in ids where !visitStarterIDs.contains(id) {
                 visitStarterIDs.append(id)
             }
+            cycleStarterIDs = shownIDs.isEmpty || result.restarted ? ids : cycleStarterIDs + ids
             step = .anchor
         } catch {
             isLoadingStarters = false
             pendingStyle = nil
-            fail(error) { [weak self] in await self?.loadStarters(style: style, page: page) }
+            fail(error) { [weak self] in await self?.loadStarters(style: style, page: page, shownIDs: shownIDs) }
         }
     }
 
@@ -577,6 +589,7 @@ final class CineMatchViewModel {
         isLoadingStarters = false
         anchor = nil
         visitStarterIDs = []
+        cycleStarterIDs = []
         errorMessage = nil
         lastFailedAction = nil
         clearFive()

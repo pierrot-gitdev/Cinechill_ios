@@ -73,6 +73,9 @@ nonisolated struct CineMatchStarterPage: Equatable, Sendable {
     /// Faux quand le style tient sur une page : « Pas ceux-là » ramènerait
     /// les mêmes.
     let hasMore: Bool
+    /// Tous les films du style ont été montrés : le serveur repart du
+    /// début, et la liste des films montrés repart de cette page.
+    var restarted: Bool = false
 }
 
 /// Où en est l'histoire d'une série proposée. La carte l'écrit toujours :
