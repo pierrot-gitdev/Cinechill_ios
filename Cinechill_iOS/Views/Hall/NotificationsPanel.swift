@@ -30,6 +30,11 @@ struct NotificationsPanel: View {
     /// tombait sinon après toutes les autres, hors de la zone visible.
     @State private var held: [String: Suggestion] = [:]
     @State private var busy: Set<String> = []
+    /// Le profil dont on attend la confirmation du blocage.
+    @State private var pendingBlock: ReportSubject?
+    @State private var reportSubject: ReportSubject?
+    /// Un blocage refusé par le serveur : la ligne est restée, on dit pourquoi.
+    @State private var errorMessage: String?
 
     private enum Settled: Equatable {
         case added(String)
@@ -67,6 +72,22 @@ struct NotificationsPanel: View {
         // Modal pour VoiceOver, et fermé par le geste d'échappement.
         .accessibilityAddTraits(.isModal)
         .accessibilityAction(.escape) { onClose() }
+        .blockConfirmation($pendingBlock) { subject in
+            Task { await block(subject) }
+        }
+        .sheet(item: $reportSubject) { subject in
+            ReportSheet(subject: subject)
+                .environmentObject(socialStore)
+        }
+        .alert(
+            errorMessage ?? "",
+            isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )
+        ) {
+            Button(String(localized: "OK", bundle: .app), role: .cancel) { errorMessage = nil }
+        }
     }
 
     private var header: some View {
@@ -172,6 +193,8 @@ struct NotificationsPanel: View {
                     width: 30,
                     cornerRadius: Metrics.radius
                 )
+
+                moreMenu(ReportSubject(suggestion: suggestion))
             }
 
             HStack(spacing: 8) {
@@ -182,8 +205,8 @@ struct NotificationsPanel: View {
                     Task { await respond(suggestion, accept: false) }
                 }
             }
-            .opacity(busy.contains(suggestion.id) ? 0.4 : 1)
-            .disabled(busy.contains(suggestion.id))
+            .opacity(busy.contains(suggestion.id) || isBlocking(suggestion.fromUid) ? 0.4 : 1)
+            .disabled(busy.contains(suggestion.id) || isBlocking(suggestion.fromUid))
         }
         .padding(.vertical, 10)
     }
@@ -247,6 +270,8 @@ struct NotificationsPanel: View {
                 .lineLimit(2)
 
                 Spacer(minLength: 0)
+
+                moreMenu(ReportSubject(profile: profile))
             }
 
             // Même gabarit que la recommandation : l'action prend sa propre
@@ -257,11 +282,56 @@ struct NotificationsPanel: View {
                     Task { await followBack(profile) }
                 }
                 // L'attente se voit : le suivi n'est plus optimiste.
-                .opacity(busy.contains(profile.id) ? 0.5 : 1)
-                .disabled(busy.contains(profile.id))
+                .opacity(busy.contains(profile.id) || isBlocking(profile.id) ? 0.5 : 1)
+                .disabled(busy.contains(profile.id) || isBlocking(profile.id))
             }
         }
         .padding(.vertical, 10)
+    }
+
+    // MARK: - Bloquer, signaler
+
+    private func isBlocking(_ uid: String) -> Bool {
+        socialStore.blocksInFlight.contains(uid)
+    }
+
+    /// Un « ⋯ » plutôt qu'un appui long : dans un panneau qu'on ouvre pour
+    /// trancher vite, une action cachée sous le doigt ne se trouve pas. Il
+    /// tourne pendant le blocage, la ligne part quand le serveur a répondu.
+    private func moreMenu(_ subject: ReportSubject) -> some View {
+        Menu {
+            Button(String(localized: "Signaler", bundle: .app)) {
+                reportSubject = subject
+            }
+            Button(String(localized: "Bloquer", bundle: .app), role: .destructive) {
+                pendingBlock = subject
+            }
+        } label: {
+            Group {
+                if isBlocking(subject.id) {
+                    CinechillSpinner(size: 13)
+                } else {
+                    HallMoreGlyph(dot: 3)
+                        .foregroundStyle(Ink.ink3)
+                }
+            }
+            .frame(width: 24, height: 30)
+            .contentShape(Rectangle().inset(by: -7))
+        }
+        .disabled(isBlocking(subject.id))
+        .accessibilityLabel(String(localized: "Options pour \(subject.name)", bundle: .app))
+    }
+
+    private func block(_ subject: ReportSubject) async {
+        do {
+            try await socialStore.block(uid: subject.id)
+        } catch is CancellationError {
+            return
+        } catch {
+            Haptics.warning()
+            errorMessage = (error as? LocalizedError)?.errorDescription
+                ?? error.localizedDescription
+        }
     }
 
     private func actionButton(

@@ -24,6 +24,7 @@ struct WatchlistView: View {
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(MediaCatalog.self) private var catalog
+    @Environment(\.openURL) private var openURL
 
     @State private var showProfile = false
     @State private var showPlatformSheet = false
@@ -459,15 +460,49 @@ struct WatchlistView: View {
 
     // MARK: - Actions
 
-    /// « Je le regarde » : un film part en galerie ; une saison avance d'un
-    /// épisode, ou part en galerie si c'était le dernier.
+    /// « Je le regarde » : une saison avance d'un épisode, ou part en galerie
+    /// si c'était le dernier.
+    ///
+    /// Un film ouvre sa plateforme et reste dans la watchlist : on ne l'a pas
+    /// encore vu. La question du lendemain le rangera, avec ce qu'on en a
+    /// pensé. Sans notifications possibles (refusées dans iOS, ou « Après un
+    /// film » coupé), personne ne poserait la question : le film part alors en
+    /// galerie tout de suite, comme avant.
     private func watch(_ item: WatchlistItem) {
         Haptics.success()
-        if item.entry.isSeason, !item.entry.isOnLastEpisode {
-            libraryStore.setNextEpisode(item.entry, to: item.entry.episodeToPlay + 1)
-        } else {
-            libraryStore.addToGallery(item.entry.mediaItem)
+        if item.entry.isSeason {
+            if item.entry.isOnLastEpisode {
+                libraryStore.addToGallery(item.entry.mediaItem)
+            } else {
+                libraryStore.setNextEpisode(item.entry, to: item.entry.episodeToPlay + 1)
+            }
+            return
         }
+        Task {
+            if await NotificationPermission.shared.filmStarted(item.entry.mediaItem) {
+                openPlatform(for: item)
+            } else {
+                libraryStore.addToGallery(item.entry.mediaItem)
+            }
+        }
+    }
+
+    /// L'app de la plateforme si elle est installée, sinon son site. Tes
+    /// plateformes d'abord, comme sur la fiche et dans CinéMatch.
+    private func openPlatform(for item: WatchlistItem) {
+        let preferred = Set(libraryStore.preferredPlatformIDs.compactMap(Int.init))
+        let providers = item.providerIDs.filter { preferred.contains($0) }
+            + item.providerIDs.filter { !preferred.contains($0) }
+        for providerID in providers {
+            for candidate in StreamingProviderLink.appURLs(forProviderID: providerID, title: item.entry.title)
+            where UIApplication.shared.canOpenURL(candidate) {
+                UIApplication.shared.open(candidate)
+                return
+            }
+        }
+        guard let webURL = providers.lazy.compactMap(TMDBDetailWatchProviderItem.webURL(forProviderID:)).first
+        else { return }
+        openURL(webURL)
     }
 
     private func preferredPlatform(for item: WatchlistItem) -> StreamingPlatform? {

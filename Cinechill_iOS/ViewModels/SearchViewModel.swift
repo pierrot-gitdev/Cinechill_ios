@@ -213,6 +213,12 @@ final class SearchViewModel {
         }
     }
 
+    /// Retire des résultats les profils bloqués depuis leur affichage.
+    func removeProfiles(in uids: Set<String>) {
+        guard profiles.contains(where: { uids.contains($0.id) }) else { return }
+        profiles.removeAll { uids.contains($0.id) }
+    }
+
     private static func fetchProfiles(_ needle: String, store: SocialStore) async -> Outcome<[PublicProfile]> {
         #if DEBUG
         if let fixture = DebugFixtures.profiles(matching: needle) { return .success(fixture) }

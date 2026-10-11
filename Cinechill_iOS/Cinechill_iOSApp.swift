@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UserNotifications
 import FirebaseCore
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
@@ -15,8 +16,27 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // fournisseur d'attestation à ce moment-là et ne le relit plus ensuite.
         AppAttestation.install()
         FirebaseApp.configure()
+        // Le délégué des notifications se pose avant la fin du lancement : un
+        // toucher qui vient de lancer l'app lui est remis tout de suite après.
+        UNUserNotificationCenter.current().delegate = NotificationCenterDelegate.shared
+        NotificationCategories.register()
+        PushRegistration.shared.start()
         return true
     }
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        PushRegistration.shared.didReceiveAPNsToken(deviceToken)
+    }
+
+    /// Simulateur, ou capacité Push absente du profil de signature : l'app
+    /// vit sans notifications distantes, rien d'autre ne change.
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {}
 }
 
 @main
@@ -42,6 +62,10 @@ struct Cinechill_iOSApp: App {
     /// et un onboarding en cours ne doit pas repartir de zéro pour autant. L'état
     /// de la vue ne survivrait pas ; celui de l'application, si.
     @State private var tour = OnboardingTour()
+
+    /// Où mène le toucher d'une notification. Partagé avec le délégué des
+    /// notifications, qui le remplit hors de toute vue.
+    @State private var notificationRouter = NotificationRouter.shared
 
     @Environment(\.scenePhase) private var scenePhase
 
@@ -77,10 +101,29 @@ struct Cinechill_iOSApp: App {
             .environmentObject(profileStore)
             .environmentObject(socialStore)
             .environment(tour)
+            .environment(notificationRouter)
             // Le seul moment où l'app reprend la main après un film lancé :
             // l'activité « en cours » dont la durée est passée s'y retire.
             .onChange(of: scenePhase, initial: true) { _, phase in
                 if phase == .active { CineMatchLiveActivity.endFinished() }
+                // Les notifications ont pu être autorisées ou coupées dans les
+                // réglages de l'iPhone pendant l'absence.
+                if phase == .active {
+                    Task {
+                        await NotificationPermission.shared.refresh()
+                        await PushRegistration.shared.sync()
+                    }
+                }
+            }
+            // Les notifications se rédigent dans la langue de l'app : le serveur
+            // l'apprend, les libellés des actions et la question du lendemain
+            // déjà programmée se réécrivent.
+            .onChange(of: language.selection) { _, _ in
+                NotificationCategories.register()
+                Task {
+                    await PushRegistration.shared.sync()
+                    await LocalReminders.relocalizeVerdict()
+                }
             }
             .task {
                 libraryStore.start()

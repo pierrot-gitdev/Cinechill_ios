@@ -22,6 +22,9 @@ import SwiftUI
 ///   La fiche était le seul écran à porter un bouton rond flottant.
 struct FilmDetailView: View {
     let item: MediaItem
+    /// Ouverte depuis la question du lendemain : les quatre réponses passent
+    /// en tête, sous le héros, jusqu'à ce qu'on en ait choisi une.
+    var asksVerdict: Bool = false
 
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var socialStore: SocialStore
@@ -41,6 +44,8 @@ struct FilmDetailView: View {
     /// Position du haut du contenu par rapport au haut de l'écran. Sert au seul
     /// mouvement de l'écran : la matérialisation du plafond.
     @State private var scrollOffset: CGFloat = 0
+    /// Les réponses du lendemain sont encore affichées.
+    @State private var showsVerdict = true
 
     private static let heroHeight: CGFloat = 260
     /// La taille réelle du titre, qui suit Dynamic Type. Le héros grandit du
@@ -140,6 +145,14 @@ struct FilmDetailView: View {
                 .frame(height: 0)
 
                 hero
+
+                if asksVerdict, showsVerdict {
+                    FilmVerdictPrompt(item: displayItem) {
+                        withAnimation(Metrics.unfold) { showsVerdict = false }
+                    }
+                    .transition(.opacity)
+                }
+
                 generique
 
                 if errorMessage != nil, !loading {

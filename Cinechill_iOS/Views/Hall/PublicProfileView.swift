@@ -25,9 +25,16 @@ struct PublicProfileView: View {
     /// Le chargement a échoué : on le dit sur place, avec de quoi réessayer,
     /// au lieu d'une alerte « Impossible » sur un écran qui restait à moitié vide.
     @State private var loadFailed = false
+    /// Le profil dont on attend la confirmation du blocage.
+    @State private var pendingBlock: ReportSubject?
+    @State private var reportSubject: ReportSubject?
 
     private var shown: PublicProfile { detail?.profile ?? profile }
     private var isFollowing: Bool { socialStore.isFollowing(profile.id) }
+    private var isOwnProfile: Bool { profile.id == socialStore.myUID }
+    private var isBlocked: Bool { socialStore.isBlocked(profile.id) }
+    /// Un blocage ou un déblocage part : le menu tourne, le suivi attend.
+    private var isBlockBusy: Bool { socialStore.blocksInFlight.contains(profile.id) }
 
     var body: some View {
         ScrollView {
@@ -35,8 +42,14 @@ struct PublicProfileView: View {
                 identity
                 stats
                 // On ne se suit pas soi-même.
-                if profile.id != socialStore.myUID {
-                    actions
+                if !isOwnProfile {
+                    if isBlocked {
+                        blockedState
+                            .transition(.opacity)
+                    } else {
+                        actions
+                            .transition(.opacity)
+                    }
                 }
                 if isLoading {
                     loadingRow
@@ -54,12 +67,23 @@ struct PublicProfileView: View {
         }
         .background(Ink.ground)
         .safeAreaInset(edge: .top) {
-            PlanHeader(shown.handleDisplay)
+            // Sans pseudo, le nom : un « @ » seul se lisait comme une panne.
+            PlanHeader(shown.handle.isEmpty ? shown.displayName : shown.handleDisplay) {
+                if !isOwnProfile { moreMenu }
+            }
         }
         .toolbar(.hidden, for: .navigationBar)
         .task(id: profile.id) { await load() }
-        // Ne sert plus qu'au suivi : le message dit déjà ce qui s'est passé,
-        // il fait le titre.
+        .animation(Metrics.shift, value: isBlocked)
+        .blockConfirmation($pendingBlock) { _ in
+            Task { await block() }
+        }
+        .sheet(item: $reportSubject) { subject in
+            ReportSheet(subject: subject)
+                .environmentObject(socialStore)
+        }
+        // Le suivi, le blocage et le déblocage : le message dit déjà ce qui
+        // s'est passé, il fait le titre.
         .alert(
             errorMessage ?? "",
             isPresented: Binding(
@@ -162,12 +186,73 @@ struct PublicProfileView: View {
     private var actions: some View {
         HallFollowButton(
             isFollowing: isFollowing,
-            isBusy: isTogglingFollow,
+            isBusy: isTogglingFollow || isBlockBusy,
             fullWidth: true
         ) {
             Haptics.impact(.medium)
             Task { await toggleFollow() }
         }
+    }
+
+    // MARK: - Blocage
+
+    /// Bloquer et signaler vivent derrière « ⋯ » : on s'en sert rarement, et
+    /// un bouton à côté de « Suivre » aurait mis ces deux actions au même rang.
+    private var moreMenu: some View {
+        Menu {
+            Button(String(localized: "Signaler", bundle: .app)) {
+                reportSubject = ReportSubject(profile: shown)
+            }
+            if isBlocked {
+                Button(String(localized: "Débloquer", bundle: .app)) {
+                    Task { await unblock() }
+                }
+            } else {
+                Button(String(localized: "Bloquer", bundle: .app), role: .destructive) {
+                    pendingBlock = ReportSubject(profile: shown)
+                }
+            }
+        } label: {
+            Group {
+                if isBlockBusy {
+                    CinechillSpinner(size: 16)
+                } else {
+                    HallMoreGlyph()
+                        .foregroundStyle(Ink.ink)
+                }
+            }
+            .frame(width: 34, height: 34)
+            .contentShape(Rectangle().inset(by: -5))
+        }
+        .disabled(isBlockBusy)
+        .accessibilityLabel(String(localized: "Options du profil", bundle: .app))
+    }
+
+    /// À la place du bouton de suivi, une fois le profil bloqué. Le bloqueur
+    /// voit encore ce profil, et c'est d'ici qu'il le débloque.
+    private var blockedState: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Tu as bloqué ce profil", bundle: .app)
+                    .planFont(14.5, weight: .medium)
+                    .foregroundStyle(Ink.ink)
+                Text("Plus d'abonnement ni de film entre ce profil et toi. Le débloquer ne rétablit pas les abonnements.", bundle: .app)
+                    .planFont(12.5)
+                    .foregroundStyle(Ink.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            PlanSecondaryButton(
+                title: isBlockBusy
+                    ? String(localized: "Déblocage…", bundle: .app)
+                    : String(localized: "Débloquer", bundle: .app),
+                isEnabled: !isBlockBusy,
+                height: Metrics.control
+            ) {
+                Task { await unblock() }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - ADN
@@ -285,6 +370,36 @@ struct PublicProfileView: View {
             return
         } catch {
             loadFailed = true
+        }
+    }
+
+    /// Le serveur défait les abonnements dans les deux sens : les compteurs
+    /// affichés sont relus ensuite, sans roue, pour ne pas mentir.
+    private func block() async {
+        do {
+            try await socialStore.block(uid: profile.id)
+        } catch is CancellationError {
+            return
+        } catch {
+            Haptics.warning()
+            errorMessage = (error as? LocalizedError)?.errorDescription
+                ?? error.localizedDescription
+            return
+        }
+        if let fresh = try? await socialStore.profileDetail(uid: profile.id) {
+            detail = fresh
+        }
+    }
+
+    private func unblock() async {
+        do {
+            try await socialStore.unblock(uid: profile.id)
+        } catch is CancellationError {
+            return
+        } catch {
+            Haptics.warning()
+            errorMessage = (error as? LocalizedError)?.errorDescription
+                ?? error.localizedDescription
         }
     }
 

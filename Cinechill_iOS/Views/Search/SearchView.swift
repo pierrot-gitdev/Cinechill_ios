@@ -70,6 +70,11 @@ struct SearchView: View {
         .task {
             await socialStore.loadFollowSuggestions()
         }
+        // Bloqué depuis sa fiche, un profil quitte les résultats déjà affichés
+        // au retour, sans relancer la recherche.
+        .onChange(of: socialStore.blockedUIDs) { _, blocked in
+            model.removeProfiles(in: blocked)
+        }
     }
 
     // MARK: - Le haut
@@ -132,7 +137,11 @@ struct SearchView: View {
     /// profils à suivre.
     @ViewBuilder
     private var idle: some View {
-        let recents = model.recents(for: model.scope)
+        // Un profil bloqué ne revient pas par les recherches récentes.
+        let recents = model.recents(for: model.scope).filter { recent in
+            if case .profile(let profile) = recent { return !socialStore.isBlocked(profile.profile.id) }
+            return true
+        }
         if !recents.isEmpty {
             sectionHeader(String(localized: "Récents", bundle: .app)) {
                 Button {

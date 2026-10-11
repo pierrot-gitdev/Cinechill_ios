@@ -15,6 +15,7 @@
 		8F816971306F220400FDBFCA /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F816970306F220400FDBFCA /* SwiftUI.framework */; };
 		8F81697C306F220600FDBFCA /* CinechillWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8F81696D306F220300FDBFCA /* CinechillWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8FBB11012F8B000100A1B2C3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 8FBB11022F8B000100A1B2C3 /* FirebaseFirestore */; };
+		C2AD72E2E5B90E941E9DE02E /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 07BC2F824C799935A4FF281A /* FirebaseMessaging */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -103,6 +104,7 @@
 			files = (
 				8F24D5142F8A52180021A936 /* GoogleSignIn in Frameworks */,
 				8F24D5132F8A52180021A936 /* FirebaseAuth in Frameworks */,
+				C2AD72E2E5B90E941E9DE02E /* FirebaseMessaging in Frameworks */,
 				8FBB11012F8B000100A1B2C3 /* FirebaseFirestore in Frameworks */,
 				8F10D8E3302B8984006C1509 /* FirebaseAppCheck in Frameworks */,
 				8F24D3C32F89C10B0021A936 /* FirebaseCore in Frameworks */,
@@ -188,6 +190,7 @@
 			packageProductDependencies = (
 				8F24D3C22F89C10B0021A936 /* FirebaseCore */,
 				8F9A41012F8A8F9400A1B2C3 /* FirebaseAuth */,
+				07BC2F824C799935A4FF281A /* FirebaseMessaging */,
 				8FBB11022F8B000100A1B2C3 /* FirebaseFirestore */,
 				8F9A41022F8A8F9400A1B2C3 /* GoogleSignIn */,
 				8F10D8E2302B8984006C1509 /* FirebaseAppCheck */,
@@ -617,6 +620,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		07BC2F824C799935A4FF281A /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8F24D3B82F89AF790021A936 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
 		8F10D8E2302B8984006C1509 /* FirebaseAppCheck */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 8F24D3B82F89AF790021A936 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

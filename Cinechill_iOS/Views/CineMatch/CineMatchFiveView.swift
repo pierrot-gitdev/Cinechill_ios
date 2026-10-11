@@ -1040,6 +1040,10 @@ struct CineMatchFiveView: View {
             libraryStore.addToWatchlist(film.firstSeason, nextEpisode: 1)
         }
         viewModel.start(film)
+        // Un film : demain à 19 h, on demande comment c'était.
+        if !film.isSeries {
+            Task { await NotificationPermission.shared.filmStarted(film.item) }
+        }
         // Avant d'ouvrir la plateforme : une fois l'app passée en arrière-plan,
         // iOS refuserait de démarrer l'activité.
         CineMatchLiveActivity.start(film: film, details: liveActivityDetails(for: film))

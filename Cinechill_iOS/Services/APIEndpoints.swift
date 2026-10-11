@@ -257,11 +257,54 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "dismissfollowsuggestion", queryItems: [])
     }
 
+    // MARK: - Blocage et signalement
+
+    static func blockUser() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "blockuser", queryItems: [])
+    }
+
+    static func unblockUser() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "unblockuser", queryItems: [])
+    }
+
+    static func blockedUsers() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getblockedusers", queryItems: [])
+    }
+
+    static func reportUser() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "reportuser", queryItems: [])
+    }
+
     // MARK: - La recherche
 
     static func searchTitles() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "searchtitles", queryItems: [])
+    }
+
+    // MARK: - Les notifications
+
+    /// Rattache le jeton FCM de l'appareil au compte, avec la langue de l'app
+    /// et le fuseau : le serveur rédige et date chaque notification avec.
+    static func registerDevice() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "registerdevice", queryItems: [])
+    }
+
+    /// Détache le jeton. Appelé à la déconnexion, avec le compte qui s'en va.
+    static func unregisterDevice() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "unregisterdevice", queryItems: [])
+    }
+
+    /// La réponse à « Tu as regardé ce film hier ? ».
+    static func setFilmVerdict() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "setfilmverdict", queryItems: [])
     }
 
     private static func buildURL(baseURL: URL, functionName: String, queryItems: [URLQueryItem]) -> URL? {

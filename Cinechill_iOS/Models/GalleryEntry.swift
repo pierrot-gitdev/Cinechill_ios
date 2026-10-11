@@ -14,11 +14,16 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
     /// Le coup de cœur, s'il a été posé. L'absence ne dit pas « pas aimé » :
     /// elle dit « rien déclaré », et ne pénalise jamais le film.
     let lovedAt: Date?
+    /// « Pas aimé », répondu le lendemain d'un film. Le film compte comme vu
+    /// (il n'est plus proposé), mais le serveur ne le lit jamais comme un goût.
+    let dislikedAt: Date?
     /// La saison, si l'entrée en est une. Une série ne se range que saison par
     /// saison : `nil` veut toujours dire « un film ».
     let seasonFacts: SeasonFacts?
 
     var isLoved: Bool { lovedAt != nil }
+
+    var isDisliked: Bool { dislikedAt != nil }
 
     var isSeason: Bool { seasonFacts != nil }
 
@@ -34,6 +39,7 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
         releaseDate: String?,
         addedAt: Date,
         lovedAt: Date? = nil,
+        dislikedAt: Date? = nil,
         seasonFacts: SeasonFacts? = nil
     ) {
         self.id = id
@@ -47,6 +53,7 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
         self.releaseDate = releaseDate
         self.addedAt = addedAt
         self.lovedAt = lovedAt
+        self.dislikedAt = dislikedAt
         self.seasonFacts = seasonFacts
     }
 
@@ -62,6 +69,7 @@ struct GalleryEntry: Identifiable, Hashable, Codable, Sendable {
         self.releaseDate = item.releaseDate
         self.addedAt = addedAt
         self.lovedAt = nil
+        self.dislikedAt = nil
         self.seasonFacts = item.season.map { SeasonFacts(season: $0) }
     }
 

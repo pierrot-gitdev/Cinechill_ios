@@ -23,6 +23,8 @@ struct AppHeaderView: View {
 
     @EnvironmentObject private var profileStore: UserProfileStore
     @EnvironmentObject private var socialStore: SocialStore
+    @Environment(NotificationRouter.self) private var notificationRouter
+    @Environment(\.isSelectedTab) private var isSelectedTab
     @State private var showNotifications = false
     @State private var showSearch = false
 
@@ -102,6 +104,21 @@ struct AppHeaderView: View {
         .onChange(of: showNotifications) { _, isOpen in
             if !isOpen { socialStore.acknowledgeFollowers() }
         }
+        // Le toucher d'une notification de recommandation ouvre ce panneau :
+        // c'est l'en-tête de l'onglet affiché qui le prend.
+        .onChange(of: notificationRouter.panelRequest, initial: true) { _, _ in
+            openPanelIfAsked()
+        }
+        .onChange(of: isSelectedTab) { _, _ in
+            openPanelIfAsked()
+        }
+    }
+
+    private func openPanelIfAsked() {
+        guard isSelectedTab, notificationRouter.panelRequest != nil,
+              notificationRouter.consumePanelRequest() else { return }
+        showSearch = false
+        withAnimation(.easeOut(duration: 0.18)) { showNotifications = true }
     }
 
     /// Le plafond : exactement le même filet que le seuil de la barre du bas, aux mêmes
@@ -410,4 +427,5 @@ struct PlanHeaderCount: View {
     )
     .environmentObject(UserProfileStore())
     .environmentObject(SocialStore())
+    .environment(NotificationRouter.shared)
 }

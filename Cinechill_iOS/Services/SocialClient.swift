@@ -27,6 +27,10 @@ enum SocialError: LocalizedError, Equatable {
     /// Plus de trente recommandations dans la journée : le serveur s'arrête là.
     case dailyLimit
     case suggestionNotFound
+    /// Plus de vingt signalements dans la journée. Le serveur renvoie le même
+    /// `daily_limit` que pour les recommandations : `report` le traduit, pour
+    /// que le message parle de signalements et non de films envoyés.
+    case reportLimit
     case server(code: String)
     case transport(message: String)
 
@@ -60,6 +64,8 @@ enum SocialError: LocalizedError, Equatable {
             return String(localized: "Tu as envoyé beaucoup de recommandations aujourd'hui. Réessaie demain.", bundle: .app)
         case .suggestionNotFound:
             return String(localized: "Cette recommandation n'existe plus.", bundle: .app)
+        case .reportLimit:
+            return String(localized: "Tu as fait beaucoup de signalements aujourd'hui. Réessaie demain.", bundle: .app)
         case .server(let code):
             return String(localized: "Le serveur a refusé la demande (\(code)).", bundle: .app)
         case .transport(let message):
@@ -109,6 +115,40 @@ protocol SocialServicing: Sendable {
     func followSuggestions() async throws -> FollowSuggestionsPage
     /// Retire un profil des propositions, pour de bon.
     func dismissFollowSuggestion(uid: String) async throws
+    /// Bloque un profil. Le serveur défait les abonnements dans les deux sens
+    /// et supprime les recommandations en attente entre les deux comptes.
+    /// Idempotent.
+    func block(uid: String) async throws
+    /// Ne rétablit aucun abonnement.
+    func unblock(uid: String) async throws
+    /// Les comptes que j'ai bloqués. Un compte supprimé n'y figure plus.
+    func blockedUsers() async throws -> [PublicProfile]
+    func report(uid: String, reason: ReportReason, note: String?, context: ReportContext?) async throws
+}
+
+/// Pourquoi on signale un profil. Les valeurs brutes sont celles qu'attend
+/// `reportUser` : les renommer casserait le contrat.
+nonisolated enum ReportReason: String, CaseIterable, Identifiable, Sendable {
+    case spam
+    case offensive
+    case impersonation
+    case other
+
+    var id: String { rawValue }
+}
+
+/// Ce qu'on regardait au moment du signalement, quand il part d'une
+/// recommandation : la personne qui modère sait alors quoi ouvrir.
+nonisolated struct ReportContext: Hashable, Sendable {
+    var suggestionId: String?
+    var itemId: String?
+
+    var payload: [String: String] {
+        var out: [String: String] = [:]
+        if let suggestionId { out["suggestionId"] = suggestionId }
+        if let itemId { out["itemId"] = itemId }
+        return out
+    }
 }
 
 nonisolated struct SocialClient: SocialServicing, Sendable {
@@ -174,6 +214,32 @@ nonisolated struct SocialClient: SocialServicing, Sendable {
 
     func dismissFollowSuggestion(uid: String) async throws {
         _ = try await post(to: APIEndpoints.dismissFollowSuggestion(), body: ["targetUid": uid])
+    }
+
+    // MARK: - Blocage et signalement
+
+    func block(uid: String) async throws {
+        _ = try await post(to: APIEndpoints.blockUser(), body: ["targetUid": uid])
+    }
+
+    func unblock(uid: String) async throws {
+        _ = try await post(to: APIEndpoints.unblockUser(), body: ["targetUid": uid])
+    }
+
+    func blockedUsers() async throws -> [PublicProfile] {
+        let data = try await post(to: APIEndpoints.blockedUsers(), body: [:])
+        return try JSONDecoder().decode(BlockedUsersDTO.self, from: data).profiles
+    }
+
+    func report(uid: String, reason: ReportReason, note: String?, context: ReportContext?) async throws {
+        var body: [String: Any] = ["targetUid": uid, "reason": reason.rawValue]
+        if let note, !note.isEmpty { body["note"] = note }
+        if let payload = context?.payload, !payload.isEmpty { body["context"] = payload }
+        do {
+            _ = try await post(to: APIEndpoints.reportUser(), body: body)
+        } catch SocialError.dailyLimit {
+            throw SocialError.reportLimit
+        }
     }
 
     // MARK: - Transport
@@ -333,6 +399,34 @@ private nonisolated struct FollowSuggestionsDTO: Decodable {
                 )
             }
         )
+    }
+}
+
+private nonisolated struct BlockedUsersDTO: Decodable {
+    let users: [Row]
+
+    nonisolated struct Row: Decodable {
+        let uid: String
+        let handle: String?
+        let displayName: String?
+        let avatarURL: String?
+    }
+
+    /// Un compte sans pseudo reste dans la liste, contrairement aux profils à
+    /// suivre : c'est le seul endroit d'où le débloquer.
+    var profiles: [PublicProfile] {
+        users.map { row in
+            PublicProfile(
+                id: row.uid,
+                handle: row.handle ?? "",
+                displayName: PublicProfile.nameOrHandle(row.displayName, row.handle),
+                avatarURL: PublicProfile.trustedAvatarURL(row.avatarURL),
+                badgeSignature: nil,
+                followerCount: 0,
+                followingCount: 0,
+                galleryCount: 0
+            )
+        }
     }
 }
 

@@ -362,6 +362,84 @@ final class LibraryStore: ObservableObject {
         ])
     }
 
+    // MARK: - L'avis du lendemain
+
+    /// Ce que l'utilisateur répond le lendemain d'un « Je le regarde ».
+    nonisolated enum FilmVerdict: String, Sendable, CaseIterable {
+        case loved, liked, disliked, notWatched
+    }
+
+    /// Envoie la réponse et rend la main quand le serveur l'a écrite. La fiche
+    /// attend ce retour avant de confirmer : rien n'est montré comme acquis
+    /// avant (pas de mise à jour optimiste, décision du 11 août 2026).
+    func setFilmVerdict(_ item: MediaItem, verdict: FilmVerdict) async throws {
+        try await Self.sendFilmVerdict(item: item, verdict: verdict)
+        if verdict != .notWatched {
+            LocalReminders.cancelVerdict(ifAnyOf: [item.id])
+        }
+    }
+
+    /// L'appel lui-même, sans instance : les actions d'une notification
+    /// arrivent parfois dans une app lancée en arrière-plan, où aucune vue n'a
+    /// encore créé de bibliothèque.
+    static func sendFilmVerdict(item: MediaItem, verdict: FilmVerdict) async throws {
+        guard let url = APIEndpoints.setFilmVerdict() else { throw URLError(.badURL) }
+        guard let user = Auth.auth().currentUser else { throw URLError(.userAuthenticationRequired) }
+        let token = try await user.getIDToken()
+
+        let body: [String: Any] = [
+            "verdict": verdict.rawValue,
+            "item": mediaStatusPayload(for: item),
+        ]
+        var request = await URLRequest(backend: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    /// La charge d'un film telle que `setMediaStatus` la reçoit : le serveur
+    /// la passe au même `sanitizeMediaItem` pour l'avis du lendemain.
+    nonisolated static func mediaStatusPayload(for item: MediaItem) -> [String: Any] {
+        [
+            "id": item.id,
+            "tmdbId": item.tmdbId,
+            "mediaType": item.mediaType.rawValue,
+            "title": item.title,
+            "posterPath": item.posterPath as Any,
+            "overview": item.overview as Any,
+            "voteAverage": item.voteAverage as Any,
+            "genreIds": item.genreIds,
+            "releaseDate": item.releaseDate as Any,
+        ]
+    }
+
+    // MARK: - Les notifications du Hall
+
+    /// Recommandations et abonnés : la seule préférence de notification que
+    /// le serveur lit. Les autres sont locales, l'appareil seul les déclenche.
+    func setSocialNotifications(_ enabled: Bool) {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        writePreferences(uid: uid, document: "notifications", data: ["social": enabled])
+    }
+
+    /// La valeur enregistrée, `true` si rien ne l'est encore (c'est la règle
+    /// du serveur : absent veut dire activé). `nil` si la lecture échoue.
+    func socialNotificationsEnabled() async -> Bool? {
+        guard let uid = Auth.auth().currentUser?.uid else { return nil }
+        guard let snapshot = try? await db.collection("users")
+            .document(uid)
+            .collection("preferences")
+            .document("notifications")
+            .getDocument() else { return nil }
+        return snapshot.data()?["social"] as? Bool ?? true
+    }
+
     // MARK: - Compte
 
     /// Nombre de films encore en cooldown après un swipe « pas vu ».
@@ -388,6 +466,9 @@ final class LibraryStore: ObservableObject {
     /// déconnexion vient en dernier : sans jeton valide, l'appel échouerait.
     func deleteAccount() async throws {
         _ = try await callAccountFunction(APIEndpoints.deleteAccount())
+        // Le serveur a oublié l'appareil avec le compte ; les rappels
+        // programmés sur le téléphone, eux, partiraient encore.
+        LocalReminders.cancelAll()
         try? Auth.auth().signOut()
     }
 
@@ -627,6 +708,9 @@ private extension LibraryStore {
                     self.hasLoadedGalleryOnce = true
                     self.resolvePendingStatuses()
                     self.resolvePendingLoves()
+                    // Le film du « Je le regarde » est rangé, d'ici ou d'ailleurs :
+                    // la question du lendemain n'a plus d'objet.
+                    LocalReminders.cancelVerdict(ifAnyOf: Set(self.galleryItems.map(\.id)))
                 }
             }
     }
@@ -738,6 +822,7 @@ private extension LibraryStore {
             releaseDate: data["releaseDate"] as? String,
             addedAt: addedAt,
             lovedAt: (data["lovedAt"] as? Timestamp)?.dateValue(),
+            dislikedAt: (data["dislikedAt"] as? Timestamp)?.dateValue(),
             seasonFacts: mediaType == .tv ? SeasonFacts(document: data) : nil
         )
     }

@@ -439,6 +439,11 @@ final class AuthService: ObservableObject {
     func signOut() throws {
 #if canImport(FirebaseAuth)
         do {
+            // Avant la déconnexion : le téléphone se détache du compte sortant,
+            // qui ne recevra plus rien ici, et ses rappels programmés tombent.
+            if let user = Auth.auth().currentUser {
+                PushRegistration.shared.signingOut(user)
+            }
             try Auth.auth().signOut()
             errorMessage = nil
         } catch {

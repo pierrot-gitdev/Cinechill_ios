@@ -53,7 +53,17 @@ struct SettingsView: View {
 
     private var email: String? { Auth.auth().currentUser?.email }
 
+    /// Une pile de navigation, pour les deux réglages qui ont leur propre écran
+    /// (les notifications, les comptes bloqués) : la croix ferme la feuille,
+    /// le chevron de ces écrans revient ici.
     var body: some View {
+        NavigationStack {
+            page
+                .toolbar(.hidden, for: .navigationBar)
+        }
+    }
+
+    private var page: some View {
         ZStack {
             Ink.ground.ignoresSafeArea()
 
@@ -87,11 +97,15 @@ struct SettingsView: View {
 
                         declaration(
                             String(localized: "Ma génération", bundle: .app),
-                            note: String(localized: "Ça nous aide à te proposer des films de ta génération.", bundle: .app),
-                            isLast: true
+                            note: String(localized: "Ça nous aide à te proposer des films de ta génération.", bundle: .app)
                         ) {
                             generation
                         }
+
+                        links
+
+                        ContactRow()
+                            .padding(.top, 26)
 
                         account
                     }
@@ -371,6 +385,48 @@ struct SettingsView: View {
                 .accessibilityLabel(generation.accessibilityLabel)
             }
         }
+    }
+
+    // MARK: - Notifications et comptes bloqués
+
+    /// Deux écrans à part : chacun porte ses propres états (l'autorisation
+    /// d'iOS, une liste à charger), que la feuille des réglages n'a pas à tenir.
+    private var links: some View {
+        VStack(spacing: 0) {
+            settingsLink(String(localized: "Notifications", bundle: .app)) {
+                NotificationSettingsView()
+            }
+            settingsLink(String(localized: "Comptes bloqués", bundle: .app)) {
+                BlockedAccountsView()
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    private func settingsLink<Destination: View>(
+        _ title: String,
+        @ViewBuilder destination: () -> Destination
+    ) -> some View {
+        NavigationLink(destination: destination()) {
+            HStack {
+                Text(title)
+                    .planFont(14)
+                    .foregroundStyle(Ink.ink)
+                Spacer()
+                // Le chevron de dépliage tourné d'un quart : la même écriture
+                // que « Le compte », pour un écran qui s'ouvre à droite.
+                DisclosureGlyph(isOpen: false)
+                    .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                    .foregroundStyle(Ink.ink3)
+                    .frame(width: 14, height: 14)
+                    .rotationEffect(.degrees(-90))
+                    .accessibilityHidden(true)
+            }
+            .frame(minHeight: 52)
+            .contentShape(Rectangle())
+            .overlay(alignment: .bottom) { PlanEdge() }
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.985))
     }
 
     // MARK: - Le compte

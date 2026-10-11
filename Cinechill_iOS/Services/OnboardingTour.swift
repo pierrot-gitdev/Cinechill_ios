@@ -130,6 +130,9 @@ final class OnboardingTour {
         guard step != nil else { return }
         step = nil
         defaults.set(true, forKey: "swipe.guideSeen")
+        // Les notifications arrivent dès maintenant, sans bruit et sans
+        // fenêtre d'iOS : la vraie demande attend un moment qui l'explique.
+        Task { await NotificationPermission.shared.requestProvisional() }
         guard let uid else { return }
         let record = Record(done: true, step: 0, startedAt: .now, version: Self.version)
         saveLocal(record, uid: uid)

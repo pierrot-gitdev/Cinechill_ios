@@ -270,7 +270,12 @@ struct SuggestionComposerSheet: View {
             }
         }
 
-        if !sent.isEmpty { Haptics.success() }
+        if !sent.isEmpty {
+            Haptics.success()
+            // Premier envoi : le bon moment pour proposer les notifications,
+            // une fois cette feuille refermée.
+            NotificationPermission.shared.offer(.firstSuggestion)
+        }
         onSent(SuggestionOutcome(
             film: item.title,
             sent: sent.map(\.displayName),

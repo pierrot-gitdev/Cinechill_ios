@@ -48,6 +48,13 @@ final class SocialStore: ObservableObject {
     /// fois sur l'accueil et dans la recherche.
     @Published private(set) var followsInFlight: Set<String> = []
     @Published private(set) var dismissalsInFlight: Set<String> = []
+    /// Les profils que j'ai bloqués, tels que `users/{uid}/blocks` les tient.
+    /// Un `Set` pour la même raison que `followingUIDs` : la question posée
+    /// partout est « ce profil est-il bloqué ? ».
+    @Published private(set) var blockedUIDs: Set<String> = []
+    /// Les blocages et déblocages en cours d'écriture, pour que le bouton
+    /// tourne où qu'il soit : profil, notifications, liste des bloqués.
+    @Published private(set) var blocksInFlight: Set<String> = []
 
     private let client: any SocialServicing
 
@@ -56,6 +63,7 @@ final class SocialStore: ObservableObject {
     private var followingListener: ListenerRegistration?
     private var suggestionsListener: ListenerRegistration?
     private var followersListener: ListenerRegistration?
+    private var blocksListener: ListenerRegistration?
     private var hasStarted = false
     /// Lu à chaque snapshot plutôt que capturé à la création du listener :
     /// sans ça, les abonnés acquittés réapparaîtraient au snapshot suivant.
@@ -90,11 +98,14 @@ final class SocialStore: ObservableObject {
         followingListener?.remove()
         suggestionsListener?.remove()
         followersListener?.remove()
+        blocksListener?.remove()
     }
 
     // MARK: - Lecture
 
     func isFollowing(_ uid: String) -> Bool { followingUIDs.contains(uid) }
+
+    func isBlocked(_ uid: String) -> Bool { blockedUIDs.contains(uid) }
 
     var myUID: String? { Auth.auth().currentUser?.uid }
 
@@ -279,8 +290,13 @@ final class SocialStore: ObservableObject {
         var seen = Set<String>()
         var results: [PublicProfile] = []
         // Les correspondances du pseudo d'abord : on tape le plus souvent le
-        // pseudo de quelqu'un qu'on connaît.
-        for profile in handleHits + wordHits + nameHits where profile.id != me {
+        // pseudo de quelqu'un qu'on connaît. La recherche lit Firestore sans
+        // passer par le serveur : c'est donc ici qu'on écarte les profils que
+        // j'ai bloqués. Ceux qui m'ont bloqué restent dans les résultats (leurs
+        // blocages ne se lisent pas d'ici), mais le serveur refuse ensuite de
+        // montrer leur profil ou de les suivre.
+        for profile in handleHits + wordHits + nameHits
+        where profile.id != me && !blockedUIDs.contains(profile.id) {
             guard Self.matchesEveryWord(profile, words: words) else { continue }
             guard seen.insert(profile.id).inserted else { continue }
             results.append(profile)
@@ -365,7 +381,9 @@ final class SocialStore: ObservableObject {
             page = try await client.followSuggestions()
             #endif
             let me = myUID
-            followSuggestions = page.suggestions.filter { $0.id != me }
+            // Le serveur filtre déjà les blocages ; un blocage posé pendant le
+            // chargement ne doit pas faire revenir la carte.
+            followSuggestions = page.suggestions.filter { $0.id != me && !blockedUIDs.contains($0.id) }
             followingCountAtLoad = page.followingCount
             followSuggestionsOnHome = followSuggestions.count >= Self.homeRowMinimum
             followSuggestionsLeadHome = page.followingCount < Self.fewFollowings
@@ -401,6 +419,62 @@ final class SocialStore: ObservableObject {
         } catch {
             return false
         }
+    }
+
+    // MARK: - Blocage et signalement
+
+    /// Bloque un profil, une fois le serveur d'accord.
+    ///
+    /// Pas de mise à jour optimiste (règle du 11 août 2026) : l'appelant montre
+    /// l'attente par `blocksInFlight`, et rien ne bouge avant la réponse. Le
+    /// serveur a alors défait les abonnements et supprimé les recommandations
+    /// dans les deux sens ; les écouteurs le confirmeront, on le pose ici pour
+    /// que la personne quitte tout de suite les listes affichées.
+    func block(uid: String) async throws {
+        guard !blocksInFlight.contains(uid) else { return }
+        blocksInFlight.insert(uid)
+        defer { blocksInFlight.remove(uid) }
+        try await client.block(uid: uid)
+        blockedUIDs.insert(uid)
+        forget(uid)
+    }
+
+    /// Débloque. Aucun abonnement ne revient : il faudra se suivre à nouveau.
+    func unblock(uid: String) async throws {
+        guard !blocksInFlight.contains(uid) else { return }
+        blocksInFlight.insert(uid)
+        defer { blocksInFlight.remove(uid) }
+        #if DEBUG
+        // La liste de démonstration n'existe pas côté serveur.
+        if DebugFixtures.blockedUsers == nil {
+            try await client.unblock(uid: uid)
+        }
+        #else
+        try await client.unblock(uid: uid)
+        #endif
+        blockedUIDs.remove(uid)
+    }
+
+    /// Les comptes bloqués, avec leur profil public, pour la liste des réglages.
+    func blockedAccounts() async throws -> [PublicProfile] {
+        #if DEBUG
+        if let fixture = DebugFixtures.blockedUsers {
+            return fixture
+        }
+        #endif
+        return try await client.blockedUsers()
+    }
+
+    func report(uid: String, reason: ReportReason, note: String?, context: ReportContext?) async throws {
+        try await client.report(uid: uid, reason: reason, note: note, context: context)
+    }
+
+    /// Retire un profil bloqué de tout ce que le Hall affiche déjà.
+    private func forget(_ uid: String) {
+        followingUIDs.remove(uid)
+        suggestions.removeAll { $0.fromUid == uid }
+        recentFollowers.removeAll { $0.id == uid }
+        followSuggestions.removeAll { $0.id == uid }
     }
 
     /// Moins de trois cartes ne font pas une rangée : rien plutôt qu'un vide.
@@ -509,12 +583,15 @@ final class SocialStore: ObservableObject {
                 self.followingCountAtLoad = 0
                 self.followSuggestionsOnHome = false
                 self.followSuggestionsLeadHome = false
+                self.blockedUIDs = []
+                self.blocksInFlight = []
 
                 guard let uid = user?.uid else { return }
                 self.startProfileListener(uid: uid)
                 self.startFollowingListener(uid: uid)
                 self.startSuggestionsListener(uid: uid)
                 self.startFollowersListener(uid: uid)
+                self.startBlocksListener(uid: uid)
             }
         }
     }
@@ -524,10 +601,12 @@ final class SocialStore: ObservableObject {
         followingListener?.remove()
         suggestionsListener?.remove()
         followersListener?.remove()
+        blocksListener?.remove()
         profileListener = nil
         followingListener = nil
         suggestionsListener = nil
         followersListener = nil
+        blocksListener = nil
     }
 
     private func startProfileListener(uid: String) {
@@ -588,6 +667,9 @@ final class SocialStore: ObservableObject {
                             }
                             return Suggestion(id: doc.documentID, data: data)
                         }
+                        // Le serveur les supprime au blocage ; un instantané
+                        // parti avant ne doit pas les faire revenir.
+                        .filter { !self.blockedUIDs.contains($0.fromUid) }
                         .sorted { $0.createdAt > $1.createdAt }
                 }
             }
@@ -614,6 +696,7 @@ final class SocialStore: ObservableObject {
                         guard let since = doc.get("since") as? Timestamp else { return false }
                         return since.dateValue() > cutoff
                     }.map(\.documentID)
+                        .filter { !self.blockedUIDs.contains($0) }
 
                     guard !fresh.isEmpty else {
                         self.recentFollowers = []
@@ -623,10 +706,27 @@ final class SocialStore: ObservableObject {
                     // snapshot réessaiera, et vider la liste ferait croire
                     // qu'ils sont partis.
                     do {
+                        // Relu après l'attente : un blocage a pu tomber pendant.
                         self.recentFollowers = try await self.profiles(uids: fresh)
+                            .filter { !self.blockedUIDs.contains($0.id) }
                     } catch {
                         self.errorMessage = error.localizedDescription
                     }
+                }
+            }
+    }
+
+    /// Lisible par son seul propriétaire. Une erreur garde l'état connu : la
+    /// vider ferait réapparaître un bouton « Suivre » sur un profil bloqué.
+    private func startBlocksListener(uid: String) {
+        blocksListener = db.collection("users").document(uid)
+            .collection("blocks")
+            .addSnapshotListener { [weak self] snapshot, error in
+                Task { @MainActor [weak self] in
+                    guard let self, error == nil, let snapshot else { return }
+                    let blocked = Set(snapshot.documents.map(\.documentID))
+                    self.blockedUIDs = blocked
+                    for uid in blocked { self.forget(uid) }
                 }
             }
     }
