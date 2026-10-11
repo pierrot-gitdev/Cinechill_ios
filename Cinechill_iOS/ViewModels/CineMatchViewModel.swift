@@ -541,8 +541,21 @@ final class CineMatchViewModel {
             failureIsNoCandidates = false
             // Le code HTTP et le corps de la réponse servent au rapport de bug,
             // pas à l'écran, où ils poussaient « Réessayer » hors de vue.
-            errorMessage = String(localized: "Le serveur n'a pas répondu comme prévu. Réessaie dans un instant.", bundle: .app)
+            // Une coupure réseau se dit à part : elle se règle chez soi, pas
+            // en attendant.
+            errorMessage = Self.isNetworkFailure(error)
+                ? String(localized: "Connexion trop lente ou coupée. Vérifie ton réseau, puis réessaie.", bundle: .app)
+                : String(localized: "Un souci de notre côté. Réessaie dans un instant.", bundle: .app)
         }
+    }
+
+    /// La requête n'a pas atteint le serveur : hors ligne, délai dépassé.
+    private static func isNetworkFailure(_ error: Error) -> Bool {
+        if error is URLError { return true }
+        if let clientError = error as? RecommendationClientError, case .transport = clientError {
+            return true
+        }
+        return false
     }
 
     private func resetSession() {

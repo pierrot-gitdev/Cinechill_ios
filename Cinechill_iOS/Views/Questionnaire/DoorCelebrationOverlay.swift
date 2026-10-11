@@ -95,13 +95,14 @@ struct DoorCelebrationOverlay: View {
         }
         .task {
             Haptics.success()
-            guard !reduceMotion else {
-                revealed = true
-                return
-            }
-            try? await Task.sleep(for: .milliseconds(420))
+            // Le passage de la pierre à l'or est l'objet de la planche : il se
+            // joue aussi en mouvement réduit, en fondu, sans l'agrandissement.
+            // Allumé d'office, on ne voyait plus lequel venait de s'allumer.
+            try? await Task.sleep(for: .milliseconds(reduceMotion ? 250 : 420))
             guard !Task.isCancelled else { return }
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.52)) {
+            // Un ressort qui se pose sans rebondir trois fois : la planche est
+            // rare, elle peut marquer le coup, pas sautiller.
+            withAnimation(reduceMotion ? Animation.easeOut(duration: 0.3) : .spring(response: 0.5, dampingFraction: 0.7)) {
                 revealed = true
             }
         }
@@ -203,7 +204,7 @@ struct DoorCelebrationOverlay: View {
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableScaleStyle())
         .padding(.top, 6)
     }
 
@@ -225,6 +226,10 @@ struct DoorCelebrationOverlay: View {
                         .lineLimit(2)
                         .minimumScaleFactor(0.75)
                         .fixedSize(horizontal: false, vertical: true)
+                        // Cinq colonnes de 55 pt : au-delà, « préférences » se
+                        // coupe au milieu du mot. Le compte et le message en
+                        // dessous disent la même chose en grand.
+                        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
@@ -256,7 +261,7 @@ struct DoorCelebrationOverlay: View {
                 color: Color(hex: key.halo).opacity(lit ? (isNew ? 0.6 : 0.35) : 0),
                 radius: isNew && revealed ? 14 : 8
             )
-            .scaleEffect(isNew && revealed ? 1.14 : 1)
+            .scaleEffect(isNew && revealed && !reduceMotion ? 1.14 : 1)
             .overlay {
                 if isLocked {
                     DoorLockGlyph()

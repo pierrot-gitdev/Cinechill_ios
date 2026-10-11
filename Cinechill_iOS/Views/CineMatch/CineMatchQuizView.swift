@@ -34,6 +34,9 @@ struct CineMatchQuizView: View {
     @State private var excludedID: Int?
     /// Le surligné du switch glisse d'une moitié à l'autre au lieu d'y sauter.
     @Namespace private var stageSwitch
+    /// La hauteur du titre sous l'affiche suit la taille du texte : à 30 pt
+    /// fixes, deux lignes agrandies étaient coupées à mi-hauteur.
+    @ScaledMetric(relativeTo: .caption) private var captionHeight: CGFloat = QuizPosterLayout.caption
 
     init(viewModel: CineMatchViewModel) {
         self.viewModel = viewModel
@@ -256,11 +259,20 @@ struct CineMatchQuizView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                QuizChevron()
-                    .stroke(style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
-                    .foregroundStyle(isOn ? Ink.ground : Ink.ink3)
-                    .frame(width: 14, height: 14)
-                    .accessibilityHidden(true)
+                // La seconde question part au serveur : tant que le premier
+                // tour n'est pas là, la ligne prise le dit au lieu de rester
+                // figée sous le doigt.
+                if isOn && viewModel.isLoadingRound {
+                    CinechillSpinner(size: 14, tint: .onPaper)
+                        .frame(width: 14, height: 14)
+                        .accessibilityHidden(true)
+                } else {
+                    QuizChevron()
+                        .stroke(style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+                        .foregroundStyle(isOn ? Ink.ground : Ink.ink3)
+                        .frame(width: 14, height: 14)
+                        .accessibilityHidden(true)
+                }
             }
             .padding(.leading, 14)
             .padding(.trailing, 12)
@@ -280,6 +292,7 @@ struct CineMatchQuizView: View {
         .buttonStyle(PressableScaleStyle(scale: 0.985))
         .disabled(pressedAnswer != nil && !isOn)
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
+        .accessibilityValue(isOn && viewModel.isLoadingRound ? String(localized: "Chargement…", bundle: .app) : "")
     }
 
     // MARK: Les comparaisons
@@ -311,6 +324,10 @@ struct CineMatchQuizView: View {
                         isCompact: isCompact,
                         top: isCompact ? 12 : 18
                     )
+                    // La question grandit, mais pas au point de manger la
+                    // grille : au-delà, sur un iPhone SE, les quatre affiches
+                    // tombaient sous leur hauteur minimale.
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                     GeometryReader { proxy in
                         if films.isEmpty {
@@ -331,15 +348,30 @@ struct CineMatchQuizView: View {
                 guard excludedID == nil, !viewModel.isLoadingRound else { return }
                 Task { await viewModel.noneOfThese() }
             } label: {
-                Text(noneTitle(isExcluding: isExcluding, count: films.count))
-                    .planFont(13, weight: .medium)
-                    .foregroundStyle(Ink.ink2)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 11)
-                    .contentShape(Rectangle())
+                // Entre deux tours, le bouton porte l'attente : les affiches
+                // restent en place et rien d'autre ne dit qu'on charge la suite.
+                Group {
+                    if viewModel.isLoadingRound {
+                        CinechillSpinner(size: 16)
+                            .frame(width: 16, height: 16)
+                    } else {
+                        Text(noneTitle(isExcluding: isExcluding, count: films.count))
+                            .planFont(13, weight: .medium)
+                            .foregroundStyle(Ink.ink2)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: Metrics.control)
+                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .padding(.top, 8)
+            .buttonStyle(PressableScaleStyle(scale: 0.97))
+            .accessibilityLabel(
+                viewModel.isLoadingRound
+                    ? String(localized: "Chargement…", bundle: .app)
+                    : noneTitle(isExcluding: isExcluding, count: films.count)
+            )
+            .padding(.top, 4)
             .disabled(films.isEmpty || excludedID != nil || viewModel.isLoadingRound)
         }
         .animation(stageAnimation, value: viewModel.comparisonStage)
@@ -456,7 +488,7 @@ struct CineMatchQuizView: View {
     /// Sur un téléphone court, quatre en ligne sont plus grandes que deux par
     /// deux.
     private func posterGrid(_ films: [CineMatchGalleryFilm], in size: CGSize) -> some View {
-        let layout = QuizPosterLayout(size: size)
+        let layout = QuizPosterLayout(size: size, caption: captionHeight)
         let rows: [[Int]] = layout.columns == 2 ? [[0, 1], [2, 3]] : [[0, 1, 2, 3]]
 
         return VStack(spacing: layout.gap) {
@@ -641,6 +673,7 @@ private struct QuizPosterLayout {
     static let caption: CGFloat = 30
     static let captionSpacing: CGFloat = 6
 
+    let caption: CGFloat
     let columns: Int
     let gap: CGFloat
     let cellWidth: CGFloat
@@ -648,8 +681,9 @@ private struct QuizPosterLayout {
     let posterWidth: CGFloat
     let posterHeight: CGFloat
 
-    init(size: CGSize) {
-        let textBlock = Self.caption + Self.captionSpacing
+    init(size: CGSize, caption: CGFloat) {
+        self.caption = caption
+        let textBlock = caption + Self.captionSpacing
 
         let squareGap: CGFloat = 10
         let squareCell = CGSize(width: max(0, (size.width - squareGap) / 2), height: max(0, (size.height - squareGap) / 2))
@@ -725,7 +759,7 @@ private struct QuizPosterTile: View {
                 .foregroundStyle(Ink.ink2)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
-                .frame(width: layout.cellWidth, height: QuizPosterLayout.caption, alignment: .top)
+                .frame(width: layout.cellWidth, height: layout.caption, alignment: .top)
         }
         .frame(width: layout.cellWidth, height: layout.cellHeight, alignment: .bottom)
         .contentShape(Rectangle())

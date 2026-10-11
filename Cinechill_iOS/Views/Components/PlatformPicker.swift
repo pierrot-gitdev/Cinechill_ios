@@ -69,7 +69,9 @@ struct PlatformGrid: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.94))
         .accessibilityLabel(platform.name)
-        .accessibilityValue(isOn ? String(localized: "Sélectionnée", bundle: .app) : String(localized: "Non sélectionnée", bundle: .app))
+        // Retenue, le trait « sélectionné » suffit : une valeur en plus le
+        // faisait dire deux fois par VoiceOver.
+        .accessibilityValue(isOn ? "" : String(localized: "Non sélectionnée", bundle: .app))
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
     }
 }
@@ -83,6 +85,8 @@ struct PlatformGrid: View {
 struct PlatformPickerSheet: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(MediaCatalog.self) private var catalog
+    /// Le chargement a échoué : sans cet état, la roue tournait pour toujours.
+    @State private var loadFailed = false
 
     private var selection: Binding<Set<String>> {
         Binding(
@@ -104,9 +108,17 @@ struct PlatformPickerSheet: View {
                             Text("Tout décocher", bundle: .app)
                                 .planLabel()
                                 .foregroundStyle(Ink.ink2)
-                                .contentShape(Rectangle().inset(by: -10))
+                                // Un libellé de 12 pt de haut : la cible
+                                // monte à 44 pt, puis la mise en page reprend
+                                // la place, sinon l'en-tête grandirait au
+                                // premier coche (le bouton n'existe qu'alors).
+                                .padding(.vertical, 16)
+                                .padding(.horizontal, 10)
+                                .contentShape(Rectangle())
+                                .padding(.vertical, -16)
+                                .padding(.horizontal, -10)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(PressableScaleStyle())
                     }
                 }
 
@@ -117,12 +129,29 @@ struct PlatformPickerSheet: View {
                             .foregroundStyle(Ink.ink2)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        if catalog.platforms.isEmpty {
+                        if catalog.platforms.isEmpty, loadFailed {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Impossible de charger les plateformes.", bundle: .app)
+                                    .planFont(13)
+                                    .foregroundStyle(Ink.ink2)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Button(action: retry) {
+                                    Text("Réessayer", bundle: .app)
+                                        .planFont(13, weight: .medium)
+                                        .foregroundStyle(Ink.ink)
+                                        .frame(minHeight: 44)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(PressableScaleStyle())
+                            }
+                            .padding(.top, 20)
+                        } else if catalog.platforms.isEmpty {
                             HStack(spacing: 10) {
                                 CinechillSpinner(size: 18)
+                                // `ink2` : jamais de texte sous 13 pt en `ink3`.
                                 Text("Chargement des plateformes…", bundle: .app)
                                     .planFont(12.5)
-                                    .foregroundStyle(Ink.ink3)
+                                    .foregroundStyle(Ink.ink2)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.top, 20)
@@ -137,6 +166,16 @@ struct PlatformPickerSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
-        .task { await catalog.loadIfNeeded() }
+        .task { await load() }
+    }
+
+    private func load() async {
+        await catalog.loadIfNeeded()
+        loadFailed = catalog.platforms.isEmpty
+    }
+
+    private func retry() {
+        loadFailed = false
+        Task { await load() }
     }
 }

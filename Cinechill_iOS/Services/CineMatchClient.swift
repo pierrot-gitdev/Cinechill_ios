@@ -17,10 +17,10 @@ nonisolated enum CineMatchClientError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noCandidates:
-            return String(localized: "Aucun film ne correspond pour l'instant. Change tes réglages pour ce soir.", bundle: .app)
-        case .noSeriesCandidates:
-            return String(localized: "Aucune série ne correspond pour l'instant. Change tes réglages pour ce soir.", bundle: .app)
+        // Le titre de l'écran dit déjà qu'il n'y a rien : le message dit
+        // seulement quoi changer, et « Retour à l'accueil » y mène.
+        case .noCandidates, .noSeriesCandidates:
+            return String(localized: "Essaie une autre durée ou d'autres plateformes, depuis « Ce soir » sur l'accueil.", bundle: .app)
         }
     }
 

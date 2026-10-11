@@ -7,7 +7,7 @@ import SwiftUI
 
 /// La conclusion : le film lancé, et la galerie pour plus tard.
 ///
-/// « Démarrer le film » ouvre la plateforme ; c'est cet écran qu'on retrouve
+/// « Je le regarde » ouvre la plateforme ; c'est cet écran qu'on retrouve
 /// en revenant. Il ne demande rien ce soir. L'appréciation monte quand le
 /// choix est définitif, et personne ne le prévoit : l'écran ferme donc la
 /// recherche au lieu de proposer d'y revenir, souhaite un bon film, et garde
@@ -37,7 +37,12 @@ struct CineMatchConclusionView: View {
     var body: some View {
         Group {
             if let film = viewModel.concludedFilm {
+                // Texte agrandi sur un iPhone SE : le titre, la note et les deux
+                // boutons ne tenaient plus sous l'affiche, et « Retour à
+                // l'accueil » sortait de l'écran. L'affiche se réduit d'abord,
+                // la page ne défile qu'au-delà.
                 content(film)
+                    .planScrollsIfNeeded()
             } else {
                 Color.clear
             }
@@ -92,10 +97,9 @@ struct CineMatchConclusionView: View {
             PosterImageView(url: film.item.posterURL, contentMode: .fill)
                 .frame(width: height / 1.5, height: height)
                 .clipShape(shape)
+                // Pas d'ombre portée : la direction n'en admet aucune, et le
+                // filet suffit à détacher l'affiche du fond.
                 .overlay(shape.strokeBorder(Ink.rule, lineWidth: 1))
-                // La seule ombre portée de l'application : elle détache l'objet
-                // que l'écran vient de trouver.
-                .shadow(color: CinechillPalette.nightDeep.opacity(0.55), radius: 12, y: 6)
                 .frame(width: proxy.size.width, height: proxy.size.height, alignment: .bottom)
         }
         .frame(minHeight: 110)
@@ -206,10 +210,10 @@ struct CineMatchConclusionView: View {
                     .planFont(13.5, weight: .medium)
                     .foregroundStyle(Ink.ink2)
                     .padding(.horizontal, 18)
-                    .frame(minHeight: 40)
+                    .frame(minHeight: Metrics.control)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressableScaleStyle(scale: 0.97))
             .disabled(state == .adding)
         }
         .animation(Metrics.shift, value: state)
@@ -218,11 +222,11 @@ struct CineMatchConclusionView: View {
     private func note(for state: CineMatchViewModel.GalleryAddState) -> String {
         switch state {
         case .added:
-            String(localized: "Il comptera dans tes prochaines propositions.", bundle: .app)
+            String(localized: "On en tiendra compte pour tes prochaines propositions.", bundle: .app)
         case .failed:
-            String(localized: "Le film n'a pas été ajouté. Réessaie.", bundle: .app)
+            String(localized: "On n'a pas pu l'ajouter à ta galerie. Réessaie.", bundle: .app)
         case .idle, .adding:
-            String(localized: "Une fois que tu l'as vu, ajoute-le à ta galerie. Tes prochaines propositions en tiendront compte.", bundle: .app)
+            String(localized: "Une fois que tu l'as vu, ajoute-le à ta galerie : on en tiendra compte la prochaine fois.", bundle: .app)
         }
     }
 
@@ -295,10 +299,10 @@ struct CineMatchConclusionView: View {
                     .planFont(13.5, weight: .medium)
                     .foregroundStyle(Ink.ink2)
                     .padding(.horizontal, 18)
-                    .frame(minHeight: 40)
+                    .frame(minHeight: Metrics.control)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressableScaleStyle(scale: 0.97))
             .disabled(state == .adding)
         }
         .animation(Metrics.shift, value: queued != nil)
@@ -313,7 +317,7 @@ struct CineMatchConclusionView: View {
             return String(localized: "On garde l'épisode à lancer dans ta watchlist.", bundle: .app)
         }
         if state == .failed {
-            return String(localized: "La saison 1 n'a pas été ajoutée à ta watchlist. Réessaie.", bundle: .app)
+            return String(localized: "On n'a pas pu mettre la saison 1 dans ta watchlist. Réessaie.", bundle: .app)
         }
         return String(localized: "On met la saison 1 dans ta watchlist, à son premier épisode.", bundle: .app)
     }

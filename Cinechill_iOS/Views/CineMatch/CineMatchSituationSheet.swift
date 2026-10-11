@@ -23,6 +23,9 @@ struct CineMatchSituationSheet: View {
     /// bouton au lieu de couvrir l'écran ou de le rogner.
     @State private var contentHeight: CGFloat = 480
     @State private var bottomInset: CGFloat = 0
+    /// Le répertoire n'a pas pu se charger : sans ce drapeau, le projecteur
+    /// tournait sans fin à la place des plateformes.
+    @State private var platformsFailed = false
 
     private var isSeries: Bool { viewModel.format == .series }
 
@@ -45,8 +48,8 @@ struct CineMatchSituationSheet: View {
                     .accessibilityAddTraits(.isHeader)
 
                 question(isSeries
-                    ? String(localized: "Avec qui comptes-tu regarder la série ?", bundle: .app)
-                    : String(localized: "Avec qui comptes-tu regarder le film ?", bundle: .app))
+                    ? String(localized: "Tu la regardes avec qui ?", bundle: .app)
+                    : String(localized: "Tu le regardes avec qui ?", bundle: .app))
                     .padding(.top, 18)
 
                 FlowLayout(spacing: 6) {
@@ -62,8 +65,9 @@ struct CineMatchSituationSheet: View {
                 .padding(.top, 9)
 
                 question(isSeries
-                    ? String(localized: "Quelle durée pour un épisode ?", bundle: .app)
-                    : String(localized: "Quelle durée pour le film ?", bundle: .app))
+                    ? String(localized: "Des épisodes de quelle longueur ?", bundle: .app)
+                    // La question de la watchlist, mot pour mot.
+                    : String(localized: "Combien de temps ce soir ?", bundle: .app))
                     .padding(.top, 16)
 
                 FlowLayout(spacing: 6) {
@@ -109,7 +113,13 @@ struct CineMatchSituationSheet: View {
         .presentationDetents([.height(contentHeight + bottomInset)])
         .presentationDragIndicator(.visible)
         .presentationBackground(Ink.ground2)
-        .task { await catalog.loadIfNeeded() }
+        .task { await loadPlatforms() }
+    }
+
+    private func loadPlatforms() async {
+        platformsFailed = false
+        await catalog.loadIfNeeded()
+        platformsFailed = catalog.platforms.isEmpty
     }
 
     private func question(_ text: String) -> some View {
@@ -121,7 +131,25 @@ struct CineMatchSituationSheet: View {
 
     @ViewBuilder
     private var platforms: some View {
-        if catalog.platforms.isEmpty {
+        if catalog.platforms.isEmpty && platformsFailed {
+            HStack(spacing: 10) {
+                Text("On n'a pas pu charger les plateformes.", bundle: .app)
+                    .planFont(12.5)
+                    .foregroundStyle(Ink.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button {
+                    Task { await loadPlatforms() }
+                } label: {
+                    Text("Réessayer", bundle: .app)
+                        .planFont(13, weight: .semibold)
+                        .foregroundStyle(Ink.ink)
+                        .frame(minHeight: Metrics.control)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableScaleStyle(scale: 0.96))
+            }
+        } else if catalog.platforms.isEmpty {
             HStack(spacing: 10) {
                 CinechillSpinner(size: 18)
                 Text("Chargement des plateformes…", bundle: .app)

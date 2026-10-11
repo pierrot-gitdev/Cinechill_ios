@@ -35,12 +35,13 @@ struct TonightCardView: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     // La lumière, pas l'indigo : c'est la seule proposition que
-                    // l'app vous fasse d'elle-même, donc son accent.
+                    // l'app te fasse d'elle-même, donc son accent. Le point
+                    // seul la porte : l'accent ne s'écrit jamais en texte.
                     HStack(spacing: 8) {
                         PlanLight()
                         Text("Ce soir", bundle: .app)
                             .planLabel()
-                            .foregroundStyle(Ink.light)
+                            .foregroundStyle(Ink.ink2)
                     }
 
                     Text(pick.item.entry.title)
@@ -95,7 +96,7 @@ struct TonightCardView: View {
 
     private var actions: some View {
         // Côte à côte, puis empilés quand le texte devient très grand :
-        // « Autre chose » tenait dans 118 pt, plus à cette taille.
+        // « Pas celui-là » tient dans 118 pt, plus à cette taille.
         let layout = isLargeType
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: Metrics.gutter))
             : AnyLayout(HStackLayout(spacing: Metrics.gutter))
@@ -103,7 +104,7 @@ struct TonightCardView: View {
             PlanButton(title: String(localized: "Je le regarde", bundle: .app), height: Metrics.control, action: onWatch)
 
             if let onReject {
-                PlanSecondaryButton(title: String(localized: "Autre chose", bundle: .app), height: Metrics.control, action: onReject)
+                PlanSecondaryButton(title: String(localized: "Pas celui-là", bundle: .app), height: Metrics.control, action: onReject)
                     .frame(width: isLargeType ? nil : 118)
             }
 

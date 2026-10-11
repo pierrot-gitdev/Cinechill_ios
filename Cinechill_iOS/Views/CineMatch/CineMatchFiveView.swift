@@ -99,7 +99,7 @@ struct CineMatchFiveView: View {
                         ? String(localized: "Aucune série pour ce soir", bundle: .app)
                         : String(localized: "Aucun film pour ce soir", bundle: .app),
                     message: message,
-                    actionTitle: String(localized: "Retour", bundle: .app),
+                    actionTitle: String(localized: "Retour à l'accueil", bundle: .app),
                     action: { viewModel.backToHome() }
                 )
                 .frame(maxHeight: .infinity)
@@ -111,13 +111,22 @@ struct CineMatchFiveView: View {
                     message: message,
                     actionTitle: String(localized: "Réessayer", bundle: .app),
                     action: { Task { await viewModel.retry() } },
-                    secondaryTitle: String(localized: "Retour", bundle: .app),
+                    secondaryTitle: String(localized: "Retour à l'accueil", bundle: .app),
                     secondaryAction: { viewModel.backToHome() }
                 )
                 .frame(maxHeight: .infinity)
             } else {
-                CinechillSpinner(size: 28)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // L'attente dit ce qu'on attend : un projecteur seul ne disait
+                // pas si la proposition du jour arrivait ou si l'écran était figé.
+                VStack(spacing: 14) {
+                    CinechillSpinner(size: 28)
+                    Text(waitingText)
+                        .planFont(13.5)
+                        .foregroundStyle(Ink.ink2)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .accessibilityElement(children: .combine)
                 if mode == .daily { backLink }
             }
         }
@@ -141,6 +150,15 @@ struct CineMatchFiveView: View {
         // En quittant les résultats, l'exposition accumulée part d'un bloc.
         .onDisappear {
             Task { await viewModel.flushExposure() }
+        }
+    }
+
+    private var waitingText: String {
+        switch (mode, isSeries) {
+        case (.daily, false): String(localized: "On cherche ton film du jour…", bundle: .app)
+        case (.daily, true): String(localized: "On cherche ta série du jour…", bundle: .app)
+        case (.five, false): String(localized: "On cherche tes cinq films…", bundle: .app)
+        case (.five, true): String(localized: "On cherche tes cinq séries…", bundle: .app)
         }
     }
 
@@ -230,8 +248,17 @@ struct CineMatchFiveView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         case .failed:
-            wideningLine(String(localized: "Le remplacement n'a pas abouti. Réessaie dans un instant.", bundle: .app))
+            wideningLine(replaceFailedText)
         }
+    }
+
+    private var replaceFailedText: String {
+        if viewModel.seenCount > 1 {
+            return String(localized: "On n'a pas pu les remplacer. Réessaie dans un instant.", bundle: .app)
+        }
+        return isSeries
+            ? String(localized: "On n'a pas pu la remplacer. Réessaie dans un instant.", bundle: .app)
+            : String(localized: "On n'a pas pu le remplacer. Réessaie dans un instant.", bundle: .app)
     }
 
     static func replacedText(count: Int, dropped: Int, isSeries: Bool) -> String {
@@ -240,14 +267,28 @@ struct CineMatchFiveView: View {
                 ? String(localized: "On n'a pas d'autre série à te proposer ce soir.", bundle: .app)
                 : String(localized: "On n'a pas d'autre film à te proposer ce soir.", bundle: .app)
         }
+        // Deux phrases accordées chacune à son compte : deux films vus et un
+        // seul remplaçant donnaient « 1 film remplacé. Celui que tu as vu… »,
+        // alors que les deux étaient partis en galerie.
+        let seen = count + dropped
+        let replaced: String
+        let kept: String
         if isSeries {
-            return count == 1
-                ? String(localized: "1 série remplacée. Celle que tu as vue est dans ta galerie.", bundle: .app)
-                : String(localized: "\(count) séries remplacées. Celles que tu as vues sont dans ta galerie.", bundle: .app)
+            replaced = count == 1
+                ? String(localized: "1 série remplacée.", bundle: .app)
+                : String(localized: "\(count) séries remplacées.", bundle: .app)
+            kept = seen == 1
+                ? String(localized: "Celle que tu as vue est dans ta galerie.", bundle: .app)
+                : String(localized: "Celles que tu as vues sont dans ta galerie.", bundle: .app)
+        } else {
+            replaced = count == 1
+                ? String(localized: "1 film remplacé.", bundle: .app)
+                : String(localized: "\(count) films remplacés.", bundle: .app)
+            kept = seen == 1
+                ? String(localized: "Celui que tu as vu est dans ta galerie.", bundle: .app)
+                : String(localized: "Ceux que tu as vus sont dans ta galerie.", bundle: .app)
         }
-        return count == 1
-            ? String(localized: "1 film remplacé. Celui que tu as vu est dans ta galerie.", bundle: .app)
-            : String(localized: "\(count) films remplacés. Ceux que tu as vus sont dans ta galerie.", bundle: .app)
+        return replaced + " " + kept
     }
 
     private func wideningLine(_ text: String) -> some View {
@@ -376,15 +417,17 @@ struct CineMatchFiveView: View {
                         FiveInfoGlyph()
                             .foregroundStyle(Ink.ink2)
                             .frame(width: 19, height: 19)
-                            .frame(width: 34, height: 34)
+                            .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(PressableScaleStyle(scale: 0.92))
                     .accessibilityLabel(String(localized: "Synopsis de \(film.item.title)", bundle: .app))
                 }
-                .padding(.top, -8)
-                .padding(.trailing, -9)
-                .padding(.bottom, -6)
+                // Les retraits suivent la cible de 44 pt : le glyphe reste
+                // où il était, seule la zone qu'on touche a grandi.
+                .padding(.top, -13)
+                .padding(.trailing, -14)
+                .padding(.bottom, -11)
 
                 Text(film.item.title)
                     .planTitle(isCompact ? 19 : 25)
@@ -432,9 +475,11 @@ struct CineMatchFiveView: View {
                 .foregroundStyle(Ink.ink2)
                 .frame(width: 16, height: 16)
                 .frame(width: 26, height: 48)
-                .contentShape(Rectangle())
+                // 26 pt de large dans la mise en page, 44 au toucher : la
+                // zone déborde un peu sur la carte plutôt que de la rétrécir.
+                .contentShape(Rectangle().inset(by: -9))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableScaleStyle(scale: 0.9))
         .opacity(isDisabled ? 0.22 : 1)
         .disabled(isDisabled || isTurning)
         .accessibilityLabel(direction == .next ? nextLabel : previousLabel)
@@ -597,7 +642,7 @@ struct CineMatchFiveView: View {
                 replaceBar
             }
 
-            // « Démarrer » promet d'ouvrir une plateforme : sans plateforme
+            // « Je le regarde » promet d'ouvrir une plateforme : sans plateforme
             // connue, rien ne s'ouvrait. Le bouton dit alors ce qu'il fait.
             PlanButton(title: launchTitle(for: film)) {
                 start(film)
@@ -636,7 +681,7 @@ struct CineMatchFiveView: View {
             }
             .foregroundStyle(Ink.ink)
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 40)
+            .frame(minHeight: Metrics.control)
             .contentShape(Rectangle())
         }
         .buttonStyle(PressableScaleStyle(scale: 0.97))
@@ -682,10 +727,10 @@ struct CineMatchFiveView: View {
                     .planFont(13.5, weight: .medium)
                     .foregroundStyle(Ink.ink2)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 40)
+                    .frame(minHeight: Metrics.control)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressableScaleStyle(scale: 0.97))
         }
         .transition(.opacity)
     }
@@ -694,18 +739,19 @@ struct CineMatchFiveView: View {
     /// autres films marqués, en un seul calcul.
     private func seenActions(for film: CineMatchFilm) -> some View {
         VStack(spacing: 7) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(seenSummary)
-                    .planFont(13.5)
-                    .foregroundStyle(Ink.ink2)
-                Spacer(minLength: 8)
-                if index < films.count - 1 {
-                    Text(isSeries
-                         ? String(localized: "Série suivante à droite", bundle: .app)
-                         : String(localized: "Film suivant à droite", bundle: .app))
-                        .planLabel()
-                        .foregroundStyle(Ink.ink3)
+            // Côte à côte tant que ça tient, l'un sous l'autre au grand texte :
+            // le compteur et l'indication se coupaient mutuellement.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline) {
+                    seenSummaryText
+                    Spacer(minLength: 8)
+                    nextHint
                 }
+                VStack(alignment: .leading, spacing: 4) {
+                    seenSummaryText
+                    nextHint
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.bottom, 4)
 
@@ -726,13 +772,35 @@ struct CineMatchFiveView: View {
                     .planFont(13.5, weight: .medium)
                     .foregroundStyle(Ink.ink2)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 40)
+                    .frame(minHeight: Metrics.control)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressableScaleStyle(scale: 0.97))
             .disabled(viewModel.isReplacing)
         }
         .transition(.opacity)
+    }
+
+    private var seenSummaryText: some View {
+        Text(seenSummary)
+            .planFont(13.5)
+            .foregroundStyle(Ink.ink2)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// Rien sur la dernière carte : il n'y a plus de suivante.
+    @ViewBuilder
+    private var nextHint: some View {
+        if index < films.count - 1 {
+            Text(isSeries
+                 ? String(localized: "Série suivante à droite", bundle: .app)
+                 : String(localized: "Film suivant à droite", bundle: .app))
+                .planLabel()
+                // `ink2` et non `ink3` : l'encre la plus basse ne porte pas de
+                // texte sous 13 pt.
+                .foregroundStyle(Ink.ink2)
+                .lineLimit(1)
+        }
     }
 
     /// Le compteur des films marqués, qui suit de carte en carte : on continue
@@ -757,12 +825,15 @@ struct CineMatchFiveView: View {
                         RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
                             .strokeBorder(Ink.ruleSet, lineWidth: 1)
                     )
+                    // Le cadre dessiné reste à 36 pt ; la zone qu'on touche
+                    // en fait 44.
+                    .padding(.vertical, 4)
                     .contentShape(Rectangle())
             }
             .buttonStyle(PressableScaleStyle(scale: 0.97))
             .disabled(viewModel.isReplacing)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 2)
         .overlay(alignment: .top) { Rectangle().fill(Ink.rule).frame(height: 1) }
         .overlay(alignment: .bottom) { Rectangle().fill(Ink.rule).frame(height: 1) }
         .padding(.bottom, 6)
@@ -839,10 +910,10 @@ struct CineMatchFiveView: View {
                 .planFont(13.5, weight: .medium)
                 .foregroundStyle(Ink.ink2)
                 .padding(.horizontal, 18)
-                .frame(minHeight: 40)
+                .frame(minHeight: Metrics.control)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableScaleStyle(scale: 0.97))
     }
 
     /// Ouvre l'app native de la plateforme si elle est installée, sinon son
@@ -877,7 +948,7 @@ struct CineMatchFiveView: View {
     private func launchTitle(for film: CineMatchFilm) -> String {
         switch (canLaunch(film), film.isSeries) {
         case (true, true): String(localized: "Je la commence", bundle: .app)
-        case (true, false): String(localized: "Démarrer le film", bundle: .app)
+        case (true, false): String(localized: "Je le regarde", bundle: .app)
         case (false, true): String(localized: "Je choisis celle-là", bundle: .app)
         case (false, false): String(localized: "Je choisis celui-là", bundle: .app)
         }
@@ -950,9 +1021,9 @@ struct CineMatchFiveView: View {
     /// Où en est l'histoire : ce qu'on sait en la commençant.
     static func statusLine(_ status: CineMatchSeriesStatus) -> String {
         switch status {
-        case .ended: String(localized: "Terminée : l'histoire a sa fin.", bundle: .app)
-        case .returning: String(localized: "Toujours diffusée : d'autres saisons viendront.", bundle: .app)
-        case .canceled: String(localized: "Arrêtée avant sa fin : l'histoire reste ouverte.", bundle: .app)
+        case .ended: String(localized: "Terminée : elle a une vraie fin.", bundle: .app)
+        case .returning: String(localized: "Toujours en cours : d'autres saisons arrivent.", bundle: .app)
+        case .canceled: String(localized: "Annulée avant la fin : l'histoire reste en suspens.", bundle: .app)
         }
     }
 }
@@ -1010,16 +1081,24 @@ private struct CineMatchSynopsisSheet: View {
                 FiveMetaRow(episodes: content.episodes, runtime: content.runtime, platform: content.platform, fontSize: 12.5)
                     .padding(.top, 6)
 
-                if let overview = content.overview, !overview.isEmpty {
-                    Text("Synopsis", bundle: .app)
-                        .planLabel()
-                        .foregroundStyle(Ink.ink2)
-                        .padding(.top, 18)
+                Text("Synopsis", bundle: .app)
+                    .planLabel()
+                    .foregroundStyle(Ink.ink2)
+                    .padding(.top, 18)
 
+                // Sans résumé, la feuille ouverte par « i » restait vide sous
+                // le titre : on dit qu'il manque.
+                if let overview = content.overview, !overview.isEmpty {
                     Text(overview)
                         .planFont(14.5)
                         .foregroundStyle(Ink.ink)
                         .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 7)
+                } else {
+                    Text("Pas de résumé pour l'instant.", bundle: .app)
+                        .planFont(14.5)
+                        .foregroundStyle(Ink.ink2)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 7)
                 }

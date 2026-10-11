@@ -14,8 +14,9 @@ import SwiftUI
 /// crans. Le cinquième posé, la clé de voûte — le C de la Salle — s'embrase et
 /// la porte s'ouvre.
 ///
-/// **La cérémonie se rejoue à chaque lancement de l'application**, et elle
-/// rend la main d'elle-même : les battants finissent leur course et l'entrée
+/// **La cérémonie entière ne se joue qu'une fois par format** ; ensuite, à
+/// chaque lancement, les battants s'ouvrent en version courte. Elle rend la
+/// main d'elle-même : les battants finissent leur course et l'entrée
 /// de séance prend la place. Pas de bouton pour confirmer — on ne demande pas
 /// à quelqu'un de valider qu'il veut franchir une porte qu'il vient de voir
 /// s'ouvrir.
@@ -27,8 +28,9 @@ import SwiftUI
 /// typographie) reste strictement « Le Plan », et les teintes des artéfacts
 /// sont des couleurs de données qui ne sortent jamais de la porte.
 ///
-/// Le texte est réduit au strict mystère : un sur-titre, la jauge, une phrase,
-/// le CTA. Tout le reste se découvre en touchant les artéfacts.
+/// Le texte est réduit : un sur-titre, la jauge, la prochaine étape et sa
+/// mesure, le CTA qui y mène. Le détail des autres se découvre en touchant les
+/// artéfacts.
 ///
 /// Ce que cet écran ne fait **pas** : annoncer un artéfact gagné. Un artéfact
 /// se gagne ailleurs — un balayage dans Découvrir, un cœur posé depuis la
@@ -58,8 +60,12 @@ struct CineMatchGateView: View {
     /// Une célébration d'artéfact occupe l'écran : la porte attend son tour
     /// plutôt que de jouer son ouverture derrière une planche.
     var isCelebrating = false
+    /// La Porte des films ou celle des séries : chacune a droit à sa cérémonie
+    /// entière, une fois.
+    var format: MediaFormat = .film
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var detailArtifact: DoorArtifactKey?
     /// L'action demandée depuis la feuille, jouée à sa fermeture complète :
     /// ouvrir une feuille — ou changer d'onglet — pendant qu'une autre s'anime
@@ -71,8 +77,8 @@ struct CineMatchGateView: View {
     /// tait. On ne franchit un seuil qu'une fois, autant le regarder.
     @State private var isOpening = false
     @State private var hasPlayedOpening = false
-    /// Un toucher pendant la cérémonie la saute : elle se rejoue à chaque
-    /// lancement, et on ne fait pas attendre quatre secondes tous les soirs.
+    /// Un toucher pendant la cérémonie la saute, la première fois comme dans sa
+    /// version courte.
     @State private var openingSkipped = false
     /// Le travelling avant, une fois les battants écartés : la scène grandit
     /// et le seuil passe hors champ, comme si on entrait dans le salon.
@@ -162,7 +168,11 @@ struct CineMatchGateView: View {
             )
             // La fiche verrouillée des préférences porte la liste des quatre
             // étapes : elle ne tient pas dans une demi-hauteur au grand texte.
-            .presentationDetents(key == .horizons && !door.canCompare ? [.medium, .large] : [.medium])
+            // Les autres non plus, passé les tailles d'accessibilité.
+            .presentationDetents(
+                (key == .horizons && !door.canCompare) || dynamicTypeSize.isAccessibilitySize
+                    ? [.medium, .large] : [.medium]
+            )
             .presentationDragIndicator(.visible)
         }
         // Rien ne répond pendant que les battants tournent : c'est la seule
@@ -187,8 +197,17 @@ struct CineMatchGateView: View {
     // MARK: - L'ouverture
 
     /// La course des battants. Assez lente pour qu'on la regarde : c'est le
-    /// seul moment de cérémonie de l'application, il ne se rejoue pas.
+    /// seul moment de cérémonie de l'application, et on ne la voit en entier
+    /// qu'une fois.
     private static let openingDuration: Double = 3
+    /// La version courte, aux lancements suivants. Rejouer quatre secondes et
+    /// demie tous les soirs ferait d'une fête une attente : on garde le geste
+    /// (les battants qui cèdent, le pas en avant) sous la seconde.
+    private static let shortOpeningDuration: Double = 0.55
+    private static let shortEntryDuration: Double = 0.4
+
+    /// Le format dont on a déjà vu la cérémonie entière, sur cet appareil.
+    private var openingPlayedKey: String { "cinematch.doorOpeningPlayed.\(format.rawValue)" }
     /// Le temps que la porte close, gagnée, se laisse regarder avant de céder.
     private static let openingLeadIn: Double = 0.3
     /// Le travelling avant. En accélération : on hésite, puis on entre.
@@ -242,6 +261,12 @@ struct CineMatchGateView: View {
         }
 
         isOpening = true
+        if UserDefaults.standard.bool(forKey: openingPlayedKey) {
+            await playShortOpening()
+            return
+        }
+        // Vue, même sautée : on a assisté au moment où la porte cède.
+        UserDefaults.standard.set(true, forKey: openingPlayedKey)
         // Un temps avant : la porte close, gagnée, se laisse regarder. Sans
         // lui l'ouverture démarre dans le même souffle que l'annonce qui la
         // précède, et les deux se mangent.
@@ -260,6 +285,21 @@ struct CineMatchGateView: View {
             zoom = entry.map { Double($0.zoom) } ?? Self.entryZoom
         }
         try? await Task.sleep(for: .seconds(Self.entryDuration))
+        guard !Task.isCancelled, !openingSkipped else { return }
+        isOpening = false
+        onEnter()
+    }
+
+    /// Les battants cèdent d'un trait et l'on entre aussitôt : pas de temps
+    /// d'arrêt ni d'haptique, ce n'est plus une nouvelle.
+    private func playShortOpening() async {
+        withAnimation(.easeOut(duration: Self.shortOpeningDuration)) { openProgress = 1 }
+        try? await Task.sleep(for: .seconds(Self.shortOpeningDuration))
+        guard !Task.isCancelled, !openingSkipped else { return }
+        withAnimation(.easeIn(duration: Self.shortEntryDuration)) {
+            zoom = entry.map { Double($0.zoom) } ?? Self.entryZoom
+        }
+        try? await Task.sleep(for: .seconds(Self.shortEntryDuration))
         guard !Task.isCancelled, !openingSkipped else { return }
         isOpening = false
         onEnter()
@@ -372,22 +412,17 @@ struct CineMatchGateView: View {
                 .foregroundStyle(Ink.ink2)
             }
             .padding(.top, 8)
+            // Le chiffre et son unité se lisent d'un trait : « 3 étapes sur 5 ».
+            .accessibilityElement(children: .combine)
 
             gauge
                 .padding(.top, 8)
 
-            Text("Termine les 5 étapes.", bundle: .app)
-                .planTitle(26)
-                .foregroundStyle(Ink.ink)
+            nextStepBlock
                 .padding(.top, 16)
 
-            PlanButton(
-                title: door.series
-                    ? String(localized: "Découvrir des séries", bundle: .app)
-                    : String(localized: "Compléter ma galerie", bundle: .app),
-                action: onDiscover
-            )
-            .padding(.top, 20)
+            PlanButton(title: primaryTitle, action: primaryAction)
+                .padding(.top, 20)
         }
         .padding(.horizontal, Metrics.margin)
         .padding(.bottom, Metrics.margin)
@@ -396,6 +431,80 @@ struct CineMatchGateView: View {
         .animation(Metrics.shift, value: door.litCount)
         .animation(.easeOut(duration: 0.35), value: isOpening)
         .accessibilityElement(children: .contain)
+    }
+
+    // MARK: - La prochaine étape
+
+    /// La première étape qui manque, dans l'ordre de la porte. « Tes
+    /// préférences » ferme la marche et n'ouvre qu'après les quatre autres :
+    /// le premier manque est donc toujours une étape qu'on peut commencer.
+    private var nextStep: DoorArtifactKey? {
+        DoorArtifactKey.allCases.first { door.artifact($0)?.done != true }
+    }
+
+    /// Ce qu'il reste à faire, nommé, avec sa mesure. « Termine les 5
+    /// étapes. » disait la même chose à 0 et à 4 sur 5 : on ne savait ni
+    /// laquelle manquait ni où aller sans toucher chaque médaillon.
+    @ViewBuilder
+    private var nextStepBlock: some View {
+        if let nextStep {
+            let step = door.artifact(nextStep)
+            // Le Cœur se lit dans la bibliothèque locale, plus fraîche que la
+            // dernière mesure du serveur : la feuille fait le même choix.
+            let current = nextStep == .coeur
+                ? max(lovedCount, step?.current ?? 0)
+                : step?.current ?? 0
+            let target = step?.target ?? 0
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Prochaine étape : \(nextStep.displayName(series: door.series))", bundle: .app)
+                    .planTitle(22)
+                    .foregroundStyle(Ink.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(nextStep.condition(in: door))
+                        .planFont(13.5)
+                        .foregroundStyle(Ink.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    if target > 0 {
+                        Text(String(localized: "\(min(current, target)) sur \(target)", bundle: .app))
+                            .planFont(13.5)
+                            .monospacedDigit()
+                            .foregroundStyle(Ink.ink2)
+                            .layoutPriority(1)
+                    }
+                }
+            }
+            .accessibilityElement(children: .combine)
+        } else {
+            Text("Termine les 5 étapes.", bundle: .app)
+                .planTitle(22)
+                .foregroundStyle(Ink.ink)
+        }
+    }
+
+    /// Le bouton mène à la prochaine étape, pas toujours à Découvrir : un
+    /// « Compléter ma galerie » affiché à qui n'a plus que des coups de cœur à
+    /// poser l'envoyait au mauvais endroit.
+    private var primaryTitle: String {
+        switch nextStep {
+        case .coeur?, .horizons?, .promesse?:
+            return nextStep?.actionTitle(series: door.series) ?? ""
+        case .memoire?, .eventail?, nil:
+            return door.series
+                ? String(localized: "Découvrir des séries", bundle: .app)
+                : String(localized: "Compléter ma galerie", bundle: .app)
+        }
+    }
+
+    private func primaryAction() {
+        switch nextStep {
+        case .coeur?: onLovePicker()
+        case .horizons?: onCompare()
+        case .memoire?, .eventail?, .promesse?, nil: onDiscover()
+        }
     }
 
     /// La jauge à cinq crans, dans les cinq teintes : le seul endroit du bas
@@ -534,7 +643,9 @@ private struct DoorSceneView: View {
                 ? String(localized: "validée", bundle: .app)
                 : String(localized: "à faire", bundle: .app)
         )
-        .accessibilityHint(String(localized: "Touche pour voir comment la valider", bundle: .app))
+        // Un indice dit ce qui se passe, pas le geste : VoiceOver annonce déjà
+        // qu'on touche deux fois.
+        .accessibilityHint(String(localized: "Montre comment la valider.", bundle: .app))
     }
 }
 
@@ -975,7 +1086,7 @@ private struct DoorArtifactSheet: View {
             }
 
             if isWaiting {
-                Text("Elle s'ouvre quand les 4 autres étapes sont validées.", bundle: .app)
+                Text("Termine d'abord les 4 autres étapes.", bundle: .app)
                     .planFont(15, weight: .medium)
                     .foregroundStyle(Ink.ink)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1117,7 +1228,7 @@ extension DoorArtifactKey: Identifiable {
         case .eventail:
             return String(localized: "Avec des genres variés, on voit aussi ce que tu aimes moins.", bundle: .app)
         case .coeur:
-            return String(localized: "Tes saisons préférées nous aident à trouver des séries qui vont te plaire.", bundle: .app)
+            return String(localized: "Avec tes saisons préférées, on sait ce qui te plaît le plus.", bundle: .app)
         case .horizons:
             return String(localized: "En comparant des séries que tu as vues, tu nous montres ce que tu préfères.", bundle: .app)
         case .promesse:
@@ -1170,7 +1281,7 @@ extension DoorArtifactKey: Identifiable {
         case .eventail:
             String(localized: "Avec des genres variés, on voit aussi ce que tu aimes moins.", bundle: .app)
         case .coeur:
-            String(localized: "Tes coups de cœur nous aident à trouver des films qui vont te plaire.", bundle: .app)
+            String(localized: "Avec tes coups de cœur, on sait ce qui te plaît le plus.", bundle: .app)
         case .horizons:
             String(localized: "En comparant des films que tu as vus, tu nous montres ce que tu préfères.", bundle: .app)
         case .promesse:

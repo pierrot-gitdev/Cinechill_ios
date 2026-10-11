@@ -38,6 +38,10 @@ struct CineMatchDoorComparisonView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(DoorStore.self) private var doorStore
+    /// La place des titres sous les affiches, qui suit la taille du texte :
+    /// fixée à 30 pt, un titre au grand texte ne tenait plus que sur une ligne
+    /// tronquée, et deux affiches absentes devenaient indiscernables.
+    @ScaledMetric(relativeTo: .caption) private var captionHeight: CGFloat = 30
 
     private var isSeries: Bool { format == .series }
 
@@ -123,6 +127,8 @@ struct CineMatchDoorComparisonView: View {
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink2)
                     .contentTransition(.numericText())
+                    // « 3 sur 12 », seul, ne dit pas de quoi.
+                    .accessibilityLabel(String(localized: "Comparaison \(round) sur \(rounds)", bundle: .app))
 
                 Button(action: onClose) {
                     DoorCloseGlyph()
@@ -212,10 +218,10 @@ struct CineMatchDoorComparisonView: View {
                         .planFont(13, weight: .medium)
                         .foregroundStyle(Ink.ink2)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
+                        .frame(minHeight: 44)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableScaleStyle())
                 .padding(.top, 8)
                 .disabled(isBusy || films.isEmpty)
             }
@@ -318,7 +324,7 @@ struct CineMatchDoorComparisonView: View {
                 PosterImageView(url: kept.posterURL, contentMode: .fill)
                     .frame(width: 16, height: 24)
                     .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
-                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    .transition(reduceMotion ? .opacity : .scale(scale: 0.6).combined(with: .opacity))
             }
             Text(title)
                 .planLabel()
@@ -368,7 +374,7 @@ struct CineMatchDoorComparisonView: View {
     }
 
     private func grid(in size: CGSize) -> some View {
-        let layout = DoorPosterLayout(size: size)
+        let layout = DoorPosterLayout(size: size, caption: captionHeight)
         let rows: [[Int]] = layout.columns == 2 ? [[0, 1], [2, 3]] : [[0, 1, 2, 3]]
 
         return VStack(spacing: layout.gap) {
@@ -412,6 +418,11 @@ struct CineMatchDoorComparisonView: View {
                             outLabel
                                 .planLabel()
                                 .foregroundStyle(Ink.warn)
+                                // Une affiche de 75 pt sur une rangée de quatre
+                                // ne loge pas « LE MOINS AIMÉ » d'une traite.
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.8)
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 3)
                                 .background(Ink.ground3, in: RoundedRectangle(cornerRadius: 2, style: .continuous))
@@ -425,7 +436,7 @@ struct CineMatchDoorComparisonView: View {
                     .foregroundStyle(isKept ? Ink.ink : Ink.ink2)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
-                    .frame(width: layout.cellWidth, height: DoorPosterLayout.caption, alignment: .top)
+                    .frame(width: layout.cellWidth, height: layout.caption, alignment: .top)
             }
             .frame(width: layout.cellWidth, height: layout.cellHeight, alignment: .bottom)
             .contentShape(Rectangle())
@@ -558,7 +569,7 @@ struct CineMatchDoorComparisonView: View {
             kept = nil
             keptID = nil
             excludedID = nil
-            errorMessage = String(localized: "Le serveur n'a pas répondu comme prévu. Réessaie dans un instant.", bundle: .app)
+            errorMessage = String(localized: "Vérifie ta connexion, puis réessaie.", bundle: .app)
         }
     }
 }
@@ -568,9 +579,10 @@ struct CineMatchDoorComparisonView: View {
 /// La maille des quatre affiches : deux par deux si la hauteur le permet,
 /// sinon sur une ligne, selon ce qui donne les plus grandes affiches.
 private struct DoorPosterLayout {
-    static let caption: CGFloat = 30
     static let captionSpacing: CGFloat = 6
 
+    /// La hauteur réservée au titre, qui grandit avec le texte.
+    let caption: CGFloat
     let columns: Int
     let gap: CGFloat
     let cellWidth: CGFloat
@@ -578,8 +590,9 @@ private struct DoorPosterLayout {
     let posterWidth: CGFloat
     let posterHeight: CGFloat
 
-    init(size: CGSize) {
-        let textBlock = Self.caption + Self.captionSpacing
+    init(size: CGSize, caption: CGFloat) {
+        self.caption = caption
+        let textBlock = caption + Self.captionSpacing
 
         let squareGap: CGFloat = 10
         let squareCell = CGSize(width: max(0, (size.width - squareGap) / 2), height: max(0, (size.height - squareGap) / 2))

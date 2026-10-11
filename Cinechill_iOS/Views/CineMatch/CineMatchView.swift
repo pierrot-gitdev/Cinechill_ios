@@ -153,7 +153,8 @@ struct CineMatchView: View {
                     let crossed = format
                     withAnimation(.easeOut(duration: 0.45)) { _ = crossedFormats.insert(crossed) }
                 },
-                isCelebrating: doorStore.celebration != nil
+                isCelebrating: doorStore.celebration != nil,
+                format: format
             )
             // Une Porte par format : basculer remonte l'écran, pour que la
             // cérémonie de l'autre Porte parte de zéro et non de l'état de
