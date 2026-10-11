@@ -27,16 +27,21 @@ struct AchievementCelebrationOverlay: View {
 
             card
                 .planScrollsIfNeeded()
-                .scaleEffect(appeared || reduceMotion ? 1 : 0.8)
+                // 0,92 et non 0,8 : la carte naît déjà presque à sa taille,
+                // rien n'apparaît de nulle part.
+                .scaleEffect(appeared || reduceMotion ? 1 : 0.92)
                 .opacity(appeared ? 1 : 0)
         }
         .onAppear {
             Haptics.success()
-            withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.45, dampingFraction: 0.72)) {
+            withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.38, dampingFraction: 0.8)) {
                 appeared = true
             }
         }
         .accessibilityAddTraits(.isModal)
+        // Le geste de fermeture de VoiceOver (Z à deux doigts) referme la
+        // carte comme le tap sur le fond.
+        .accessibilityAction(.escape, onDismiss)
     }
 
     @ViewBuilder
@@ -49,7 +54,33 @@ struct AchievementCelebrationOverlay: View {
 
     // MARK: - Badge débloqué
 
+    /// Le regroupement VoiceOver ne couvre que ce qui se lit : regroupés avec
+    /// le reste, les deux boutons n'étaient plus atteignables un par un.
     private func badgeCard(_ badge: Badge, trigger: BadgeTrigger?) -> some View {
+        VStack(spacing: 0) {
+            badgeFacts(badge, trigger: trigger)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(badgeAccessibilityLabel(badge, trigger: trigger))
+
+            PlanButton(title: String(localized: "Afficher sur mon profil", bundle: .app), height: Metrics.control, action: onEquip)
+                .padding(.top, 28)
+
+            Button(action: onDismiss) {
+                Text("Plus tard", bundle: .app)
+                    .planFont(13)
+                    .foregroundStyle(Ink.ink2)
+                    .frame(minWidth: Metrics.control, minHeight: Metrics.control)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PressableScaleStyle())
+            .padding(.top, 4)
+        }
+        .padding(cardPadding)
+        .frame(maxWidth: 340)
+        .background(cardBackground(accent: badge.rarity.accent))
+    }
+
+    private func badgeFacts(_ badge: Badge, trigger: BadgeTrigger?) -> some View {
         VStack(spacing: 0) {
             eyebrow(String(localized: "Nouveau badge", bundle: .app), color: badge.rarity.accent)
 
@@ -79,20 +110,7 @@ struct AchievementCelebrationOverlay: View {
                 triggerRow(trigger)
                     .padding(.top, 16)
             }
-
-            PlanButton(title: String(localized: "Afficher sur mon profil", bundle: .app), height: Metrics.control, action: onEquip)
-                .padding(.top, 28)
-
-            Button(String(localized: "Plus tard", bundle: .app), action: onDismiss)
-                .planFont(13)
-                .foregroundStyle(Ink.ink2)
-                .padding(.top, 16)
         }
-        .padding(cardPadding)
-        .frame(maxWidth: 340)
-        .background(cardBackground(accent: badge.rarity.accent))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(badgeAccessibilityLabel(badge, trigger: trigger))
     }
 
     /// Le film qui a fait tomber le badge. La félicitation attend que le
@@ -131,6 +149,22 @@ struct AchievementCelebrationOverlay: View {
     /// et donc ce qu'on montre, c'est l'objet frappé au pied.
     private func distinctionCard(_ distinction: Distinction) -> some View {
         VStack(spacing: 0) {
+            distinctionFacts(distinction)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(
+                    String(localized: "\(distinction.citation) : \(distinction.label), pour \(distinction.lowerBound) films", bundle: .app)
+                )
+
+            PlanButton(title: String(localized: "Continuer", bundle: .app), height: Metrics.control, action: onDismiss)
+                .padding(.top, 26)
+        }
+        .padding(cardPadding)
+        .frame(maxWidth: 340)
+        .background(cardBackground(accent: distinction.accent))
+    }
+
+    private func distinctionFacts(_ distinction: Distinction) -> some View {
+        VStack(spacing: 0) {
             eyebrow(distinction.citation, color: distinction.accent)
 
             DistinctionEmblem(distinction: distinction)
@@ -162,17 +196,7 @@ struct AchievementCelebrationOverlay: View {
                 .planLabel()
                 .foregroundStyle(Ink.ink2)
                 .padding(.top, 18)
-
-            PlanButton(title: String(localized: "Continuer", bundle: .app), height: Metrics.control, action: onDismiss)
-                .padding(.top, 26)
         }
-        .padding(cardPadding)
-        .frame(maxWidth: 340)
-        .background(cardBackground(accent: distinction.accent))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            String(localized: "\(distinction.citation) : \(distinction.label), pour \(distinction.lowerBound) films", bundle: .app)
-        )
     }
 
     // MARK: - Pièces communes

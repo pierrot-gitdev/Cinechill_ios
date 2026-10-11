@@ -46,6 +46,9 @@ struct FollowListView: View {
     @State private var profiles: [PublicProfile] = []
     @State private var filter = ""
     @State private var isLoading = true
+    /// Un échec de lecture, à distinguer d'une liste vraiment vide : sans
+    /// réseau, « Tu ne suis personne » serait un mensonge.
+    @State private var loadError: String?
     @State private var pendingFollows: Set<String> = []
     @State private var openedProfile: PublicProfile?
     @State private var showsSearch = false
@@ -68,6 +71,15 @@ struct FollowListView: View {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if isLoading {
                     loading
+                } else if let loadError {
+                    HallEmptyState(
+                        icon: mode.icon,
+                        title: String(localized: "Liste indisponible", bundle: .app),
+                        message: loadError,
+                        actionTitle: String(localized: "Réessayer", bundle: .app),
+                        action: { Task { await load() } }
+                    )
+                    .padding(.top, 44)
                 } else if profiles.isEmpty {
                     emptyState.padding(.top, 44)
                 } else {
@@ -86,7 +98,7 @@ struct FollowListView: View {
         .safeAreaInset(edge: .top) {
             PlanHeader(mode.title) {
                 if !profiles.isEmpty {
-                    PlanHeaderCount(value: profiles.count.formatted())
+                    PlanHeaderCount(value: profiles.count.formatted(.number.locale(AppLanguage.current.locale)))
                 }
             }
         }
@@ -144,7 +156,10 @@ struct FollowListView: View {
                 icon: .hall,
                 title: mode.emptyTitle,
                 message: isOwnList
-                    ? String(localized: "Les films qu'on te recommande arrivent ici. Suis quelqu'un dont tu aimes les goûts.", bundle: .app)
+                    // Les recommandations ne passent pas par cette liste : on
+                    // recommande à ceux qu'on suit, et on reçoit de ceux qui
+                    // nous suivent. « Arrivent ici » était faux.
+                    ? String(localized: "Suis quelqu'un dont tu aimes les goûts pour voir ses films et lui en recommander.", bundle: .app)
                     : String(localized: "Cette personne ne suit encore personne.", bundle: .app),
                 actionTitle: isOwnList ? String(localized: "Chercher un profil", bundle: .app) : nil,
                 action: isOwnList ? { showsSearch = true } : nil
@@ -171,21 +186,32 @@ struct FollowListView: View {
 
     private func load() async {
         isLoading = true
+        loadError = nil
         defer { isLoading = false }
 
         guard let target = uid ?? socialStore.myUID else {
             profiles = []
             return
         }
-        let ids: [String]
-        switch mode {
-        case .following: ids = await socialStore.followingUIDs(of: target)
-        case .followers: ids = await socialStore.followerUIDs(of: target)
+        do {
+            let ids: [String]
+            switch mode {
+            case .following: ids = try await socialStore.followingUIDs(of: target)
+            case .followers: ids = try await socialStore.followerUIDs(of: target)
+            }
+            let me = socialStore.myUID
+            profiles = try await socialStore.profiles(uids: ids)
+                .filter { $0.id != me }
+                .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
+        } catch is CancellationError {
+            return
+        } catch {
+            // La liste déjà affichée tombe : l'en-tête compterait sinon des
+            // personnes que l'écran ne montre plus.
+            profiles = []
+            loadError = (error as? LocalizedError)?.errorDescription
+                ?? error.localizedDescription
         }
-        let me = socialStore.myUID
-        profiles = await socialStore.profiles(uids: ids)
-            .filter { $0.id != me }
-            .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
     }
 
     private func toggleFollow(_ profile: PublicProfile) async {

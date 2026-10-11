@@ -355,7 +355,10 @@ final class WatchlistViewModel {
             return String(localized: "Tu en es à l'épisode \(next).", bundle: .app)
         }
 
-        let months = Int(monthsWaiting(item))
+        // Une date d'ajout absente (`distantPast`) ne dit rien de l'attente :
+        // elle donnait « Dans ta liste depuis 24 000 mois ».
+        let isDated = item.entry.addedAt.timeIntervalSince1970 > 0
+        let months = isDated ? Int(monthsWaiting(item)) : 0
         if months >= 3 {
             return String(localized: "Dans ta liste depuis \(months) mois.", bundle: .app)
         }
@@ -367,10 +370,23 @@ final class WatchlistViewModel {
         if let platform = preferredPlatformName(for: item) {
             return String(localized: "Sur \(platform), tu peux le lancer tout de suite.", bundle: .app)
         }
+        // La note elle-même, et non « le mieux noté de ta liste » : le seuil
+        // de 8 ne garantit pas qu'aucun autre film ne fasse mieux.
         if let rating = item.entry.voteAverage, rating >= 8 {
-            return String(localized: "Le mieux noté de ta liste.", bundle: .app)
+            let ratingText = rating.formatted(
+                .number.precision(.fractionLength(1)).locale(AppLanguage.current.locale)
+            )
+            return String(localized: "Note : \(ratingText) sur 10.", bundle: .app)
         }
-        return String(localized: "Il est dans ta liste depuis un moment.", bundle: .app)
+        // « Depuis un moment » n'est vrai que d'une entrée sans date, qui
+        // date d'avant l'horodatage. Les autres attendent moins de trois mois.
+        guard isDated else {
+            return String(localized: "Il est dans ta liste depuis un moment.", bundle: .app)
+        }
+        if months >= 1 {
+            return String(localized: "Dans ta liste depuis \(months) mois.", bundle: .app)
+        }
+        return String(localized: "Dans ta liste depuis moins d'un mois.", bundle: .app)
     }
 
     private func preferredPlatformName(for item: WatchlistItem) -> String? {

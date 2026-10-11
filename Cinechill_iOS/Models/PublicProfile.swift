@@ -70,6 +70,18 @@ extension PublicProfile {
         "googleusercontent.com", "firebasestorage.googleapis.com", "image.tmdb.org",
     ]
 
+    /// Le nom à afficher : le nom choisi, sinon le pseudo, sinon « Sans nom ».
+    /// Une chaîne vide n'est pas un nom : avec `??` seul, un `displayName` vide
+    /// donnait une ligne blanche dans les listes.
+    nonisolated static func nameOrHandle(_ displayName: String?, _ handle: String?) -> String {
+        for candidate in [displayName, handle] {
+            if let value = candidate?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty {
+                return value
+            }
+        }
+        return String(localized: "Sans nom", bundle: .app)
+    }
+
     /// Une URL d'avatar en `https` sur un hôte connu, ou rien.
     nonisolated static func trustedAvatarURL(_ raw: Any?) -> URL? {
         guard let string = raw as? String,
@@ -90,7 +102,7 @@ extension PublicProfile {
         }
         self.id = id
         self.handle = handle
-        self.displayName = (data["displayName"] as? String) ?? handle
+        self.displayName = PublicProfile.nameOrHandle(data["displayName"] as? String, handle)
         self.avatarURL = PublicProfile.trustedAvatarURL(data["avatarURL"])
         self.badgeSignature = data["badgeSignature"] as? String
         self.followerCount = (data["followerCount"] as? Int) ?? 0

@@ -66,7 +66,7 @@ struct SettingsView: View {
 
                         declaration(
                             String(localized: "Langue", bundle: .app),
-                            note: String(localized: "Elle change aussi la langue des titres, résumés et genres.", bundle: .app)
+                            note: String(localized: "Les titres, les résumés et les genres changent aussi.", bundle: .app)
                         ) {
                             languagePicker
                         }
@@ -118,10 +118,10 @@ struct SettingsView: View {
             Text("On supprimera ta photo de profil.", bundle: .app)
         }
         .alert(String(localized: "Remettre les films passés", bundle: .app), isPresented: $showResetSkipsAlert) {
-            Button(String(localized: "Réinitialiser", bundle: .app)) { Task { await resetSkips() } }
+            Button(String(localized: "Remettre", bundle: .app)) { Task { await resetSkips() } }
             Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
-            Text("On te reproposera les films que tu as écartés au swipe.", bundle: .app)
+            Text("Les films que tu as passés reviendront dans Découvrir.", bundle: .app)
         }
         .alert(String(localized: "Supprimer ton compte", bundle: .app), isPresented: $showDeleteAccountAlert) {
             Button(String(localized: "Supprimer définitivement", bundle: .app), role: .destructive) {
@@ -366,7 +366,9 @@ struct SettingsView: View {
                 PlanChip(title: generation.label, isOn: isOn, fillsWidth: true) {
                     libraryStore.setBirthDecade(isOn ? nil : generation.decade)
                 }
-                .accessibilityLabel(String(localized: "Né dans les années \(generation.label)", bundle: .app))
+                // « Né dans les années –70 » se lisait tel quel, et accordait
+                // au masculin : chaque tranche a sa phrase.
+                .accessibilityLabel(generation.accessibilityLabel)
             }
         }
     }
@@ -429,11 +431,13 @@ struct SettingsView: View {
     private var accountBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let email {
-                accountLine(label: String(localized: "Adresse", bundle: .app), value: email)
+                accountLine(label: String(localized: "Email", bundle: .app), value: email)
             }
 
             accountAction(
-                String(localized: "Réinitialiser les films écartés", bundle: .app),
+                // Le même nom que l'alerte qu'elle ouvre : « écartés » ici,
+                // « passés » là, pour une seule et même liste.
+                String(localized: "Remettre les films passés", bundle: .app),
                 note: skipsSubtitle
             ) {
                 showResetSkipsAlert = true
@@ -451,7 +455,7 @@ struct SettingsView: View {
 
             accountAction(
                 String(localized: "Supprimer mon compte", bundle: .app),
-                note: String(localized: "Galerie, watchlist et profil. Irréversible.", bundle: .app),
+                note: String(localized: "Tu perdras ta galerie, ta watchlist et ton profil.", bundle: .app),
                 isDestructive: true
             ) {
                 showDeleteAccountAlert = true
@@ -518,7 +522,9 @@ struct SettingsView: View {
             .padding(.vertical, 14)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        // Le retour à l'appui des autres lignes de l'app : sans lui, rien ne
+        // disait que « Se déconnecter » avait pris le tap avant l'alerte.
+        .buttonStyle(PressableScaleStyle(scale: 0.985))
         .disabled(isWorking)
         .overlay(alignment: .top) { PlanEdge() }
     }
@@ -567,8 +573,14 @@ struct SettingsView: View {
     }
 
     private func saveNameIfNeeded() async {
-        let trimmed = nameField.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, trimmed != profileStore.displayName else { return }
+        let trimmed = nameField.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Un champ vidé n'efface pas le nom : il le retrouve, au lieu de
+        // laisser croire qu'un nom vide a été enregistré.
+        guard !trimmed.isEmpty else {
+            nameField = profileStore.displayName
+            return
+        }
+        guard trimmed != profileStore.displayName else { return }
         nameError = nil
         nameSaved = false
         isSavingName = true
@@ -584,7 +596,8 @@ struct SettingsView: View {
             try? await Task.sleep(for: .seconds(2))
             withAnimation(Metrics.shift) { nameSaved = false }
         } catch {
-            nameError = error.localizedDescription
+            // Le message de Firebase est technique, et souvent en anglais.
+            nameError = String(localized: "On n'a pas pu enregistrer ton nom. Réessaie.", bundle: .app)
         }
     }
 
@@ -629,6 +642,16 @@ private enum Generation: String, CaseIterable, Identifiable {
         case .eighties: "80"
         case .nineties: "90"
         case .millennium: "2000+"
+        }
+    }
+
+    var accessibilityLabel: String {
+        switch self {
+        case .before1970: String(localized: "Naissance avant 1970", bundle: .app)
+        case .seventies: String(localized: "Naissance dans les années 70", bundle: .app)
+        case .eighties: String(localized: "Naissance dans les années 80", bundle: .app)
+        case .nineties: String(localized: "Naissance dans les années 90", bundle: .app)
+        case .millennium: String(localized: "Naissance en 2000 ou après", bundle: .app)
         }
     }
 }

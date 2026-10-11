@@ -77,7 +77,11 @@ struct PlanToast: View {
         .opacity(opacity)
         .allowsHitTesting(false)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title). \(destination)")
+        // Une chaîne déjà composée : le littéral interpolé devenait une clé
+        // de traduction « %@. %@ », cherchée hors du catalogue de l'app.
+        .accessibilityLabel(Text(verbatim: "\(title). \(destination)"))
+        // Pas d'annonce ici : le deck annonce déjà le classement, une seconde
+        // voix le répéterait.
         .task { await play() }
     }
 

@@ -30,6 +30,14 @@ final class ProfileSearchViewModel {
     private(set) var settledQuery: String = ""
     /// Les suivis en cours de bascule, pour ne pas rendre tout l'écran occupé.
     private(set) var pendingFollows: Set<String> = []
+    /// Tant que les suggestions n'ont pas répondu, « personne à proposer »
+    /// serait faux : l'écran attend.
+    private(set) var isLoadingSuggestions = false
+    private(set) var suggestionsError: String?
+    /// L'échec de la dernière recherche. Il reste affiché jusqu'à la réponse
+    /// suivante plutôt que d'être effacé à chaque touche : sinon le message
+    /// clignoterait pendant la frappe. Les derniers résultats restent aussi.
+    private(set) var searchError: String?
 
     private var searchTask: Task<Void, Never>?
 
@@ -45,12 +53,21 @@ final class ProfileSearchViewModel {
     /// pendant la frappe, l'écran ne doit pas clignoter en « aucun profil ».
     var showsNoResults: Bool {
         !isSearching && !isQueryTooShort && results.isEmpty
-            && settledQuery == trimmedQuery
+            && settledQuery == trimmedQuery && searchError == nil
     }
 
     func loadSuggestions(store: SocialStore) async {
-        guard suggestions.isEmpty else { return }
-        suggestions = await store.suggestedProfiles()
+        guard suggestions.isEmpty, !isLoadingSuggestions else { return }
+        isLoadingSuggestions = true
+        suggestionsError = nil
+        defer { isLoadingSuggestions = false }
+        do {
+            suggestions = try await store.suggestedProfiles()
+        } catch is CancellationError {
+            return
+        } catch {
+            suggestionsError = Self.message(for: error)
+        }
     }
 
     func search(store: SocialStore) {
@@ -60,6 +77,7 @@ final class ProfileSearchViewModel {
         guard needle.count >= Self.minimumLength else {
             results = []
             settledQuery = needle
+            searchError = nil
             isSearching = false
             return
         }
@@ -68,12 +86,24 @@ final class ProfileSearchViewModel {
         searchTask = Task { [weak self] in
             try? await Task.sleep(for: Self.debounce)
             guard !Task.isCancelled, let self else { return }
-            let found = await store.searchProfiles(matching: needle)
-            guard !Task.isCancelled else { return }
-            self.results = found
-            self.settledQuery = needle
+            do {
+                let found = try await store.searchProfiles(matching: needle)
+                guard !Task.isCancelled else { return }
+                self.results = found
+                self.settledQuery = needle
+                self.searchError = nil
+            } catch is CancellationError {
+                return
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.searchError = Self.message(for: error)
+            }
             self.isSearching = false
         }
+    }
+
+    private static func message(for error: any Error) -> String {
+        (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
     }
 
     func toggleFollow(_ profile: PublicProfile, store: SocialStore) async {

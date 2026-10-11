@@ -68,7 +68,7 @@ nonisolated struct Badge: Identifiable, Sendable, Hashable {
     }
 
     func displayCondition(unlocked: Bool) -> String {
-        isSecret && !unlocked ? String(localized: "Un badge reste à découvrir.", bundle: .app) : condition
+        isSecret && !unlocked ? String(localized: "Tu le découvriras en l'obtenant.", bundle: .app) : condition
     }
 }
 
@@ -132,7 +132,7 @@ nonisolated enum BadgeCatalog {
         ),
         Badge(
             id: "centenary", name: String(localized: "Le Centenaire", bundle: .app),
-            condition: String(localized: "100 films dans la galerie.", bundle: .app),
+            condition: String(localized: "100 films dans ta galerie.", bundle: .app),
             rarity: .rare, isSecret: false
         ),
         Badge(
@@ -197,7 +197,7 @@ nonisolated enum BadgeCatalog {
         ),
         Badge(
             id: "night_owl", name: String(localized: "Le Noctambule", bundle: .app),
-            condition: String(localized: "15 films enregistrés entre 2 h et 5 h du matin.", bundle: .app),
+            condition: String(localized: "15 films ajoutés entre 2 h et 5 h du matin.", bundle: .app),
             rarity: .mythic, isSecret: true
         ),
     ]}

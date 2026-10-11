@@ -20,8 +20,10 @@ final class UserProfileStore: ObservableObject {
             customPhotoData = nil
             return
         }
-        displayName = user.displayName
-            ?? user.email?.components(separatedBy: "@").first
+        // Un nom vide n'est pas un nom : Apple le renvoie parfois tel quel, et
+        // le profil s'ouvrait sur un titre blanc.
+        displayName = user.displayName.flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 }
+            ?? user.email?.components(separatedBy: "@").first.flatMap { $0.isEmpty ? nil : $0 }
             ?? String(localized: "Utilisateur", bundle: .app)
         googlePhotoURL = user.photoURL
         customPhotoData = UserDefaults.standard.data(forKey: photoKey(uid: user.uid))

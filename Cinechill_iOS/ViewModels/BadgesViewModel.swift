@@ -77,6 +77,9 @@ final class BadgesViewModel {
 
     var totalCount: Int { BadgeCatalog.all.count }
 
+    /// Le serveur a répondu au moins une fois : les comptes affichés sont vrais.
+    var hasProgress: Bool { !progressByID.isEmpty }
+
     var currentCelebration: Celebration? { pendingCelebrations.first }
 
     /// Les badges obtenus, les plus récents d'abord — c'est ce qu'on montre en

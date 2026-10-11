@@ -48,7 +48,7 @@ struct GalleryBandGridView: View {
         .background(Ink.ground)
         .safeAreaInset(edge: .top) {
             PlanHeader(band.title) {
-                PlanHeaderCount(value: band.count.formatted())
+                PlanHeaderCount(value: band.count.formatted(.number.locale(AppLanguage.current.locale)))
             }
         }
         .toolbar(.hidden, for: .navigationBar)

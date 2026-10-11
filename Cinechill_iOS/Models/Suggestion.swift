@@ -46,9 +46,11 @@ extension Suggestion {
         self.id = id
         self.fromUid = fromUid
         self.fromHandle = data["fromHandle"] as? String
-        self.fromDisplayName = (data["fromDisplayName"] as? String)
-            ?? (data["fromHandle"] as? String)
-            ?? String(localized: "Quelqu'un", bundle: .app)
+        // Un nom vide se rabat sur le pseudo, puis sur « Quelqu'un ».
+        let name = [data["fromDisplayName"] as? String, data["fromHandle"] as? String]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first { !$0.isEmpty }
+        self.fromDisplayName = name ?? String(localized: "Quelqu'un", bundle: .app)
         self.fromAvatarURL = PublicProfile.trustedAvatarURL(data["fromAvatarURL"])
         self.item = MediaItem(
             tmdbId: tmdbId,
@@ -93,9 +95,9 @@ nonisolated struct SuggestionTarget: Identifiable, Hashable, Sendable {
         if alreadySeen { return String(localized: "A déjà vu ce film", bundle: .app) }
         guard alreadySuggested else { return nil }
         guard let suggestedAt else { return String(localized: "Déjà recommandé", bundle: .app) }
-        // La date suit la langue et la région de l'appareil : « 4 août » ici,
+        // La date suit la langue choisie dans l'app : « 4 août » ici,
         // « August 4 » ailleurs — ce qu'un `dateFormat` fixe ne sait pas faire.
-        let date = suggestedAt.formatted(.dateTime.day().month(.wide))
+        let date = suggestedAt.formatted(.dateTime.day().month(.wide).locale(AppLanguage.current.locale))
         return String(localized: "Déjà recommandé le \(date)", bundle: .app)
     }
 }

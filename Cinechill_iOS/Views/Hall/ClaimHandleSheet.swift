@@ -120,22 +120,13 @@ struct ClaimHandleSheet: View {
     /// lui tendre une porte.
     private var alternatives: some View {
         HStack(spacing: 7) {
+            // La puce commune plutôt qu'un dessin propre : elle porte la cible
+            // de 44 pt et le retour à l'appui que l'ancienne n'avait pas.
             ForEach(PlanHandle.alternatives(for: handle), id: \.self) { candidate in
-                Button {
+                PlanChip(title: "@\(candidate)", isOn: false) {
                     handle = candidate
                     isTaken = false
-                } label: {
-                    Text(verbatim: "@\(candidate)")
-                        .planFont(11.5)
-                        .foregroundStyle(Ink.ink)
-                        .padding(.horizontal, 11)
-                        .padding(.vertical, 5)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-                                .stroke(Ink.ruleSet, lineWidth: 1)
-                        )
                 }
-                .buttonStyle(.plain)
             }
         }
         .padding(.top, 12)

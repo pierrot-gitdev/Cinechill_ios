@@ -40,9 +40,18 @@ struct GallerySignatureView: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(signature.hasSeasons
-            ? String(localized: "\(signature.total) vus, dont \(signature.addedThisMonth) ce mois", bundle: .app)
-            : String(localized: "\(signature.total) films vus, dont \(signature.addedThisMonth) ce mois", bundle: .app))
+        .accessibilityLabel(countAccessibilityLabel)
+    }
+
+    /// Deux morceaux plutôt qu'une phrase : VoiceOver lisait « 1 films vus,
+    /// dont 0 ce mois ». Le total porte son pluriel, et le mois ne se dit
+    /// que s'il compte quelque chose.
+    private var countAccessibilityLabel: String {
+        let total = signature.hasSeasons
+            ? String(localized: "\(signature.total) vus", bundle: .app)
+            : String(localized: "\(signature.total) films vus", bundle: .app)
+        guard signature.addedThisMonth > 0 else { return total }
+        return total + ", " + String(localized: "dont \(signature.addedThisMonth) ce mois", bundle: .app)
     }
 
     private var countHead: some View {

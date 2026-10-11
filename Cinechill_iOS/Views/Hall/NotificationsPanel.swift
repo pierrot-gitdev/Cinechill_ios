@@ -154,7 +154,11 @@ struct NotificationsPanel: View {
                     .planFont(13)
                     .lineLimit(2)
 
-                    Text(verbatim: "\(suggestion.item.title) · \(suggestion.item.displayYear)")
+                    // Sans année connue, le titre seul : « Titre · — » se lisait
+                    // comme une donnée cassée.
+                    Text(verbatim: suggestion.item.releaseDate.map { $0.count >= 4 } == true
+                         ? "\(suggestion.item.title) · \(suggestion.item.displayYear)"
+                         : suggestion.item.title)
                         .planFont(11.5)
                         .foregroundStyle(Ink.ink2)
                         .lineLimit(2)

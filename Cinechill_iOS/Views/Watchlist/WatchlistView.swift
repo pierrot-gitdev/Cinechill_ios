@@ -131,7 +131,8 @@ struct WatchlistView: View {
             }
             .padding(.bottom, 24)
         }
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: model.budget)
+        // Ease-out : la liste répond à un appui sur une puce.
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: model.budget)
     }
 
     private var budgetPicker: some View {
@@ -219,7 +220,8 @@ struct WatchlistView: View {
                             .overlay(alignment: .bottom) {
                                 Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
                             }
-                            .contentShape(Rectangle().inset(by: -10))
+                            // 44 pt de cible : le lien ne mesure que 15 pt de haut.
+                            .contentShape(Rectangle().inset(by: -15))
                     }
                     .buttonStyle(.plain)
                 } else {
@@ -425,6 +427,8 @@ struct WatchlistView: View {
                 .planFont(11)
                 .foregroundStyle(Ink.ink2)
                 .frame(width: 20, height: 20)
+                // VoiceOver lisait « tiret ».
+                .accessibilityLabel(String(localized: "Sur aucune plateforme", bundle: .app))
         } else {
             // Disponible, mais pas chez vous : le point creux du vocabulaire
             // commun, plutôt qu'un symbole de téléchargement qui ne veut rien

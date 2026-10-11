@@ -45,11 +45,9 @@ struct HallAvatar: View {
 
     private var fallback: some View {
         ZStack {
-            LinearGradient(
-                colors: Self.palette(for: seed),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            // Un aplat, pas un dégradé : la direction n'en admet aucun de
+            // décoratif. La teinte suffit à distinguer deux profils.
+            Self.palette(for: seed)[0]
             Text(initial)
                 .font(.system(size: size * 0.40, weight: .semibold)) // l'initiale suit l'avatar, pas le texte
                 .foregroundStyle(Ink.ground)
@@ -133,6 +131,12 @@ struct HallFollowButton: View {
                         .fill(Ink.paper)
                 }
             }
+            // La version compacte ne dessine que 29 pt de haut : la cible
+            // gagne 8 pt de part et d'autre sans déplacer la mise en page,
+            // comme `PlanChip`.
+            .padding(.vertical, fullWidth ? 0 : 8)
+            .contentShape(Rectangle())
+            .padding(.vertical, fullWidth ? 0 : -8)
         }
         .buttonStyle(PressableScaleStyle(scale: 0.94))
         .disabled(isBusy)
@@ -268,6 +272,13 @@ struct SuggestionOutcomeBanner: View {
         .overlay(alignment: .bottom) { PlanEdge() }
         .padding(.bottom, 18)
         .transition(.move(edge: .bottom).combined(with: .opacity))
+        // Trois secondes à l'écran, puis plus rien : VoiceOver doit l'entendre
+        // au moment où il paraît.
+        .accessibilityElement(children: .combine)
+        .onAppear {
+            let spoken = [outcome.title, outcome.message].compactMap { $0 }.joined(separator: " ")
+            AccessibilityNotification.Announcement(spoken).post()
+        }
     }
 }
 
@@ -307,7 +318,7 @@ struct HallSearchField: View {
                             .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
                             .foregroundStyle(Ink.ink3)
                             .frame(width: 14, height: 14)
-                            .contentShape(Rectangle().inset(by: -10))
+                            .contentShape(Rectangle().inset(by: -15))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(String(localized: "Effacer la recherche", bundle: .app))

@@ -54,7 +54,9 @@ struct SuggestionComposerSheet: View {
                     HallEmptyState(
                         icon: .hall,
                         title: String(localized: "Liste indisponible", bundle: .app),
-                        message: loadError
+                        message: loadError,
+                        actionTitle: String(localized: "Réessayer", bundle: .app),
+                        action: { Task { await load() } }
                     )
                 } else if targets.isEmpty {
                     HallEmptyState(
@@ -163,6 +165,7 @@ struct SuggestionComposerSheet: View {
         .buttonStyle(.plain)
         .disabled(!target.canReceive)
         .accessibilityLabel(target.displayName)
+        .accessibilityAddTraits(selected.contains(target.id) ? .isSelected : [])
         .accessibilityHint(target.blockedReason ?? String(localized: "Sélectionner", bundle: .app))
     }
 
@@ -224,6 +227,7 @@ struct SuggestionComposerSheet: View {
 
     private func load() async {
         isLoading = true
+        loadError = nil
         defer { isLoading = false }
         do {
             targets = try await socialStore.suggestionTargets(itemId: item.id)
@@ -248,6 +252,7 @@ struct SuggestionComposerSheet: View {
         var sent: [SuggestionTarget] = []
         var alreadySeen: [SuggestionTarget] = []
         var failed = false
+        var hitDailyLimit = false
 
         for target in chosen {
             do {
@@ -255,6 +260,11 @@ struct SuggestionComposerSheet: View {
                 sent.append(target)
             } catch SocialError.targetAlreadySeen {
                 alreadySeen.append(target)
+            } catch SocialError.dailyLimit {
+                // La limite vaut pour tous les destinataires suivants : inutile
+                // d'insister, et le bandeau doit le dire au lieu d'un échec vague.
+                hitDailyLimit = true
+                break
             } catch {
                 failed = true
             }
@@ -265,7 +275,8 @@ struct SuggestionComposerSheet: View {
             film: item.title,
             sent: sent.map(\.displayName),
             alreadySeen: alreadySeen.map(\.displayName),
-            hadFailure: failed
+            hadFailure: failed,
+            hitDailyLimit: hitDailyLimit
         ))
         dismiss()
     }
@@ -286,14 +297,23 @@ struct SuggestionOutcome: Equatable {
     let sent: [String]
     let alreadySeen: [String]
     let hadFailure: Bool
+    /// Le serveur a refusé un envoi pour la limite du jour. Sans ce cas, le
+    /// bandeau disait « Rien n'a pu être envoyé » sans dire pourquoi.
+    var hitDailyLimit: Bool = false
 
     var isSilent: Bool {
-        sent.isEmpty && alreadySeen.isEmpty && !hadFailure
+        sent.isEmpty && alreadySeen.isEmpty && !hadFailure && !hitDailyLimit
     }
 
     var title: String {
+        if hitDailyLimit, sent.isEmpty {
+            return String(localized: "Rien n'a pu être envoyé.", bundle: .app)
+        }
         if !alreadySeen.isEmpty, sent.isEmpty {
-            return String(localized: "\(list(alreadySeen)) a déjà vu \(film).", bundle: .app)
+            // L'accord suit le nombre : « Léa et Sofiane ont déjà vu… ».
+            return alreadySeen.count == 1
+                ? String(localized: "\(list(alreadySeen)) a déjà vu \(film).", bundle: .app)
+                : String(localized: "\(list(alreadySeen)) ont déjà vu \(film).", bundle: .app)
         }
         if hadFailure, sent.isEmpty {
             return String(localized: "Rien n'a pu être envoyé.", bundle: .app)
@@ -302,11 +322,20 @@ struct SuggestionOutcome: Equatable {
     }
 
     var message: String? {
+        if hitDailyLimit {
+            return sent.isEmpty
+                ? String(localized: "Tu as envoyé beaucoup de recommandations aujourd'hui. Réessaie demain.", bundle: .app)
+                : String(localized: "Tu as atteint la limite du jour. Réessaie demain pour les autres.", bundle: .app)
+        }
         if !alreadySeen.isEmpty, sent.isEmpty {
-            return String(localized: "Rien ne lui a été envoyé.", bundle: .app)
+            return alreadySeen.count == 1
+                ? String(localized: "Rien ne lui a été envoyé.", bundle: .app)
+                : String(localized: "On ne leur a rien envoyé.", bundle: .app)
         }
         if !alreadySeen.isEmpty {
-            return String(localized: "\(list(alreadySeen)) l'avait déjà vu. Rien ne lui a été envoyé.", bundle: .app)
+            return alreadySeen.count == 1
+                ? String(localized: "\(list(alreadySeen)) l'avait déjà vu. Rien ne lui a été envoyé.", bundle: .app)
+                : String(localized: "\(list(alreadySeen)) l'avaient déjà vu. On ne leur a rien envoyé.", bundle: .app)
         }
         if hadFailure {
             return String(localized: "Une partie des envois a échoué. Réessaie.", bundle: .app)

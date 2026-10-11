@@ -218,7 +218,7 @@ final class SocialStore: ObservableObject {
     /// requêtes plutôt qu'une. Le `\u{f8ff}` est la borne haute d'un préfixe,
     /// la convention Firestore pour ça. Un même profil trouvé par les deux
     /// voies (pseudo *et* nom contiennent la saisie) ne compte qu'une fois.
-    func searchProfiles(matching query: String, limit: Int = 25) async -> [PublicProfile] {
+    func searchProfiles(matching query: String, limit: Int = 25) async throws -> [PublicProfile] {
         let needle = Self.normalize(query)
         guard needle.count >= 2 else { return [] }
         let me = myUID
@@ -228,14 +228,16 @@ final class SocialStore: ObservableObject {
 
         var seen = Set<String>()
         var results: [PublicProfile] = []
-        for profile in await byHandle + (await byName) where profile.id != me {
+        let handleHits = try await byHandle
+        let nameHits = try await byName
+        for profile in handleHits + nameHits where profile.id != me {
             guard seen.insert(profile.id).inserted else { continue }
             results.append(profile)
         }
         return Array(results.prefix(limit))
     }
 
-    private func prefixQuery(field: String, needle: String, limit: Int) async -> [PublicProfile] {
+    private func prefixQuery(field: String, needle: String, limit: Int) async throws -> [PublicProfile] {
         do {
             let snapshot = try await db.collection("publicProfiles")
                 .whereField(field, isGreaterThanOrEqualTo: needle)
@@ -244,14 +246,13 @@ final class SocialStore: ObservableObject {
                 .getDocuments()
             return snapshot.documents.compactMap { PublicProfile(id: $0.documentID, data: $0.data()) }
         } catch {
-            errorMessage = error.localizedDescription
-            return []
+            throw Self.readFailure(error)
         }
     }
 
     /// Quelques profils à proposer quand le champ de recherche est vide — un
     /// écran nu renverrait l'utilisateur à sa propre absence d'idée.
-    func suggestedProfiles(limit: Int = 12) async -> [PublicProfile] {
+    func suggestedProfiles(limit: Int = 12) async throws -> [PublicProfile] {
         do {
             let snapshot = try await db.collection("publicProfiles")
                 .order(by: "galleryCount", descending: true)
@@ -262,20 +263,17 @@ final class SocialStore: ObservableObject {
                 .compactMap { PublicProfile(id: $0.documentID, data: $0.data()) }
                 .filter { $0.id != me }
         } catch {
-            // Sans index composite ce tri peut échouer : l'écran doit rester
-            // utilisable, la recherche par frappe fonctionne de toute façon.
-            return []
+            throw Self.readFailure(error)
         }
     }
 
-    func profile(uid: String) async -> PublicProfile? {
+    func profile(uid: String) async throws -> PublicProfile? {
         do {
             let snapshot = try await db.collection("publicProfiles").document(uid).getDocument()
             guard let data = snapshot.data() else { return nil }
             return PublicProfile(id: snapshot.documentID, data: data)
         } catch {
-            errorMessage = error.localizedDescription
-            return nil
+            throw Self.readFailure(error)
         }
     }
 
@@ -283,8 +281,10 @@ final class SocialStore: ObservableObject {
     ///
     /// Les sous-collections `following`/`followers` ne portent qu'une date : le
     /// profil affichable vit dans `publicProfiles`. On les recharge par paquets
-    /// de dix, la limite d'un `in` Firestore.
-    func profiles(uids: [String]) async -> [PublicProfile] {
+    /// de dix, la limite d'un `in` Firestore. Un paquet en échec fait échouer
+    /// l'ensemble : une liste amputée sans le dire mentirait autant qu'une
+    /// liste vide.
+    func profiles(uids: [String]) async throws -> [PublicProfile] {
         guard !uids.isEmpty else { return [] }
         var out: [PublicProfile] = []
         for chunk in uids.chunked(into: 10) {
@@ -296,29 +296,41 @@ final class SocialStore: ObservableObject {
                     PublicProfile(id: $0.documentID, data: $0.data())
                 }
             } catch {
-                errorMessage = error.localizedDescription
+                throw Self.readFailure(error)
             }
         }
         return out
     }
 
-    func followingUIDs(of uid: String) async -> [String] {
-        await linkedUIDs(of: uid, collection: "following")
+    func followingUIDs(of uid: String) async throws -> [String] {
+        try await linkedUIDs(of: uid, collection: "following")
     }
 
-    func followerUIDs(of uid: String) async -> [String] {
-        await linkedUIDs(of: uid, collection: "followers")
+    func followerUIDs(of uid: String) async throws -> [String] {
+        try await linkedUIDs(of: uid, collection: "followers")
     }
 
-    private func linkedUIDs(of uid: String, collection: String) async -> [String] {
+    private func linkedUIDs(of uid: String, collection: String) async throws -> [String] {
         do {
             let snapshot = try await db.collection("users").document(uid)
                 .collection(collection).getDocuments()
             return snapshot.documents.map(\.documentID)
         } catch {
-            errorMessage = error.localizedDescription
-            return []
+            throw Self.readFailure(error)
         }
+    }
+
+    /// Ce que remonte une lecture Firestore ratée. Ces lectures rendaient `[]`
+    /// en cas d'échec, et l'écran affichait alors « Tu ne suis personne » à
+    /// quelqu'un qui n'avait simplement pas de réseau. L'erreur brute de
+    /// Firestore est en anglais technique : on la remplace par la phrase des
+    /// autres appels réseau du Hall. L'annulation reste une annulation, pour
+    /// que l'appelant la taise.
+    private static func readFailure(_ error: any Error) -> any Error {
+        if error is CancellationError { return error }
+        return SocialError.transport(
+            message: String(localized: "On n'arrive pas à joindre le serveur. Vérifie ta connexion internet.", bundle: .app)
+        )
     }
 
     // MARK: - Listeners
@@ -455,7 +467,14 @@ final class SocialStore: ObservableObject {
                         self.recentFollowers = []
                         return
                     }
-                    self.recentFollowers = await self.profiles(uids: fresh)
+                    // Un échec garde les abonnés déjà affichés : le prochain
+                    // snapshot réessaiera, et vider la liste ferait croire
+                    // qu'ils sont partis.
+                    do {
+                        self.recentFollowers = try await self.profiles(uids: fresh)
+                    } catch {
+                        self.errorMessage = error.localizedDescription
+                    }
                 }
             }
     }

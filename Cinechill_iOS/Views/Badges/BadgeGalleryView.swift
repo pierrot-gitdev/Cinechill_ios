@@ -22,7 +22,19 @@ struct BadgeGalleryView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                 Section {
-                    if model.filteredBadges.isEmpty {
+                    if model.errorMessage != nil, !model.hasProgress {
+                        // Sans réponse du serveur, la grille montrait quinze
+                        // badges verrouillés, à zéro : un faux état, sans un mot.
+                        PlanEmptyState(
+                            icon: .hall,
+                            title: String(localized: "On n'a pas pu charger tes badges", bundle: .app),
+                            message: String(localized: "Vérifie ta connexion, puis réessaie.", bundle: .app),
+                            actionTitle: String(localized: "Réessayer", bundle: .app),
+                            action: { Task { await model.refresh() } }
+                        )
+                        .padding(.top, 56)
+                        .padding(.horizontal, Metrics.margin)
+                    } else if model.filteredBadges.isEmpty {
                         // Un filtre sans résultat disait le vide sans un mot.
                         PlanEmptyState(
                             icon: .hall,
@@ -53,7 +65,7 @@ struct BadgeGalleryView: View {
         .background(Ink.ground)
         .safeAreaInset(edge: .top) {
             PlanHeader(String(localized: "Mes badges", bundle: .app)) {
-                PlanHeaderCount(value: "\(model.unlockedCount.formatted()) / \(model.totalCount.formatted())")
+                PlanHeaderCount(value: "\(model.unlockedCount.formatted(.number.locale(AppLanguage.current.locale))) / \(model.totalCount.formatted(.number.locale(AppLanguage.current.locale)))")
             }
         }
         .toolbar(.hidden, for: .navigationBar)
@@ -99,7 +111,6 @@ struct BadgeGalleryView: View {
     private func cell(_ badge: Badge) -> some View {
         let state = model.progress(for: badge)
         return Button {
-            Haptics.impact(.light)
             selected = badge
         } label: {
             VStack(spacing: 9) {
@@ -111,10 +122,12 @@ struct BadgeGalleryView: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
 
-                if !state.unlocked {
+                // Avant la réponse du serveur, chaque badge valait « 0 / 1 » :
+                // on ne montre un compte qu'une fois qu'il est vrai.
+                if !state.unlocked, badge.isSecret || model.hasProgress {
                     Text(badge.isSecret
                          ? String(localized: "Secret", bundle: .app)
-                         : "\(state.current.formatted()) / \(state.target.formatted())")
+                         : "\(state.current.formatted(.number.locale(AppLanguage.current.locale))) / \(state.target.formatted(.number.locale(AppLanguage.current.locale)))")
                         .planLabel()
                         .monospacedDigit()
                         .foregroundStyle(Ink.ink2)
@@ -254,7 +267,9 @@ struct BadgeDetailView: View {
     @ViewBuilder
     private var unlockedNote: some View {
         if let date = progress.unlockedAt {
-            Text(String(localized: "Obtenu le \(date.formatted(date: .abbreviated, time: .omitted))", bundle: .app))
+            // La date suit la langue de l'app, pas celle de l'iPhone.
+            let day = date.formatted(.dateTime.day().month(.abbreviated).year().locale(AppLanguage.current.locale))
+            Text(String(localized: "Obtenu le \(day)", bundle: .app))
                 .planLabel()
                 .foregroundStyle(Ink.ink2)
                 .padding(.top, 26)

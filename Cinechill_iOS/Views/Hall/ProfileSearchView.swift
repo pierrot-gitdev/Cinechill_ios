@@ -31,6 +31,10 @@ struct ProfileSearchView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 14)
 
+                if !model.isQueryTooShort, let searchError = model.searchError {
+                    searchFailure(searchError)
+                }
+
                 if model.isQueryTooShort {
                     suggestionsSection
                 } else if model.showsNoResults {
@@ -75,11 +79,27 @@ struct ProfileSearchView: View {
     /// absence d'idée : on propose des profils actifs.
     @ViewBuilder
     private var suggestionsSection: some View {
-        if model.suggestions.isEmpty {
+        if model.isLoadingSuggestions, model.suggestions.isEmpty {
+            HStack {
+                Spacer()
+                CinechillSpinner(size: 26)
+                Spacer()
+            }
+            .padding(.top, 60)
+        } else if let suggestionsError = model.suggestionsError {
+            HallEmptyState(
+                icon: .hall,
+                title: String(localized: "Liste indisponible", bundle: .app),
+                message: suggestionsError,
+                actionTitle: String(localized: "Réessayer", bundle: .app),
+                action: { Task { await model.loadSuggestions(store: socialStore) } }
+            )
+            .padding(.top, 40)
+        } else if model.suggestions.isEmpty {
             HallEmptyState(
                 icon: .hall,
                 title: String(localized: "Personne à proposer pour l'instant", bundle: .app),
-                message: String(localized: "Tape un pseudo pour retrouver quelqu'un que tu connais.", bundle: .app)
+                message: String(localized: "Tape un pseudo ou un nom pour retrouver quelqu'un que tu connais.", bundle: .app)
             )
             .padding(.top, 40)
         } else {
@@ -97,6 +117,35 @@ struct ProfileSearchView: View {
             message: String(localized: "Vérifie l'orthographe, ou invite cette personne à rejoindre Cinechill.", bundle: .app)
         )
         .padding(.top, 40)
+    }
+
+    /// L'échec d'une recherche, sous le champ, comme dans la grille de la
+    /// relance du deck : un état plein écran clignoterait à chaque touche et
+    /// masquerait les derniers résultats, qui restent affichés dessous.
+    private func searchFailure(_ message: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 11) {
+            PlanLight(tint: Ink.warn)
+            Text(message)
+                .planFont(12.5)
+                .foregroundStyle(Ink.warn)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button {
+                model.search(store: socialStore)
+            } label: {
+                Text("Réessayer", bundle: .app)
+                    .planFont(12.5, weight: .medium)
+                    .foregroundStyle(Ink.ink)
+                    .underline()
+                    .fixedSize()
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PressableScaleStyle())
+            .disabled(model.isSearching)
+        }
+        .padding(.horizontal, Metrics.margin)
+        .padding(.bottom, 10)
     }
 
     private func rows(_ profiles: [PublicProfile]) -> some View {

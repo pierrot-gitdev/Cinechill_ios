@@ -21,6 +21,7 @@ struct ProfileView: View {
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(MediaCatalog.self) private var catalog
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     @State private var showSettings = false
     @State private var showSearch = false
@@ -89,14 +90,15 @@ struct ProfileView: View {
     /// translucide, quatrième plafond de l'application pour un seul volume.
     private var topBar: some View {
         PlanHeader(String(localized: "Profil", bundle: .app), leading: .close) {
-            HStack(spacing: 4) {
+            HStack(spacing: 0) {
                 // La recherche de profils n'a pas de place permanente dans la
                 // navigation : on la trouve là où l'on gère ses relations.
                 NavigationLink(value: HallRoute.search) {
                     CinechillHallIconView(.chercher)
                         .frame(width: 18, height: 18)
                         .foregroundStyle(Ink.ink2)
-                        .frame(width: 34, height: 34)
+                        // 44 pt : la cible d'un doigt, pas celle du dessin.
+                        .frame(width: Metrics.control, height: Metrics.control)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(PressableScaleStyle(scale: 0.9))
@@ -107,7 +109,7 @@ struct ProfileView: View {
                         .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
                         .foregroundStyle(Ink.ink2)
                         .frame(width: 18, height: 18)
-                        .frame(width: 34, height: 34)
+                        .frame(width: Metrics.control, height: Metrics.control)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(PressableScaleStyle(scale: 0.9))
@@ -137,15 +139,33 @@ struct ProfileView: View {
             // profil sont une propriété du profil, pas cinq objets posés dessus.
             VStack(spacing: 0) {
                 PlanEdge()
-                HStack(spacing: 0) {
-                    statCell(value: socialStore.myProfile?.followingCount ?? 0, label: String(localized: "Abonnements", bundle: .app), route: .following)
-                    statCell(value: socialStore.myProfile?.followerCount ?? 0, label: String(localized: "Abonnés", bundle: .app), route: .followers)
-                    statCell(value: galleryCount, label: String(localized: "Vus", bundle: .app))
-                    statCell(value: libraryStore.watchlistItems.count, label: String(localized: "À voir", bundle: .app))
+                // Aux tailles d'accessibilité, deux rangées de deux : sur une
+                // seule, « Abonnements » ne tenait plus qu'en se rétrécissant.
+                if typeSize.isAccessibilitySize {
+                    HStack(spacing: 0) { followingCell; followersCell }
+                    HStack(spacing: 0) { seenCell; toWatchCell }
+                } else {
+                    HStack(spacing: 0) { followingCell; followersCell; seenCell; toWatchCell }
                 }
                 PlanEdge()
             }
         }
+    }
+
+    private var followingCell: some View {
+        statCell(value: socialStore.myProfile?.followingCount ?? 0, label: String(localized: "Abonnements", bundle: .app), route: .following)
+    }
+
+    private var followersCell: some View {
+        statCell(value: socialStore.myProfile?.followerCount ?? 0, label: String(localized: "Abonnés", bundle: .app), route: .followers)
+    }
+
+    private var seenCell: some View {
+        statCell(value: galleryCount, label: String(localized: "Vus", bundle: .app))
+    }
+
+    private var toWatchCell: some View {
+        statCell(value: libraryStore.watchlistItems.count, label: String(localized: "À voir", bundle: .app))
     }
 
     private func statCell(value: Int, label: String, route: HallRoute? = nil) -> some View {
@@ -228,13 +248,19 @@ struct ProfileView: View {
                                 Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
                             }
                     }
-                    .contentShape(Rectangle().inset(by: -10))
+                    // 44 pt de cible autour d'un lien de 15 pt.
+                    .contentShape(Rectangle().inset(by: -15))
                 }
                 .buttonStyle(.plain)
             }
 
+            // « Tu gagnes le premier avec ton premier film » ne se dit qu'à
+            // qui n'a pas de badge pour de bon : pas pendant le chargement,
+            // ni quand le serveur n'a pas répondu à quelqu'un qui a des films.
             if badgesModel.showcase.isEmpty {
-                emptyBadges
+                if badgesModel.hasProgress || galleryCount == 0 {
+                    emptyBadges
+                }
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {

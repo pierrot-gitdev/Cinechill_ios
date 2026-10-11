@@ -33,7 +33,9 @@ enum SocialError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return String(localized: "Tu dois être connecté·e.", bundle: .app)
+            // Pas d'écriture inclusive au point médian : la tournure à
+            // l'impératif évite d'accorder.
+            return String(localized: "Connecte-toi pour continuer.", bundle: .app)
         case .missingBaseURL:
             return String(localized: "Configuration serveur manquante.", bundle: .app)
         case .handleTaken:
@@ -196,7 +198,9 @@ nonisolated struct SocialClient: SocialServicing, Sendable {
             if let urlError = error as? URLError, urlError.code == .cancelled {
                 throw CancellationError()
             }
-            throw SocialError.transport(message: error.localizedDescription)
+            // Le message d'URLSession suit la langue de l'iPhone et parle
+            // réseau (« The request timed out ») : on dit quoi faire.
+            throw SocialError.transport(message: String(localized: "On n'arrive pas à joindre le serveur. Vérifie ta connexion internet.", bundle: .app))
         }
 
         guard let http = response as? HTTPURLResponse else {
@@ -247,7 +251,7 @@ private nonisolated struct PublicProfileDetailDTO: Decodable {
             profile: PublicProfile(
                 id: uid,
                 handle: handle ?? "",
-                displayName: displayName ?? handle ?? String(localized: "Sans nom", bundle: .app),
+                displayName: PublicProfile.nameOrHandle(displayName, handle),
                 avatarURL: PublicProfile.trustedAvatarURL(avatarURL),
                 badgeSignature: badgeSignature,
                 followerCount: followerCount,
@@ -281,7 +285,7 @@ private nonisolated struct TargetDTO: Decodable {
         SuggestionTarget(
             id: uid,
             handle: handle,
-            displayName: displayName ?? handle ?? String(localized: "Sans nom", bundle: .app),
+            displayName: PublicProfile.nameOrHandle(displayName, handle),
             avatarURL: PublicProfile.trustedAvatarURL(avatarURL),
             alreadySeen: alreadySeen,
             alreadySuggested: alreadySuggested,

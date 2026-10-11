@@ -22,6 +22,9 @@ struct PublicProfileView: View {
     @State private var isLoading = true
     @State private var isTogglingFollow = false
     @State private var errorMessage: String?
+    /// Le chargement a échoué : on le dit sur place, avec de quoi réessayer,
+    /// au lieu d'une alerte « Impossible » sur un écran qui restait à moitié vide.
+    @State private var loadFailed = false
 
     private var shown: PublicProfile { detail?.profile ?? profile }
     private var isFollowing: Bool { socialStore.isFollowing(profile.id) }
@@ -31,12 +34,18 @@ struct PublicProfileView: View {
             VStack(alignment: .leading, spacing: 22) {
                 identity
                 stats
-                actions
+                // On ne se suit pas soi-même.
+                if profile.id != socialStore.myUID {
+                    actions
+                }
                 if isLoading {
                     loadingRow
+                } else if loadFailed {
+                    loadFailedRow
                 } else {
                     dnaSection
                     postersSection
+                    emptyGalleryNote
                 }
             }
             .padding(.horizontal, Metrics.margin)
@@ -49,16 +58,16 @@ struct PublicProfileView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .task(id: profile.id) { await load() }
+        // Ne sert plus qu'au suivi : le message dit déjà ce qui s'est passé,
+        // il fait le titre.
         .alert(
-            String(localized: "Impossible", bundle: .app),
+            errorMessage ?? "",
             isPresented: Binding(
                 get: { errorMessage != nil },
                 set: { if !$0 { errorMessage = nil } }
             )
         ) {
             Button(String(localized: "OK", bundle: .app), role: .cancel) { errorMessage = nil }
-        } message: {
-            Text(errorMessage ?? "")
         }
     }
 
@@ -227,6 +236,28 @@ struct PublicProfileView: View {
         }
     }
 
+    /// Un profil sans film vu ne laissait rien sous le bouton de suivi.
+    @ViewBuilder
+    private var emptyGalleryNote: some View {
+        if let detail, detail.genres.isEmpty, detail.posters.isEmpty {
+            Text("Sa galerie est vide pour l'instant.", bundle: .app)
+                .planFont(13)
+                .foregroundStyle(Ink.ink2)
+        }
+    }
+
+    private var loadFailedRow: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("On n'a pas pu charger ses goûts et sa galerie.", bundle: .app)
+                .planFont(13)
+                .foregroundStyle(Ink.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+            PlanSecondaryButton(title: String(localized: "Réessayer", bundle: .app), height: Metrics.control) {
+                Task { await load() }
+            }
+        }
+    }
+
     private var loadingRow: some View {
         HStack {
             Spacer()
@@ -246,14 +277,14 @@ struct PublicProfileView: View {
 
     private func load() async {
         isLoading = true
+        loadFailed = false
         defer { isLoading = false }
         do {
             detail = try await socialStore.profileDetail(uid: profile.id)
         } catch is CancellationError {
             return
         } catch {
-            errorMessage = (error as? LocalizedError)?.errorDescription
-                ?? error.localizedDescription
+            loadFailed = true
         }
     }
 
