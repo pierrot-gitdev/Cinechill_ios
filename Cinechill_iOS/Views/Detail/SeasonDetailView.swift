@@ -30,6 +30,9 @@ struct SeasonDetailView: View {
     @State private var loading = true
     @State private var errorMessage: String?
     @State private var scrollOffset: CGFloat = 0
+    /// Le tap qui fait entrer la saison dans la file à un épisode donné :
+    /// l'attente porte sur le statut, l'épisode visé n'est connu que d'ici.
+    @State private var pendingFirstEpisode: Int?
 
     private let client = TVClient()
 
@@ -81,6 +84,9 @@ struct SeasonDetailView: View {
         .toolbar(.hidden, for: .navigationBar)
         .task { await load() }
         .task { await libraryStore.warmUpStatusEndpoint() }
+        .onChange(of: libraryStore.pendingStatus(for: seasonItem) == nil) { _, settled in
+            if settled { pendingFirstEpisode = nil }
+        }
     }
 
     // MARK: - Le contenu
@@ -104,6 +110,13 @@ struct SeasonDetailView: View {
                 )
                 generique
 
+                if errorMessage != nil, !loading {
+                    DetailLoadFailure(
+                        message: String(localized: "On n'a pas pu charger cette saison.", bundle: .app),
+                        retry: { Task { await load() } }
+                    )
+                }
+
                 if showsSeriesLink {
                     seriesLink
                 }
@@ -126,14 +139,6 @@ struct SeasonDetailView: View {
 
                 if let cast = series?.cast, !cast.isEmpty {
                     DetailCast(cast: cast)
-                }
-
-                if let errorMessage {
-                    Text(errorMessage)
-                        .planFont(12.5)
-                        .foregroundStyle(Ink.warn)
-                        .padding(.horizontal, Metrics.margin)
-                        .padding(.top, 24)
                 }
             }
             .padding(.bottom, 32)
@@ -212,12 +217,13 @@ struct SeasonDetailView: View {
                     .foregroundStyle(Ink.ink3)
                     .frame(width: 12, height: 12)
             }
+            .frame(minHeight: 44)
             .padding(.vertical, 12)
             .contentShape(Rectangle())
             .overlay(alignment: .top) { PlanEdge() }
             .overlay(alignment: .bottom) { PlanEdge() }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableScaleStyle(scale: 0.98))
         .padding(.horizontal, Metrics.margin)
         .padding(.top, 20)
     }
@@ -240,10 +246,28 @@ struct SeasonDetailView: View {
         .padding(.top, 24)
     }
 
+    /// L'épisode visé par une écriture en cours, et si une écriture touche la
+    /// saison. Pendant ce temps les lignes ne bougent pas : la marque reste sur
+    /// l'épisode que Firestore a confirmé, et l'attente se montre sur celui
+    /// qu'on vient de toucher. Pas de bascule avant la réponse.
+    private var pendingEpisode: Int? {
+        if let entry = queuedEntry, let target = libraryStore.pendingNextEpisode(for: entry) {
+            return target
+        }
+        // Ne vaut que tant que l'entrée dans la file est en vol.
+        guard libraryStore.pendingStatus(for: seasonItem) == .toWatch else { return nil }
+        return pendingFirstEpisode
+    }
+
+    private var isWriting: Bool {
+        libraryStore.pendingStatus(for: seasonItem) != nil || pendingEpisode != nil
+    }
+
     private func episodeRow(_ episode: TVEpisode) -> some View {
-        let toPlay = queuedEntry.map { libraryStore.pendingNextEpisode(for: $0) ?? $0.episodeToPlay }
+        let toPlay = queuedEntry?.episodeToPlay
         let isPast = isSeen || (toPlay.map { episode.number < $0 } ?? false)
         let isNext = !isSeen && toPlay == episode.number
+        let isWaiting = !isSeen && pendingEpisode == episode.number
         let isTappable = !isSeen && episode.isReleased
 
         return Button {
@@ -251,11 +275,15 @@ struct SeasonDetailView: View {
             setEpisodeToPlay(episode.number)
         } label: {
             HStack(spacing: 11) {
+                // Une largeur plancher et non fixe : « 112 » d'une longue série,
+                // en grand texte, passait à la ligne dans 20 pt.
                 Text(verbatim: "\(episode.number)")
                     .planLabel()
                     .monospacedDigit()
                     .foregroundStyle(isNext ? Ink.ink : Ink.ink3)
-                    .frame(width: 20, alignment: .leading)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .frame(minWidth: 20, alignment: .leading)
 
                 Text(episode.name.isEmpty
                      ? String(localized: "Épisode \(episode.number)", bundle: .app)
@@ -274,23 +302,29 @@ struct SeasonDetailView: View {
                 // Plein : vu. Creux : celui à lancer — c'est lui qui est dans la
                 // file. Rien : ce qui reste. Le vocabulaire des affiches.
                 Group {
-                    if isPast {
+                    if isWaiting {
+                        CinechillSpinner(size: 10)
+                    } else if isPast {
                         PlanLight()
                     } else if isNext {
                         PlanLightOutline()
                     }
                 }
-                .frame(width: 8)
+                .frame(width: 10)
             }
             .padding(.horizontal, Metrics.margin)
             .padding(.vertical, 10)
+            .frame(minHeight: 44)
             .background(isNext ? Ink.ground2 : .clear)
             .opacity(episode.isReleased ? 1 : 0.45)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .disabled(!isTappable)
+        .buttonStyle(PressableScaleStyle(scale: 0.98))
+        // Toute la liste attend la réponse : deux épisodes visés coup sur coup
+        // arriveraient dans un ordre que personne ne contrôle.
+        .disabled(!isTappable || isWriting)
         .accessibilityAddTraits(isNext ? [.isSelected] : [])
+        .accessibilityValue(isWaiting ? String(localized: "Enregistrement…", bundle: .app) : "")
     }
 
     /// La durée d'un épisode sorti, la date d'un épisode à venir.
@@ -309,6 +343,7 @@ struct SeasonDetailView: View {
         if let entry = queuedEntry {
             libraryStore.setNextEpisode(entry, to: number)
         } else {
+            pendingFirstEpisode = number
             libraryStore.addToWatchlist(seasonItem, nextEpisode: number)
         }
     }
@@ -375,36 +410,47 @@ struct SeasonDetailView: View {
     /// ne compte pas pour la Porte, qui ne compte que des films.
     private var loveButton: some View {
         let loved = libraryStore.isLoved(seasonItem)
-        let isPending = libraryStore.pendingLoveByItemID[seasonItem.id] != nil
+        let isPending = libraryStore.isLovePending(seasonItem)
 
         return Button {
             Haptics.impact(.light, intensity: loved ? 0.5 : 0.8)
             libraryStore.setLove(seasonItem, loved: !loved)
         } label: {
-            DetailHeartShape()
-                .stroke(
-                    loved ? Color(hex: 0xC25562) : Ink.ink,
-                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
-                )
-                .background(
+            // Pendant l'écriture le faisceau prend la place du cœur, comme sur
+            // Vu / À voir : le cœur ne change qu'une fois Firestore revenu.
+            Group {
+                if isPending {
+                    CinechillSpinner(size: 14)
+                } else {
                     DetailHeartShape()
-                        .fill(loved ? Color(hex: 0xC25562) : .clear)
-                )
-                .frame(width: 18, height: 16)
-                .frame(width: 48, height: Metrics.control)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-                        .strokeBorder(Ink.ruleSet, lineWidth: 1)
-                )
-                .opacity(isPending ? 0.6 : 1)
+                        .stroke(
+                            loved ? Color(hex: 0xC25562) : Ink.ink,
+                            style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
+                        )
+                        .background(
+                            DetailHeartShape()
+                                .fill(loved ? Color(hex: 0xC25562) : .clear)
+                        )
+                        .frame(width: 18, height: 16)
+                }
+            }
+            .frame(width: 48, height: Metrics.control)
+            .overlay(
+                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                    .strokeBorder(Ink.ruleSet, lineWidth: 1)
+            )
         }
         .buttonStyle(PressableScaleStyle(scale: 0.94))
+        // Comme sur la fiche film : pas de second tap pendant l'écriture.
+        .disabled(isPending)
         .transition(.opacity)
+        .animation(Metrics.shift, value: isPending)
         .accessibilityLabel(
             loved
                 ? String(localized: "Retirer le coup de cœur", bundle: .app)
                 : String(localized: "Coup de cœur", bundle: .app)
         )
+        .accessibilityValue(isPending ? String(localized: "Enregistrement…", bundle: .app) : "")
     }
 
     // MARK: - Chargement
@@ -440,6 +486,7 @@ struct SeasonDetailView: View {
         } catch is CancellationError {
             return
         } catch {
+            // Le texte affiché est fixe ; on garde la cause pour le débogage.
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
         series = await seriesResult

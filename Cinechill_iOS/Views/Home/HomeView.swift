@@ -28,6 +28,9 @@ struct HomeView: View {
 
     @State private var showPlatformSheet = false
     @State private var showProfile = false
+    /// Le temps d'un « Réessayer » : `loadAll` efface l'erreur dès son départ,
+    /// et le bandeau disparaissait sans que rien ne dise qu'on cherchait.
+    @State private var isRetrying = false
 
     private func reload() async {
         await homeModel.loadAll(preferredPlatformIDs: libraryStore.preferredPlatformIDs)
@@ -43,7 +46,7 @@ struct HomeView: View {
                         // La conséquence, pas le mécanisme : le code HTTP du serveur
                         // ne dit rien à personne. Et une issue, sans quoi il
                         // fallait tuer l'app pour réessayer.
-                        if homeModel.errorMessage != nil {
+                        if homeModel.errorMessage != nil || isRetrying {
                             HStack(alignment: .firstTextBaseline, spacing: 11) {
                                 PlanLight(tint: Ink.warn)
                                 Text("Impossible de charger l'accueil. Vérifie ta connexion.", bundle: .app)
@@ -51,16 +54,26 @@ struct HomeView: View {
                                     .foregroundStyle(Ink.warn)
                                     .fixedSize(horizontal: false, vertical: true)
                                 Spacer(minLength: 8)
-                                Button {
-                                    Task { await reload() }
-                                } label: {
-                                    Text("Réessayer", bundle: .app)
-                                        .planLabel()
-                                        .foregroundStyle(Ink.ink)
+                                if isRetrying {
+                                    CinechillSpinner(size: 14)
                                         .frame(minHeight: 44)
-                                        .contentShape(Rectangle())
+                                        .accessibilityLabel(String(localized: "Chargement…", bundle: .app))
+                                } else {
+                                    Button {
+                                        Task {
+                                            isRetrying = true
+                                            await reload()
+                                            isRetrying = false
+                                        }
+                                    } label: {
+                                        Text("Réessayer", bundle: .app)
+                                            .planLabel()
+                                            .foregroundStyle(Ink.ink)
+                                            .frame(minHeight: 44)
+                                            .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(PressableScaleStyle())
                                 }
-                                .buttonStyle(PressableScaleStyle())
                             }
                         }
 
@@ -215,10 +228,13 @@ struct HomeView: View {
                                     // mangeait une demi-affiche de largeur pour une
                                     // information qui tient en deux caractères.
                                     HStack(alignment: .top, spacing: 6) {
+                                        // À l'encre et non à la lumière : un rang n'est
+                                        // ni acquis ni vérifié, et dix rangs cyan
+                                        // noyaient les points de la bibliothèque.
                                         Text(verbatim: "\(index + 1)")
                                             .planLabel()
                                             .monospacedDigit()
-                                            .foregroundStyle(Ink.light)
+                                            .foregroundStyle(Ink.ink2)
                                         Text(item.title)
                                             .planFont(11)
                                             .foregroundStyle(Ink.ink)
@@ -227,6 +243,8 @@ struct HomeView: View {
                                     }
                                     .frame(width: 104, height: posterTitleHeight, alignment: .topLeading)
                                 }
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel(Text(verbatim: "\(index + 1). \(posterAccessibilityLabel(item))"))
                             }
                             .buttonStyle(PressableScaleStyle(scale: 0.95))
                         }
@@ -248,7 +266,10 @@ struct HomeView: View {
 
             posterRail(homeModel.popularItems)
 
-            if homeModel.popularItems.isEmpty, !homeModel.loading {
+            // Sous le bandeau d'erreur, « Rien à afficher » répétait la même
+            // nouvelle avec une cause fausse : la liste n'est pas vide, elle
+            // n'est pas arrivée.
+            if homeModel.popularItems.isEmpty, !homeModel.loading, homeModel.errorMessage == nil {
                 Text(emptyPopularMessage)
                     .planFont(12.5)
                     .foregroundStyle(Ink.ink2)
@@ -292,10 +313,15 @@ struct HomeView: View {
                     .overlay(alignment: .bottom) {
                         Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
                     }
-                    .contentShape(Rectangle().inset(by: -10))
+                    // 44 pt de haut : l'encart de 10 pt n'en donnait que 34.
+                    .frame(minHeight: 44)
+                    .padding(.horizontal, 8)
+                    .contentShape(Rectangle())
+                    .padding(.horizontal, -8)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(String(localized: "Choisir tes plateformes", bundle: .app))
+            .buttonStyle(PressableScaleStyle())
+            // Le même libellé que sur la liste d'un genre : c'est le même bouton.
+            .accessibilityLabel(String(localized: "Modifier mes plateformes", bundle: .app))
         }
     }
 
@@ -345,9 +371,12 @@ struct HomeView: View {
                         .overlay(alignment: .bottom) {
                             Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
                         }
-                        .contentShape(Rectangle().inset(by: -10))
+                        .frame(minHeight: 44)
+                        .padding(.horizontal, 8)
+                        .contentShape(Rectangle())
+                        .padding(.horizontal, -8)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableScaleStyle())
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -377,7 +406,9 @@ struct HomeView: View {
 
     private func posterRail(_ items: [MediaItem]) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: 12) {
+            // Paresseuse : « Populaire » compte cinquante affiches, toutes
+            // chargées d'un coup alors que quatre tiennent à l'écran.
+            LazyHStack(alignment: .top, spacing: 12) {
                 ForEach(items) { item in
                     NavigationLink(value: item) {
                         VStack(alignment: .leading, spacing: 7) {
@@ -406,6 +437,8 @@ struct HomeView: View {
                                 // affiches se désalignent.
                                 .frame(width: 104, height: posterTitleHeight, alignment: .topLeading)
                         }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(posterAccessibilityLabel(item))
                     }
                     .buttonStyle(PressableScaleStyle(scale: 0.95))
                 }
@@ -425,6 +458,24 @@ struct HomeView: View {
                         ? String(localized: "1 saison", bundle: .app)
                         : String(localized: "\(count) saisons", bundle: .app))
         }
+    }
+
+    /// Ce que VoiceOver lit d'une affiche : le titre une fois, puis ce que la
+    /// bibliothèque en sait. Sans lui, l'affiche et la légende disaient chacune
+    /// le titre, et le point était lu avant le nom du film.
+    private func posterAccessibilityLabel(_ item: MediaItem) -> String {
+        var label = item.title
+        if item.isSeries, let count = item.seasonCount, count > 0 {
+            label += ", " + (count == 1
+                ? String(localized: "1 saison", bundle: .app)
+                : String(localized: "\(count) saisons", bundle: .app))
+        }
+        if libraryStore.isInGallery(item) {
+            label += String(localized: ", déjà vu", bundle: .app)
+        } else if libraryStore.isInWatchlist(item) {
+            label += String(localized: ", dans ta watchlist", bundle: .app)
+        }
+        return label
     }
 
     private func sectionTitle(_ title: String) -> some View {
@@ -484,6 +535,19 @@ struct TheaterCardView: View {
                 .multilineTextAlignment(.leading)
                 .frame(width: width, height: posterTitleHeight, alignment: .topLeading)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var accessibilityText: String {
+        var label = item.title
+        if let freshness { label += ", " + freshness }
+        if inGallery {
+            label += String(localized: ", déjà vu", bundle: .app)
+        } else if inWatchlist {
+            label += String(localized: ", dans ta watchlist", bundle: .app)
+        }
+        return label
     }
 
     /// « Cette semaine » puis « depuis N jours » — l'ancienneté est ce qui dit

@@ -88,7 +88,14 @@ struct FilmDetailView: View {
         ZStack(alignment: .top) {
             Ink.ground.ignoresSafeArea()
             content
-            ceiling
+            // Le plafond des trois fiches : celui de la fiche film en était une
+            // copie, et ses cibles de 34 pt n'avaient pas suivi.
+            DetailCeiling(
+                title: displayItem.title,
+                progress: ceilingProgress,
+                onBack: { dismiss() },
+                onTrailer: trailerAction
+            )
         }
         .safeAreaInset(edge: .bottom) { decisionFloor }
         .toolbar(.hidden, for: .navigationBar)
@@ -135,6 +142,13 @@ struct FilmDetailView: View {
                 hero
                 generique
 
+                if errorMessage != nil, !loading {
+                    DetailLoadFailure(
+                        message: String(localized: "On n'a pas pu charger ce film.", bundle: .app),
+                        retry: { Task { await loadDetail() } }
+                    )
+                }
+
                 if let connection = galleryConnection {
                     remark(connection)
                 }
@@ -145,14 +159,6 @@ struct FilmDetailView: View {
                 if let cast = detail?.credits?.cast, !cast.isEmpty {
                     castSection(cast)
                 }
-
-                if let errorMessage {
-                    Text(errorMessage)
-                        .planFont(12.5)
-                        .foregroundStyle(Ink.warn)
-                        .padding(.horizontal, Metrics.margin)
-                        .padding(.top, 24)
-                }
             }
             .padding(.bottom, 32)
         }
@@ -160,60 +166,6 @@ struct FilmDetailView: View {
         .onPreferenceChange(HeroOffsetKey.self) { scrollOffset = $0 }
         .ignoresSafeArea(edges: .top)
         .scrollIndicators(.hidden)
-    }
-
-    // MARK: - Le plafond
-
-    /// Nu sur le backdrop, posé une fois le héros passé. Le filet et le voile
-    /// sont ceux de `AppHeaderView`, aux mêmes valeurs — c'est cette égalité qui
-    /// fait lire la fiche comme une pièce du même volume.
-    private var ceiling: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                glyphButton(.back, label: String(localized: "Retour", bundle: .app)) { dismiss() }
-
-                Text(displayItem.title)
-                    .planFont(17, weight: .semibold)
-                    .foregroundStyle(Ink.ink)
-                    .lineLimit(1)
-                    .opacity(ceilingProgress)
-
-                Spacer(minLength: 8)
-
-                if detail?.trailerKey != nil {
-                    glyphButton(.play, label: String(localized: "Voir la bande-annonce", bundle: .app), action: openTrailer)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 4)
-            .padding(.bottom, 10)
-
-            PlanRail().opacity(ceilingProgress)
-        }
-        .background {
-            PlanScrim()
-                .opacity(ceilingProgress)
-                .ignoresSafeArea(edges: .top)
-        }
-        .animation(.easeOut(duration: 0.15), value: ceilingProgress < 0.5)
-    }
-
-    private func glyphButton(
-        _ glyph: DetailGlyph.Kind, label: String, action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            DetailGlyph(kind: glyph)
-                .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
-                .foregroundStyle(Ink.ink)
-                .frame(width: 22, height: 22)
-                // Sur le backdrop, le tracé seul ne tiendrait pas sur une image
-                // claire : une ombre courte le détache sans poser d'objet.
-                .shadow(color: .black.opacity(1 - ceilingProgress), radius: 5)
-                .frame(width: 34, height: 34)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(PressableScaleStyle(scale: 0.9))
-        .accessibilityLabel(label)
     }
 
     // MARK: - Le héros
@@ -376,10 +328,17 @@ struct FilmDetailView: View {
         guard let genreID = displayItem.genreIds.first else { return nil }
         let genreName = detail?.genreNames?.first?.lowercased()
 
+        // Le rang (« 4ᵉ drame de ta galerie ») ne vaut que pour un film qui y
+        // est : avant le « Vu », il annonçait une place que le film n'avait pas.
+        let isSeen = currentStatus == .seen
+
         if let decade = decadeOfItem {
             let sameVein = gallery.filter { entry in
                 entry.genreIds.contains(genreID) && decadeOf(entry.releaseDate) == decade
             }.count
+            if sameVein >= 2, !isSeen {
+                return String(localized: "Tu as déjà vu \(sameVein) films de ce genre sortis dans les années \(decade).", bundle: .app)
+            }
             if sameVein >= 2 {
                 let rank = Self.ordinal(sameVein + 1)
                 if let genreName {
@@ -391,7 +350,7 @@ struct FilmDetailView: View {
 
         let sameGenre = gallery.filter { $0.genreIds.contains(genreID) }.count
         guard sameGenre >= 3 else { return nil }
-        if let genreName {
+        if isSeen, let genreName {
             return String(localized: "\(Self.ordinal(sameGenre + 1)) \(genreName) de ta galerie.", bundle: .app)
         }
         return String(localized: "Tu as déjà \(sameGenre) films de ce genre dans ta galerie.", bundle: .app)
@@ -640,37 +599,49 @@ struct FilmDetailView: View {
     /// données, celle de l'artéfact du Cœur — ne fait que l'appuyer.
     private var loveButton: some View {
         let loved = libraryStore.isLoved(displayItem)
-        let isPending = libraryStore.pendingLoveByItemID[displayItem.id] != nil
+        let isPending = libraryStore.isLovePending(displayItem)
 
         return Button {
             Haptics.impact(.light, intensity: loved ? 0.5 : 0.8)
             libraryStore.setLove(displayItem, loved: !loved)
         } label: {
-            DetailHeartShape()
-                .stroke(
-                    loved ? Color(hex: 0xC25562) : Ink.ink,
-                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
-                )
-                .background(
+            // Pendant l'écriture le faisceau prend la place du cœur, comme sur
+            // Vu / À voir : le cœur ne change qu'une fois Firestore revenu.
+            Group {
+                if isPending {
+                    CinechillSpinner(size: 14)
+                } else {
                     DetailHeartShape()
-                        .fill(loved ? Color(hex: 0xC25562) : .clear)
-                )
-                .frame(width: 18, height: 16)
-                .frame(width: 48, height: Metrics.control)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-                        .strokeBorder(Ink.ruleSet, lineWidth: 1)
-                )
-                .opacity(isPending ? 0.6 : 1)
+                        .stroke(
+                            loved ? Color(hex: 0xC25562) : Ink.ink,
+                            style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
+                        )
+                        .background(
+                            DetailHeartShape()
+                                .fill(loved ? Color(hex: 0xC25562) : .clear)
+                        )
+                        .frame(width: 18, height: 16)
+                }
+            }
+            .frame(width: 48, height: Metrics.control)
+            .overlay(
+                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                    .strokeBorder(Ink.ruleSet, lineWidth: 1)
+            )
         }
         .buttonStyle(PressableScaleStyle(scale: 0.94))
+        // Un second tap pendant l'écriture en lançait une seconde, contraire,
+        // dont personne ne contrôle l'ordre d'arrivée : même règle que Vu / À voir.
+        .disabled(isPending)
         .transition(.opacity)
         .animation(Metrics.shift, value: loved)
+        .animation(Metrics.shift, value: isPending)
         .accessibilityLabel(
             loved
                 ? String(localized: "Retirer le coup de cœur", bundle: .app)
                 : String(localized: "Coup de cœur", bundle: .app)
         )
+        .accessibilityValue(isPending ? String(localized: "Enregistrement…", bundle: .app) : "")
     }
 
     /// Le bouton qui doit montrer l'attente : celui qu'on vient de toucher.
@@ -790,6 +761,13 @@ struct FilmDetailView: View {
 
     // MARK: - Actions
 
+    /// Une propriété typée, comme sur les fiches série et saison : un ternaire
+    /// mêlant `nil` et une méthode isolée faisait renoncer le vérificateur de types.
+    private var trailerAction: (() -> Void)? {
+        guard detail?.trailerKey != nil else { return nil }
+        return { openTrailer() }
+    }
+
     private func openTrailer() {
         guard let appURL = detail?.trailerAppURL,
               let webURL = detail?.trailerURL else { return }
@@ -819,7 +797,10 @@ struct FilmDetailView: View {
         let client = BackendDetailClient()
         do {
             detail = try await client.itemDetails(id: item.tmdbId, mediaType: item.mediaType)
+        } catch is CancellationError {
+            return
         } catch {
+            // Le texte affiché est fixe ; on garde la cause pour le débogage.
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
     }

@@ -54,8 +54,9 @@ final class LibraryStore: ObservableObject {
     /// Les coups de cœur en cours d'écriture, et l'état visé par chacun. Même
     /// mécanique que le statut : rien n'est montré comme acquis avant que le
     /// listener ne l'ait répercuté, mais l'attente reste lisible tuile par
-    /// tuile.
-    @Published private(set) var pendingLoveByItemID: [String: Bool] = [:]
+    /// tuile. La valeur visée ne sert qu'à savoir quand l'attente prend fin ;
+    /// l'affichage n'en dérive rien (voir `isLoved`), il lit `isLovePending`.
+    @Published private var pendingLoveByItemID: [String: Bool] = [:]
     /// L'épisode à lancer visé par une écriture en cours, saison par saison.
     /// Même règle que le statut : la ligne ne passe à l'épisode suivant qu'une
     /// fois Firestore revenu, et l'attente se montre en place d'ici là.
@@ -192,21 +193,32 @@ final class LibraryStore: ObservableObject {
         watchlistItems.first { $0.id == item.id }
     }
 
-    /// Le coup de cœur tel que l'écran doit le montrer : ce que Firestore dit,
-    /// sauf si une écriture est en route — auquel cas c'est elle qu'on écoute,
-    /// sans quoi le cœur retomberait sous le doigt le temps de l'aller-retour.
+    /// Le coup de cœur tel que Firestore l'a confirmé, et rien d'autre. Pendant
+    /// l'aller-retour le cœur garde son état d'avant et `isLovePending` fait
+    /// voir l'attente : l'écran ne montre jamais un cœur que le serveur
+    /// pourrait encore refuser (décision du 11 oct. 2026, pas d'optimisme).
     func isLoved(_ item: MediaItem) -> Bool {
-        if let pending = pendingLoveByItemID[item.id] { return pending }
-        return galleryItems.first { $0.id == item.id }?.isLoved == true
+        galleryItems.first { $0.id == item.id }?.isLoved == true
+    }
+
+    /// Vrai tant qu'une écriture de coup de cœur sur cet élément n'a pas été
+    /// répercutée par le listener : de quoi montrer l'attente et bloquer un
+    /// second appui.
+    func isLovePending(_ item: MediaItem) -> Bool {
+        pendingLoveByItemID[item.id] != nil
+    }
+
+    /// Même question par identifiant, pour les vues qui tiennent une entrée de
+    /// galerie plutôt qu'un `MediaItem`.
+    func isLovePending(id: String) -> Bool {
+        pendingLoveByItemID[id] != nil
     }
 
     /// Combien de films portent un cœur — le compte de l'artéfact du Cœur.
     /// Une saison peut porter un cœur ; elle ne compte pas ici, parce que la
-    /// Porte ne compte que des films.
+    /// Porte ne compte que des films. Seuls les cœurs confirmés comptent.
     var lovedCount: Int {
-        galleryFilms.filter { entry in
-            pendingLoveByItemID[entry.id] ?? entry.isLoved
-        }.count
+        galleryFilms.filter(\.isLoved).count
     }
 
     /// Les saisons de la galerie, pour la planche des coups de cœur des séries.
@@ -217,14 +229,13 @@ final class LibraryStore: ObservableObject {
     /// Combien de saisons portent un cœur : le compte du Cœur de la Porte des
     /// séries, qui compte des saisons parce que c'est là que le cœur se pose.
     var lovedSeasonCount: Int {
-        gallerySeasons.filter { entry in
-            pendingLoveByItemID[entry.id] ?? entry.isLoved
-        }.count
+        gallerySeasons.filter(\.isLoved).count
     }
 
-    /// Pose ou retire un coup de cœur sur un film déjà en galerie.
+    /// Pose ou retire un coup de cœur sur un film déjà en galerie. Sans effet
+    /// tant qu'une écriture précédente sur le même élément est en route.
     func setLove(_ item: MediaItem, loved: Bool) {
-        guard isInGallery(item) else { return }
+        guard isInGallery(item), pendingLoveByItemID[item.id] == nil else { return }
         pendingLoveByItemID[item.id] = loved
 
         Task { [weak self] in

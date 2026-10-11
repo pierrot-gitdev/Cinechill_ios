@@ -24,7 +24,7 @@ struct GenrePopularListView: View {
     @Environment(MediaCatalog.self) private var catalog
 
     @State private var items: [MediaItem] = []
-    /// Vrai d'entrée : sinon l'état vide « Rien dans cette catégorie »
+    /// Vrai d'entrée : sinon l'état vide « Rien dans ce genre »
     /// clignote une image avant que le chargement ne parte.
     @State private var loading = true
     /// « Voir sans filtre » ne vaut que pour cet écran : effacer les
@@ -48,11 +48,13 @@ struct GenrePopularListView: View {
 
                 if loading {
                     loadingState
-                } else if let errorMessage {
+                } else if errorMessage != nil {
+                    // La conséquence et non la cause : le message du serveur
+                    // (« HTTP 503 ») ne disait rien à personne.
                     PlanEmptyState(
                         icon: .salle,
                         title: String(localized: "Chargement impossible", bundle: .app),
-                        message: errorMessage,
+                        message: String(localized: "On n'a pas pu charger les films de ce genre. Vérifie ta connexion.", bundle: .app),
                         actionTitle: String(localized: "Réessayer", bundle: .app),
                         action: { Task { await load() } }
                     )
@@ -60,7 +62,7 @@ struct GenrePopularListView: View {
                 } else if items.isEmpty {
                     PlanEmptyState(
                         icon: .chercher,
-                        title: String(localized: "Rien dans cette catégorie", bundle: .app),
+                        title: String(localized: "Rien dans ce genre", bundle: .app),
                         message: emptyMessage,
                         actionTitle: hasPlatformFilter ? String(localized: "Voir sans filtre", bundle: .app) : nil,
                         action: hasPlatformFilter ? { showWithoutFilter() } : nil
@@ -133,9 +135,12 @@ struct GenrePopularListView: View {
                         .overlay(alignment: .bottom) {
                             Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
                         }
-                        .contentShape(Rectangle().inset(by: -10))
+                        .frame(minHeight: 44)
+                        .padding(.horizontal, 8)
+                        .contentShape(Rectangle())
+                        .padding(.horizontal, -8)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableScaleStyle())
                 .accessibilityLabel(String(localized: "Modifier mes plateformes", bundle: .app))
             }
             .frame(minHeight: 44)
@@ -145,8 +150,10 @@ struct GenrePopularListView: View {
         }
     }
 
+    /// Après « Voir sans filtre », la ligne dit « Toutes plateformes » : elle
+    /// affichait encore les logos d'un filtre que la liste ne posait plus.
     private var selectedPlatforms: [StreamingPlatform] {
-        catalog.platforms.filter { libraryStore.preferredPlatformIDs.contains($0.id) }
+        catalog.platforms.filter { effectivePlatformIDs.contains($0.id) }
     }
 
     private var effectivePlatformIDs: Set<String> {
@@ -216,8 +223,8 @@ struct GenrePopularListView: View {
 
     private var emptyMessage: String {
         hasPlatformFilter
-            ? String(localized: "Aucun film de cette catégorie n'est disponible sur tes plateformes en ce moment.", bundle: .app)
-            : String(localized: "Essaie une autre catégorie.", bundle: .app)
+            ? String(localized: "Aucun film de ce genre sur tes plateformes en ce moment.", bundle: .app)
+            : String(localized: "Essaie un autre genre.", bundle: .app)
     }
 
     private func load() async {
@@ -230,6 +237,7 @@ struct GenrePopularListView: View {
             items = try await homeModel.loadTopForCategory(category, platformIDs: platformIDs)
         } catch {
             if error is CancellationError { return }
+            // Le texte affiché est fixe ; on garde la cause pour le débogage.
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             items = []
         }

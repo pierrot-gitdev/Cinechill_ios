@@ -121,6 +121,9 @@ struct DetailCeiling: View {
                     .foregroundStyle(Ink.ink)
                     .lineLimit(1)
                     .opacity(progress)
+                    // Invisible, le titre se lisait quand même à VoiceOver, juste
+                    // avant celui du héros : deux fois le même nom d'affilée.
+                    .accessibilityHidden(progress < 0.5)
 
                 Spacer(minLength: 8)
 
@@ -128,7 +131,8 @@ struct DetailCeiling: View {
                     glyphButton(.play, label: String(localized: "Voir la bande-annonce", bundle: .app), action: onTrailer)
                 }
             }
-            .padding(.horizontal, 16)
+            // 11 et non 16 : la cible passe de 34 à 44 pt, le tracé reste où il était.
+            .padding(.horizontal, 11)
             .padding(.top, 4)
             .padding(.bottom, 10)
 
@@ -159,7 +163,7 @@ struct DetailCeiling: View {
                 .foregroundStyle(Ink.ink)
                 .frame(width: 22, height: 22)
                 .shadow(color: .black.opacity(1 - progress), radius: 5)
-                .frame(width: 34, height: 34)
+                .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
         .buttonStyle(PressableScaleStyle(scale: 0.9))
@@ -401,6 +405,45 @@ struct DetailFloorButton: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.96))
         .accessibilityAddTraits(style == .inked ? [.isSelected] : [])
+        // Le faisceau qui tourne ne se voit pas : VoiceOver doit dire l'attente.
+        .accessibilityValue(isWaiting ? String(localized: "Enregistrement…", bundle: .app) : "")
+    }
+}
+
+// MARK: - L'échec
+
+/// Une fiche qui n'est pas venue : ce qui manque, en une ligne, et une issue.
+///
+/// Elle se pose sous le générique, là où tournait l'attente, et non au pied de
+/// la page : sur un iPhone SE l'erreur tombait sous le plancher, et l'écran
+/// restait à moitié vide sans rien en dire. Le message du serveur n'y paraît
+/// plus : « HTTP 503 » ne dit rien à personne.
+struct DetailLoadFailure: View {
+    let message: String
+    let retry: () -> Void
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 11) {
+            PlanLight(tint: Ink.warn)
+
+            Text(message)
+                .planFont(13)
+                .foregroundStyle(Ink.warn)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 8)
+
+            Button(action: retry) {
+                Text("Réessayer", bundle: .app)
+                    .planLabel()
+                    .foregroundStyle(Ink.ink)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PressableScaleStyle())
+        }
+        .padding(.horizontal, Metrics.margin)
+        .padding(.top, 14)
     }
 }
 

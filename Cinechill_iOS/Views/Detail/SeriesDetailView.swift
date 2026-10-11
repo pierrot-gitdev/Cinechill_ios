@@ -69,6 +69,13 @@ struct SeriesDetailView: View {
                 )
                 generique
 
+                if errorMessage != nil, !loading {
+                    DetailLoadFailure(
+                        message: String(localized: "On n'a pas pu charger cette série.", bundle: .app),
+                        retry: { Task { await load() } }
+                    )
+                }
+
                 if let remark {
                     HStack(alignment: .top, spacing: 11) {
                         PlanLight().padding(.top, 6)
@@ -101,14 +108,6 @@ struct SeriesDetailView: View {
 
                 if let cast = detail?.cast, !cast.isEmpty {
                     DetailCast(cast: cast)
-                }
-
-                if let errorMessage {
-                    Text(errorMessage)
-                        .planFont(12.5)
-                        .foregroundStyle(Ink.warn)
-                        .padding(.horizontal, Metrics.margin)
-                        .padding(.top, 24)
                 }
             }
             .padding(.bottom, 32)
@@ -228,7 +227,8 @@ struct SeriesDetailView: View {
                 NavigationLink(destination: ItemDetailView(item: detail.item(for: season), showsSeriesLink: false)) {
                     seasonRow(season, isInPlay: season.number == seasonInPlay?.number)
                 }
-                .buttonStyle(.plain)
+                // Une ligne qui ouvre une fiche répond au doigt, comme les affiches.
+                .buttonStyle(PressableScaleStyle(scale: 0.98))
 
                 PlanEdge().padding(.horizontal, Metrics.margin)
             }
@@ -282,6 +282,22 @@ struct SeriesDetailView: View {
         // elle qu'agit le plancher.
         .background(isInPlay ? Ink.ground2 : .clear)
         .contentShape(Rectangle())
+        // Le point plein ou creux n'a pas de voix : sans ce libellé, VoiceOver
+        // lisait deux fois « Saison 2 » (affiche, puis titre) et taisait l'état.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(seasonAccessibilityLabel(season, entry: entry, isSeen: isSeen))
+    }
+
+    private func seasonAccessibilityLabel(_ season: TVSeasonListing, entry: WatchlistEntry?, isSeen: Bool) -> String {
+        var parts = [String(localized: "Saison \(season.number)", bundle: .app)]
+        let line = seasonLine(season, entry: entry)
+        if !line.isEmpty { parts.append(line) }
+        if isSeen {
+            parts.append(String(localized: "déjà vue", bundle: .app))
+        } else if entry != nil {
+            parts.append(String(localized: "Dans ta watchlist", bundle: .app))
+        }
+        return parts.joined(separator: ", ")
     }
 
     /// La seconde ligne d'une saison : ce qu'on sait d'elle, écrit, jamais
@@ -326,11 +342,14 @@ struct SeriesDetailView: View {
             VStack(spacing: 0) {
                 PlanEdge()
 
+                // Deux lignes permises : « Saison 12 · épisode 10 le 14 déc. »
+                // en capitales espacées ne tient pas sur un iPhone SE en grand texte.
                 Text(floorLabel(season, entry: entry))
                     .planLabel()
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink2)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Metrics.margin)
                     .padding(.top, 12)
@@ -459,6 +478,7 @@ struct SeriesDetailView: View {
         } catch is CancellationError {
             return
         } catch {
+            // Le texte affiché est fixe ; on garde la cause pour le débogage.
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
     }

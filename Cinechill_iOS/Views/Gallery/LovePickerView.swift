@@ -44,21 +44,41 @@ struct LovePickerView: View {
         VStack(spacing: 0) {
             header
 
-            ScrollView {
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4),
-                    spacing: 10
-                ) {
-                    ForEach(entries) { entry in
-                        tile(entry)
-                    }
-                }
+            if entries.isEmpty {
+                // La feuille s'ouvre depuis la Porte à n'importe quelle étape,
+                // galerie vide comprise : une grille vide sous « Touche un
+                // film » ne laissait rien à toucher et ne disait pas pourquoi.
+                PlanEmptyState(
+                    icon: .hall,
+                    title: isSeries
+                        ? String(localized: "Aucune série dans ta galerie", bundle: .app)
+                        : String(localized: "Ta galerie est vide", bundle: .app),
+                    message: isSeries
+                        ? String(localized: "Ajoute dans Découvrir les séries que tu as vues. Tu pourras ensuite choisir tes saisons préférées ici.", bundle: .app)
+                        : String(localized: "Ajoute dans Découvrir les films que tu as vus. Tu pourras ensuite choisir tes coups de cœur ici.", bundle: .app),
+                    actionTitle: String(localized: "Fermer", bundle: .app),
+                    action: onClose
+                )
                 .padding(.horizontal, Metrics.margin)
-                .padding(.top, 18)
-                .padding(.bottom, 24)
-            }
+                .planScrollsIfNeeded()
+                .frame(maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVGrid(
+                        columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4),
+                        spacing: 10
+                    ) {
+                        ForEach(entries) { entry in
+                            tile(entry)
+                        }
+                    }
+                    .padding(.horizontal, Metrics.margin)
+                    .padding(.top, 18)
+                    .padding(.bottom, 24)
+                }
 
-            floor
+                floor
+            }
         }
         .background(Ink.ground)
     }
@@ -158,7 +178,7 @@ struct LovePickerView: View {
 
     private func tile(_ entry: GalleryEntry) -> some View {
         let loved = libraryStore.isLoved(entry.mediaItem)
-        let isPending = libraryStore.pendingLoveByItemID[entry.id] != nil
+        let isPending = libraryStore.isLovePending(id: entry.id)
 
         return Button {
             Haptics.impact(.light, intensity: loved ? 0.5 : 0.8)
@@ -192,6 +212,11 @@ struct LovePickerView: View {
                         Text("Saison \(season)", bundle: .app)
                             .planFont(9.5, weight: .semibold)
                             .foregroundStyle(Ink.ink)
+                            // La tuile fait 74 pt sur un iPhone SE : au grand
+                            // texte, « Saison 12 » rapetisse plutôt que de se
+                            // couper.
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 2)
                             .background(Ink.ground3, in: RoundedRectangle(cornerRadius: 2, style: .continuous))
@@ -200,16 +225,30 @@ struct LovePickerView: View {
                 }
                 // L'attente reste lisible tuile par tuile, sans rien promettre.
                 .opacity(isPending ? 0.7 : 1)
+                // Après l'opacité, pour que le faisceau ne soit pas voilé avec
+                // l'affiche. Le cœur confirmé reste en place à côté.
+                .overlay(alignment: .bottomLeading) {
+                    if isPending {
+                        CinechillSpinner(size: 18)
+                            .padding(6)
+                            .transition(.opacity)
+                    }
+                }
         }
         .buttonStyle(PressableScaleStyle(scale: 0.96))
+        // Un second tap pendant l'écriture en lancerait une seconde, contraire.
+        .disabled(isPending)
         .animation(Metrics.shift, value: loved)
+        .animation(Metrics.shift, value: isPending)
         .accessibilityLabel(accessibilityTitle(entry))
         .accessibilityValue(
-            loved
-                ? String(localized: "coup de cœur", bundle: .app)
-                : String(localized: "pas un coup de cœur", bundle: .app)
+            isPending
+                ? String(localized: "Enregistrement…", bundle: .app)
+                : loved
+                    ? String(localized: "coup de cœur", bundle: .app)
+                    : String(localized: "pas un coup de cœur", bundle: .app)
         )
-        .accessibilityHint(String(localized: "Toucher pour changer", bundle: .app))
+        .accessibilityHint(String(localized: "Ajoute ou retire le coup de cœur.", bundle: .app))
     }
 
     private func accessibilityTitle(_ entry: GalleryEntry) -> String {
@@ -229,8 +268,10 @@ struct LovePickerView: View {
                     Text("C'est fait, l'étape est validée.", bundle: .app)
                         .foregroundStyle(Color(hex: 0xF0B3BC))
                 } else {
+                    // `ink2` et non `ink3` : jamais de texte sous 13 pt à
+                    // l'encre la plus basse.
                     Text("Encore \(target - lovedCount) pour valider l'étape.", bundle: .app)
-                        .foregroundStyle(Ink.ink3)
+                        .foregroundStyle(Ink.ink2)
                 }
             }
             .planFont(12.5)

@@ -105,7 +105,9 @@ struct GalleryView: View {
                 }
             }
         }
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.28), value: model.axis)
+        // Ease-out : le changement d'axe répond à un appui, la réponse doit
+        // partir vite et se poser doucement.
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.24), value: model.axis)
     }
 
     /// Le voile de la nuit remplace `ultraThinMaterial` : c'était le seul
@@ -214,8 +216,10 @@ struct GalleryView: View {
     }
 
     private func filmTile(_ entry: GalleryEntry, width posterWidth: CGFloat) -> some View {
-        // L'attente d'abord : le cœur se pose dès le geste, comme sur la fiche.
-        let loved = libraryStore.pendingLoveByItemID[entry.id] ?? entry.isLoved
+        // Le cœur confirmé seulement : pendant l'écriture, le faisceau prend
+        // sa place, et le cœur ne bouge qu'une fois Firestore revenu.
+        let loved = entry.isLoved
+        let isPending = libraryStore.isLovePending(id: entry.id)
         return NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
             PosterTile(
                 posterPath: entry.posterPath,
@@ -225,7 +229,11 @@ struct GalleryView: View {
             // Sans ce signe, « Coup de cœur » dans le menu ne changeait rien à
             // l'écran : seule la vibration confirmait le geste.
             .overlay(alignment: .bottomTrailing) {
-                if loved, posterWidth >= 48 {
+                if isPending, posterWidth >= 48 {
+                    CinechillSpinner(size: 14)
+                        .padding(3)
+                        .transition(.opacity)
+                } else if loved, posterWidth >= 48 {
                     Image(decorative: "ArtefactCoeur")
                         .resizable()
                         .scaledToFit()
@@ -236,8 +244,13 @@ struct GalleryView: View {
                 }
             }
             .animation(Metrics.shift, value: loved)
+            .animation(Metrics.shift, value: isPending)
         }
-        .accessibilityValue(loved ? String(localized: "coup de cœur", bundle: .app) : "")
+        .accessibilityValue(
+            isPending
+                ? String(localized: "Enregistrement…", bundle: .app)
+                : loved ? String(localized: "coup de cœur", bundle: .app) : ""
+        )
         .accessibilityAction(named: loved
             ? String(localized: "Retirer le coup de cœur", bundle: .app)
             : String(localized: "Coup de cœur", bundle: .app)
@@ -264,6 +277,8 @@ struct GalleryView: View {
                     Label(String(localized: "Coup de cœur", bundle: .app), systemImage: "heart")
                 }
             }
+            // Pas de second ordre tant que le premier n'est pas revenu.
+            .disabled(isPending)
 
             Button {
                 composerItem = entry.mediaItem
