@@ -104,6 +104,8 @@ protocol SocialServicing: Sendable {
     /// est alors close sans rien ajouter à la watchlist.
     func respond(to suggestionId: String, accept: Bool) async throws -> Bool
     func publicProfileDetail(uid: String) async throws -> PublicProfileDetail
+    /// Écrit le nom public et ses préfixes de recherche. Exige un pseudo.
+    func setPublicName(_ name: String) async throws
 }
 
 nonisolated struct SocialClient: SocialServicing, Sendable {
@@ -156,6 +158,10 @@ nonisolated struct SocialClient: SocialServicing, Sendable {
             to: APIEndpoints.publicProfile(), body: ["targetUid": uid]
         )
         return try JSONDecoder().decode(PublicProfileDetailDTO.self, from: data).detail
+    }
+
+    func setPublicName(_ name: String) async throws {
+        _ = try await post(to: APIEndpoints.setPublicName(), body: ["displayName": name])
     }
 
     // MARK: - Transport

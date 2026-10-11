@@ -40,6 +40,10 @@ final class SocialStore: ObservableObject {
     /// Lu à chaque snapshot plutôt que capturé à la création du listener :
     /// sans ça, les abonnés acquittés réapparaîtraient au snapshot suivant.
     private var followersSeenAt: Date = .distantPast
+    /// Vrai quand mon profil porte déjà ses préfixes de recherche. Un profil
+    /// créé avant leur arrivée ne les a pas : le prochain passage par
+    /// `syncDisplayName` les fait écrire, sans attendre le rattrapage.
+    private var myProfileIsSearchIndexed = true
 
     /// Les abonnés apparus depuis cette date sont considérés comme « récents »
     /// et alimentent le centre de notifications.
@@ -104,14 +108,10 @@ final class SocialStore: ObservableObject {
     func claimHandle(_ handle: String, displayName: String) async throws {
         try await client.claimHandle(handle)
 
-        guard let uid = myUID else { return }
         let trimmed = Self.publicName(displayName)
         guard !trimmed.isEmpty else { return }
 
-        try? await db.collection("publicProfiles").document(uid).setData([
-            "displayName": trimmed,
-            "displayNameNormalized": Self.normalize(trimmed),
-        ], merge: true)
+        try? await client.setPublicName(trimmed)
     }
 
     /// Le nom public, tel que les règles Firestore l'acceptent : sans blancs
@@ -133,19 +133,19 @@ final class SocialStore: ObservableObject {
     /// les réglages — sans ça, la recherche par prénom/nom trouverait un nom
     /// périmé, et le profil affiché à vos abonnés ne serait plus le vôtre.
     ///
-    /// Écriture directe (les règles Firestore l'autorisent pour ces deux
-    /// champs, pas pour les compteurs) : pas besoin d'une Cloud Function pour
-    /// une donnée purement déclarative. Sans effet si aucun pseudo n'a encore
-    /// été choisi — rien à synchroniser avant qu'un profil public existe.
+    /// Par le serveur : c'est lui qui calcule les préfixes de recherche du
+    /// nom, et le client n'a pas le droit de les écrire (n'importe qui
+    /// pourrait sinon apparaître quand on cherche le nom d'un autre). Sans
+    /// effet si aucun pseudo n'a encore été choisi : rien à synchroniser avant
+    /// qu'un profil public existe. Le nom inchangé ne repart pas.
     func syncDisplayName(_ name: String) async {
-        guard let uid = myUID, myProfile != nil else { return }
+        guard let profile = myProfile else { return }
         let trimmed = Self.publicName(name)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty,
+              trimmed != profile.displayName || !myProfileIsSearchIndexed
+        else { return }
         do {
-            try await db.collection("publicProfiles").document(uid).setData([
-                "displayName": trimmed,
-                "displayNameNormalized": Self.normalize(trimmed),
-            ], merge: true)
+            try await client.setPublicName(trimmed)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -209,32 +209,86 @@ final class SocialStore: ObservableObject {
 
     // MARK: - Recherche
 
-    /// Recherche par préfixe, sur le pseudo **et** sur le prénom/nom — deux
-    /// requêtes à un seul champ, exécutées en parallèle et fusionnées.
+    /// La recherche de profils, par n'importe quel mot du nom ou du pseudo.
     ///
-    /// Firestore indexe automatiquement chaque champ pris seul : il n'y a
-    /// rien à déclarer dans `firestore.indexes.json`, et c'est précisément
-    /// ce qui interdit une requête `OR` entre deux champs — d'où les deux
-    /// requêtes plutôt qu'une. Le `\u{f8ff}` est la borne haute d'un préfixe,
-    /// la convention Firestore pour ça. Un même profil trouvé par les deux
-    /// voies (pseudo *et* nom contiennent la saisie) ne compte qu'une fois.
+    /// Trois requêtes à un seul champ, en parallèle, fusionnées :
+    /// - `searchPrefixes`, que le serveur remplit de tous les débuts de mots du
+    ///   nom et du pseudo : c'est elle qui trouve Léa Martin quand on tape
+    ///   « martin ». Firestore n'interroge qu'un mot à la fois ; les mots
+    ///   suivants filtrent ensuite côté client ;
+    /// - le préfixe du pseudo et celui du nom entier, comme avant : un profil
+    ///   que le rattrapage n'a pas encore touché reste trouvable par là.
+    ///
+    /// Firestore indexe chaque champ pris seul : rien à déclarer, et c'est ce
+    /// qui interdit un `OR` entre champs. Le `\u{f8ff}` est la borne haute
+    /// d'un préfixe. Un profil trouvé par deux voies ne compte qu'une fois.
+    /// Un caractère suffit : le `@` de la recherche y mène.
     func searchProfiles(matching query: String, limit: Int = 25) async throws -> [PublicProfile] {
         let needle = Self.normalize(query)
-        guard needle.count >= 2 else { return [] }
+        let words = Self.searchWords(needle)
+        // Le premier mot tel que tapé, normalisé comme le serveur : pas depuis
+        // `needle`, dont le repli a déjà changé « ø » en « o ».
+        guard !words.isEmpty, let typedFirst = Self.searchWords(query).first else { return [] }
         let me = myUID
 
+        async let byWord = wordQuery(Self.serverPrefix(typedFirst), limit: limit)
         async let byHandle = prefixQuery(field: "handleNormalized", needle: needle, limit: limit)
         async let byName = prefixQuery(field: "displayNameNormalized", needle: needle, limit: limit)
 
-        var seen = Set<String>()
-        var results: [PublicProfile] = []
+        let wordHits = try await byWord
         let handleHits = try await byHandle
         let nameHits = try await byName
-        for profile in handleHits + nameHits where profile.id != me {
+
+        var seen = Set<String>()
+        var results: [PublicProfile] = []
+        // Les correspondances du pseudo d'abord : on tape le plus souvent le
+        // pseudo de quelqu'un qu'on connaît.
+        for profile in handleHits + wordHits + nameHits where profile.id != me {
+            guard Self.matchesEveryWord(profile, words: words) else { continue }
             guard seen.insert(profile.id).inserted else { continue }
             results.append(profile)
         }
         return Array(results.prefix(limit))
+    }
+
+    /// Le mot tel que le serveur l'a rangé dans `searchPrefixes` : même
+    /// normalisation que `normalizeSearchText` (décomposition, accents
+    /// combinants retirés, minuscules), et vingt points de code au plus, là où
+    /// s'arrêtent les préfixes stockés. Le repli de `normalize` irait plus
+    /// loin (« ø » devient « o ») et ne trouverait alors rien. Le filtre des
+    /// mots suivants fait le reste.
+    private static func serverPrefix(_ word: String) -> String {
+        let stripped = word.decomposedStringWithCanonicalMapping.unicodeScalars
+            .filter { !(0x300...0x36F).contains($0.value) }
+        let lowered = String(String.UnicodeScalarView(stripped)).lowercased()
+        return String(String.UnicodeScalarView(lowered.unicodeScalars.prefix(20)))
+    }
+
+    /// Les mots d'une saisie ou d'un nom, coupés comme le serveur les coupe.
+    nonisolated static func searchWords(_ normalized: String) -> [String] {
+        normalized
+            .split(whereSeparator: { $0.isWhitespace || "-'’._".contains($0) })
+            .map(String.init)
+    }
+
+    /// Chaque mot tapé doit commencer un mot du nom ou du pseudo : « lea mar »
+    /// trouve Léa Martin, pas Léa Dumont.
+    private static func matchesEveryWord(_ profile: PublicProfile, words: [String]) -> Bool {
+        let handle = normalize(profile.handle)
+        let haystack = searchWords(normalize(profile.displayName)) + searchWords(handle) + [handle]
+        return words.allSatisfy { word in haystack.contains { $0.hasPrefix(word) } }
+    }
+
+    private func wordQuery(_ word: String, limit: Int) async throws -> [PublicProfile] {
+        do {
+            let snapshot = try await db.collection("publicProfiles")
+                .whereField("searchPrefixes", arrayContains: word)
+                .limit(to: limit)
+                .getDocuments()
+            return snapshot.documents.compactMap { PublicProfile(id: $0.documentID, data: $0.data()) }
+        } catch {
+            throw Self.readFailure(error)
+        }
     }
 
     private func prefixQuery(field: String, needle: String, limit: Int) async throws -> [PublicProfile] {
@@ -342,7 +396,7 @@ final class SocialStore: ObservableObject {
     }
 
     /// Minuscules et sans accents : « lea » doit trouver « Léa ».
-    static func normalize(_ raw: String) -> String {
+    nonisolated static func normalize(_ raw: String) -> String {
         raw.trimmingCharacters(in: .whitespacesAndNewlines)
             .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR"))
             .lowercased()
@@ -391,6 +445,7 @@ final class SocialStore: ObservableObject {
                     }
                     if let data = snapshot?.data(), snapshot?.exists == true {
                         self.myProfile = PublicProfile(id: uid, data: data)
+                        self.myProfileIsSearchIndexed = data["searchPrefixes"] is [Any]
                     } else {
                         self.myProfile = nil
                     }
@@ -479,3 +534,4 @@ final class SocialStore: ObservableObject {
             }
     }
 }
+

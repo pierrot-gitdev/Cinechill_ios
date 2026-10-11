@@ -234,6 +234,14 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "getpublicprofile", queryItems: [])
     }
 
+    /// Le nom public, écrit par le serveur avec ses préfixes de recherche :
+    /// le client n'a pas le droit d'écrire ces derniers, sans quoi n'importe
+    /// qui pourrait apparaître dans la recherche du nom d'un autre.
+    static func setPublicName() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "setpublicname", queryItems: [])
+    }
+
     private static func buildURL(baseURL: URL, functionName: String, queryItems: [URLQueryItem]) -> URL? {
         guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
             return nil
