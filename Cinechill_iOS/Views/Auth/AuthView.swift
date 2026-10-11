@@ -119,6 +119,20 @@ struct AuthView: View {
     /// Le schéma des liens de repli, qui ne sortent jamais de l'écran.
     private static let repairScheme = "cinechill-auth"
 
+    /// « Tu acceptes les conditions » sans pouvoir les lire n'engage personne,
+    /// et l'App Store exige la politique à portée de doigt. Les deux mots sont
+    /// des liens soulignés : la couleur seule ne les distinguerait pas du texte.
+    private var legalNotice: AttributedString {
+        let terms = LegalPage.terms.url.absoluteString
+        let privacy = LegalPage.privacy.url.absoluteString
+        let source = String(localized: "En créant un compte, tu acceptes les [conditions d'utilisation](\(terms)) et la [politique de confidentialité](\(privacy)).", bundle: .app)
+        var text = (try? AttributedString(markdown: source)) ?? AttributedString(source)
+        for run in text.runs where run.link != nil {
+            text[run.range].underlineStyle = .single
+            text[run.range].foregroundColor = AuthInk.ink
+        }
+        return text
+    }
 
     /// Le tracé : le contour du logo, agrandi et sorti du cadre par le haut et
     /// la droite. Ce n'est pas un décor — c'est la même forme que la signature,
@@ -299,7 +313,7 @@ struct AuthView: View {
                 isLoading: isWorking, action: submit
             )
             doors
-            Text("En créant un compte, tu acceptes les conditions et la politique de confidentialité.", bundle: .app)
+            Text(legalNotice)
                 .planFont(11)
                 .foregroundStyle(AuthInk.ink2)
                 .fixedSize(horizontal: false, vertical: true)

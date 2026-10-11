@@ -411,6 +411,10 @@ struct SettingsView: View {
 
             PlanEdge()
 
+            legalLink(String(localized: "Conditions d'utilisation", bundle: .app), page: .terms)
+                .padding(.top, 8)
+            legalLink(String(localized: "Politique de confidentialité", bundle: .app), page: .privacy)
+
             Text(appVersion)
                 .planFont(11)
                 .foregroundStyle(Ink.ink2)
@@ -484,6 +488,21 @@ struct SettingsView: View {
             }
         }
         .padding(.bottom, 8)
+    }
+
+    /// Les pages légales s'ouvrent dans Safari : elles vivent sur le web, et on
+    /// les relit sans quitter son compte.
+    private func legalLink(_ title: String, page: LegalPage) -> some View {
+        Link(destination: page.url) {
+            Text(title)
+                .planFont(13)
+                .foregroundStyle(Ink.ink2)
+                .underline()
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.985))
+        .accessibilityAddTraits(.isLink)
     }
 
     private func accountLine(label: String, value: String) -> some View {
