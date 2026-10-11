@@ -66,7 +66,7 @@ extension PublicProfile {
     /// l'heure de passage de chacun, et pouvait servir une image piégée.
     /// Les règles Firestore ne laissent plus écrire ce champ ; ce filtre
     /// couvre les valeurs écrites avant, et toute route qu'on aurait oubliée.
-    private static let avatarHosts = [
+    nonisolated private static let avatarHosts = [
         "googleusercontent.com", "firebasestorage.googleapis.com", "image.tmdb.org",
     ]
 
