@@ -583,7 +583,10 @@ private extension LibraryStore {
                 // La porte de CinéMatch est un état de compte, pas d'appareil :
                 // changer d'utilisateur ne doit léguer ni la porte en cache, ni
                 // l'historique des célébrations.
-                for key in ["cinematch.door", "cinematch.doorCelebratedKeys"] {
+                for key in [
+                    "cinematch.door", "cinematch.doorCelebratedKeys",
+                    "cinematch.seriesDoor", "cinematch.seriesDoorCelebratedKeys",
+                ] {
                     UserDefaults.standard.removeObject(forKey: key)
                 }
 
