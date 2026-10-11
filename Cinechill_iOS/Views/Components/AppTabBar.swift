@@ -24,7 +24,13 @@ struct AppTabBar: View {
     @Binding var selectedTab: Int
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private static let height: CGFloat = 58
+    /// 49 pt, la hauteur de la barre d'iOS. À 58, le contenu (35 pt) flottait
+    /// en haut d'une case trop grande, et l'écart avec la zone du trait
+    /// d'accueil, dessous, laissait 45 pt de vide sous les icônes.
+    private static let height: CGFloat = 49
+    /// L'icône, un cran plus grande qu'avant (22) : la barre perd de la
+    /// hauteur, le contenu doit en reprendre pour qu'elle ne paraisse pas vide.
+    private static let iconSize: CGFloat = 24
 
     /// **Calculée, jamais `static let`.** Une propriété statique n'est initialisée
     /// qu'une fois par processus : les libellés y étaient résolus au premier accès
@@ -142,7 +148,7 @@ struct AppTabBar: View {
         } label: {
             VStack(spacing: 3) {
                 CinechillNavIcon(item.icon)
-                    .frame(width: 22, height: 22)
+                    .frame(width: Self.iconSize, height: Self.iconSize)
 
                 Text(item.label)
                     .font(.system(size: 8.5, weight: .semibold))
