@@ -10,10 +10,18 @@ enum SwipeFeedClientError: LocalizedError {
     case missingBaseURL
     case invalidURL
     case notAuthenticated
+    /// Le téléphone n'a pas de réseau : la seule erreur que la personne peut
+    /// réparer elle-même, donc la seule qu'on nomme à part.
+    case offline
     case transport(message: String)
     case httpStatus(code: Int, message: String?)
     case decoding(message: String)
 
+    /// Ce que lit la personne, sous « Impossible de charger les films ».
+    ///
+    /// Le détail technique (code HTTP, corps de réponse, erreur de décodage)
+    /// reste dans les valeurs associées pour le débogage : il s'affichait tel
+    /// quel, JSON du serveur compris, dans l'état vide du deck.
     var errorDescription: String? {
         switch self {
         case .missingBaseURL:
@@ -21,16 +29,13 @@ enum SwipeFeedClientError: LocalizedError {
         case .invalidURL:
             return String(localized: "URL backend invalide.", bundle: .app)
         case .notAuthenticated:
-            return String(localized: "Tu dois être connecté·e pour découvrir des films.", bundle: .app)
-        case .transport(let message):
-            return String(localized: "Erreur réseau : \(message)", bundle: .app)
-        case .httpStatus(let code, let message):
-            if let message, !message.isEmpty {
-                return String(localized: "Erreur serveur (HTTP \(code)) : \(message)", bundle: .app)
-            }
-            return String(localized: "Erreur serveur (HTTP \(code)).", bundle: .app)
-        case .decoding(let message):
-            return String(localized: "Impossible de lire la réponse du serveur. \(message)", bundle: .app)
+            return String(localized: "Connecte-toi pour continuer.", bundle: .app)
+        case .offline:
+            return String(localized: "Pas de connexion internet. Réessaie quand ton téléphone aura du réseau.", bundle: .app)
+        case .transport:
+            return String(localized: "On n'arrive pas à joindre le serveur. Réessaie dans un instant.", bundle: .app)
+        case .httpStatus, .decoding:
+            return String(localized: "Un souci de notre côté. Réessaie dans un instant.", bundle: .app)
         }
     }
 }
@@ -203,6 +208,10 @@ nonisolated struct BackendSwipeFeedClient: SwipeFeedFetching, Sendable {
                 throw CancellationError()
             }
             if error is CancellationError { throw error }
+            if let urlError = error as? URLError,
+               [.notConnectedToInternet, .networkConnectionLost, .dataNotAllowed].contains(urlError.code) {
+                throw SwipeFeedClientError.offline
+            }
             throw SwipeFeedClientError.transport(message: error.localizedDescription)
         }
         guard let http = response as? HTTPURLResponse else {

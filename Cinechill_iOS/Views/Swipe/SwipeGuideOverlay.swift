@@ -32,6 +32,7 @@ struct SwipeGuideOverlay: View {
     let onClose: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var offset: CGSize = .zero
     @State private var intensity: Double = 0
@@ -218,8 +219,12 @@ struct SwipeGuideOverlay: View {
     /// la destination.
     private func row(_ move: Move) -> some View {
         let isLit = revealed.contains(move) || current == move
+        // Aux tailles d'accessibilité, le nom et la conséquence ne tiennent
+        // plus côte à côte dans 286 pt : « Il reviendra plus tard » se coupait.
+        // La conséquence passe alors sous le nom, en entier.
+        let stacked = dynamicTypeSize.isAccessibilitySize
 
-        return HStack(spacing: 11) {
+        return HStack(alignment: stacked ? .firstTextBaseline : .center, spacing: 11) {
             Group {
                 if move == .love {
                     SwipeDoubleTapGlyph(side: 13)
@@ -229,18 +234,28 @@ struct SwipeGuideOverlay: View {
             }
             .foregroundStyle(isLit ? Ink.ink : Ink.ink3)
 
-            Text(move.title)
+            let title = Text(move.title)
                 .planLabel()
                 .foregroundStyle(isLit ? Ink.ink : Ink.ink2)
-
-            Spacer(minLength: 10)
-
-            Text(move.outcome)
+            let outcome = Text(move.outcome)
                 .planFont(12)
                 .foregroundStyle(isLit ? Ink.ink : Ink.ink2)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
+
+            if stacked {
+                VStack(alignment: .leading, spacing: 4) {
+                    title
+                    outcome.fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            } else {
+                title
+                Spacer(minLength: 10)
+                outcome
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
         }
+        .padding(.vertical, stacked ? 6 : 0)
         .frame(minHeight: 40)
         .opacity(isLit ? 1 : 0.5)
         .accessibilityElement(children: .combine)

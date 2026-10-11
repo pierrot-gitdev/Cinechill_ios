@@ -147,11 +147,11 @@ struct SagaSheet: View {
 
     private var introduction: String {
         if let picks, picks.kind == .director, let name = picks.name {
-            return String(localized: "\(name) a aussi réalisé ces films. Coche ceux que tu as vus, ils entrent dans ta galerie.", bundle: .app)
+            return String(localized: "\(name) a aussi réalisé ces films. Coche ceux que tu as vus, on les range dans ta galerie.", bundle: .app)
         }
         return isSeries
-            ? String(localized: "Tu as vu la saison 1. Coche celles que tu as vues aussi, elles entrent dans ta galerie.", bundle: .app)
-            : String(localized: "Tu as vu « \(offer.title) ». Coche ceux que tu as vus aussi, ils entrent dans ta galerie.", bundle: .app)
+            ? String(localized: "Tu as vu la saison 1. Coche les autres saisons que tu as vues, on les range dans ta galerie.", bundle: .app)
+            : String(localized: "Tu as vu « \(offer.title) ». Coche ceux que tu as vus aussi, on les range dans ta galerie.", bundle: .app)
     }
 
     private func row(_ part: SagaPart) -> some View {
@@ -160,6 +160,8 @@ struct SagaSheet: View {
 
         return Button {
             guard !isOwned, !isSaving else { return }
+            // Pas de vibration à la coche : la mosaïque n'en a pas, et une
+            // liste de huit lignes en jouerait huit.
             withAnimation(Metrics.shift) {
                 if isOn {
                     selection.remove(part.libraryID)
@@ -202,9 +204,13 @@ struct SagaSheet: View {
             .contentShape(Rectangle())
             .opacity(isOwned ? 0.45 : 1)
         }
-        .buttonStyle(.plain)
+        // `.plain` ne répondait pas à l'appui : la ligne se resserre à peine,
+        // juste assez pour sentir qu'elle est prise.
+        .buttonStyle(PressableScaleStyle(scale: 0.98))
         .disabled(isOwned || isSaving)
-        .accessibilityLabel(Text(verbatim: "\(part.title) \(part.displayYear)"))
+        // L'année inconnue se tait : VoiceOver lisait « tiret ».
+        .accessibilityLabel(Text(verbatim: (part.releaseDate?.count ?? 0) >= 4
+                                 ? "\(part.title), \(part.displayYear)" : part.title))
         .accessibilityValue(
             isOwned
                 ? String(localized: "Déjà dans ta galerie", bundle: .app)
@@ -260,10 +266,13 @@ struct SagaSheet: View {
             // Le seul effet de la validation, dit avant qu'on valide.
             if !selection.isEmpty {
                 Text(isSeries
-                     ? String(localized: "Celles que tu ne coches pas restent comme elles sont.", bundle: .app)
-                     : String(localized: "Ceux que tu ne coches pas restent comme ils sont.", bundle: .app))
+                     ? String(localized: "On ne touche pas à celles que tu ne coches pas.", bundle: .app)
+                     : String(localized: "On ne touche pas à ceux que tu ne coches pas.", bundle: .app))
                     .planFont(11.5)
-                    .foregroundStyle(Ink.ink3)
+                    // `ink3` ne descend pas sous 13 pt.
+                    .foregroundStyle(Ink.ink2)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 6)
                     .transition(.opacity)
@@ -287,7 +296,7 @@ struct SagaSheet: View {
                     .padding(.vertical, 12)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressableScaleStyle())
             .disabled(isSaving)
             .opacity(isSaving ? 0.4 : 1)
         }
@@ -334,11 +343,15 @@ struct SagaSheet: View {
             PlanEmptyState(
                 icon: .salle,
                 title: isSeries
-                    ? String(localized: "La série n'a pas pu se charger", bundle: .app)
-                    : String(localized: "La saga n'a pas pu se charger", bundle: .app),
+                    ? String(localized: "Impossible de charger les saisons", bundle: .app)
+                    : String(localized: "Impossible de charger la saga", bundle: .app),
                 message: message,
-                actionTitle: String(localized: "Fermer", bundle: .app),
-                action: onClose
+                // Hors ligne un instant, on peut réessayer sans perdre la
+                // feuille : elle ne se rouvre pas d'elle-même.
+                actionTitle: String(localized: "Réessayer", bundle: .app),
+                action: { Task { await load() } },
+                secondaryTitle: String(localized: "Fermer", bundle: .app),
+                secondaryAction: onClose
             )
             Spacer(minLength: 0)
         }
@@ -375,6 +388,7 @@ struct SagaSheet: View {
 
     private func load() async {
         isLoading = true
+        errorMessage = nil
         defer { isLoading = false }
         do {
             switch offer.source {

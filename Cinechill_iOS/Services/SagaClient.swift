@@ -14,7 +14,9 @@ enum SagaClientError: LocalizedError {
     case unavailable
 
     var errorDescription: String? {
-        String(localized: "On n'a pas réussi à charger la saga.", bundle: .app)
+        // Le titre de l'écran dit déjà l'échec : le message dit ce qui reste
+        // acquis.
+        String(localized: "Le film que tu viens d'ajouter est dans ta galerie.", bundle: .app)
     }
 }
 

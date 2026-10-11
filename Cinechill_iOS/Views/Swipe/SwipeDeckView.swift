@@ -18,6 +18,7 @@ struct SwipeDeckView: View {
     @Environment(DoorStore.self) private var doorStore
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
     /// Distance à parcourir pour valider un verdict.
     private static let sideThreshold: CGFloat = 105
@@ -235,7 +236,9 @@ struct SwipeDeckView: View {
                 }
                 .buttonStyle(PressableScaleStyle())
                 .transition(.opacity)
-                .accessibilityLabel(String(localized: "Annuler le dernier swipe", bundle: .app))
+                // Le libellé commence par le mot affiché : Contrôle vocal
+                // retrouve le bouton par ce qu'on lit, « Revenir ».
+                .accessibilityLabel(String(localized: "Revenir à la carte précédente", bundle: .app))
             }
 
             helpButton
@@ -400,7 +403,7 @@ struct SwipeDeckView: View {
                 .frame(width: size.width, height: size.height)
                 .overlay {
                     if showsLoveHint {
-                        SwipeLoveHint()
+                        SwipeLoveHint(isSeries: card.isSeries)
                             .padding(.horizontal, 16)
                             .offset(y: -size.height * 0.06)
                             .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.96)))
@@ -695,10 +698,20 @@ struct SwipeDeckView: View {
 
     /// Une décision prise sans geste (VoiceOver, Switch Control), annoncée
     /// puisque rien ne se voit partir.
-    private func accessibleCommit(_ direction: SwipeDirection) {
+    private func accessibleCommit(_ direction: SwipeDirection, loved: Bool = false) {
         guard let card = model.topCard else { return }
-        commit(direction, velocity: .zero)
-        let outcome = direction.confirmation ?? String(localized: "Il reviendra plus tard", bundle: .app)
+        commit(direction, loved: loved, velocity: loved ? CGSize(width: 240, height: 0) : .zero)
+        let outcome: String
+        if loved {
+            outcome = String(localized: "Ajouté à ta galerie · Coup de cœur", bundle: .app)
+        } else if let confirmation = direction.confirmation {
+            outcome = confirmation
+        } else {
+            // « Il » ne reprend pas une série : on l'accorde.
+            outcome = card.isSeries
+                ? String(localized: "Elle reviendra plus tard", bundle: .app)
+                : String(localized: "Il reviendra plus tard", bundle: .app)
+        }
         AccessibilityNotification.Announcement("\(card.title). \(outcome)").post()
         Task {
             try? await Task.sleep(for: .milliseconds(150))
@@ -902,7 +915,14 @@ struct SwipeDeckView: View {
         // allumée sur la suivante.
         releasePress()
         doubleTapLoves += 1
-        commit(.right, loved: true, velocity: CGSize(width: 240, height: 0))
+        // Par l'action « Coup de cœur » de VoiceOver, rien ne se voit partir :
+        // la décision s'annonce et le focus revient sur la carte suivante,
+        // comme pour les trois autres issues.
+        if voiceOverEnabled {
+            accessibleCommit(.right, loved: true)
+        } else {
+            commit(.right, loved: true, velocity: CGSize(width: 240, height: 0))
+        }
     }
 
     // MARK: - Le rappel du coup de cœur

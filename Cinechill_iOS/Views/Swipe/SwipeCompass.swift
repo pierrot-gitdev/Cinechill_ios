@@ -89,7 +89,9 @@ struct SwipeCompass: View {
         VStack(spacing: 6) {
             SwipeDoubleTapGlyph(side: 14)
             Text("Coup de cœur", bundle: .app).planLabel()
-            Text("Deux touches", bundle: .app)
+            // « Deux touches » se lisait comme des touches de clavier : la
+            // consigne reprend le verbe de la planche des gestes.
+            Text("Touche deux fois", bundle: .app)
                 .planFont(11)
                 .foregroundStyle(Ink.ink2)
         }
@@ -121,12 +123,16 @@ struct SwipeCompass: View {
 /// en plus grand, avec ce qu'on gagne à toucher deux fois. Il ne prend aucun
 /// toucher : le double tap qu'il réclame passe à travers lui.
 struct SwipeLoveHint: View {
+    /// La question s'accorde : on demande « adorée » pour une série.
+    var isSeries = false
+
     var body: some View {
         HStack(spacing: 14) {
             SwipeDoubleTapGlyph(side: 26)
                 .foregroundStyle(Ink.ink)
             VStack(alignment: .leading, spacing: 3) {
-                Text("Tu l'as adoré ?", bundle: .app)
+                Text(isSeries ? String(localized: "Tu l'as adorée ?", bundle: .app)
+                              : String(localized: "Tu l'as adoré ?", bundle: .app))
                     .planFont(14.5, weight: .medium)
                     .foregroundStyle(Ink.ink)
                 Text("Touche deux fois l'affiche.", bundle: .app)

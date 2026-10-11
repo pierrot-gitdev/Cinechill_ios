@@ -135,17 +135,31 @@ struct SwipeCardView: View {
         .accessibilityAction(named: Text("Coup de cœur", bundle: .app), onDoubleTap)
         // Ce qui manque se tait : « tiret » n'est pas une année, ni une note.
         .accessibilityLabel(accessibilityTitle)
-        .accessibilityHint(String(localized: "Glisse à droite si tu l'as vu, à gauche sinon, vers le haut pour l'ajouter à ta watchlist. Touche deux fois l'affiche si tu l'as adoré.", bundle: .app))
+        // L'indice ne décrit que l'activation. Il disait les balayages, que
+        // VoiceOver ne transmet pas à la carte : les quatre issues sont dans
+        // les actions, que VoiceOver annonce de lui-même.
+        .accessibilityHint(hasOverview && !isSynopsisOpen
+                           ? String(localized: "Touche deux fois pour lire le résumé.", bundle: .app)
+                           : "")
     }
 
+    /// Ce que la plaque montre, dans l'ordre où on l'écoute : le titre
+    /// d'abord, puis ce qui le situe, et le résumé quand il est ouvert.
     private var accessibilityTitle: String {
         var parts = [card.title]
-        if (card.releaseDate?.count ?? 0) >= 4 { parts.append(card.displayYear) }
+        if hasYear { parts.append(card.displayYear) }
+        if let seasons = seasonsText { parts.append(seasons) }
+        if let genre, !genre.isEmpty { parts.append(genre) }
         if card.hasRating {
             parts.append(String(localized: "note \(card.voteAverageText) sur 10", bundle: .app))
         }
+        if isSynopsisOpen, let overview = card.overview, !overview.isEmpty {
+            parts.append(overview)
+        }
         return parts.joined(separator: ", ")
     }
+
+    private var hasYear: Bool { (card.releaseDate?.count ?? 0) >= 4 }
 
     // MARK: - L'affiche
 
@@ -226,14 +240,20 @@ struct SwipeCardView: View {
     /// Pour une série, le nombre de saisons s'intercale : c'est lui, et non le
     /// mot « série », qui dit ce qu'on regarde.
     private var eyebrowText: String {
-        var parts = [card.displayYear]
-        if card.isSeries, let count = card.seasonCount, count > 0 {
-            parts.append(count == 1
-                         ? String(localized: "1 saison", bundle: .app)
-                         : String(localized: "\(count) saisons", bundle: .app))
-        }
+        var parts: [String] = []
+        if hasYear { parts.append(card.displayYear) }
+        if let seasons = seasonsText { parts.append(seasons) }
         if let genre, !genre.isEmpty { parts.append(genre) }
-        return parts.joined(separator: " · ")
+        // Le tiret ne tient la ligne que s'il est seul : « — · Drame » lisait
+        // une valeur absente comme un premier mot.
+        return parts.isEmpty ? card.displayYear : parts.joined(separator: " · ")
+    }
+
+    private var seasonsText: String? {
+        guard card.isSeries, let count = card.seasonCount, count > 0 else { return nil }
+        return count == 1
+            ? String(localized: "1 saison", bundle: .app)
+            : String(localized: "\(count) saisons", bundle: .app)
     }
 
     private var titleRow: some View {

@@ -28,7 +28,7 @@ struct SwipeMilestoneOverlay: View {
                 .foregroundStyle(Ink.light)
                 .padding(.top, 10)
 
-            Text("Chaque ajout compte dans tes suggestions.", bundle: .app)
+            Text("On s'en sert pour choisir tes prochaines cartes.", bundle: .app)
                 .planFont(13)
                 .foregroundStyle(Ink.ink2)
                 .multilineTextAlignment(.center)
@@ -86,6 +86,10 @@ struct SwipeGoalMilestoneOverlay: View {
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink3)
             }
+            // « 100 sur 100 » en très grand texte dépasse les 244 pt de la
+            // planche : le chiffre se resserre plutôt que de passer à la ligne.
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
             .padding(.top, 12)
 
             Text(isSeries ? String(localized: "séries vues", bundle: .app)

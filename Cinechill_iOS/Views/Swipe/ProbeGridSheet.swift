@@ -128,7 +128,7 @@ struct ProbeGridSheet: View {
                         )
                     }
 
-                    if displayed.isEmpty, isSearchStage, !query.isEmpty, !isSearching {
+                    if displayed.isEmpty, isSearchStage, !query.isEmpty, !isSearching, errorMessage == nil {
                         Text("Aucun film trouvé.", bundle: .app)
                             .planFont(12.5)
                             .foregroundStyle(Ink.ink3)
@@ -163,7 +163,7 @@ struct ProbeGridSheet: View {
     private var introduction: String {
         switch stage {
         case .start1, .start2, .start3:
-            String(localized: "Touche ceux que tu as vus. Ils entrent dans ta galerie, et Découvrir te proposera des films proches.", bundle: .app)
+            String(localized: "Touche ceux que tu as vus : on les range dans ta galerie et on te proposera des films proches.", bundle: .app)
         case .relance1:
             String(localized: "Tu as passé beaucoup de films d'affilée. Touche ceux que tu as vus ici, on cherchera de ce côté.", bundle: .app)
         case .relance2:
@@ -211,7 +211,9 @@ struct ProbeGridSheet: View {
                     Text(verbatim: card.displayYear)
                         .planFont(10.5)
                         .monospacedDigit()
-                        .foregroundStyle(Ink.ink3)
+                        // `ink3` ne descend pas sous 13 pt : l'année passe un
+                        // cran plus haut, comme dans la feuille de saga.
+                        .foregroundStyle(Ink.ink2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 // Trois colonnes d'un tiers d'écran : au-delà du premier cran
@@ -224,7 +226,9 @@ struct ProbeGridSheet: View {
         }
         .buttonStyle(PressableScaleStyle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: "\(card.title) \(card.displayYear)"))
+        // L'année inconnue se tait : VoiceOver lisait « tiret ».
+        .accessibilityLabel(Text(verbatim: card.releaseDate.map { $0.count >= 4 } == true
+                                 ? "\(card.title), \(card.displayYear)" : card.title))
         .accessibilityValue(isOn ? String(localized: "Coché", bundle: .app) : "")
         .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : [.isButton])
     }
@@ -330,11 +334,23 @@ struct ProbeGridSheet: View {
         guard !Task.isCancelled else { return }
         isSearching = true
         defer { isSearching = false }
-        let found = (try? await client.fetchProbeGrid(
-            stage: .relance2, query: text, excludedIDs: excludedIDs + shownIDs
-        )) ?? []
-        guard !Task.isCancelled else { return }
-        searchResults = found
+        do {
+            let found = try await client.fetchProbeGrid(
+                stage: .relance2, query: text, excludedIDs: excludedIDs + shownIDs
+            )
+            guard !Task.isCancelled else { return }
+            errorMessage = nil
+            searchResults = found
+        } catch is CancellationError {
+            return
+        } catch {
+            guard !Task.isCancelled else { return }
+            // Hors ligne, la recherche répondait « Aucun film trouvé » : on dit
+            // plutôt ce qui s'est passé, sous le champ.
+            searchResults = []
+            errorMessage = (error as? LocalizedError)?.errorDescription
+                ?? error.localizedDescription
+        }
     }
 
     /// Écrit la grille et passe à la suivante, ou referme.
