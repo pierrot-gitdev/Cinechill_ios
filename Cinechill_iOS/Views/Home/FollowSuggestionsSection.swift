@@ -27,12 +27,30 @@ struct FollowSuggestionsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Profils à suivre", bundle: .app)
-                .planTitle(21)
-                .foregroundStyle(Ink.ink)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
-                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .firstTextBaseline) {
+                Text("Profils à suivre", bundle: .app)
+                    .planTitle(21)
+                    .foregroundStyle(Ink.ink)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                NavigationLink {
+                    SearchView(scope: .profiles)
+                } label: {
+                    Text("Tout voir", bundle: .app)
+                        .planFont(12)
+                        .foregroundStyle(Ink.ink2)
+                        .overlay(alignment: .bottom) {
+                            Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
+                        }
+                        .frame(minHeight: 44)
+                        .padding(.horizontal, 8)
+                        .contentShape(Rectangle())
+                        .padding(.horizontal, -8)
+                }
+                .buttonStyle(PressableScaleStyle())
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: Metrics.gutter) {

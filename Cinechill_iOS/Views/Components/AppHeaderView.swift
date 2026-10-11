@@ -24,6 +24,7 @@ struct AppHeaderView: View {
     @EnvironmentObject private var profileStore: UserProfileStore
     @EnvironmentObject private var socialStore: SocialStore
     @State private var showNotifications = false
+    @State private var showSearch = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -49,6 +50,7 @@ struct AppHeaderView: View {
 
                 Spacer(minLength: 8)
 
+                searchButton
                 notificationButton
                 profileButton
             }
@@ -89,6 +91,12 @@ struct AppHeaderView: View {
                 .zIndex(100)
             }
         }
+        // La recherche s'empile dans la navigation de l'onglet en cours : une
+        // fiche ouverte depuis un résultat garde la requête au retour. Chaque
+        // onglet a sa pile, et l'en-tête vit dedans.
+        .navigationDestination(isPresented: $showSearch) {
+            SearchView()
+        }
         // Les nouveaux abonnés s'acquittent à la fermeture du panneau, pas à
         // son ouverture : vidés avant le premier rendu, on ne les voyait jamais.
         .onChange(of: showNotifications) { _, isOpen in
@@ -109,6 +117,25 @@ struct AppHeaderView: View {
             startPoint: .leading, endPoint: .trailing
         )
         .frame(height: 1)
+    }
+
+    // MARK: - Recherche
+
+    /// La loupe, au gabarit de la cloche (glyphe de 19 pt dans 34 pt), et la
+    /// même sur les cinq onglets : on la trouve sans la chercher.
+    private var searchButton: some View {
+        Button {
+            showNotifications = false
+            showSearch = true
+        } label: {
+            CinechillHallIconView(.chercher)
+                .frame(width: 19, height: 19)
+                .foregroundStyle(Color.secondary)
+                .frame(width: 34, height: 34)
+                .contentShape(Rectangle().inset(by: -5))
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.9))
+        .accessibilityLabel(String(localized: "Rechercher", bundle: .app))
     }
 
     // MARK: - Notifications

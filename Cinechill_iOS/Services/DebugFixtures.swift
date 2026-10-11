@@ -6,7 +6,8 @@
 #if DEBUG
 import Foundation
 
-/// Des données de test pour les profils à suivre, en Debug seulement.
+/// Des données de test pour la recherche et les profils à suivre, en Debug
+/// seulement.
 ///
 /// Pas d'interrupteur à l'écran : on le pose dans le schéma Xcode, en argument
 /// de lancement, `-debugData worst` ou `-debugData empty`. iOS range les
@@ -15,7 +16,8 @@ import Foundation
 ///
 /// Le pire cas tient ce qu'on voit en vrai : un nom de trente caractères, un
 /// pseudo au maximum de vingt, un profil sans nom, 0 et 1 pour les pluriels,
-/// des diacritiques vietnamiens.
+/// des diacritiques vietnamiens, un titre de film de quatre-vingts caractères,
+/// une affiche et une année absentes.
 nonisolated enum DebugFixtures {
     enum Mode: String {
         case worst
@@ -31,6 +33,30 @@ nonisolated enum DebugFixtures {
         case nil: nil
         case .empty: FollowSuggestionsPage(followingCount: 0, suggestions: [])
         case .worst: FollowSuggestionsPage(followingCount: 2, suggestions: worstSuggestions)
+        }
+    }
+
+    /// Les titres trouvés, filtrés comme le ferait TMDB, en gros.
+    static func titles(matching query: String) -> [MediaItem]? {
+        switch mode {
+        case nil: return nil
+        case .empty: return []
+        case .worst:
+            let needle = SocialStore.normalize(query)
+            return worstTitles.filter { SocialStore.normalize($0.title).contains(needle) }
+        }
+    }
+
+    static func profiles(matching query: String) -> [PublicProfile]? {
+        switch mode {
+        case nil: return nil
+        case .empty: return []
+        case .worst:
+            let words = SocialStore.searchWords(SocialStore.normalize(query))
+            return worstSuggestions.map(\.profile).filter { profile in
+                let haystack = SocialStore.searchWords(SocialStore.normalize(profile.displayName + " " + profile.handle))
+                return words.allSatisfy { word in haystack.contains { $0.hasPrefix(word) } }
+            }
         }
     }
 
@@ -74,6 +100,33 @@ nonisolated enum DebugFixtures {
             profile: profile("debug-6", "soren.k", "Søren Lindqvist", seen: 1203),
             followsYou: false, mutualCount: 1, mutualName: "Léa", commonCount: 0
         ),
+    ]
+
+    private static func title(
+        _ id: Int, _ title: String, _ type: MediaType, year: String?, poster: String?, seasons: Int? = nil
+    ) -> MediaItem {
+        MediaItem(
+            tmdbId: id,
+            mediaType: type,
+            title: title,
+            posterPath: poster,
+            overview: nil,
+            voteAverage: nil,
+            voteCount: nil,
+            genreIds: [],
+            releaseDate: year.map { "\($0)-01-01" },
+            seasonCount: seasons
+        )
+    }
+
+    private static let worstTitles: [MediaItem] = [
+        title(935, "Docteur Folamour ou : comment j'ai appris à ne plus m'en faire et à aimer la bombe",
+              .movie, year: "1964", poster: "/7SixLzxcqezsXDFAlGu1cv6vMAu.jpg"),
+        title(999_001, "Dunes", .movie, year: nil, poster: nil),
+        title(27_022, "Les Aventures extraordinaires d'Adèle Blanc-Sec", .movie, year: "2010", poster: nil),
+        title(45_016, "Bron/Broen", .tv, year: "2011", poster: nil, seasons: 4),
+        title(90_228, "Dune : Prophecy", .tv, year: "2024", poster: nil, seasons: 1),
+        title(693_134, "Dune : Deuxième partie", .movie, year: "2024", poster: nil),
     ]
 }
 #endif

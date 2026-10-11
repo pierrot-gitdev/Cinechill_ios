@@ -107,7 +107,7 @@ struct FollowListView: View {
             PublicProfileView(profile: profile)
         }
         .navigationDestination(isPresented: $showsSearch) {
-            ProfileSearchView()
+            SearchView(scope: .profiles)
         }
         .task(id: uid ?? "self") { await load() }
     }

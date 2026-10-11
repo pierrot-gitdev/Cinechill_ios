@@ -341,23 +341,6 @@ final class SocialStore: ObservableObject {
         }
     }
 
-    /// Quelques profils à proposer quand le champ de recherche est vide — un
-    /// écran nu renverrait l'utilisateur à sa propre absence d'idée.
-    func suggestedProfiles(limit: Int = 12) async throws -> [PublicProfile] {
-        do {
-            let snapshot = try await db.collection("publicProfiles")
-                .order(by: "galleryCount", descending: true)
-                .limit(to: limit)
-                .getDocuments()
-            let me = myUID
-            return snapshot.documents
-                .compactMap { PublicProfile(id: $0.documentID, data: $0.data()) }
-                .filter { $0.id != me }
-        } catch {
-            throw Self.readFailure(error)
-        }
-    }
-
     // MARK: - Profils à suivre
 
     /// Charge les profils à suivre. Sans `force`, un chargement de moins d'une

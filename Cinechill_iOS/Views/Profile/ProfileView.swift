@@ -58,7 +58,7 @@ struct ProfileView: View {
                 case .followers:
                     FollowListView(mode: .followers)
                 case .search:
-                    ProfileSearchView()
+                    SearchView(scope: .profiles)
                 }
             }
         }

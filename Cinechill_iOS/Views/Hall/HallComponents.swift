@@ -155,6 +155,8 @@ struct HallProfileRow: View {
     private var isLargeType: Bool { typeSize.isAccessibilitySize }
     let profile: PublicProfile
     var showsGalleryCount: Bool = true
+    /// Une ligne de plus sous le pseudo : la raison d'un profil à suivre.
+    var note: String?
     var isFollowing: Bool
     var isBusy: Bool = false
     let onToggleFollow: () -> Void
@@ -177,6 +179,12 @@ struct HallProfileRow: View {
                     .planFont(11.5)
                     .foregroundStyle(Ink.ink2)
                     .lineLimit(isLargeType ? 2 : 1)
+                if let note {
+                    Text(note)
+                        .planFont(11.5)
+                        .foregroundStyle(Ink.ink2)
+                        .lineLimit(2)
+                }
 
                 // Aux tailles d'accessibilité, « Suivre » passe sous le nom :
                 // à côté, il ne laissait au nom que quelques lettres.
@@ -291,8 +299,12 @@ struct HallSearchField: View {
     let placeholder: String
     @Binding var text: String
     var isBusy: Bool = false
+    /// Prend la main dès l'ouverture, clavier compris : on n'ouvre la
+    /// recherche que pour taper. Une fois seulement, pas au retour d'une fiche.
+    var focusesOnAppear: Bool = false
 
     @FocusState private var isFocused: Bool
+    @State private var hasFocusedOnce = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -341,6 +353,14 @@ struct HallSearchField: View {
                 .frame(height: 1)
         }
         .animation(Metrics.shift, value: isFocused)
+        .task {
+            guard focusesOnAppear, !hasFocusedOnce else { return }
+            hasFocusedOnce = true
+            // Après la poussée : demandé pendant la transition, le clavier
+            // monte en même temps que l'écran glisse, et l'un saccade l'autre.
+            try? await Task.sleep(for: .milliseconds(350))
+            isFocused = true
+        }
     }
 }
 

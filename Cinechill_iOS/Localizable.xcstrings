@@ -2072,6 +2072,54 @@
         }
       }
     },
+    "Aucun résultat pour « %@ »" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No results for “%@”"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun résultat pour « %@ »"
+          }
+        }
+      }
+    },
+    "Effacer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effacer"
+          }
+        }
+      }
+    },
+    "Films, séries, profils" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Movies, series, profiles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Films, séries, profils"
+          }
+        }
+      }
+    },
     "Ne plus proposer %@" : {
       "localizations" : {
         "en" : {
@@ -2084,6 +2132,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ne plus proposer %@"
+          }
+        }
+      }
+    },
+    "Profils" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profiles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profils"
           }
         }
       }
@@ -2104,6 +2168,54 @@
         }
       }
     },
+    "Recherche indisponible" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search unavailable"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recherche indisponible"
+          }
+        }
+      }
+    },
+    "Récents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Récents"
+          }
+        }
+      }
+    },
+    "Tape un titre, en français ou en version originale." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type a title, in French or in its original language."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tape un titre, en français ou en version originale."
+          }
+        }
+      }
+    },
     "Te suit" : {
       "localizations" : {
         "en" : {
@@ -2116,6 +2228,142 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Te suit"
+          }
+        }
+      }
+    },
+    "Voir les %lld films" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "See the movie"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "See all %lld movies"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Voir le film"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Voir les %lld films"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Voir les %lld profils" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "See the profile"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "See all %lld profiles"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Voir le profil"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Voir les %lld profils"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Voir les %lld séries" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "See the series"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "See all %lld series"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Voir la série"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Voir les %lld séries"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Vérifie l'orthographe ou essaie le titre original." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check the spelling or try the original title."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérifie l'orthographe ou essaie le titre original."
           }
         }
       }
@@ -10603,22 +10851,6 @@
         }
       }
     },
-    "Personne à proposer pour l'instant" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nobody to suggest right now"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personne à proposer pour l'instant"
-          }
-        }
-      }
-    },
     "Personne ne parle pendant une minute" : {
       "localizations" : {
         "en" : {
@@ -11191,22 +11423,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pseudo"
-          }
-        }
-      }
-    },
-    "Pseudo, prénom ou nom" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Username, first or last name"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pseudo, prénom ou nom"
           }
         }
       }
@@ -13100,22 +13316,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Spectaculaire, qui fait voyager"
-          }
-        }
-      }
-    },
-    "Suggestions" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suggestions"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suggestions"
           }
         }
       }
