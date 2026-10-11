@@ -67,12 +67,10 @@ struct OnboardingFlowView: View {
     }
 
     private func advance() {
-        Haptics.selection()
         withAnimation(pageAnimation) { tour.next() }
     }
 
     private func goBack() {
-        Haptics.selection()
         withAnimation(pageAnimation) { tour.back() }
     }
 

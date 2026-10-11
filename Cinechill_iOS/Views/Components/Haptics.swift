@@ -15,6 +15,9 @@ enum Haptics {
         generator.impactOccurred(intensity: intensity)
     }
 
+    /// Réservé au geste : le tic du deck quand une carte tirée repasse sous
+    /// son seuil. Un toucher n'en reçoit pas, l'écran y répond déjà ; Pierre a
+    /// écarté la vibration à chaque appui (5 oct. puis 11 oct. 2026).
     static func selection() {
         let generator = UISelectionFeedbackGenerator()
         generator.prepare()

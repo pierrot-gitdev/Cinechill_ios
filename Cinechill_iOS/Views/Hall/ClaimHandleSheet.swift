@@ -124,7 +124,6 @@ struct ClaimHandleSheet: View {
                 Button {
                     handle = candidate
                     isTaken = false
-                    Haptics.selection()
                 } label: {
                     Text(verbatim: "@\(candidate)")
                         .planFont(11.5)

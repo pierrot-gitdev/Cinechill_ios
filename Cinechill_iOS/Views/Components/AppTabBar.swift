@@ -166,7 +166,6 @@ struct AppTabBar: View {
 
     private func select(_ index: Int) {
         guard selectedTab != index else { return }
-        Haptics.selection()
         selectedTab = index
     }
 

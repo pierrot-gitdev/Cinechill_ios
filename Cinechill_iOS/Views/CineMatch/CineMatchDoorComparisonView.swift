@@ -456,7 +456,6 @@ struct CineMatchDoorComparisonView: View {
     /// premier geste ne se reprend pas : la page a déjà changé de films.
     private func pick(_ film: CineMatchGalleryFilm) {
         guard !isBusy else { return }
-        Haptics.selection()
         switch stage {
         case .prefer: prefer(film)
         case .least: markLeast(film)
@@ -517,7 +516,6 @@ struct CineMatchDoorComparisonView: View {
 
     private func skip() {
         guard !isBusy, !films.isEmpty else { return }
-        Haptics.selection()
         history.append(.none(shownIDs: films.map(\.id)))
         Task { await load() }
     }

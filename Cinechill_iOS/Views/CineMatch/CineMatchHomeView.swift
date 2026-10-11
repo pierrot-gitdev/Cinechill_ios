@@ -137,7 +137,6 @@ struct CineMatchHomeView: View {
         let columnWidth = width / 3
 
         return Button {
-            Haptics.selection()
             showSituation = true
         } label: {
             VStack(spacing: 0) {
@@ -387,7 +386,6 @@ struct CineMatchHomeView: View {
         guard pendingEntry == nil else { return }
         focusedEntry = entry
         pendingEntry = entry
-        Haptics.selection()
         Task {
             // La ligne s'allume et marque la pression avant qu'on parte : sans
             // ce temps, le toucher ne se voit pas.

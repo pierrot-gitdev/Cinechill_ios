@@ -160,7 +160,6 @@ struct SagaSheet: View {
 
         return Button {
             guard !isOwned, !isSaving else { return }
-            Haptics.selection()
             withAnimation(Metrics.shift) {
                 if isOn {
                     selection.remove(part.libraryID)

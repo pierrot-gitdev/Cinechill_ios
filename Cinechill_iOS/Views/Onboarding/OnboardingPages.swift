@@ -301,7 +301,6 @@ struct OnboardingPlatformsPage: View {
         let shape = RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
 
         return Button {
-            Haptics.selection()
             var selection = libraryStore.preferredPlatformIDs
             if isOn { selection.remove(platform.id) } else { selection.insert(platform.id) }
             libraryStore.setPreferredPlatforms(selection)

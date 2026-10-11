@@ -22,7 +22,6 @@ struct FormatSwitch: View {
             ForEach(MediaFormat.allCases, id: \.self) { option in
                 PlanChip(title: option.label, isOn: format == option) {
                     guard format != option else { return }
-                    Haptics.selection()
                     formatRaw = option.rawValue
                 }
             }

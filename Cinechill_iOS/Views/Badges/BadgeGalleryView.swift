@@ -83,7 +83,6 @@ struct BadgeGalleryView: View {
             HStack(spacing: 7) {
                 ForEach(BadgesViewModel.Filter.allCases) { option in
                     PlanChip(title: option.label, isOn: model.filter == option) {
-                        Haptics.selection()
                         model.filter = option
                     }
                 }

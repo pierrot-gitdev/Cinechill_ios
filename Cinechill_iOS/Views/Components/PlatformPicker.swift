@@ -37,7 +37,6 @@ struct PlatformGrid: View {
     private func cell(_ platform: StreamingPlatform) -> some View {
         let isOn = selection.contains(platform.id)
         return Button {
-            Haptics.selection()
             if isOn { selection.remove(platform.id) } else { selection.insert(platform.id) }
         } label: {
             Group {
@@ -100,7 +99,6 @@ struct PlatformPickerSheet: View {
                 PlanHeader(String(localized: "Mes plateformes", bundle: .app), leading: .close) {
                     if !libraryStore.preferredPlatformIDs.isEmpty {
                         Button {
-                            Haptics.selection()
                             libraryStore.setPreferredPlatforms([])
                         } label: {
                             Text("Tout décocher", bundle: .app)

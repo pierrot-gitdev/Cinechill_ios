@@ -299,7 +299,6 @@ struct SettingsView: View {
                     isOn: language.selection == candidate,
                     fillsWidth: true
                 ) {
-                    Haptics.selection()
                     language.select(candidate)
                 }
             }
@@ -342,7 +341,6 @@ struct SettingsView: View {
                 ForEach(sortedGenres, id: \.id) { genre in
                     let isBanned = libraryStore.bannedGenreIDs.contains(genre.id)
                     PlanChip(title: genre.name, isOn: false, isExcluded: isBanned) {
-                        Haptics.selection()
                         var ids = libraryStore.bannedGenreIDs
                         if isBanned { ids.remove(genre.id) } else { ids.insert(genre.id) }
                         libraryStore.setBannedGenres(ids)
@@ -366,7 +364,6 @@ struct SettingsView: View {
             ForEach(Generation.allCases) { generation in
                 let isOn = libraryStore.birthDecade == generation.decade
                 PlanChip(title: generation.label, isOn: isOn, fillsWidth: true) {
-                    Haptics.selection()
                     libraryStore.setBirthDecade(isOn ? nil : generation.decade)
                 }
                 .accessibilityLabel(String(localized: "Né dans les années \(generation.label)", bundle: .app))
@@ -386,7 +383,6 @@ struct SettingsView: View {
                 .padding(.top, 44)
 
             Button {
-                Haptics.selection()
                 withAnimation(Metrics.unfold) { isAccountOpen.toggle() }
             } label: {
                 HStack {

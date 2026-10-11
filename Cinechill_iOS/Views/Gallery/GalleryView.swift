@@ -116,7 +116,6 @@ struct GalleryView: View {
             HStack(spacing: 7) {
                 ForEach(GalleryAxis.allCases) { axis in
                     PlanChip(title: axis.label, isOn: model.axis == axis) {
-                        Haptics.selection()
                         model.axis = axis
                     }
                 }

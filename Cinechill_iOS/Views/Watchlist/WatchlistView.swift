@@ -149,7 +149,6 @@ struct WatchlistView: View {
             HStack(spacing: 7) {
                 ForEach(TimeBudget.allCases) { budget in
                     PlanChip(title: budget.label, isOn: model.budget == budget) {
-                        Haptics.selection()
                         model.budget = budget
                     }
                 }
@@ -212,7 +211,6 @@ struct WatchlistView: View {
 
                 if group.kind == .dormant {
                     Button {
-                        Haptics.selection()
                         withAnimation(Metrics.unfold) { model.isTriaging.toggle() }
                     } label: {
                         Text(model.isTriaging ? String(localized: "Terminé", bundle: .app) : String(localized: "Faire le tri", bundle: .app))
@@ -441,7 +439,6 @@ struct WatchlistView: View {
     private var budgetFooter: some View {
         if model.hiddenByBudget > 0 {
             Button {
-                Haptics.selection()
                 model.budget = .any
             } label: {
                 Text(model.hiddenByBudget == 1

@@ -248,7 +248,6 @@ struct SeasonDetailView: View {
 
         return Button {
             guard isTappable else { return }
-            Haptics.selection()
             setEpisodeToPlay(episode.number)
         } label: {
             HStack(spacing: 11) {

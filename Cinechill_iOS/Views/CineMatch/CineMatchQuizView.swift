@@ -235,7 +235,6 @@ struct CineMatchQuizView: View {
 
         return Button {
             guard pressedAnswer == nil else { return }
-            Haptics.selection()
             pressedAnswer = answer.key
             Task {
                 // Le temps de voir la ligne allumée, puis on avance.
@@ -330,7 +329,6 @@ struct CineMatchQuizView: View {
 
             Button {
                 guard excludedID == nil, !viewModel.isLoadingRound else { return }
-                Haptics.selection()
                 Task { await viewModel.noneOfThese() }
             } label: {
                 Text(noneTitle(isExcluding: isExcluding, count: films.count))
@@ -485,7 +483,6 @@ struct CineMatchQuizView: View {
 
         return Button {
             guard !isBusy else { return }
-            Haptics.selection()
             switch viewModel.comparisonStage {
             case .keep:
                 viewModel.keep(film)

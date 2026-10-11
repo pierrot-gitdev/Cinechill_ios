@@ -634,7 +634,6 @@ struct AuthView: View {
                 Button {
                     handle = candidate
                     handleAvailability = .unknown
-                    Haptics.selection()
                 } label: {
                     Text(verbatim: "@\(candidate)")
                         .planFont(11.5)
@@ -674,7 +673,6 @@ struct AuthView: View {
 
     private func go(_ next: Step) {
         guard step != next else { return }
-        Haptics.selection()
         focus = nil
         failure = nil
         handleAvailability = .unknown
@@ -872,7 +870,6 @@ struct AuthView: View {
         await run {
             try await authService.sendPasswordReset(email: email)
             resendIn = 45
-            Haptics.selection()
         }
     }
 

@@ -125,7 +125,6 @@ struct SuggestionComposerSheet: View {
     private func row(_ target: SuggestionTarget) -> some View {
         Button {
             guard target.canReceive else { return }
-            Haptics.selection()
             if selected.contains(target.id) {
                 selected.remove(target.id)
             } else {

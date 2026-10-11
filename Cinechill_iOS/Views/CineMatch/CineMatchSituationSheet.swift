@@ -55,7 +55,6 @@ struct CineMatchSituationSheet: View {
                             title: company.scenarioLabel,
                             isOn: viewModel.situation.company == company
                         ) {
-                            Haptics.selection()
                             apply { $0.company = company }
                         }
                     }
@@ -73,7 +72,6 @@ struct CineMatchSituationSheet: View {
                             title: duration.scenarioLabel(series: isSeries),
                             isOn: viewModel.situation.duration == duration
                         ) {
-                            Haptics.selection()
                             apply { $0.duration = duration }
                         }
                     }

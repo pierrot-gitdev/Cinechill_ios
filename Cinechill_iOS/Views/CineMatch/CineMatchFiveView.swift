@@ -623,7 +623,6 @@ struct CineMatchFiveView: View {
     /// vu sans l'avoir rangé. On le dit ici, sans quitter la proposition.
     private func alreadySeenLink(for film: CineMatchFilm) -> some View {
         Button {
-            Haptics.selection()
             askingSeenID = film.id
         } label: {
             HStack(spacing: 8) {
@@ -805,7 +804,6 @@ struct CineMatchFiveView: View {
     /// non. Le cœur attend que la galerie le connaisse, faute de quoi le
     /// serveur n'aurait rien sur quoi le poser.
     private func markSeen(_ film: CineMatchFilm, loved: Bool) {
-        Haptics.selection()
         askingSeenID = nil
         viewModel.markSeen(film, loved: loved)
         let item = galleryItem(for: film)
@@ -829,7 +827,6 @@ struct CineMatchFiveView: View {
     }
 
     private func unmarkSeen(_ film: CineMatchFilm) {
-        Haptics.selection()
         viewModel.unmarkSeen(film)
         libraryStore.removeFromGallery(galleryItem(for: film))
     }
