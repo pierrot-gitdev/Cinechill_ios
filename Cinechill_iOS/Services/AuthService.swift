@@ -396,10 +396,14 @@ final class AuthService: ObservableObject {
     func signInWithGoogle() async throws {
 #if canImport(FirebaseAuth) && canImport(GoogleSignIn)
         guard let clientID = FirebaseApp.app()?.options.clientID else {
-            throw fail(.form(String(localized: "Configuration Google Sign-In invalide.", bundle: .app)))
+            throw fail(.form(String(localized: "La connexion avec Google n'est pas disponible pour le moment.", bundle: .app)))
         }
         guard let rootViewController = Self.rootViewController else {
-            throw fail(.form(String(localized: "Impossible d'ouvrir Google Sign-In.", bundle: .app)))
+            throw fail(AuthFailure(
+                field: .form,
+                message: String(localized: "On n'a pas pu ouvrir la connexion avec Google.", bundle: .app),
+                isRetryable: true
+            ))
         }
 
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
@@ -407,7 +411,11 @@ final class AuthService: ObservableObject {
         do {
             let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController)
             guard let idToken = result.user.idToken?.tokenString else {
-                throw AuthFailure.form(String(localized: "Google Sign-In incomplet.", bundle: .app))
+                throw AuthFailure(
+                    field: .form,
+                    message: String(localized: "Google n'a pas terminé la connexion.", bundle: .app),
+                    isRetryable: true
+                )
             }
             let credential = GoogleAuthProvider.credential(
                 withIDToken: idToken,
@@ -500,7 +508,7 @@ final class AuthService: ObservableObject {
             return AuthFailure(field: .form, message: String(localized: "Ce lien a expiré ou a déjà servi.", bundle: .app))
 
         case AuthErrorCode.userDisabled.rawValue:
-            return AuthFailure(field: .form, message: String(localized: "Ce compte a été désactivé.", bundle: .app))
+            return AuthFailure(field: .form, message: String(localized: "Ce compte est désactivé.", bundle: .app))
 
         case AuthErrorCode.tooManyRequests.rawValue:
             return AuthFailure(
@@ -509,16 +517,20 @@ final class AuthService: ObservableObject {
             )
 
         case AuthErrorCode.networkError.rawValue:
+            // Ce qu'on peut vérifier soi-même, et le bouton « Réessayer » à côté.
             return AuthFailure(
                 field: .form,
-                message: String(localized: "Connexion au serveur impossible.", bundle: .app),
+                message: String(localized: "On n'arrive pas à joindre le serveur. Vérifie ta connexion internet.", bundle: .app),
                 isRetryable: true
             )
 
         default:
+            // Une panne qu'on ne sait pas nommer ne doit pas accuser le réseau :
+            // c'est ce faux diagnostic qui avait fait chercher une panne réseau
+            // inexistante (voir `signInWithApple`).
             return AuthFailure(
                 field: .form,
-                message: String(localized: "Connexion au serveur impossible.", bundle: .app),
+                message: String(localized: "Ça n'a pas marché. Réessaie dans un instant.", bundle: .app),
                 isRetryable: true
             )
         }

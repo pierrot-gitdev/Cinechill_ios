@@ -47,6 +47,9 @@ struct OnboardingCineMatchPage: View {
         }
         .padding(.horizontal, Metrics.margin)
         .padding(.top, 16)
+        // Texte agrandi sur un petit écran : la page défile plutôt que de
+        // passer sous le bouton.
+        .planScrollsIfNeeded()
         .onAppear { isShown = true }
     }
 
@@ -57,9 +60,12 @@ struct OnboardingCineMatchPage: View {
 
         return VStack(spacing: 0) {
             // L'affiche cède la première quand la place manque.
+            // `idealHeight` au plancher : c'est sur lui que `planScrollsIfNeeded`
+            // mesure la page, si bien qu'elle ne défile qu'une fois l'affiche
+            // déjà réduite au minimum.
             PosterImageView(url: film.posterURL, contentMode: .fit)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: 110, maxHeight: 220)
+                .frame(minHeight: 110, idealHeight: 110, maxHeight: 220)
                 .padding(.vertical, 12)
                 .background(Ink.ground2)
 
@@ -116,8 +122,8 @@ struct OnboardingTastesPage: View {
         VStack(alignment: .leading, spacing: 0) {
             OnboardingHeading(
                 eyebrow: String(localized: "Avant ton premier CinéMatch", bundle: .app),
-                title: String(localized: "D'abord, Cinechill doit connaître tes goûts.", bundle: .app),
-                text: String(localized: "Cinechill choisit d'après les films que tu as vus. CinéMatch s'ouvre quand ta galerie en compte 100.", bundle: .app)
+                title: String(localized: "D'abord, on doit connaître tes goûts.", bundle: .app),
+                text: String(localized: "On choisit d'après les films que tu as vus. Ajoutes-en 100 à ta galerie pour ouvrir CinéMatch.", bundle: .app)
             )
 
             cells
@@ -163,6 +169,7 @@ struct OnboardingTastesPage: View {
         }
         .padding(.horizontal, Metrics.margin)
         .padding(.top, 16)
+        .planScrollsIfNeeded()
         .task { await fill() }
     }
 
@@ -319,7 +326,9 @@ struct OnboardingPlatformsPage: View {
                 Text(platform.name)
                     .planFont(14.5, weight: .semibold)
                     .foregroundStyle(Ink.ink)
-                    .lineLimit(1)
+                    // Deux lignes : en texte agrandi, sur une demi-largeur,
+                    // « Amazon Prime Video » ne tient pas sur une.
+                    .lineLimit(2)
                     .minimumScaleFactor(0.8)
 
                 Spacer(minLength: 4)

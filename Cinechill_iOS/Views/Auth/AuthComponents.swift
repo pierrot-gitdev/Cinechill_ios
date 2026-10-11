@@ -125,13 +125,16 @@ struct PlanField<Value: Hashable>: View {
                 EmptyView()
             case .action(let title, let perform):
                 Button(title, action: perform)
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressableScaleStyle())
                     .planLabel()
                     .foregroundStyle(AuthInk.ink2)
                     // La cible déborde le texte : 10 pt de haut ne se touchent
                     // pas. Le débord reste modeste — au-delà, il mordrait sur
                     // la fin du champ, juste en dessous.
                     .contentShape(Rectangle().inset(by: -8))
+                    // Seul, « Oublié ? » ne dit pas ce qui l'est : VoiceOver
+                    // l'annonce avec le libellé du champ.
+                    .accessibilityLabel(Text(verbatim: "\(label), \(title)"))
             case .light:
                 PlanLight()
             }
@@ -155,7 +158,7 @@ struct PlanField<Value: Hashable>: View {
                     TextField(label, text: $text, prompt: prompt)
                 }
             }
-            .accessibilityHint(error ?? note ?? "")
+            .accessibilityHint(Self.plain(error ?? note ?? ""))
             .planFont(17)
             .kerning(-0.17)
             .foregroundStyle(AuthInk.ink)
@@ -188,12 +191,37 @@ struct PlanField<Value: Hashable>: View {
     }
 
     private func noteText(_ value: String, tint: Color) -> some View {
-        Text(.init(value))              // le gras du repli est écrit en Markdown
+        Text(Self.markdown(value))
             .planFont(12)
             .foregroundStyle(tint)
+            // Le lien du repli (« Mot de passe oublié ? ») prend l'encre pleine,
+            // pas le bleu système.
+            .tint(AuthInk.ink)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 9)
             .transition(.opacity)
+    }
+
+    /// Le repli d'une erreur est un lien Markdown, que l'écran intercepte par
+    /// `openURL`. Lu par `AttributedString` et non par `Text(.init(_:))` : une
+    /// `LocalizedStringKey` irait chercher la chaîne, **déjà traduite**, dans le
+    /// catalogue de la langue du système, si bien qu'une erreur seule
+    /// (« Cette adresse n'est pas valide. ») s'affichait dans la langue
+    /// d'iOS au lieu de celle choisie dans les réglages.
+    static func markdown(_ value: String) -> AttributedString {
+        var text = (try? AttributedString(
+            markdown: value,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        )) ?? AttributedString(value)
+        for run in text.runs where run.link != nil {
+            text[run.range].swiftUI.underlineStyle = .single
+        }
+        return text
+    }
+
+    /// Le même texte sans balises, pour VoiceOver.
+    static func plain(_ value: String) -> String {
+        String(markdown(value).characters)
     }
 
     private var prompt: Text {
@@ -383,7 +411,7 @@ private struct PlanComponentsPreview: View {
                     accessory: .light,
                     note: "3 à 20 caractères, minuscules, chiffres, point et tiret bas."
                 )
-                PlanAlert(message: "Connexion au serveur impossible.", retry: {})
+                PlanAlert(message: "On n'arrive pas à joindre le serveur. Vérifie ta connexion internet.", retry: {})
                 PlanButton(title: "Entrer", loadingTitle: "Connexion…", isLoading: true) {}
                 PlanSecondaryButton(title: "Continuer avec Google") {}
             }

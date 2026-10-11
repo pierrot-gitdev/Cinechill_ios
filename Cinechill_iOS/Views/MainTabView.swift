@@ -8,6 +8,7 @@ import SwiftUI
 struct MainTabView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(OnboardingTour.self) private var tour
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Prêtés par `RootView`, qui les a créés bien avant cette vue pour que l'accueil se
     /// charge pendant l'ouverture. Les autres onglets n'étant pas montés au lancement, ils
@@ -161,7 +162,8 @@ struct MainTabView: View {
             }
             .environmentObject(libraryStore)
             .environment(catalog)
-            .transition(.move(edge: .bottom))
+            // Mouvement réduit : le parcours s'efface au lieu de descendre.
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom))
             .zIndex(20)
         }
     }

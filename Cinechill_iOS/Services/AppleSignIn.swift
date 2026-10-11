@@ -97,7 +97,11 @@ extension AppleSignInCoordinator: ASAuthorizationControllerDelegate {
                 let data = credential.identityToken,
                 let token = String(data: data, encoding: .utf8)
             else {
-                finish(.failure(AuthFailure.form(String(localized: "Connexion Apple incomplète.", bundle: .app))))
+                finish(.failure(AuthFailure(
+                    field: .form,
+                    message: String(localized: "Apple n'a pas terminé la connexion.", bundle: .app),
+                    isRetryable: true
+                )))
                 return
             }
             let code = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }

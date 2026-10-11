@@ -58,6 +58,9 @@ struct OnboardingGesturesPage: View {
             }
             .padding(.horizontal, Metrics.margin)
             .padding(.top, 16)
+            // La carte cède jusqu'à 110 pt ; au-delà, en texte agrandi sur un
+            // petit écran, la page défile plutôt que de passer sous le bouton.
+            .planScrollsIfNeeded()
         }
         .task { await play() }
     }
@@ -175,8 +178,9 @@ struct OnboardingGesturesPage: View {
 
     private func perform(_ gesture: Gesture) async {
         if gesture == .love {
-            // Deux battements, puis le cœur se pose : le double tap.
-            for _ in 0 ..< 2 {
+            // Deux battements, puis le cœur se pose : le double tap. Mouvement
+            // réduit : le cœur se pose sans les battements.
+            for _ in 0 ..< (reduceMotion ? 0 : 2) {
                 withAnimation(.easeOut(duration: 0.08)) { press = 0.96 }
                 try? await Task.sleep(for: .milliseconds(90))
                 withAnimation(.spring(response: 0.22, dampingFraction: 0.6)) { press = 1 }

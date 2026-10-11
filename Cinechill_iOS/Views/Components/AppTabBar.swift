@@ -44,7 +44,11 @@ struct AppTabBar: View {
 
     /// Courbe du volet 04 : lente au départ, longue à l'arrivée. Une lumière qui se déplace trop
     /// vite scintille au lieu de couler.
-    private static let travel = Animation.timingCurve(0.22, 1, 0.32, 1, duration: 0.44)
+    ///
+    /// 0,28 s et non plus 0,44 : on change d'onglet des dizaines de fois par soirée, et une lampe
+    /// encore en route quand l'écran est déjà là se lit comme un retard. La courbe, très tendue
+    /// au départ, garde la coulée.
+    private static let travel = Animation.timingCurve(0.22, 1, 0.32, 1, duration: 0.28)
 
     var body: some View {
         GeometryReader { proxy in
@@ -147,7 +151,7 @@ struct AppTabBar: View {
                     // L'opacité, jamais la présence : la place reste réservée, donc rien
                     // ne se déplace quand le libellé apparaît.
                     .opacity(isSelected ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.28), value: isSelected)
+                    .animation(.easeOut(duration: 0.18), value: isSelected)
             }
             .foregroundStyle(isSelected ? activeTint : inactiveTint)
             .frame(maxWidth: .infinity, maxHeight: .infinity)

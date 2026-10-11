@@ -42,6 +42,10 @@ struct AppHeaderView: View {
                 Text(title)
                     .planFont(17, weight: .semibold)
                     .foregroundStyle(.primary)
+                    // En texte agrandi, le titre cède avant les deux boutons.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                    .accessibilityAddTraits(.isHeader)
 
                 Spacer(minLength: 8)
 
@@ -121,9 +125,11 @@ struct AppHeaderView: View {
                 .foregroundStyle(showNotifications ? Color.primary : Color.secondary)
                 .frame(width: 34, height: 34)
                 .overlay(alignment: .topTrailing) { unreadDot }
-                .contentShape(Rectangle())
+                // 44 pt de cible sans grandir l'en-tête : le débord ne change
+                // pas la mise en page.
+                .contentShape(Rectangle().inset(by: -5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableScaleStyle(scale: 0.9))
         .accessibilityLabel(
             socialStore.unreadCount > 0
                 ? String(localized: "Notifications, \(socialStore.unreadCount) en attente", bundle: .app)
@@ -156,9 +162,17 @@ struct AppHeaderView: View {
             avatarImage
                 .frame(width: 27, height: 27)
                 .clipShape(Circle())
-                .contentShape(Circle())
+                // 27 pt ne se touchent pas au pouce. Vers la cloche, le débord
+                // s'arrête au milieu des 10 pt qui les séparent.
+                .padding(.vertical, 8.5)
+                .padding(.leading, 5)
+                .padding(.trailing, 8.5)
+                .contentShape(Rectangle())
+                .padding(.vertical, -8.5)
+                .padding(.leading, -5)
+                .padding(.trailing, -8.5)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableScaleStyle(scale: 0.9))
         .accessibilityLabel(String(localized: "Profil", bundle: .app))
     }
 

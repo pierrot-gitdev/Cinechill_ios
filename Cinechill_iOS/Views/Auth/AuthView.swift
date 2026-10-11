@@ -101,7 +101,24 @@ struct AuthView: View {
         }
         .onAppear(perform: adoptResetCode)
         .onChange(of: resetCode) { _, _ in adoptResetCode() }
+        // Les replis des erreurs sont des liens (« Mot de passe oublié ? »
+        // sous le champ) : on les ouvre ici, dans le parcours, au lieu de
+        // laisser l'utilisateur chercher le bouton correspondant.
+        .environment(\.openURL, OpenURLAction { url in
+            guard url.scheme == Self.repairScheme else { return .systemAction }
+            switch url.host() {
+            case "reset":  go(.resetRequest)
+            case "signin": go(.signIn)
+            case "signup": go(.signUp)
+            default:       break
+            }
+            return .handled
+        })
     }
+
+    /// Le schéma des liens de repli, qui ne sortent jamais de l'écran.
+    private static let repairScheme = "cinechill-auth"
+
 
     /// Le tracé : le contour du logo, agrandi et sorti du cadre par le haut et
     /// la droite. Ce n'est pas un décor — c'est la même forme que la signature,
@@ -324,7 +341,9 @@ struct AuthView: View {
         // serait une fuite d'information.
         outcome(
             gap: gap,
-            headline: String(localized: "Lien envoyé.", bundle: .app),
+            // « Lien envoyé. » affirmait ce que la phrase dessous nuance : on
+            // ne sait pas si l'adresse a un compte. On dit quoi faire.
+            headline: String(localized: "Regarde tes emails.", bundle: .app),
             detail: String(localized: "Si un compte existe pour \(AuthService.normalize(email)), tu recevras un email dans la minute. Pense à regarder dans tes spams.", bundle: .app)
         )
 
@@ -644,8 +663,14 @@ struct AuthView: View {
                             RoundedRectangle(cornerRadius: AuthMetrics.radius, style: .continuous)
                                 .stroke(AuthInk.ruleSet, lineWidth: 1)
                         )
+                        // 24 pt de haut : la cible déborde la puce en hauteur
+                        // seulement (les voisines sont à 7 pt), sans changer
+                        // la mise en page.
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                        .padding(.vertical, -10)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableScaleStyle())
             }
         }
         .padding(.top, 10)
@@ -662,9 +687,11 @@ struct AuthView: View {
 
     private func repair(_ repair: AuthRepair?) -> String {
         switch repair {
-        case .resetPassword: return String(localized: " Tu peux le **réinitialiser**.", bundle: .app)
-        case .signIn:        return String(localized: " **Se connecter** ?", bundle: .app)
-        case .signUp:        return String(localized: " **Créer un compte** ?", bundle: .app)
+        // Des liens, et non du gras : un mot mis en avant qu'on ne peut pas
+        // toucher promet un geste qu'il ne tient pas. Voir `openURL` plus haut.
+        case .resetPassword: return String(localized: " [Mot de passe oublié ?](cinechill-auth://reset)", bundle: .app)
+        case .signIn:        return String(localized: " [Se connecter](cinechill-auth://signin) ?", bundle: .app)
+        case .signUp:        return String(localized: " [Créer un compte](cinechill-auth://signup) ?", bundle: .app)
         case nil:            return ""
         }
     }

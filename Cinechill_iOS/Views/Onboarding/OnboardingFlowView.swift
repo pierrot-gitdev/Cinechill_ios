@@ -66,6 +66,8 @@ struct OnboardingFlowView: View {
         reduceMotion ? .easeOut(duration: 0.2) : .timingCurve(0.23, 1, 0.32, 1, duration: 0.36)
     }
 
+    // Pas de vibration à chaque page : l'haptique à l'appui a été écartée
+    // pour toute l'app. Seule la fin du parcours en porte une.
     private func advance() {
         withAnimation(pageAnimation) { tour.next() }
     }
@@ -132,10 +134,10 @@ struct OnboardingFlowView: View {
                         .planFont(13.5, weight: .medium)
                         .foregroundStyle(Ink.ink2)
                         .frame(maxWidth: .infinity)
-                        .frame(minHeight: 40)
+                        .frame(minHeight: 44)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableScaleStyle())
                 .opacity(hasPlatforms ? 0 : 1)
                 .disabled(hasPlatforms)
                 .accessibilityHidden(hasPlatforms)
