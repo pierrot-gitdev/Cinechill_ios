@@ -24,6 +24,8 @@ enum SocialError: LocalizedError, Equatable {
     /// Le destinataire a vu le film entre l'affichage de la liste et l'envoi.
     case targetAlreadySeen
     case alreadySuggested
+    /// Plus de trente recommandations dans la journée : le serveur s'arrête là.
+    case dailyLimit
     case suggestionNotFound
     case server(code: String)
     case transport(message: String)
@@ -52,6 +54,8 @@ enum SocialError: LocalizedError, Equatable {
             return String(localized: "Cette personne a déjà vu ce film.", bundle: .app)
         case .alreadySuggested:
             return String(localized: "Tu lui as déjà recommandé ce film.", bundle: .app)
+        case .dailyLimit:
+            return String(localized: "Tu as envoyé beaucoup de recommandations aujourd'hui. Réessaie demain.", bundle: .app)
         case .suggestionNotFound:
             return String(localized: "Cette recommandation n'existe plus.", bundle: .app)
         case .server(let code):
@@ -73,6 +77,7 @@ enum SocialError: LocalizedError, Equatable {
         case "not_in_gallery": .notInGallery
         case "target_already_seen": .targetAlreadySeen
         case "already_suggested": .alreadySuggested
+        case "daily_limit": .dailyLimit
         case "suggestion_not_found": .suggestionNotFound
         default: .server(code: code)
         }

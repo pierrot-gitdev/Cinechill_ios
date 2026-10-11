@@ -7591,6 +7591,22 @@
         }
       }
     },
+    "Tu as envoyé beaucoup de recommandations aujourd'hui. Réessaie demain." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've sent a lot of recommendations today. Try again tomorrow."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu as envoyé beaucoup de recommandations aujourd'hui. Réessaie demain."
+          }
+        }
+      }
+    },
     "Tu as passé beaucoup de films d'affilée. Touche ceux que tu as vus ici, on cherchera de ce côté." : {
       "localizations" : {
         "en" : {
