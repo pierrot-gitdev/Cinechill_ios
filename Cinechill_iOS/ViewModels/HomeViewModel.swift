@@ -48,6 +48,24 @@ final class HomeViewModel {
         self.rowsClient = rowsClient
     }
 
+    /// Le compte pour lequel l'écran a été chargé.
+    private var accountID: String?
+
+    /// Un autre compte s'est connecté : ce qui a été chargé pour le
+    /// précédent repart, ses rangées personnalisées d'abord. Le répertoire
+    /// des genres et des plateformes, lui, ne dépend de personne.
+    func prepare(forAccount uid: String?) {
+        guard uid != accountID else { return }
+        let hadAccount = accountID != nil
+        accountID = uid
+        guard hadAccount else { return }
+        rows = .empty
+        rawPopularItems = []
+        popularItems = []
+        loadedPopularProviderIDs = nil
+        hasLoadedOnce = false
+    }
+
     /// Le préchargement de l'ouverture et l'apparition de l'écran demandent tous deux le
     /// chargement ; il ne doit avoir lieu qu'une fois. `loading` couvre le cas où le
     /// préchargement est encore en vol, `hasLoadedOnce` celui où il a déjà abouti.

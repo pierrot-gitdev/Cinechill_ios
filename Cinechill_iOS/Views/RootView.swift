@@ -83,7 +83,10 @@ struct RootView: View {
         }
         .animation(.easeOut(duration: 0.25), value: splashFinished)
         .animation(.easeOut(duration: 0.25), value: authService.isInitializing)
-        .task(id: authService.isAuthenticated) {
+        // Par compte, et pas seulement à la connexion : sans ça, le compte
+        // suivant sur le même téléphone voyait l'accueil personnalisé du
+        // précédent, « parce que tu as vu » compris.
+        .task(id: authService.currentUID) {
             await preloadHome()
         }
     }
@@ -106,6 +109,7 @@ struct RootView: View {
         async let awake: Void = libraryStore.warmUpStatusEndpoint()
 
         await libraryStore.waitForPreferences(upTo: .seconds(2))
+        homeModel.prepare(forAccount: authService.currentUID)
         await homeModel.loadAllIfNeeded(preferredPlatformIDs: libraryStore.preferredPlatformIDs)
         await repertoire
         await awake

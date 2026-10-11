@@ -118,6 +118,17 @@ final class AuthService: ObservableObject {
     private var authStateHandle: AuthStateDidChangeListenerHandle?
 #endif
 
+    /// L'identifiant du compte connecté. Ce qui dépend du compte se règle
+    /// dessus, et non sur `isAuthenticated` : passer d'un compte à un autre
+    /// sur le même téléphone laisse `isAuthenticated` à vrai de bout en bout.
+    var currentUID: String? {
+#if canImport(FirebaseAuth)
+        firebaseUser?.uid
+#else
+        nil
+#endif
+    }
+
     var isAuthenticated: Bool {
 #if canImport(FirebaseAuth)
         firebaseUser != nil
