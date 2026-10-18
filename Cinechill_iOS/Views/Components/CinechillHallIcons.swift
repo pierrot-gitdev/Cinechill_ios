@@ -25,6 +25,8 @@ enum CinechillHallIcon: CaseIterable {
     case recommander
     /// La salle devient la lentille — ni loupe générique, ni jumelles.
     case chercher
+    /// Deux glissières dont les curseurs sont des salles. Les réglages.
+    case regler
 }
 
 struct CinechillHallIconView: View {
@@ -138,6 +140,30 @@ struct CinechillHallIconStroke: Shape {
             )
             path.move(to: s.p(15.3, 15.3))
             path.addLine(to: s.p(20.4, 20.4))
+
+        case .regler:
+            // Les glissières s'arrêtent sur le bord des curseurs : un trait
+            // qui traverse un anneau le ferme et brouille le dessin à 18 pt.
+            // Le curseur du haut porte la brèche, celui du bas reste plein
+            // pour que la brèche reste unique.
+            path.move(to: s.p(3, 7.5))
+            path.addLine(to: s.p(10.6, 7.5))
+            path.addArc(
+                center: s.p(14, 7.5), radius: s.l(3.4),
+                startAngle: .degrees(-54), endAngle: .degrees(234),
+                clockwise: false
+            )
+            path.move(to: s.p(17.4, 7.5))
+            path.addLine(to: s.p(21, 7.5))
+
+            path.move(to: s.p(3, 16.5))
+            path.addLine(to: s.p(6.6, 16.5))
+            path.addEllipse(in: CGRect(
+                x: s.p(10, 16.5).x - s.l(3.4), y: s.p(10, 16.5).y - s.l(3.4),
+                width: s.l(6.8), height: s.l(6.8)
+            ))
+            path.move(to: s.p(13.4, 16.5))
+            path.addLine(to: s.p(21, 16.5))
         }
 
         return path
@@ -163,6 +189,7 @@ struct CinechillHallIconLight: Shape {
         case .hall:        center = s.p(9, 4)
         case .recommander: center = s.p(12.8, 8.2)
         case .chercher:    center = s.p(10.6, 4.2)
+        case .regler:      center = s.p(14, 4.1)
         }
 
         let r = s.l(Self.radius)
