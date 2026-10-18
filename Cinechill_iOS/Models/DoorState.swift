@@ -66,7 +66,7 @@ nonisolated struct DoorArtifact: Codable, Equatable, Sendable {
     var artifactKey: DoorArtifactKey? { DoorArtifactKey(rawValue: key) }
 }
 
-/// La porte, telle que `getTasteProfile` la renvoie.
+/// La porte, telle que `getDoors` la renvoie.
 nonisolated struct DoorState: Codable, Equatable, Sendable {
     let unlocked: Bool
     let artifacts: [DoorArtifact]

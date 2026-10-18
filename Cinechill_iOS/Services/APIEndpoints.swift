@@ -85,20 +85,15 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "enrichcandidates", queryItems: [])
     }
 
-    /// L'état des Portes. Le point d'entrée garde son ancien nom, `gettasteprofile`.
+    /// L'état des Portes.
     static func doors() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
-        return buildURL(baseURL: baseURL, functionName: "gettasteprofile", queryItems: [])
+        return buildURL(baseURL: baseURL, functionName: "getdoors", queryItems: [])
     }
 
     static func sessionOutcome() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "recordsessionoutcome", queryItems: [])
-    }
-
-    static func backfillGallery() -> URL? {
-        guard let baseURL = BackendConfiguration.baseURL else { return nil }
-        return buildURL(baseURL: baseURL, functionName: "backfillgallery", queryItems: [])
     }
 
     // MARK: - CinéMatch v2

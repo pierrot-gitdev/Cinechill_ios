@@ -77,34 +77,22 @@ final class DoorStore {
     private var isBootstrapping = false
     private var didBootstrap = false
 
-    /// Plafond de rappels du rattrapage. Le serveur borne chaque passe dans le
-    /// temps ; une galerie ordinaire tient en une seule.
-    private static let maximumCatchUpPasses = 12
-
     init(client: any RecommendationFetching = BackendRecommendationClient()) {
         self.client = client
         self.door = DoorState.cached ?? .initial
         self.seriesDoor = DoorState.cachedSeries ?? .initialSeries
     }
 
-    /// La mise à niveau de l'existant, une fois par ouverture de l'app.
-    ///
-    /// **L'ordre compte, et c'est tout l'objet de cette méthode.** Le rattrapage
-    /// fait remonter d'un coup les positions de la galerie et les « Je l'ai
-    /// adoré » déjà dits : sans lui d'abord, la mesure suivante lirait tout ça
-    /// comme des artéfacts tout juste gagnés et l'écran partirait en cascade
-    /// d'annonces. Ce que le rattrapage remonte est un dû, pas un exploit — on
-    /// pose donc l'état de référence **après** lui, en silence.
+    /// La première mesure, une fois par ouverture de l'app, posée en silence :
+    /// ce qui s'est gagné pendant que l'app était fermée (sur un autre
+    /// appareil, ou avant une mise à jour) est un dû, pas un exploit. Tant
+    /// qu'elle n'a pas répondu, `refresh()` n'annonce rien.
     func bootstrap() async {
         guard !didBootstrap else { return }
         didBootstrap = true
         isBootstrapping = true
         defer { isBootstrapping = false }
 
-        for _ in 0 ..< Self.maximumCatchUpPasses {
-            guard let done = try? await client.backfillGallery() else { break }
-            if done { break }
-        }
         await measure(announcing: false)
     }
 

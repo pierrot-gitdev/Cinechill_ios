@@ -51,20 +51,14 @@ enum RecommendationClientError: LocalizedError {
     }
 }
 
-/// Ce que la Porte demande au serveur : l'état des deux Portes, et la passe
-/// de rattrapage de la galerie.
+/// Ce que la Porte demande au serveur.
 protocol RecommendationFetching: Sendable {
     /// L'état des deux Portes, mesuré sur la galerie et la watchlist.
     func fetchDoors() async throws -> DoorReading
-    /// La passe de rattrapage : elle positionne les films déjà en galerie et
-    /// transforme les « Je l'ai adoré » passés en coups de cœur. Rend `true`
-    /// quand il ne reste plus rien à traiter.
-    func backfillGallery() async throws -> Bool
 }
 
-/// Le client des appels du serveur hors CinéMatch : les Portes, la passe de
-/// rattrapage de la galerie, et l'enrichissement des films de la watchlist
-/// (voir `CandidateEnriching`).
+/// Le client des appels du serveur hors CinéMatch : les Portes et
+/// l'enrichissement des films de la watchlist (voir `CandidateEnriching`).
 nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable {
     func enrichCandidates(_ candidates: [CandidateRow]) async throws -> [EnrichedCandidateRow] {
         guard !candidates.isEmpty else { return [] }
@@ -78,11 +72,6 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
     func fetchDoors() async throws -> DoorReading {
         let data = try await post(to: APIEndpoints.doors(), body: [:])
         return try decode(DoorReadingDTO.self, from: data).reading
-    }
-
-    func backfillGallery() async throws -> Bool {
-        let data = try await post(to: APIEndpoints.backfillGallery(), body: [:])
-        return (try? decode(BackfillResponseDTO.self, from: data))?.done ?? true
     }
 
     // MARK: - Wire helpers
@@ -140,10 +129,6 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
 
 private struct EnrichCandidatesResponseDTO: Decodable, Sendable {
     let candidates: [EnrichedCandidateRow]
-}
-
-private struct BackfillResponseDTO: Decodable, Sendable {
-    let done: Bool
 }
 
 private struct DoorReadingDTO: Decodable, Sendable {
