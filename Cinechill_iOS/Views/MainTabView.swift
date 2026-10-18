@@ -313,11 +313,6 @@ struct MainTabView: View {
                     dismissDoorCelebration()
                     doorStore.post(.showDoor(format))
                     selectedTab = 1
-                },
-                onCompare: {
-                    dismissDoorCelebration()
-                    doorStore.post(.compare(format))
-                    selectedTab = 1
                 }
             )
             .id(key)

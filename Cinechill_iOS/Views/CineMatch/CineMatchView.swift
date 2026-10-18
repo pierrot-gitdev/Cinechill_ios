@@ -31,13 +31,11 @@ struct CineMatchView: View {
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(DoorStore.self) private var doorStore
-    @Environment(MediaCatalog.self) private var catalog
 
     @AppStorage(MediaFormat.storageKey) private var formatRaw = MediaFormat.film.rawValue
 
     @State private var showProfile = false
     @State private var showLovePicker = false
-    @State private var showDoorComparison = false
     /// Les formats dont le seuil a été franchi **dans cette ouverture de
     /// l'app**. Volontairement un état de session et non une préférence
     /// gardée : la cérémonie se rejoue à chaque lancement, elle ne se consomme
@@ -77,12 +75,6 @@ struct CineMatchView: View {
                 )
                 .environmentObject(libraryStore)
             }
-            .fullScreenCover(isPresented: $showDoorComparison) {
-                CineMatchDoorComparisonView(format: format, onClose: { showDoorComparison = false })
-                    .environmentObject(libraryStore)
-                    .environment(doorStore)
-                    .environment(catalog)
-            }
         }
         // Chaque retour sur l'onglet remesure la porte : la galerie a pu se
         // remplir depuis Découvrir, et la jauge doit le raconter sans attendre.
@@ -93,12 +85,6 @@ struct CineMatchView: View {
         // La planche refermée, on remesure aussi : c'est peut-être elle qui
         // vient d'allumer le Cœur.
         .onChange(of: showLovePicker) { _, isOpen in
-            guard !isOpen else { return }
-            Task { await doorStore.refresh() }
-        }
-        // Même chose au retour des comparaisons : ce sont elles qui font
-        // avancer « Tes préférences ».
-        .onChange(of: showDoorComparison) { _, isOpen in
             guard !isOpen else { return }
             Task { await doorStore.refresh() }
         }
@@ -119,7 +105,7 @@ struct CineMatchView: View {
             handleDoorRequest()
         }
         // La planche d'une étape, affichée au-dessus de n'importe quel onglet,
-        // envoie ici : montrer la Porte, ou ouvrir les comparaisons.
+        // envoie ici pour montrer la Porte.
         .onChange(of: doorStore.request) { _, _ in
             handleDoorRequest()
         }
@@ -129,9 +115,6 @@ struct CineMatchView: View {
         guard let request = doorStore.consumeRequest() else { return }
         // La planche parle d'une Porte précise : l'interrupteur la suit.
         if request.format != format { formatRaw = request.format.rawValue }
-        if case .compare = request, doorStore.door(for: request.format).canCompare {
-            showDoorComparison = true
-        }
     }
 
     @ViewBuilder
@@ -148,7 +131,6 @@ struct CineMatchView: View {
                 onProfileTap: { showProfile = true },
                 onDiscover: { selectedTab = 2 },
                 onLovePicker: { showLovePicker = true },
-                onCompare: { showDoorComparison = true },
                 onEnter: {
                     let crossed = format
                     withAnimation(.easeOut(duration: 0.45)) { _ = crossedFormats.insert(crossed) }

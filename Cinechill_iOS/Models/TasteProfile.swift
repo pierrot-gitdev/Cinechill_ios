@@ -49,7 +49,7 @@ nonisolated struct TasteProfile: Equatable, Sendable {
     var verdictCount: Int = 0
     /// Un film lancé dont on ne sait pas encore ce qu'il a donné.
     var pendingVerdict: PendingVerdict?
-    /// La porte de CinéMatch : les cinq artéfacts, mesurés par le serveur sur
+    /// La porte de CinéMatch : les quatre artéfacts, mesurés par le serveur sur
     /// les mêmes lectures que le trait. `nil` tant que le serveur n'a pas
     /// répondu.
     var door: DoorState?

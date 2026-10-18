@@ -33,23 +33,21 @@ final class DoorStore {
     private(set) var hasMeasured = false
     /// L'artéfact tout juste gagné, à célébrer puis à remettre à `nil`.
     private(set) var celebration: DoorArtifactKey?
-    /// La Porte des séries : mêmes cinq étapes, à l'échelle des séries.
+    /// La Porte des séries : mêmes quatre étapes, à l'échelle des séries.
     private(set) var seriesDoor: DoorState
     /// L'étape gagnée l'a été sur la Porte des séries.
     private(set) var celebrationIsSeries = false
 
     /// Ce que la planche d'une étape demande à l'onglet CinéMatch : montrer la
-    /// Porte, ou ouvrir tout de suite les comparaisons. La planche s'affiche à
-    /// la racine, au-dessus de n'importe quel onglet ; c'est l'onglet CinéMatch
-    /// qui sait ouvrir sa Porte et ses comparaisons, et il lit la demande dès
-    /// qu'il est monté.
+    /// Porte. La planche s'affiche à la racine, au-dessus de n'importe quel
+    /// onglet ; c'est l'onglet CinéMatch qui sait ouvrir sa Porte, et il lit la
+    /// demande dès qu'il est monté.
     enum Request: Equatable {
         case showDoor(MediaFormat)
-        case compare(MediaFormat)
 
         var format: MediaFormat {
             switch self {
-            case .showDoor(let format), .compare(let format): format
+            case .showDoor(let format): format
             }
         }
     }

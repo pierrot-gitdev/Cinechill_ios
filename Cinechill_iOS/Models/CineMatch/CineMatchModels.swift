@@ -101,8 +101,8 @@ nonisolated enum CineMatchSeriesStatus: String, Sendable {
     case ended, returning, canceled
 }
 
-/// Un film de la galerie, montré en affiche : dans les comparaisons de la
-/// Porte, sur les tuiles et parmi les films de départ.
+/// Un film de la galerie, montré en affiche : sur les tuiles et parmi les films
+/// de départ.
 nonisolated struct CineMatchGalleryFilm: Identifiable, Hashable, Sendable {
     let id: Int
     let title: String
@@ -114,29 +114,6 @@ nonisolated struct CineMatchGalleryFilm: Identifiable, Hashable, Sendable {
         guard let posterPath, !posterPath.isEmpty else { return nil }
         return URL(string: "https://image.tmdb.org/t/p/w500\(posterPath)")
     }
-}
-
-/// Une comparaison de la Porte telle que le serveur la prépare : quatre
-/// affiches pour la première question, quatre autres pour la seconde.
-nonisolated struct CineMatchComparisonRound: Equatable, Sendable {
-    /// Le nombre de comparaisons de la séance (0 à 4). Ignoré par la Porte.
-    let total: Int
-    let round: Int
-    /// Vide quand `round` dépasse `total`.
-    let films: [CineMatchGalleryFilm]
-    /// Clé : l'id d'un des quatre films. Absent quand la galerie est épuisée.
-    /// Ne sert plus que quand `excludeFilms` est vide.
-    let replacements: [Int: CineMatchGalleryFilm]
-    /// Les films de la seconde question, tous différents de `films`. Vide
-    /// quand la galerie n'en a pas assez, ou face à un serveur plus ancien.
-    let excludeFilms: [CineMatchGalleryFilm]
-}
-
-/// Une comparaison jouée. `pick` garde un film et en écarte un autre ;
-/// `none` dit qu'aucune des affiches affichées ne tentait.
-nonisolated enum CineMatchComparison: Equatable, Sendable {
-    case pick(keptID: Int, excludedID: Int, latencyMs: Int)
-    case none(shownIDs: [Int])
 }
 
 /// Un des cinq films proposés, ou la proposition du jour. Une série y entre

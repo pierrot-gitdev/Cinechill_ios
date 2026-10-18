@@ -176,6 +176,102 @@
         }
       }
     },
+    "CinéMatch verrouillé, %lld étape sur %lld validée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CinéMatch locked, %lld of %lld steps done"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CinéMatch verrouillé, %lld étape sur %lld validée"
+          }
+        }
+      }
+    },
+    "CinéMatch verrouillé, %lld étapes sur %lld validées" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CinéMatch locked, %lld of %lld steps done"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CinéMatch verrouillé, %lld étapes sur %lld validées"
+          }
+        }
+      }
+    },
+    "étape sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "of %lld steps"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "étape sur %lld"
+          }
+        }
+      }
+    },
+    "étapes sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "of %lld steps"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "étapes sur %lld"
+          }
+        }
+      }
+    },
+    "%lld étape sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld steps"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld étape sur %lld"
+          }
+        }
+      }
+    },
+    "%lld étapes sur %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld steps"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld étapes sur %lld"
+          }
+        }
+      }
+    },
     "%lld films en commun" : {
       "localizations" : {
         "en" : {
@@ -324,22 +420,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ : c'est fait."
-          }
-        }
-      }
-    },
-    "%@ : étape validée" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@: step done"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ : étape validée"
           }
         }
       }
@@ -824,38 +904,6 @@
         }
       }
     },
-    "%lld comparaisons entre des films que tu as vus" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld comparisons between movies you've watched"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld comparaisons entre des films que tu as vus"
-          }
-        }
-      }
-    },
-    "%lld comparaisons entre des séries que tu as vues" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld comparisons between series you've watched"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld comparaisons entre des séries que tu as vues"
-          }
-        }
-      }
-    },
     "%lld coups de cœur dans ta galerie" : {
       "localizations" : {
         "en" : {
@@ -884,38 +932,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld épisodes"
-          }
-        }
-      }
-    },
-    "%lld étape sur 5" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld of 5 steps"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld étape sur 5"
-          }
-        }
-      }
-    },
-    "%lld étapes sur 5" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld of 5 steps"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld étapes sur 5"
           }
         }
       }
@@ -3448,6 +3464,22 @@
         }
       }
     },
+    "Termine les %lld étapes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Complete the %lld steps."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termine les %lld étapes."
+          }
+        }
+      }
+    },
     "Touche pour voir ce qu'il reste." : {
       "localizations" : {
         "en" : {
@@ -3508,6 +3540,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu as regardé %@ hier ?"
+          }
+        }
+      }
+    },
+    "Tu auras ensuite trois étapes plus courtes à valider." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Then you'll have three shorter steps to complete."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu auras ensuite trois étapes plus courtes à valider."
           }
         }
       }
@@ -4060,38 +4108,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouté à ta watchlist"
-          }
-        }
-      }
-    },
-    "Ajoute d'abord %lld films à ta galerie pour pouvoir comparer." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add %lld movies to your gallery first to be able to compare."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajoute d'abord %lld films à ta galerie pour pouvoir comparer."
-          }
-        }
-      }
-    },
-    "Ajoute d'abord %lld séries à ta galerie pour pouvoir comparer." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "First add %lld series to your gallery to compare."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajoute d'abord %lld séries à ta galerie pour pouvoir comparer."
           }
         }
       }
@@ -5856,38 +5872,6 @@
         }
       }
     },
-    "CinéMatch verrouillé, %lld étape sur 5 validée" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CinéMatch locked, %lld of 5 steps done"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CinéMatch verrouillé, %lld étape sur 5 validée"
-          }
-        }
-      }
-    },
-    "CinéMatch verrouillé, %lld étapes sur 5 validées" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CinéMatch locked, %lld of 5 steps done"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CinéMatch verrouillé, %lld étapes sur 5 validées"
-          }
-        }
-      }
-    },
     "Coché" : {
       "localizations" : {
         "en" : {
@@ -6028,86 +6012,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Commun"
-          }
-        }
-      }
-    },
-    "Comparaison %lld sur %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comparison %lld of %lld"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comparaison %lld sur %lld"
-          }
-        }
-      }
-    },
-    "Compare des films que tu as vus, %lld fois. Ça prend deux minutes, et CinéMatch s'ouvre juste après." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compare movies you've seen, %lld times. It takes two minutes, and CinéMatch opens right after."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compare des films que tu as vus, %lld fois. Ça prend deux minutes, et CinéMatch s'ouvre juste après."
-          }
-        }
-      }
-    },
-    "Compare des séries que tu as vues, %lld fois. Ça prend deux minutes, et CinéMatch des séries s'ouvre juste après." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compare shows you've seen, %lld times. It takes two minutes, and CinéMatch for shows opens right after."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compare des séries que tu as vues, %lld fois. Ça prend deux minutes, et CinéMatch des séries s'ouvre juste après."
-          }
-        }
-      }
-    },
-    "Comparer mes films" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compare my movies"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comparer mes films"
-          }
-        }
-      }
-    },
-    "Comparer mes séries" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compare my series"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comparer mes séries"
           }
         }
       }
@@ -7290,38 +7194,6 @@
         }
       }
     },
-    "En comparant des films que tu as vus, tu nous montres ce que tu préfères." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "By comparing movies you've watched, you show us what you prefer."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En comparant des films que tu as vus, tu nous montres ce que tu préfères."
-          }
-        }
-      }
-    },
-    "En comparant des séries que tu as vues, tu nous montres ce que tu préfères." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "By comparing series you've watched, you show us what you prefer."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En comparant des séries que tu as vues, tu nous montres ce que tu préfères."
-          }
-        }
-      }
-    },
     "En couple" : {
       "localizations" : {
         "en" : {
@@ -7883,70 +7755,6 @@
         }
       }
     },
-    "Et celle que tu aimes **le moins** ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "And which one do you like **the least**?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Et celle que tu aimes **le moins** ?"
-          }
-        }
-      }
-    },
-    "Et celle que tu aimes le moins, parmi quatre autres séries ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "And which one do you like the least, out of four other shows?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Et celle que tu aimes le moins, parmi quatre autres séries ?"
-          }
-        }
-      }
-    },
-    "Et celui que tu aimes **le moins** ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "And which one do you like **the least**?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Et celui que tu aimes **le moins** ?"
-          }
-        }
-      }
-    },
-    "Et celui que tu aimes le moins, parmi quatre autres films ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "And which one do you like the least, out of four other movies?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Et celui que tu aimes le moins, parmi quatre autres films ?"
-          }
-        }
-      }
-    },
     "Étape %lld sur %lld" : {
       "localizations" : {
         "en" : {
@@ -7963,38 +7771,6 @@
         }
       }
     },
-    "Étape %lld sur 5" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Step %lld of 5"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Étape %lld sur 5"
-          }
-        }
-      }
-    },
-    "étape sur 5" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "of 5 steps"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "étape sur 5"
-          }
-        }
-      }
-    },
     "Étape validée" : {
       "localizations" : {
         "en" : {
@@ -8007,22 +7783,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Étape validée"
-          }
-        }
-      }
-    },
-    "étapes sur 5" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "of 5 steps"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "étapes sur 5"
           }
         }
       }
@@ -9531,22 +9291,6 @@
         }
       }
     },
-    "La moins aimée" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Liked least"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La moins aimée"
-          }
-        }
-      }
-    },
     "La Palme d'or" : {
       "localizations" : {
         "en" : {
@@ -9675,22 +9419,6 @@
         }
       }
     },
-    "Laquelle tu préfères ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Which one do you prefer?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Laquelle tu préfères ?"
-          }
-        }
-      }
-    },
     "Le %@" : {
       "localizations" : {
         "en" : {
@@ -9815,22 +9543,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le film que tu viens d'ajouter est dans ta galerie."
-          }
-        }
-      }
-    },
-    "Le moins aimé" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Liked least"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le moins aimé"
           }
         }
       }
@@ -10039,22 +9751,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Léger et drôle"
-          }
-        }
-      }
-    },
-    "Lequel tu préfères ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Which one do you prefer?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lequel tu préfères ?"
           }
         }
       }
@@ -10519,22 +10215,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modifier ta soirée. Avec qui : %@. Par épisode : %@. Longueur : %@. Plateformes : %@."
-          }
-        }
-      }
-    },
-    "Moins aimé" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Liked least"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moins aimé"
           }
         }
       }
@@ -12051,38 +11731,6 @@
         }
       }
     },
-    "Pas assez de films vus" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not enough movies watched"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pas assez de films vus"
-          }
-        }
-      }
-    },
-    "Pas assez de séries vues" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not enough series watched"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pas assez de séries vues"
-          }
-        }
-      }
-    },
     "Pas celle-là" : {
       "localizations" : {
         "en" : {
@@ -12931,22 +12579,6 @@
         }
       }
     },
-    "Préféré" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Liked most"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Préféré"
-          }
-        }
-      }
-    },
     "Première Bobine" : {
       "localizations" : {
         "en" : {
@@ -13123,38 +12755,6 @@
         }
       }
     },
-    "Quatre autres films" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Four other movies"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quatre autres films"
-          }
-        }
-      }
-    },
-    "Quatre autres séries" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Four other shows"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quatre autres séries"
-          }
-        }
-      }
-    },
     "Quelles saisons as-tu adorées ?" : {
       "localizations" : {
         "en" : {
@@ -13199,70 +12799,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quels films as-tu adorés ?"
-          }
-        }
-      }
-    },
-    "Question 1 sur 2 : la série que tu préfères" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Question 1 of 2: the show you like best"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Question 1 sur 2 : la série que tu préfères"
-          }
-        }
-      }
-    },
-    "Question 1 sur 2 : le film que tu préfères" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Question 1 of 2: the movie you like best"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Question 1 sur 2 : le film que tu préfères"
-          }
-        }
-      }
-    },
-    "Question 2 sur 2 : la série que tu aimes le moins, parmi quatre autres. Tu as préféré %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Question 2 of 2: the show you like least, out of four others. You picked %@ as your favorite."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Question 2 sur 2 : la série que tu aimes le moins, parmi quatre autres. Tu as préféré %@."
-          }
-        }
-      }
-    },
-    "Question 2 sur 2 : le film que tu aimes le moins, parmi quatre autres. Tu as préféré %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Question 2 of 2: the movie you like least, out of four others. You picked %@ as your favorite."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Question 2 sur 2 : le film que tu aimes le moins, parmi quatre autres. Tu as préféré %@."
           }
         }
       }
@@ -15400,38 +14936,6 @@
         }
       }
     },
-    "Termine d'abord les 4 autres étapes." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Finish the other 4 steps first."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Termine d'abord les 4 autres étapes."
-          }
-        }
-      }
-    },
-    "Termine les 5 étapes." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Complete the 5 steps."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Termine les 5 étapes."
-          }
-        }
-      }
-    },
     "Terminée : elle a une vraie fin." : {
       "localizations" : {
         "en" : {
@@ -15476,22 +14980,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tes plateformes"
-          }
-        }
-      }
-    },
-    "Tes préférences" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your preferences"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tes préférences"
           }
         }
       }
@@ -16276,22 +15764,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu as vu toutes ses saisons."
-          }
-        }
-      }
-    },
-    "Tu auras ensuite quatre étapes plus courtes à valider." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Then you'll have four shorter steps to complete."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu auras ensuite quatre étapes plus courtes à valider."
           }
         }
       }

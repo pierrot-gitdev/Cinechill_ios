@@ -5,16 +5,17 @@
 
 import Foundation
 
-/// Les cinq artéfacts de la porte, de bas en haut sur le montant : la jauge se
-/// remplit en montant.
+/// Les quatre artéfacts de la porte, de bas en haut sur le montant : la jauge
+/// se remplit en montant. L'ordre des cas est cet ordre-là : la jauge, le rang
+/// « Étape n sur 4 » et le conduit le lisent tous ici.
 ///
-/// « Tes préférences » (clé `horizons`) ferme la marche : les comparaisons ne
-/// s'ouvrent qu'une fois les quatre autres étapes validées, elles sont donc la
-/// dernière chose qu'on fait et le dernier médaillon de la porte. L'ordre des
-/// cas est cet ordre-là : la jauge, le rang « Étape n sur 5 » et le conduit le
-/// lisent tous ici.
+/// Il y en avait cinq jusqu'au 18 octobre 2026. Le cinquième, « Tes
+/// préférences », faisait jouer douze comparaisons entre films vus ; il a été
+/// retiré parce qu'il ne servait ni la personne (rien de visible au bout) ni le
+/// moteur (douze duels pèsent peu face à une galerie de cent films et douze
+/// coups de cœur, que les quatre autres étapes garantissent déjà).
 nonisolated enum DoorArtifactKey: String, Codable, CaseIterable, Sendable {
-    case memoire, eventail, coeur, promesse, horizons
+    case memoire, eventail, coeur, promesse
 
     /// Le PNG du médaillon, exporté à 1200 comme les badges : monture d'or,
     /// champ émaillé, emblème et halo intégrés. L'état éteint se dérive en
@@ -24,7 +25,6 @@ nonisolated enum DoorArtifactKey: String, Codable, CaseIterable, Sendable {
         case .memoire: "ArtefactMemoire"
         case .eventail: "ArtefactEventail"
         case .coeur: "ArtefactCoeur"
-        case .horizons: "ArtefactHorizons"
         case .promesse: "ArtefactPromesse"
         }
     }
@@ -39,7 +39,6 @@ nonisolated enum DoorArtifactKey: String, Codable, CaseIterable, Sendable {
         case .memoire: 0xA98CE8
         case .eventail: 0xE0B24A
         case .coeur: 0xC25562
-        case .horizons: 0x5996FF
         case .promesse: 0x35C4A8
         }
     }
@@ -50,7 +49,6 @@ nonisolated enum DoorArtifactKey: String, Codable, CaseIterable, Sendable {
         case .memoire: 0xA854F7
         case .eventail: 0xFFA826
         case .coeur: 0xFF6B7E
-        case .horizons: 0x5996FF
         case .promesse: 0x78FFDB
         }
     }
@@ -68,88 +66,50 @@ nonisolated struct DoorArtifact: Codable, Equatable, Sendable {
     var artifactKey: DoorArtifactKey? { DoorArtifactKey(rawValue: key) }
 }
 
-/// L'ancien détail des Horizons : décennies et pays. L'artéfact de clé
-/// `horizons` est devenu « Tes préférences » et se mesure en comparaisons ;
-/// le serveur renvoie encore cet objet pour ne pas casser les anciennes
-/// versions de l'app, mais il n'entre plus dans la porte.
-nonisolated struct DoorHorizons: Codable, Equatable, Sendable {
-    let decades: Int
-    let decadesTarget: Int
-    let countries: Int
-    let countriesTarget: Int
-}
-
 /// La porte, telle que `getTasteProfile` la renvoie.
 nonisolated struct DoorState: Codable, Equatable, Sendable {
     let unlocked: Bool
     let artifacts: [DoorArtifact]
-    /// Absent de la Porte des séries, qui n'a jamais compté de décennies.
-    var horizons: DoorHorizons?
-    /// Vrai pour la Porte des séries : mêmes cinq étapes, autres seuils, et
+    /// Vrai pour la Porte des séries : mêmes quatre étapes, autres seuils, et
     /// d'autres mots. Absent de la réponse du serveur, posé par `DoorStore`.
     var isSeries: Bool? = nil
 
     var series: Bool { isSeries == true }
 
-    /// Nombre d'artéfacts allumés.
-    var litCount: Int { artifacts.filter(\.done).count }
+    /// Nombre d'artéfacts allumés, parmi ceux que l'app connaît : un artéfact
+    /// que le serveur enverrait en plus ne fausse ni la jauge ni le compte.
+    var litCount: Int {
+        DoorArtifactKey.allCases.filter { artifact($0)?.done == true }.count
+    }
 
     func artifact(_ key: DoorArtifactKey) -> DoorArtifact? {
         artifacts.first { $0.key == key.rawValue }
     }
 
-    /// Les étapes à valider avant les comparaisons : toutes les autres.
-    static let stepsBeforeComparison = DoorArtifactKey.allCases.filter { $0 != .horizons }
-
-    /// Les comparaisons de « Tes préférences » n'ouvrent qu'une fois les quatre
-    /// autres étapes validées. La Mémoire d'abord, pour une raison de données :
-    /// sous ce nombre de films, les mêmes affiches reviendraient d'un tour à
-    /// l'autre, et le serveur tient cette règle-là. Les trois autres pour une
-    /// raison de parcours : la comparaison est la dernière marche, celle qu'on
-    /// propose de faire tout de suite quand le reste est fait, au lieu d'une
-    /// étape qu'on croise au hasard sans savoir à quoi elle sert.
-    var canCompare: Bool { missingBeforeComparison.isEmpty }
-
-    /// Les étapes qui manquent encore avant les comparaisons, dans l'ordre de
-    /// la porte.
-    var missingBeforeComparison: [DoorArtifactKey] {
-        Self.stepsBeforeComparison.filter { artifact($0)?.done != true }
-    }
-
-    /// Les quatre premières étapes sont faites et il ne reste que les
-    /// comparaisons : le moment de les proposer directement.
-    var onlyComparisonLeft: Bool {
-        canCompare && artifact(.horizons)?.done != true
-    }
+    /// Le nombre d'étapes de la porte, dit à l'écran (« 2 étapes sur 4 »).
+    static var stepCount: Int { DoorArtifactKey.allCases.count }
 
     /// La porte d'un compte que le serveur n'a pas encore raconté : tout à
     /// zéro, tout éteint. C'est l'état honnête d'un profil inconnu, et il
     /// évite de faire clignoter l'entrée avant de la refermer.
     ///
-    /// Les seuils sont ceux du serveur : la Mémoire à 100 films, et l'artéfact
-    /// de clé `horizons`, devenu « Tes préférences », à 12 comparaisons entre
-    /// des films vus. Les deux se tiennent : chaque comparaison consomme cinq
-    /// films (quatre affiches et le remplaçant du film gardé), soit 60 sur les
-    /// douze tours ; à 100, aucune affiche ne revient d'un tour à l'autre.
+    /// Les seuils sont ceux du serveur : 100 films, 6 genres, 12 coups de
+    /// cœur, 10 films dans la watchlist.
     static let initial = DoorState(
         unlocked: false,
         artifacts: DoorArtifactKey.allCases.map { key in
             DoorArtifact(key: key.rawValue, done: false, current: 0, target: initialTarget(key))
-        },
-        horizons: DoorHorizons(
-            decades: 0, decadesTarget: 4, countries: 0, countriesTarget: 3
-        )
+        }
     )
 
     /// La Porte des séries d'un compte que le serveur n'a pas encore racontée.
     /// Les seuils sont ceux du serveur : 15 séries, 4 genres, 4 saisons
-    /// adorées, 6 comparaisons, 3 saisons dans la file.
+    /// adorées, 3 saisons dans la file.
     static let initialSeries = DoorState(
         unlocked: false,
         artifacts: DoorArtifactKey.allCases.map { key in
             DoorArtifact(key: key.rawValue, done: false, current: 0, target: initialSeriesTarget(key))
         },
-        horizons: nil,
         isSeries: true
     )
 
@@ -158,7 +118,6 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
         case .memoire: 15
         case .eventail: 4
         case .coeur: 4
-        case .horizons: 6
         case .promesse: 3
         }
     }
@@ -176,7 +135,6 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
         case .memoire: 100
         case .eventail: 6
         case .coeur: 12
-        case .horizons: 12
         case .promesse: 10
         }
     }
@@ -186,8 +144,11 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
     /// La dernière porte racontée par le serveur, gardée d'un lancement à
     /// l'autre : l'onglet s'ouvre sur un état plausible au lieu d'attendre le
     /// réseau, et la réponse ne fait que le rafraîchir.
-    private static let cacheKey = "cinematch.door"
-    private static let seriesCacheKey = "cinematch.seriesDoor"
+    ///
+    /// Clés en `.v2` depuis le passage à quatre étapes : une porte gardée avec
+    /// l'ancienne cinquième étape compterait encore son médaillon allumé.
+    private static let cacheKey = "cinematch.door.v2"
+    private static let seriesCacheKey = "cinematch.seriesDoor.v2"
 
     static var cached: DoorState? { read(cacheKey) }
     static var cachedSeries: DoorState? { read(seriesCacheKey)?.markedAsSeries() }

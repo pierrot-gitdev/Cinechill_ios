@@ -127,11 +127,6 @@ enum APIEndpoints {
 
     // MARK: - CinéMatch v2
 
-    static func cineMatchComparison() -> URL? {
-        guard let baseURL = BackendConfiguration.baseURL else { return nil }
-        return buildURL(baseURL: baseURL, functionName: "getcinematchcomparison", queryItems: [])
-    }
-
     static func cineMatchStarters() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "getcinematchstarters", queryItems: [])

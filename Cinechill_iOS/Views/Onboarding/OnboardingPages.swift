@@ -156,7 +156,7 @@ struct OnboardingTastesPage: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(String(localized: "100 films vus pour ouvrir CinéMatch", bundle: .app))
 
-            Text("Tu auras ensuite quatre étapes plus courtes à valider.", bundle: .app)
+            Text("Tu auras ensuite trois étapes plus courtes à valider.", bundle: .app)
                 .planFont(13)
                 .foregroundStyle(Ink.ink3)
                 .fixedSize(horizontal: false, vertical: true)

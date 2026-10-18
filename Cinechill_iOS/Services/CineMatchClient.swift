@@ -33,13 +33,9 @@ nonisolated enum CineMatchClientError: LocalizedError {
 /// film de départ et la soirée, et affiche ce qui revient.
 ///
 /// Chaque appel porte son format. Films et séries sont deux profils que le
-/// serveur tient à part (galerie, duels, exposition, historique), et leurs
+/// serveur tient à part (galerie, exposition, historique), et leurs
 /// identifiants TMDB se recoupent : un appel sans format parlerait de films.
 protocol CineMatchFetching: Sendable {
-    /// Les comparaisons de la Porte. `forDoor` lève la limite de `total` et
-    /// fait recycler les films les moins récemment montrés.
-    func comparisonRound(round: Int, shownIDs: [Int], history: [CineMatchComparison], forDoor: Bool,
-                         format: MediaFormat) async throws -> CineMatchComparisonRound
     /// Les dix styles, du plus présent dans la galerie au moins présent.
     func styles(format: MediaFormat) async throws -> [CineMatchStyleTile]
     /// Six films d'un style. `page` passe aux six suivants ; `shownIDs`, les
@@ -59,7 +55,6 @@ protocol CineMatchFetching: Sendable {
     /// `nil` quand aucun film ne correspond au scénario.
     func daily(situation: CineMatchSituation, format: MediaFormat) async throws -> CineMatchFilm?
     func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int], format: MediaFormat) async throws
-    func recordDuel(winnerID: Int, loserID: Int, format: MediaFormat) async throws
     func recordLaunch(tmdbID: Int, format: MediaFormat) async throws
     /// « Pas celui-là » : le refus d'un des cinq, noté dans sa séance.
     func recordPass(tmdbID: Int, format: MediaFormat) async throws
@@ -68,19 +63,6 @@ protocol CineMatchFetching: Sendable {
 nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
     /// Le serveur n'accepte pas plus de vingt films par écriture d'exposition.
     private static let exposureBatchLimit = 20
-
-    func comparisonRound(round: Int, shownIDs: [Int], history: [CineMatchComparison], forDoor: Bool,
-                         format: MediaFormat) async throws -> CineMatchComparisonRound {
-        var body: [String: Any] = [
-            "round": round,
-            "shownIds": shownIDs,
-            "history": history.map(Self.payload(for:)),
-            "format": format.rawValue,
-        ]
-        if forDoor { body["purpose"] = "door" }
-        let data = try await post(to: APIEndpoints.cineMatchComparison(), body: body)
-        return try decode(ComparisonResponseDTO.self, from: data).roundValue
-    }
 
     func styles(format: MediaFormat) async throws -> [CineMatchStyleTile] {
         #if DEBUG
@@ -193,12 +175,6 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         }
     }
 
-    func recordDuel(winnerID: Int, loserID: Int, format: MediaFormat) async throws {
-        _ = try await post(to: APIEndpoints.filmDuel(), body: [
-            "winnerTmdbId": winnerID, "loserTmdbId": loserID, "format": format.rawValue,
-        ])
-    }
-
     func recordLaunch(tmdbID: Int, format: MediaFormat) async throws {
         _ = try await post(to: APIEndpoints.sessionOutcome(), body: [
             "kind": "launch", "tmdbId": tmdbID, "format": format.rawValue,
@@ -221,18 +197,6 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
             "watchRegion": "FR",
             "engagement": situation.engagement.rawValue,
         ]
-    }
-
-    static func payload(for comparison: CineMatchComparison) -> [String: Any] {
-        switch comparison {
-        case .pick(let keptID, let excludedID, let latencyMs):
-            return [
-                "kind": "pick", "keptId": keptID, "excludedId": excludedID,
-                "latencyMs": latencyMs,
-            ]
-        case .none(let shownIDs):
-            return ["kind": "none", "shownIds": shownIDs]
-        }
     }
 
     // MARK: - Wire helpers
@@ -351,30 +315,6 @@ private nonisolated struct StartersResponseDTO: Decodable, Sendable {
 private nonisolated struct NearResponseDTO: Decodable, Sendable {
     let films: [GalleryFilmDTO]?
     let tweaks: [String]?
-}
-
-private nonisolated struct ComparisonResponseDTO: Decodable, Sendable {
-    let total: Int
-    let round: Int
-    let films: [GalleryFilmDTO]
-    /// Les clés JSON sont des chaînes : un objet JSON n'en connaît pas d'autres.
-    let replacements: [String: GalleryFilmDTO]?
-    let excludeFilms: [GalleryFilmDTO]?
-
-    var roundValue: CineMatchComparisonRound {
-        CineMatchComparisonRound(
-            total: total,
-            round: round,
-            films: films.map(\.film),
-            replacements: Dictionary(
-                (replacements ?? [:]).compactMap { key, value in
-                    Int(key).map { ($0, value.film) }
-                },
-                uniquingKeysWith: { first, _ in first }
-            ),
-            excludeFilms: (excludeFilms ?? []).map(\.film)
-        )
-    }
 }
 
 private nonisolated struct FiveFilmDTO: Decodable, Sendable {
