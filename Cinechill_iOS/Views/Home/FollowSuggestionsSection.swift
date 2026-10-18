@@ -26,28 +26,13 @@ struct FollowSuggestionsSection: View {
     @State private var failure: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Profils à suivre", bundle: .app)
-                    .planTitle(21)
-                    .foregroundStyle(Ink.ink)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-                    .accessibilityAddTraits(.isHeader)
-                Spacer()
+        VStack(alignment: .leading, spacing: HomeRhythm.title) {
+            HomeSectionHeader(title: String(localized: "Profils à suivre", bundle: .app)) {
                 NavigationLink {
                     SearchView(scope: .profiles)
                 } label: {
                     Text("Tout voir", bundle: .app)
-                        .planFont(12)
-                        .foregroundStyle(Ink.ink2)
-                        .overlay(alignment: .bottom) {
-                            Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
-                        }
-                        .frame(minHeight: 44)
-                        .padding(.horizontal, 8)
-                        .contentShape(Rectangle())
-                        .padding(.horizontal, -8)
+                        .homeTextLink()
                 }
                 .buttonStyle(PressableScaleStyle())
             }

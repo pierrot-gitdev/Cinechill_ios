@@ -45,7 +45,7 @@ struct HomeView: View {
                 Ink.ground.ignoresSafeArea()
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 30) {
+                    VStack(alignment: .leading, spacing: HomeRhythm.section) {
                         // La conséquence, pas le mécanisme : le code HTTP du serveur
                         // ne dit rien à personne. Et une issue, sans quoi il
                         // fallait tuer l'app pour réessayer.
@@ -102,7 +102,7 @@ struct HomeView: View {
                         }
                     }
                     .padding(.horizontal, Metrics.margin)
-                    .padding(.top, 26)
+                    .padding(.top, 20)
                     .padding(.bottom, 20)
                 }
                 .scrollIndicators(.hidden)
@@ -171,8 +171,8 @@ struct HomeView: View {
     @ViewBuilder
     private var inTheatersSection: some View {
         if !homeModel.rows.inTheaters.isEmpty {
-            VStack(alignment: .leading, spacing: 14) {
-                sectionTitle(String(localized: "Au cinéma en ce moment", bundle: .app))
+            VStack(alignment: .leading, spacing: HomeRhythm.title) {
+                HomeSectionHeader(title: String(localized: "Au cinéma en ce moment", bundle: .app))
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 12) {
@@ -211,9 +211,9 @@ struct HomeView: View {
     @ViewBuilder
     private var becauseYouWatchedSection: some View {
         if let seeded = homeModel.rows.becauseYouWatched, !seeded.items.isEmpty {
-            VStack(alignment: .leading, spacing: 14) {
-                sectionTitle(
-                    seeded.seedTitle.map { String(localized: "Parce que tu as vu \($0)", bundle: .app) }
+            VStack(alignment: .leading, spacing: HomeRhythm.title) {
+                HomeSectionHeader(
+                    title: seeded.seedTitle.map { String(localized: "Parce que tu as vu \($0)", bundle: .app) }
                         ?? String(localized: "Dans le même style", bundle: .app)
                 )
                 posterRail(seeded.items)
@@ -229,8 +229,8 @@ struct HomeView: View {
     @ViewBuilder
     private var trendingSection: some View {
         if !homeModel.rows.trending.isEmpty {
-            VStack(alignment: .leading, spacing: 14) {
-                sectionTitle(String(localized: "Tendances de la semaine", bundle: .app))
+            VStack(alignment: .leading, spacing: HomeRhythm.title) {
+                HomeSectionHeader(title: String(localized: "Tendances de la semaine", bundle: .app))
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 12) {
@@ -287,8 +287,8 @@ struct HomeView: View {
     // MARK: - Populaire
 
     private var popularSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sectionTitle(String(localized: "Populaire en ce moment", bundle: .app))
+        VStack(alignment: .leading, spacing: HomeRhythm.title) {
+            HomeSectionHeader(title: String(localized: "Populaire en ce moment", bundle: .app))
 
             platformRow
 
@@ -336,16 +336,7 @@ struct HomeView: View {
                 showPlatformSheet = true
             } label: {
                 Text("Modifier", bundle: .app)
-                    .planFont(12)
-                    .foregroundStyle(Ink.ink2)
-                    .overlay(alignment: .bottom) {
-                        Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
-                    }
-                    // 44 pt de haut : l'encart de 10 pt n'en donnait que 34.
-                    .frame(minHeight: 44)
-                    .padding(.horizontal, 8)
-                    .contentShape(Rectangle())
-                    .padding(.horizontal, -8)
+                    .homeTextLink()
             }
             .buttonStyle(PressableScaleStyle())
             // Le même libellé que sur la liste d'un genre : c'est le même bouton.
@@ -388,21 +379,11 @@ struct HomeView: View {
     // MARK: - Parcourir
 
     private var browseSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                sectionTitle(String(localized: "Parcourir", bundle: .app))
-                Spacer()
+        VStack(alignment: .leading, spacing: HomeRhythm.title) {
+            HomeSectionHeader(title: String(localized: "Parcourir", bundle: .app)) {
                 NavigationLink(destination: HomeGenresListView(categories: homeModel.browseCategories, homeModel: homeModel)) {
                     Text("Tout voir", bundle: .app)
-                        .planFont(12)
-                        .foregroundStyle(Ink.ink2)
-                        .overlay(alignment: .bottom) {
-                            Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
-                        }
-                        .frame(minHeight: 44)
-                        .padding(.horizontal, 8)
-                        .contentShape(Rectangle())
-                        .padding(.horizontal, -8)
+                        .homeTextLink()
                 }
                 .buttonStyle(PressableScaleStyle())
             }
@@ -505,13 +486,70 @@ struct HomeView: View {
         }
         return label
     }
+}
 
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title)
-            .planTitle(21)
-            .foregroundStyle(Ink.ink)
-            .lineLimit(2)
-            .minimumScaleFactor(0.8)
+// MARK: - Le rythme de l'accueil
+
+/// Les deux écarts verticaux de l'accueil, et eux seuls.
+///
+/// Les légendes d'affiche réservent toujours deux lignes, si bien qu'un titre
+/// court laisse déjà une ligne vide sous chaque rangée : l'écart entre deux
+/// rangées s'y ajoute. À 30 points, plus les 44 points des liens « Tout voir »
+/// et « Modifier » comptés dans la mise en page, une rangée et la suivante
+/// étaient séparées de près de 55 points visibles.
+enum HomeRhythm {
+    /// Entre deux rangées.
+    static let section: CGFloat = 24
+    /// Entre le titre d'une rangée et ce qu'elle contient, et entre ses lignes.
+    static let title: CGFloat = 12
+}
+
+/// Le titre d'une rangée de l'accueil, avec son lien éventuel à droite.
+///
+/// Un seul dessin pour toutes les rangées, celles de cette vue comme
+/// « Profils à suivre » : trois copies avaient fini par ne plus avoir la même
+/// hauteur, ni le même trait d'en-tête pour VoiceOver.
+struct HomeSectionHeader<Trailing: View>: View {
+    let title: String
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(title)
+                .planTitle(21)
+                .foregroundStyle(Ink.ink)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 0)
+            trailing
+        }
+    }
+}
+
+extension HomeSectionHeader where Trailing == EmptyView {
+    init(title: String) {
+        self.init(title: title) { EmptyView() }
+    }
+}
+
+extension View {
+    /// Un lien texte souligné, comme « Tout voir » ou « Modifier ».
+    ///
+    /// La cible fait 44 points de haut, mais la mise en page n'en compte que
+    /// la hauteur du texte : la cible déborde sur l'écart qui l'entoure au
+    /// lieu de l'agrandir. Le même procédé tenait déjà la largeur.
+    func homeTextLink() -> some View {
+        planFont(12)
+            .foregroundStyle(Ink.ink2)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 15)
+            .contentShape(Rectangle())
+            .padding(.horizontal, -8)
+            .padding(.vertical, -15)
     }
 }
 
