@@ -144,6 +144,25 @@ struct SettingsView: View {
         trailing: LineGlyph.Kind? = .chevron,
         tint: Color = Ink.ink
     ) -> some View {
+        line(title, note: note, trailing: trailing, tint: tint) {
+            if let value {
+                Text(value)
+                    .planFont(14)
+                    .foregroundStyle(Ink.ink2)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    /// La même ligne, avec à droite autre chose qu'un texte : les logos des
+    /// plateformes retenues.
+    private func line<Accessory: View>(
+        _ title: String,
+        note: String? = nil,
+        trailing: LineGlyph.Kind? = .chevron,
+        tint: Color = Ink.ink,
+        @ViewBuilder accessory: () -> Accessory
+    ) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
@@ -157,16 +176,15 @@ struct SettingsView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            // Posée dans le libellé d'un `Menu`, une ligne hérite d'un
+            // alignement centré : la seconde ligne d'une note partait au
+            // milieu. Toujours à gauche, quel que soit le conteneur.
+            .multilineTextAlignment(.leading)
             .layoutPriority(1)
 
             Spacer(minLength: 8)
 
-            if let value {
-                Text(value)
-                    .planFont(14)
-                    .foregroundStyle(Ink.ink2)
-                    .lineLimit(1)
-            }
+            accessory()
 
             if let trailing {
                 LineGlyph(kind: trailing)
@@ -261,7 +279,9 @@ struct SettingsView: View {
             NavigationLink {
                 PlatformSettingsView()
             } label: {
-                line(String(localized: "Mes plateformes", bundle: .app), value: platformsSummary)
+                line(String(localized: "Mes plateformes", bundle: .app)) {
+                    platformsSummary
+                }
             }
             .buttonStyle(PressableScaleStyle(scale: 0.985))
 
@@ -276,13 +296,55 @@ struct SettingsView: View {
         }
     }
 
-    /// Les plateformes retenues, par leur nom. La ligne coupe ce qui ne tient
-    /// pas : l'écran d'après montre tout.
-    private var platformsSummary: String {
-        let chosen = libraryStore.preferredPlatformIDs
-        guard !chosen.isEmpty else { return String(localized: "Aucune", bundle: .app) }
-        let names = catalog.platforms.filter { chosen.contains($0.id) }.map(\.name)
-        return names.isEmpty ? String(localized: "\(chosen.count) plateformes", bundle: .app) : names.joined(separator: ", ")
+    /// Les plateformes retenues, par leur logo : quatre noms ne tenaient pas
+    /// sur la ligne, quatre logos de 22 pt si. Au-delà, le compte du reste.
+    @ViewBuilder
+    private var platformsSummary: some View {
+        let chosen = catalog.platforms.filter { libraryStore.preferredPlatformIDs.contains($0.id) }
+        if libraryStore.preferredPlatformIDs.isEmpty {
+            Text("Aucune", bundle: .app)
+                .planFont(14)
+                .foregroundStyle(Ink.ink2)
+        } else if chosen.isEmpty {
+            // Le catalogue n'est pas encore là : le nombre, en attendant.
+            Text(String(localized: "\(libraryStore.preferredPlatformIDs.count) plateformes", bundle: .app))
+                .planFont(14)
+                .foregroundStyle(Ink.ink2)
+        } else {
+            HStack(spacing: 5) {
+                ForEach(chosen.prefix(4)) { platform in
+                    platformLogo(platform)
+                }
+                if chosen.count > 4 {
+                    Text(verbatim: "+\(chosen.count - 4)")
+                        .planFont(12)
+                        .monospacedDigit()
+                        .foregroundStyle(Ink.ink2)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(chosen.map(\.name).joined(separator: ", "))
+        }
+    }
+
+    private func platformLogo(_ platform: StreamingPlatform) -> some View {
+        Group {
+            if let logoURL = platform.logoURL {
+                PosterImageView(url: logoURL)
+            } else {
+                Text(platform.shortLabel.prefix(2))
+                    .planFont(8, weight: .semibold)
+                    .foregroundStyle(Ink.ink2)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Ink.ground3)
+            }
+        }
+        .frame(width: 22, height: 22)
+        .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+                .strokeBorder(Ink.rule, lineWidth: 1)
+        )
     }
 
     private var bannedGenresSummary: String {
@@ -309,18 +371,21 @@ struct SettingsView: View {
                 }
                 Text("Ne pas préciser", bundle: .app).tag(0)
             } label: {
-                Text("Ma génération", bundle: .app)
+                Text("Décennie de naissance", bundle: .app)
             }
             .pickerStyle(.inline)
         } label: {
             line(
-                String(localized: "Ma génération", bundle: .app),
-                note: String(localized: "Les films sortis avant ta naissance te seront moins souvent proposés.", bundle: .app),
+                String(localized: "Décennie de naissance", bundle: .app),
+                // Le deck ne retire aucun film ancien : il en baisse un peu
+                // la fréquence (`generationFactor`, au plus de moitié). La
+                // note dit ce qu'on gagne, pas ce qu'on perdrait.
+                note: String(localized: "Dans Découvrir, les films de ton époque passent un peu plus souvent. Les classiques restent proposés.", bundle: .app),
                 value: current?.menuLabel ?? String(localized: "Non précisée", bundle: .app),
                 trailing: .menu
             )
         }
-        .accessibilityLabel(String(localized: "Ma génération", bundle: .app))
+        .accessibilityLabel(String(localized: "Décennie de naissance", bundle: .app))
         .accessibilityValue(current?.menuLabel ?? String(localized: "Non précisée", bundle: .app))
     }
 
@@ -400,7 +465,6 @@ struct SettingsView: View {
         } label: {
             line(
                 String(localized: "Langue", bundle: .app),
-                note: String(localized: "Les titres, les résumés et les genres changent aussi.", bundle: .app),
                 value: language.selection.label,
                 trailing: .menu
             )

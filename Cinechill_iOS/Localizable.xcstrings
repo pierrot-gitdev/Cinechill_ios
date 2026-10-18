@@ -5036,6 +5036,22 @@
         }
       }
     },
+    "Dans Découvrir, les films de ton époque passent un peu plus souvent. Les classiques restent proposés." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Discover, movies from your era come up a little more often. Classics are still suggested."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans Découvrir, les films de ton époque passent un peu plus souvent. Les classiques restent proposés."
+          }
+        }
+      }
+    },
     "Dans la même veine" : {
       "localizations" : {
         "en" : {
@@ -5200,6 +5216,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Débloquer %@"
+          }
+        }
+      }
+    },
+    "Décennie de naissance" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decade of birth"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Décennie de naissance"
           }
         }
       }
@@ -8436,22 +8468,6 @@
         }
       }
     },
-    "Les films sortis avant ta naissance te seront moins souvent proposés." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Movies released before you were born will come up less often."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les films sortis avant ta naissance te seront moins souvent proposés."
-          }
-        }
-      }
-    },
     "Les profils que tu bloques s'affichent ici, avec de quoi les débloquer." : {
       "localizations" : {
         "en" : {
@@ -8512,22 +8528,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les séries que tu as passées reviendront plus tard."
-          }
-        }
-      }
-    },
-    "Les titres, les résumés et les genres changent aussi." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Titles, synopses and genres change too."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les titres, les résumés et les genres changent aussi."
           }
         }
       }
@@ -8624,22 +8624,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lui recommander un film"
-          }
-        }
-      }
-    },
-    "Ma génération" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "My generation"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ma génération"
           }
         }
       }
