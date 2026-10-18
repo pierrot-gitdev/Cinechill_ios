@@ -510,3 +510,73 @@ struct DetailHeartShape: Shape {
         return path
     }
 }
+
+// MARK: - La bande-annonce
+
+/// La bande-annonce, jouée dans l'app et non dans YouTube : la salle se
+/// baisse, l'écran passe au format cinéma, et l'on revient à la fiche d'un
+/// tap. C'est le geste de CinéMatch, qui la joue sur l'écran de sa salle, et
+/// le même lecteur.
+private struct TrailerTheater: View {
+    let key: String
+    let onClose: () -> Void
+
+    var body: some View {
+        ZStack {
+            // Toucher la salle autour de l'écran la rallume.
+            Color.black.opacity(0.94)
+                .ignoresSafeArea()
+                .onTapGesture(perform: onClose)
+                .accessibilityHidden(true)
+
+            CineMatchTrailerPlayer(key: key)
+                .aspectRatio(16 / 9, contentMode: .fit)
+                .frame(maxWidth: .infinity)
+        }
+        .overlay(alignment: .topTrailing) {
+            Button(action: onClose) {
+                TrailerCloseGlyph()
+                    .stroke(style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
+                    .foregroundStyle(Ink.ink)
+                    .frame(width: 22, height: 22)
+                    .frame(width: Metrics.control, height: Metrics.control)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PressableScaleStyle(scale: 0.9))
+            .padding(.trailing, 10)
+            .accessibilityLabel(String(localized: "Fermer la bande-annonce", bundle: .app))
+        }
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape, onClose)
+    }
+}
+
+/// La croix, dans l'écriture des glyphes de la fiche : grille de 24, trait
+/// de 1,5, extrémités rondes.
+private struct TrailerCloseGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        let s = min(rect.width, rect.height) / 24
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + 6.4 * s, y: rect.minY + 6.4 * s))
+        path.addLine(to: CGPoint(x: rect.minX + 17.6 * s, y: rect.minY + 17.6 * s))
+        path.move(to: CGPoint(x: rect.minX + 17.6 * s, y: rect.minY + 6.4 * s))
+        path.addLine(to: CGPoint(x: rect.minX + 6.4 * s, y: rect.minY + 17.6 * s))
+        return path
+    }
+}
+
+extension View {
+    /// Joue la bande-annonce dont la clé YouTube est posée, par-dessus tout
+    /// l'écran, plancher compris. Un fondu court, sans mouvement : la salle
+    /// s'éteint, elle ne glisse pas.
+    func trailerTheater(_ key: Binding<String?>) -> some View {
+        overlay {
+            if let value = key.wrappedValue {
+                TrailerTheater(key: value) {
+                    withAnimation(.easeOut(duration: 0.2)) { key.wrappedValue = nil }
+                }
+                .transition(.opacity)
+            }
+        }
+    }
+}

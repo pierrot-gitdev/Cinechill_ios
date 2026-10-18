@@ -22,9 +22,10 @@ struct SeasonDetailView: View {
     var showsSeriesLink = true
 
     @EnvironmentObject private var libraryStore: LibraryStore
-    @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
 
+    /// La clé YouTube de la bande-annonce qui joue, s'il y en a une.
+    @State private var playingTrailer: String?
     @State private var series: TVSeriesDetail?
     @State private var detail: TVSeasonDetail?
     @State private var loading = true
@@ -82,6 +83,7 @@ struct SeasonDetailView: View {
         }
         .safeAreaInset(edge: .bottom) { floor }
         .toolbar(.hidden, for: .navigationBar)
+        .trailerTheater($playingTrailer)
         .task { await load() }
         .task { await libraryStore.warmUpStatusEndpoint() }
         .onChange(of: libraryStore.pendingStatus(for: seasonItem) == nil) { _, settled in
@@ -465,12 +467,8 @@ struct SeasonDetailView: View {
     }
 
     private func openTrailer() {
-        guard let appURL = series?.trailerAppURL, let webURL = series?.trailerURL else { return }
-        if UIApplication.shared.canOpenURL(appURL) {
-            UIApplication.shared.open(appURL)
-        } else {
-            openURL(webURL)
-        }
+        guard let key = series?.trailerKey else { return }
+        withAnimation(.easeOut(duration: 0.2)) { playingTrailer = key }
     }
 
     /// La série et la saison en parallèle : la première porte les plateformes,

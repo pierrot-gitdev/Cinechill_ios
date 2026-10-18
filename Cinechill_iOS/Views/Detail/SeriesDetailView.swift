@@ -21,9 +21,10 @@ struct SeriesDetailView: View {
     let item: MediaItem
 
     @EnvironmentObject private var libraryStore: LibraryStore
-    @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
 
+    /// La clé YouTube de la bande-annonce qui joue, s'il y en a une.
+    @State private var playingTrailer: String?
     @State private var detail: TVSeriesDetail?
     @State private var loading = true
     @State private var errorMessage: String?
@@ -44,6 +45,7 @@ struct SeriesDetailView: View {
         }
         .safeAreaInset(edge: .bottom) { floor }
         .toolbar(.hidden, for: .navigationBar)
+        .trailerTheater($playingTrailer)
         .task { await load() }
         .task { await libraryStore.warmUpStatusEndpoint() }
     }
@@ -461,12 +463,8 @@ struct SeriesDetailView: View {
     }
 
     private func openTrailer() {
-        guard let appURL = detail?.trailerAppURL, let webURL = detail?.trailerURL else { return }
-        if UIApplication.shared.canOpenURL(appURL) {
-            UIApplication.shared.open(appURL)
-        } else {
-            openURL(webURL)
-        }
+        guard let key = detail?.trailerKey else { return }
+        withAnimation(.easeOut(duration: 0.2)) { playingTrailer = key }
     }
 
     private func load() async {

@@ -49,6 +49,8 @@ struct FilmDetailView: View {
     /// « Lequel est le plus sombre ? », posée à la place de la question du
     /// lendemain une fois celle-ci répondue, si le serveur en a une.
     @State private var darkerQuestion: CineMatchDarkerQuestion?
+    /// La clé YouTube de la bande-annonce qui joue, s'il y en a une.
+    @State private var playingTrailer: String?
     private let cineMatchClient: any CineMatchFetching = BackendCineMatchClient()
 
     private static let heroHeight: CGFloat = 260
@@ -109,6 +111,7 @@ struct FilmDetailView: View {
         .safeAreaInset(edge: .bottom) { decisionFloor }
         .toolbar(.hidden, for: .navigationBar)
         .overlay(alignment: .bottom) { outcomeBanner }
+        .trailerTheater($playingTrailer)
         .sheet(isPresented: $showComposer) {
             SuggestionComposerSheet(item: displayItem) { result in
                 guard !result.isSilent else { return }
@@ -792,13 +795,8 @@ struct FilmDetailView: View {
     }
 
     private func openTrailer() {
-        guard let appURL = detail?.trailerAppURL,
-              let webURL = detail?.trailerURL else { return }
-        if UIApplication.shared.canOpenURL(appURL) {
-            UIApplication.shared.open(appURL)
-        } else {
-            openURL(webURL)
-        }
+        guard let key = detail?.trailerKey else { return }
+        withAnimation(.easeOut(duration: 0.2)) { playingTrailer = key }
     }
 
     /// Ouvre l'app native de la plateforme si elle est installée (ex. Netflix via `nflx://`),
