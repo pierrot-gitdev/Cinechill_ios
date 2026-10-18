@@ -34,7 +34,6 @@ final class CineMatchViewModel {
     /// Deux touchers ne suffisaient pas (retour de Pierre, 12 octobre) : le
     /// film choisi dit le genre d'histoire, pas la direction ni le ton.
     enum Step: Equatable { case home, style, anchor, refine, tweak, loadingFive, five, daily, conclusion }
-    enum GalleryAddState: Equatable { case idle, adding, added, failed }
 
     /// Ce qu'on a dit d'un des cinq. Un film marqué ne se lance plus : il se
     /// remplace, avec les autres films marqués, en un seul calcul.
@@ -109,7 +108,6 @@ final class CineMatchViewModel {
     private(set) var widening: CineMatchWidening?
     private(set) var dailyFilm: CineMatchFilm?
     private(set) var concludedFilm: CineMatchFilm?
-    private(set) var galleryAddState: GalleryAddState = .idle
     /// Non nil : la vue affiche `PlanEmptyState` et « Réessayer ».
     private(set) var errorMessage: String?
 
@@ -212,7 +210,6 @@ final class CineMatchViewModel {
         widening = nil
         dailyFilm = nil
         concludedFilm = nil
-        galleryAddState = .idle
         pendingFiveExposure = []
         step = .home
     }
@@ -237,7 +234,6 @@ final class CineMatchViewModel {
         currentIndex = 0
         widening = nil
         concludedFilm = nil
-        galleryAddState = .idle
         step = .style
         guard !stylesAreFresh else { return }
         // Posé avant la tâche : entre les deux, l'écran des styles se serait
@@ -413,7 +409,6 @@ final class CineMatchViewModel {
         stopInflight()
         dailyFilm = nil
         concludedFilm = nil
-        galleryAddState = .idle
         errorMessage = nil
         lastFailedAction = nil
         eveningID = Self.newEveningID()
@@ -428,19 +423,8 @@ final class CineMatchViewModel {
         let evening = eveningID
         Task { try? await client.recordLaunch(tmdbID: film.id, format: format, evening: evening) }
         concludedFilm = film
-        galleryAddState = .idle
         step = .conclusion
         flushExposureInBackground()
-    }
-
-    func beginGalleryAdd() {
-        guard galleryAddState == .idle || galleryAddState == .failed else { return }
-        galleryAddState = .adding
-    }
-
-    func finishGalleryAdd(success: Bool) {
-        guard galleryAddState == .adding else { return }
-        galleryAddState = success ? .added : .failed
     }
 
     // MARK: - Films marqués
