@@ -2568,6 +2568,22 @@
         }
       }
     },
+    "Fermer la bande-annonce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close the trailer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer la bande-annonce"
+          }
+        }
+      }
+    },
     "Films, séries, profils" : {
       "localizations" : {
         "en" : {
@@ -2580,6 +2596,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Films, séries, profils"
+          }
+        }
+      }
+    },
+    "fin vers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ends around"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "fin vers"
           }
         }
       }
@@ -2612,6 +2644,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il reste dans ta watchlist."
+          }
+        }
+      }
+    },
+    "Lancer la série" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play the series"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lancer la série"
+          }
+        }
+      }
+    },
+    "Lancer le film" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play the movie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lancer le film"
+          }
+        }
+      }
+    },
+    "Lancer sur %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play on %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lancer sur %@"
           }
         }
       }
@@ -4124,38 +4204,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter 1 saison"
-          }
-        }
-      }
-    },
-    "Ajouter à ma galerie" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to my gallery"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter à ma galerie"
-          }
-        }
-      }
-    },
-    "Ajouter à ma watchlist" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to my watchlist"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter à ma watchlist"
           }
         }
       }
@@ -6550,22 +6598,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dans ta watchlist"
-          }
-        }
-      }
-    },
-    "Dans ta watchlist : saison 1, épisode %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In your watchlist: season 1, episode %lld"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dans ta watchlist : saison 1, épisode %lld"
           }
         }
       }
@@ -11259,54 +11291,6 @@
         }
       }
     },
-    "On en tiendra compte pour tes prochaines propositions." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We'll factor it into your next picks."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On en tiendra compte pour tes prochaines propositions."
-          }
-        }
-      }
-    },
-    "On garde l'épisode à lancer dans ta watchlist." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We keep the next episode in your watchlist."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On garde l'épisode à lancer dans ta watchlist."
-          }
-        }
-      }
-    },
-    "On met la saison 1 dans ta watchlist, à son premier épisode." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We're putting season 1 in your watchlist, at its first episode."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On met la saison 1 dans ta watchlist, à son premier épisode."
-          }
-        }
-      }
-    },
     "On n'a pas d'autre film à te proposer ce soir." : {
       "localizations" : {
         "en" : {
@@ -11467,22 +11451,6 @@
         }
       }
     },
-    "On n'a pas pu l'ajouter à ta galerie. Réessaie." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We couldn't add it to your gallery. Try again."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On n'a pas pu l'ajouter à ta galerie. Réessaie."
-          }
-        }
-      }
-    },
     "On n'a pas pu la remplacer. Réessaie dans un instant." : {
       "localizations" : {
         "en" : {
@@ -11527,22 +11495,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On n'a pas pu les remplacer. Réessaie dans un instant."
-          }
-        }
-      }
-    },
-    "On n'a pas pu mettre la saison 1 dans ta watchlist. Réessaie." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We couldn't add season 1 to your watchlist. Try again."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On n'a pas pu mettre la saison 1 dans ta watchlist. Réessaie."
           }
         }
       }
@@ -17061,22 +17013,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un souci de notre côté. Réessaie dans un instant."
-          }
-        }
-      }
-    },
-    "Une fois que tu l'as vu, ajoute-le à ta galerie : on en tiendra compte la prochaine fois." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Once you've watched it, add it to your gallery: we'll factor it in next time."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une fois que tu l'as vu, ajoute-le à ta galerie : on en tiendra compte la prochaine fois."
           }
         }
       }

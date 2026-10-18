@@ -11,8 +11,14 @@ enum CineMatchFiveMode {
     case five, daily
 }
 
-/// Les cinq films, un par écran — et la proposition du jour, dans le même
+/// Les cinq films, un par écran, et la proposition du jour, dans le même
 /// langage visuel : une seule façon de dire « voici ton film ».
+///
+/// **La salle s'allume** (12 octobre 2026, à la demande de Pierre, qui
+/// trouvait le carrousel trop sage) : l'affiche est l'écran au fond d'une
+/// salle dont les rangées sont celles du logo. À l'arrivée, on s'approche,
+/// l'écran s'allume et sa lumière court sur les fauteuils ; à chaque film
+/// suivant, l'écran s'éteint et se rallume. Voir `CineMatchRoomView`.
 ///
 /// Cinq plutôt qu'un : un coup de cœur pèse deux fois plus qu'un raté, il faut
 /// maximiser la chance qu'il y en ait un. Un seul à l'écran plutôt que cinq :
@@ -38,19 +44,28 @@ struct CineMatchFiveView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Le déplacement de la carte sous le doigt, et pendant son départ.
+    /// Le déplacement sous le doigt : l'écran suit un peu.
     @State private var dragOffset: CGFloat = 0
-    @State private var rotation: Double = 0
-    @State private var cardOpacity: Double = 1
-    /// Prise par le haut, la carte bascule autour de son bord bas ; prise par
-    /// le bas, autour de son bord haut.
-    @State private var isGrabbedHigh = true
-    /// Une carte part : aucun geste n'est pris tant que la suivante n'est pas
-    /// arrivée.
+    /// Un film change : aucun geste n'est pris tant que l'écran n'est pas
+    /// rallumé.
     @State private var isTurning = false
+    /// Ce que joue la salle : l'entrée, un changement de film, ou rien.
+    @State private var sequence: CineMatchRoomSequence = .still
+    /// La salle est éteinte : le fond passe au noir.
+    @State private var isDark = false
+    /// Le titre, l'heure de fin et les boutons sont arrivés.
+    @State private var isRevealed = false
     @State private var synopsis: SynopsisContent?
-    /// Le film dont on demande « Tu l'as aimé ? », sur place, sous la carte.
+    /// Le film dont on demande « Tu l'as aimé ? », sur place, sous l'écran.
     @State private var askingSeenID: Int?
+    /// La bande-annonce passe sur l'écran de la salle.
+    @State private var isTrailerOpen = false
+    /// De l'affiche à l'écran au format cinéma (bande-annonce).
+    @State private var widen: Double = 0
+    /// De la salle allumée à la salle éteinte, film lancé.
+    @State private var launch: Double = 0
+    /// L'heure du lancement : celle qui fixe « fin vers ».
+    @State private var launchedAt: Date?
 
     init(viewModel: CineMatchViewModel, mode: CineMatchFiveMode) {
         self.viewModel = viewModel
@@ -72,8 +87,13 @@ struct CineMatchFiveView: View {
     }
 
     private var current: CineMatchFilm? {
-        films.isEmpty ? nil : films[index]
+        if isLaunched { return viewModel.concludedFilm }
+        return films.isEmpty ? nil : films[index]
     }
+
+    /// « Je le regarde » a été touché : la même vue montre le film lancé, la
+    /// salle éteinte, sans changer de décor.
+    private var isLaunched: Bool { viewModel.step == .conclusion }
 
     /// Les plateformes de la soirée d'abord, celles déclarées dans les réglages
     /// à défaut : c'est ce qui choisit le logo affiché et l'app ouverte.
@@ -88,11 +108,25 @@ struct CineMatchFiveView: View {
                 .padding(.top, 14)
 
             if let current {
-                deck(current)
-                    .padding(.top, 12)
-
-                actions(for: current)
+                room(current)
                     .padding(.top, 10)
+                    .padding(.horizontal, -Metrics.margin)
+
+                if isLaunched {
+                    launched(current)
+                        .padding(.top, 12)
+                        .transition(.opacity)
+                } else {
+                    details(current)
+                        .padding(.top, 10)
+                        .opacity(isRevealed ? 1 : 0)
+                        .offset(y: isRevealed || reduceMotion ? 0 : 14)
+
+                    actions(for: current)
+                        .padding(.top, 14)
+                        .opacity(isRevealed ? 1 : 0)
+                        .allowsHitTesting(isRevealed)
+                }
             } else if mode == .daily, let message = viewModel.errorMessage, viewModel.failureIsNoCandidates {
                 PlanEmptyState(
                     title: isSeries
@@ -133,7 +167,7 @@ struct CineMatchFiveView: View {
         .padding(.horizontal, Metrics.margin)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Ink.ground)
+        .background(isDark ? Self.night : Ink.ground)
         .sheet(item: $synopsis) { content in
             CineMatchSynopsisSheet(content: content, onClose: { synopsis = nil })
                 .presentationDetents([.medium, .large])
@@ -141,11 +175,24 @@ struct CineMatchFiveView: View {
         }
         .onAppear {
             PosterImageCache.shared.prefetch(films.map(\.item.posterURL))
+            // Revenu sur un film déjà lancé (changement d'onglet) : la salle
+            // est éteinte, sans rejouer l'entrée.
+            guard !isLaunched else {
+                isDark = true
+                isRevealed = true
+                launch = 1
+                return
+            }
             showCurrentCard()
+            playEntrance()
         }
         .onChange(of: films.map(\.id)) { _, _ in
+            guard !isLaunched else { return }
             PosterImageCache.shared.prefetch(films.map(\.item.posterURL))
             showCurrentCard()
+            // Les films arrivent (proposition du jour), ou l'un d'eux est
+            // remplacé : l'entrée la première fois, un changement ensuite.
+            if isRevealed { playSwap() } else { playEntrance() }
         }
         // En quittant les résultats, l'exposition accumulée part d'un bloc.
         .onDisappear {
@@ -175,34 +222,33 @@ struct CineMatchFiveView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
                 switch mode {
-                case .five:
+                case .five where !isLaunched:
                     // Un pas en arrière : les six films de départ, ou les
                     // styles après « Peu importe ». Choisir un autre film de
                     // départ vaut mieux que de tout reprendre à l'accueil.
                     Button {
                         viewModel.goBack()
                     } label: {
-                        Text("Retour", bundle: .app)
-                            .planFont(13, weight: .medium)
+                        FiveArrowGlyph(pointsRight: false)
+                            .stroke(style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
                             .foregroundStyle(Ink.ink2)
-                            .padding(.trailing, 12)
-                            .frame(minHeight: Metrics.control)
+                            .frame(width: 16, height: 16)
+                            .frame(width: 44, height: Metrics.control, alignment: .leading)
                             .contentShape(Rectangle())
                     }
-                    .buttonStyle(PressableScaleStyle(scale: 0.96))
-                    // Le bouton garde sa cible de 44 pt sans pousser la carte.
+                    .buttonStyle(PressableScaleStyle(scale: 0.92))
+                    // Le bouton garde sa cible de 44 pt sans pousser la salle.
                     .padding(.vertical, -14)
                     .disabled(viewModel.isReplacing)
+                    .accessibilityLabel(String(localized: "Retour", bundle: .app))
 
                     Spacer(minLength: 0)
 
+                    // Les points suffisent : « 1 sur 5 » disait deux fois la
+                    // même chose (épuré le 13 octobre).
                     if films.count > 1 { dots }
-                    if !films.isEmpty {
-                        Text(String(localized: "\(index + 1) sur \(films.count)", bundle: .app))
-                            .planLabel()
-                            .monospacedDigit()
-                            .foregroundStyle(Ink.ink2)
-                    }
+                case .five:
+                    Spacer(minLength: 0)
                 case .daily:
                     Group {
                         if isSeries {
@@ -222,19 +268,21 @@ struct CineMatchFiveView: View {
             // Ce qu'on a demandé, en une ligne : le film touché, le second
             // film, la retouche. Sans elle, rien ne disait plus pourquoi ces
             // cinq-là. Absente après « Peu importe ».
-            if mode == .five, let line = requestLine {
+            if mode == .five, !isLaunched, let line = requestLine {
                 Text(line)
                     .planFont(13)
                     .foregroundStyle(Ink.ink2)
+                    .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
             }
 
-            if mode == .five, let outcome = viewModel.replaceOutcome {
+            if mode == .five, !isLaunched, let outcome = viewModel.replaceOutcome {
                 replaceLine(outcome)
             }
 
-            if mode == .five, let widening = viewModel.widening {
+            if mode == .five, !isLaunched, let widening = viewModel.widening {
                 if widening.duration {
                     wideningLine(String(localized: "On a été plus souple sur la durée", bundle: .app))
                 }
@@ -353,195 +401,266 @@ struct CineMatchFiveView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    // MARK: - Le paquet
+    // MARK: - La salle
 
-    private func deck(_ film: CineMatchFilm) -> some View {
-        GeometryReader { proxy in
-            let chevronWidth: CGFloat = mode == .five ? 26 : 0
-            let size = Self.cardSize(
-                in: CGSize(width: proxy.size.width - chevronWidth * 2, height: proxy.size.height)
-            )
+    /// Le noir de la salle éteinte, plus profond que celui de l'app. Calculé :
+    /// une couleur ne craint rien d'un `static let`, mais la règle se tient
+    /// mieux sans exception.
+    private static var night: Color { Color(hex: 0x080706) }
 
-            ZStack {
-                card(film, size: size)
-                    .id(film.id)
+    private func room(_ film: CineMatchFilm) -> some View {
+        let mark = mode == .five && !isLaunched ? viewModel.marks[film.id] : nil
+        let canPlayTrailer = film.trailerKey?.isEmpty == false
+        let showsCue = isRevealed && !isLaunched && !isTrailerOpen && mark == nil && canPlayTrailer
 
-                if mode == .five {
-                    HStack(spacing: 0) {
-                        chevron(.previous, cardWidth: size.width)
-                        Spacer(minLength: 0)
-                        chevron(.next, cardWidth: size.width)
+        return CineMatchRoomView(
+            film: film,
+            isMarked: mark != nil,
+            tag: isLaunched ? nil : tagText(for: film, mark: mark),
+            showsTrailerCue: showsCue,
+            sequence: sequence,
+            dragOffset: dragOffset,
+            widen: widen,
+            launch: launch
+        ) {
+            if isTrailerOpen, let key = film.trailerKey {
+                CineMatchTrailerPlayer(key: key)
+                    .overlay(alignment: .topTrailing) {
+                        Button {
+                            closeTrailer()
+                        } label: {
+                            FiveCloseGlyph()
+                                .stroke(style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
+                                .foregroundStyle(.white)
+                                .frame(width: 16, height: 16)
+                                .frame(width: 44, height: 44)
+                                .background(Color.black.opacity(0.55), in: Circle().inset(by: 8))
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PressableScaleStyle(scale: 0.92))
+                        .accessibilityLabel(String(localized: "Fermer la bande-annonce", bundle: .app))
                     }
-                }
             }
-            .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .frame(maxHeight: .infinity)
-    }
-
-    /// Sur un grand écran, la proportion de Découvrir (1,62). Quand la hauteur
-    /// manque, la carte s'élargit plutôt que de rétrécir : une carte de 150
-    /// points de large tronque le titre, alors que l'affiche, tenue entière
-    /// dans son cadre, supporte très bien une proportion plus basse.
-    private static func cardSize(in space: CGSize) -> CGSize {
-        let width = max(0, space.width)
-        let height = max(0, space.height)
-        var w = min(width, height / 1.62)
-        var h = min(height, w * 1.62)
-        if h < 380 {
-            w = min(width, height / 1.22)
-            h = min(height, w * 1.22)
-        }
-        return CGSize(width: w, height: h)
-    }
-
-    private func card(_ film: CineMatchFilm, size: CGSize) -> some View {
-        let isCompact = size.height < 380
-        let shape = RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-
-        let mark = mode == .five ? viewModel.marks[film.id] : nil
-
-        return VStack(spacing: 0) {
-            PosterImageView(url: film.item.posterURL, contentMode: .fit)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.vertical, 9)
-                .offset(x: max(-9, min(9, -dragOffset * 0.05)))
-                .opacity(mark == nil ? 1 : 0.3)
-                .overlay(alignment: .topLeading) { cardTag(for: film, mark: mark) }
-                .accessibilityHidden(true)
-
-            plate(film, isCompact: isCompact)
-                .opacity(mark == nil ? 1 : 0.55)
-        }
-        .frame(width: size.width, height: size.height)
-        .background(Ink.ground)
-        .overlay(shape.strokeBorder(Ink.rule, lineWidth: 1))
-        .clipShape(shape)
-        .contentShape(shape)
-        .rotationEffect(.degrees(rotation), anchor: isGrabbedHigh ? .bottom : .top)
-        .offset(x: dragOffset)
-        .opacity(cardOpacity)
-        .gesture(dragGesture(cardHeight: size.height, cardWidth: size.width))
-        .accessibilityElement(children: .contain)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .onTapGesture { tapRoom(film) }
+        .gesture(mode == .five && !isLaunched && !isTrailerOpen ? dragGesture : nil)
+        .accessibilityElement(children: isTrailerOpen ? .contain : .ignore)
         .accessibilityLabel(film.item.title)
-        .accessibilityValue(cardAccessibilityValue(film))
-        .accessibilityAction(named: nextLabel) { turn(1, cardWidth: size.width) }
-        .accessibilityAction(named: previousLabel) { turn(-1, cardWidth: size.width) }
+        .accessibilityValue(isLaunched ? "" : cardAccessibilityValue(film))
+        .accessibilityAction(named: String(localized: "Bande-annonce", bundle: .app)) { openTrailer(film) }
+        .accessibilityAction(named: nextLabel) { turn(1) }
+        .accessibilityAction(named: previousLabel) { turn(-1) }
         .accessibilityAction(named: String(localized: "Synopsis", bundle: .app)) { openSynopsis(film) }
+    }
+
+    /// Un toucher sur la salle : pendant l'entrée, il la passe ; ensuite,
+    /// sur l'écran, il lance la bande-annonce, puisque c'est là qu'elle passe.
+    private func tapRoom(_ film: CineMatchFilm) {
+        if sequence.kind == .entrance {
+            skipEntrance()
+            return
+        }
+        guard !isLaunched, !isTrailerOpen, isRevealed, viewModel.marks[film.id] == nil else { return }
+        openTrailer(film)
     }
 
     /// « Déjà vu » ou « Écarté » sur un film marqué, « Nouveau » sur un
     /// remplaçant.
-    @ViewBuilder
-    private func cardTag(for film: CineMatchFilm, mark: CineMatchViewModel.Mark?) -> some View {
-        let text: String? = if let mark {
-            switch mark {
+    private func tagText(for film: CineMatchFilm, mark: CineMatchViewModel.Mark?) -> String? {
+        if let mark {
+            return switch mark {
             case .seen(loved: true): String(localized: "Déjà vu · coup de cœur", bundle: .app)
             case .seen(loved: false): String(localized: "Déjà vu", bundle: .app)
             case .refused where isSeries: String(localized: "Écartée", bundle: .app)
             case .refused: String(localized: "Écarté", bundle: .app)
             }
-        } else if mode == .five, viewModel.freshFilmIDs.contains(film.id) {
-            String(localized: "Nouveau", bundle: .app)
-        } else {
-            nil
         }
-        if let text {
-            Text(text)
-                .planLabel()
-                .foregroundStyle(Ink.ink)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(Ink.ground3, in: RoundedRectangle(cornerRadius: 2, style: .continuous))
-                .padding(12)
-                .transition(.opacity)
+        if mode == .five, viewModel.freshFilmIDs.contains(film.id) {
+            return String(localized: "Nouveau", bundle: .app)
         }
+        return nil
     }
 
-    private func plate(_ film: CineMatchFilm, isCompact: Bool) -> some View {
-        VStack(spacing: 0) {
-            PlanEdge(tint: Ink.ruleSet)
-
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 6) {
-                    Text(eyebrow(for: film))
-                        .planLabel()
-                        .foregroundStyle(Ink.ink2)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Button {
-                        openSynopsis(film)
-                    } label: {
-                        FiveInfoGlyph()
-                            .foregroundStyle(Ink.ink2)
-                            .frame(width: 19, height: 19)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(PressableScaleStyle(scale: 0.92))
-                    .accessibilityLabel(String(localized: "Synopsis de \(film.item.title)", bundle: .app))
+    /// Ce que l'on sait du film, sous l'écran, et rien de plus (épuré le 13
+    /// octobre) : le titre, qui ouvre le synopsis, puis une ligne, la durée,
+    /// l'heure à laquelle il finirait si on le lançait maintenant, la
+    /// plateforme. L'heure part de l'heure qu'il est et défile jusqu'à la fin
+    /// à l'arrivée du film.
+    private func details(_ film: CineMatchFilm) -> some View {
+        VStack(spacing: 6) {
+            Button {
+                openSynopsis(film)
+            } label: {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(film.item.title)
+                        .planTitle(28)
+                        .foregroundStyle(Ink.ink)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.75)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Image(systemName: "chevron.right")
+                        .planFont(15, weight: .regular)
+                        .foregroundStyle(Ink.ink3)
+                        .accessibilityHidden(true)
                 }
-                // Les retraits suivent la cible de 44 pt : le glyphe reste
-                // où il était, seule la zone qu'on touche a grandi.
-                .padding(.top, -13)
-                .padding(.trailing, -14)
-                .padding(.bottom, -11)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PressableScaleStyle(scale: 0.97))
+            .accessibilityLabel(String(localized: "Synopsis de \(film.item.title)", bundle: .app))
 
-                Text(film.item.title)
-                    .planTitle(isCompact ? 19 : 25)
-                    .foregroundStyle(Ink.ink)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.72)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 8)
-
+            TimelineView(.everyMinute) { context in
                 FiveMetaRow(
-                    episodes: film.isSeries ? film.episodeCount : nil,
+                    episodes: nil,
                     runtime: film.runtimeMinutes,
                     platform: platform(for: film),
-                    fontSize: 12
+                    fontSize: 13,
+                    end: endDate(for: film, now: context.date)
                 )
-                .padding(.top, 6)
-
-                if let status = film.status {
-                    Text(Self.statusLine(status))
-                        .planFont(12)
-                        .foregroundStyle(Ink.ink2)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 4)
-                }
             }
-            .padding(.horizontal, isCompact ? 14 : 16)
-            .padding(.top, isCompact ? 11 : 14)
-            .padding(.bottom, isCompact ? 10 : 13)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Ink.ground)
+        .frame(maxWidth: .infinity)
+        .id(film.id)
+        .transition(.opacity)
     }
 
-    private enum Direction { case previous, next }
+    /// La fin si on lançait maintenant ; avant l'arrivée du film, l'heure
+    /// qu'il est, pour que les chiffres défilent jusqu'à la fin.
+    private func endDate(for film: CineMatchFilm, now: Date) -> Date? {
+        guard let minutes = film.runtimeMinutes, minutes > 0 else { return nil }
+        return isRevealed ? now.addingTimeInterval(Double(minutes) * 60) : now
+    }
 
-    private func chevron(_ direction: Direction, cardWidth: CGFloat) -> some View {
-        let isDisabled = direction == .previous ? index == 0 : index >= films.count - 1
+    /// Après « Je le regarde » : la salle s'est éteinte, l'écran joue. On dit
+    /// bon film, on rappelle l'heure de fin, et on peut rouvrir la
+    /// plateforme. Plus de bouton galerie : la notification du lendemain
+    /// demande comment c'était.
+    private func launched(_ film: CineMatchFilm) -> some View {
+        let end = (launchedAt ?? Date()).addingTimeInterval(Double(film.runtimeMinutes ?? 0) * 60)
 
-        return Button {
-            turn(direction == .next ? 1 : -1, cardWidth: cardWidth)
-        } label: {
-            FiveArrowGlyph(pointsRight: direction == .next)
-                .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
-                .foregroundStyle(Ink.ink2)
-                .frame(width: 16, height: 16)
-                .frame(width: 26, height: 48)
-                // 26 pt de large dans la mise en page, 44 au toucher : la
-                // zone déborde un peu sur la carte plutôt que de la rétrécir.
-                .contentShape(Rectangle().inset(by: -9))
+        return VStack(spacing: 8) {
+            Group {
+                if film.isSeries {
+                    Text("Bonne série !", bundle: .app)
+                } else {
+                    Text("Bon film !", bundle: .app)
+                }
+            }
+            .planTitle(36)
+            .foregroundStyle(Ink.ink)
+            .multilineTextAlignment(.center)
+            .accessibilityAddTraits(.isHeader)
+
+            FiveMetaRow(
+                episodes: nil,
+                runtime: film.runtimeMinutes,
+                platform: platform(for: film),
+                fontSize: 13,
+                title: film.item.title,
+                end: (film.runtimeMinutes ?? 0) > 0 ? end : nil
+            )
+
+            VStack(spacing: 4) {
+                if canLaunch(film) {
+                    PlanButton(title: relaunchTitle(for: film)) {
+                        openPlatform(for: film)
+                    }
+                }
+                Button {
+                    viewModel.backToHome()
+                } label: {
+                    Text("Retour à l'accueil", bundle: .app)
+                        .planFont(13.5, weight: .medium)
+                        .foregroundStyle(Ink.ink2)
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: Metrics.control)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableScaleStyle(scale: 0.97))
+            }
+            .padding(.top, 14)
         }
-        .buttonStyle(PressableScaleStyle(scale: 0.9))
-        .opacity(isDisabled ? 0.22 : 1)
-        .disabled(isDisabled || isTurning)
-        .accessibilityLabel(direction == .next ? nextLabel : previousLabel)
+        .frame(maxWidth: .infinity)
+    }
+
+    /// « Lancer sur Netflix » ; sans nom de plateforme, « Lancer le film ».
+    private func relaunchTitle(for film: CineMatchFilm) -> String {
+        if let platform = platform(for: film) {
+            return String(localized: "Lancer sur \(platform.name)", bundle: .app)
+        }
+        return film.isSeries
+            ? String(localized: "Lancer la série", bundle: .app)
+            : String(localized: "Lancer le film", bundle: .app)
+    }
+
+    // MARK: - Les séquences
+
+    /// L'entrée, une fois, à l'arrivée des films. Un toucher sur la salle la
+    /// passe (`skipEntrance`).
+    private func playEntrance() {
+        guard current != nil else { return }
+        guard !reduceMotion else {
+            sequence = .still
+            isDark = true
+            isRevealed = true
+            return
+        }
+        let start = Date()
+        sequence = CineMatchRoomSequence(kind: .entrance, start: start)
+        isRevealed = false
+        isDark = false
+        withAnimation(.easeInOut(duration: 0.7).delay(0.6)) { isDark = true }
+        Task {
+            // L'écran s'allume.
+            try? await Task.sleep(for: .milliseconds(1100))
+            guard sequence.start == start else { return }
+            Haptics.impact(.medium, intensity: 0.7)
+            // La lumière court sur les premiers rangs : le film se présente.
+            try? await Task.sleep(for: .milliseconds(250))
+            guard sequence.start == start else { return }
+            withAnimation(.easeOut(duration: 0.45)) { isRevealed = true }
+            try? await Task.sleep(for: .milliseconds(Int(sequence.duration * 1000) - 1250))
+            guard sequence.start == start else { return }
+            sequence = .still
+        }
+    }
+
+    private func skipEntrance() {
+        guard sequence.kind == .entrance else { return }
+        sequence = .still
+        withAnimation(.easeOut(duration: 0.2)) {
+            isDark = true
+            isRevealed = true
+        }
+    }
+
+    /// Le changement de film : l'écran s'éteint, le film change dans le noir,
+    /// l'écran se rallume. `change` est fait au moment où l'écran est noir.
+    private func playSwap(change: (() -> Void)? = nil) {
+        guard !reduceMotion else {
+            change?()
+            return
+        }
+        closeTrailer(animated: false)
+        let start = Date()
+        sequence = CineMatchRoomSequence(kind: .swap, start: start)
+        isTurning = true
+        Task {
+            try? await Task.sleep(for: .milliseconds(Int(CineMatchRoomSequence.swapDarkAt * 1000)))
+            var still = Transaction()
+            still.disablesAnimations = true
+            withTransaction(still) {
+                change?()
+                dragOffset = 0
+            }
+            try? await Task.sleep(for: .milliseconds(420))
+            isTurning = false
+            try? await Task.sleep(for: .milliseconds(400))
+            guard sequence.start == start else { return }
+            sequence = .still
+        }
     }
 
     private var nextLabel: String {
@@ -558,48 +677,36 @@ struct CineMatchFiveView: View {
 
     // MARK: - Le geste
 
-    private func dragGesture(cardHeight: CGFloat, cardWidth: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 6)
+    /// L'écran suit le doigt, en résistant ; assez loin, ou assez vite, le
+    /// film change. Balayer vers la droite amène le film suivant.
+    private var dragGesture: some Gesture {
+        DragGesture(minimumDistance: 8)
             .onChanged { value in
-                guard !isTurning else { return }
-                if dragOffset == 0, rotation == 0 {
-                    isGrabbedHigh = value.startLocation.y < cardHeight / 2
-                }
+                guard !isTurning, isRevealed else { return }
                 let raw = value.translation.width
-                // Aux extrémités la carte résiste fort : vers la gauche sur le
-                // premier film, vers la droite sur le dernier.
-                let atEnd = mode == .daily
-                    || (raw < 0 && index == 0)
-                    || (raw > 0 && index >= films.count - 1)
-                let offset = atEnd ? raw * 0.3 : Self.resisted(raw, threshold: 90)
-                dragOffset = offset
-                rotation = Double(offset / 22) * (isGrabbedHigh ? 1 : -1)
+                let atEnd = (raw < 0 && index == 0) || (raw > 0 && index >= films.count - 1)
+                dragOffset = atEnd ? raw * 0.3 : Self.resisted(raw, threshold: 90)
             }
             .onEnded { value in
-                guard !isTurning else { return }
+                guard !isTurning, isRevealed else { return }
                 let offset = dragOffset
                 let direction = offset > 0 ? 1 : -1
                 let velocity = value.velocity.width
                 let target = index + direction
-                let commits = mode == .five
-                    && films.indices.contains(target)
-                    && (abs(offset) > 90 || (abs(velocity) > 550 && abs(offset) > 28))
+                let commits = films.indices.contains(target)
+                    && (abs(offset) > 70 || (abs(velocity) > 550 && abs(offset) > 24))
                 if commits {
-                    turn(direction, cardWidth: cardWidth)
+                    turn(direction)
                 } else {
-                    withAnimation(Self.recenter) {
-                        dragOffset = 0
-                        rotation = 0
-                    }
+                    withAnimation(Self.recenter) { dragOffset = 0 }
                 }
             }
     }
 
-    /// Le rappel au centre : il dépasse légèrement, la carte est tenue par un
-    /// ressort et non posée.
+    /// Le rappel au centre : l'écran est tenu par un ressort, pas posé.
     private static let recenter = Animation.spring(response: 0.36, dampingFraction: 0.62)
 
-    /// Au-delà du seuil le doigt continue mais la carte résiste, en s'approchant
+    /// Au-delà du seuil le doigt continue mais l'écran résiste, en s'approchant
     /// d'une limite sans jamais l'atteindre (même loi que `SwipeMotion`).
     private static func resisted(_ value: CGFloat, threshold: CGFloat) -> CGFloat {
         let magnitude = abs(value)
@@ -609,62 +716,27 @@ struct CineMatchFiveView: View {
         return (value < 0 ? -1 : 1) * (threshold + compressed)
     }
 
-    /// Tourner une carte : la courante part du côté du geste, la suivante
-    /// arrive par l'autre. Hors des bornes, la carte bute et revient.
-    private func turn(_ direction: Int, cardWidth: CGFloat) {
+    /// Passer au film d'à côté. Hors des bornes, l'écran bute et revient.
+    private func turn(_ direction: Int) {
         guard mode == .five, !isTurning else { return }
         let target = index + direction
         guard films.indices.contains(target) else {
             bump(direction)
             return
         }
-
         Haptics.impact(.light, intensity: 0.6)
+        move(to: target)
+    }
 
-        if reduceMotion {
-            dragOffset = 0
-            rotation = 0
-            viewModel.showCard(at: target)
-            return
-        }
-
-        isTurning = true
-        let travel = cardWidth + 70
-        Task {
-            withAnimation(.timingCurve(0.2, 0.7, 0.3, 1, duration: 0.26)) {
-                dragOffset = CGFloat(direction) * travel
-                rotation = Double(direction) * 7
-                cardOpacity = 0
-            }
-            try? await Task.sleep(for: .milliseconds(240))
-
-            var still = Transaction()
-            still.disablesAnimations = true
-            withTransaction(still) {
-                viewModel.showCard(at: target)
-                dragOffset = -CGFloat(direction) * travel
-                rotation = -Double(direction) * 7
-            }
-            // Une image pour que la carte suivante soit posée hors champ avant
-            // de revenir : sans elle les deux écritures se confondraient.
-            try? await Task.sleep(for: .milliseconds(16))
-
-            withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.34)) {
-                dragOffset = 0
-                rotation = 0
-                cardOpacity = 1
-            }
-            try? await Task.sleep(for: .milliseconds(300))
-            isTurning = false
-        }
+    /// L'écran s'éteint et se rallume sur le film `target`.
+    private func move(to target: Int) {
+        guard films.indices.contains(target), target != index, !isTurning else { return }
+        playSwap { viewModel.showCard(at: target) }
     }
 
     private func bump(_ direction: Int) {
         guard !reduceMotion else { return }
-        withAnimation(.easeOut(duration: 0.12)) {
-            dragOffset = CGFloat(direction) * 16
-            rotation = 0
-        }
+        withAnimation(.easeOut(duration: 0.12)) { dragOffset = CGFloat(direction) * 16 }
         Task {
             try? await Task.sleep(for: .milliseconds(120))
             withAnimation(Self.recenter) { dragOffset = 0 }
@@ -717,13 +789,6 @@ struct CineMatchFiveView: View {
 
             switch mode {
             case .five:
-                PlanSecondaryButton(
-                    title: String(localized: "Bande-annonce", bundle: .app),
-                    isEnabled: film.trailerURL != nil || film.trailerAppURL != nil,
-                    height: 44
-                ) {
-                    openTrailer(film)
-                }
                 markLinks(for: film)
             case .daily:
                 backLink
@@ -773,21 +838,23 @@ struct CineMatchFiveView: View {
     }
 
     /// « Pas celui-là » : le film ne tente pas, sans qu'on l'ait vu. Il se
-    /// marque comme un film vu, et part avec eux au remplacement.
+    /// marque comme un film vu, la carte suivante arrive, et il part avec les
+    /// autres au remplacement.
     private func refuseLink(for film: CineMatchFilm) -> some View {
         Button {
             viewModel.markRefused(film)
-            replaceIfAllMarked()
+            advanceAfterMark()
         } label: {
             HStack(spacing: 8) {
-                FiveCloseGlyph()
-                    .stroke(style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
-                    .frame(width: 14, height: 14)
                 Text(isSeries
                      ? String(localized: "Pas celle-là", bundle: .app)
                      : String(localized: "Pas celui-là", bundle: .app))
                     .planFont(14, weight: .medium)
                     .fixedSize()
+                // La flèche dit ce qui suit : on passe au film suivant.
+                FiveArrowGlyph(pointsRight: true)
+                    .stroke(style: StrokeStyle(lineWidth: 1.4, lineCap: .round, lineJoin: .round))
+                    .frame(width: 14, height: 14)
             }
             .foregroundStyle(Ink.ink)
             .padding(.horizontal, 8)
@@ -1010,13 +1077,32 @@ struct CineMatchFiveView: View {
                 libraryStore.setLove(item, loved: true)
             }
         }
-        replaceIfAllMarked()
+        advanceAfterMark()
     }
 
-    /// Tout est marqué : il n'y a plus rien à regarder ici, le calcul part.
-    private func replaceIfAllMarked() {
-        guard viewModel.markedCount == films.count else { return }
-        Task { await viewModel.replaceMarked() }
+    /// Après « Pas celui-là » ou « Je l'ai déjà vu » : la carte se montre
+    /// marquée un instant, puis la suivante encore à voir arrive, en faisant
+    /// le tour. Tout est marqué : le calcul part, pour les cinq. On ne
+    /// demandait plus de toucher « Les remplacer » ni de balayer soi-même :
+    /// dire non à un film, c'est vouloir voir le suivant.
+    private func advanceAfterMark() {
+        guard viewModel.markedCount < films.count else {
+            Task { await viewModel.replaceMarked() }
+            return
+        }
+        let marked = films.map(\.id)
+        let from = index
+        Task {
+            // Le temps de voir la carte prendre sa marque.
+            try? await Task.sleep(for: .milliseconds(reduceMotion ? 150 : 320))
+            // Rien n'a bougé entre-temps : même carte, mêmes films.
+            guard films.map(\.id) == marked, index == from, !isTurning else { return }
+            let next = (1 ..< films.count)
+                .map { (from + $0) % films.count }
+                .first { viewModel.marks[films[$0].id] == nil }
+            guard let next else { return }
+            move(to: next)
+        }
     }
 
     /// Un film vu sort de la galerie où il venait d'entrer ; un film écarté
@@ -1047,7 +1133,7 @@ struct CineMatchFiveView: View {
     /// site. Le lancement est noté même si rien ne s'ouvre : la décision a été
     /// prise, c'est elle qui compte.
     private func start(_ film: CineMatchFilm) {
-        let platformIDs = preferredPlatformIDs
+        closeTrailer(animated: false)
         // Commencer une série, c'est mettre sa saison 1 dans la file, au
         // premier épisode : c'est la watchlist qui prendra le relais dès le
         // soir suivant. Une saison 1 déjà dans la file garde son épisode.
@@ -1062,6 +1148,24 @@ struct CineMatchFiveView: View {
         // Avant d'ouvrir la plateforme : une fois l'app passée en arrière-plan,
         // iOS refuserait de démarrer l'activité.
         CineMatchLiveActivity.start(film: film, details: liveActivityDetails(for: film))
+        // Le film commence : la salle s'éteint rang par rang, l'écran
+        // s'élargit et se pose au milieu ; la plateforme s'ouvre une fois la
+        // salle noire.
+        launchedAt = Date()
+        withAnimation(reduceMotion ? .easeOut(duration: 0.25) : .easeInOut(duration: 0.9)) {
+            launch = 1
+            isDark = true
+        }
+        Task {
+            try? await Task.sleep(for: .milliseconds(reduceMotion ? 250 : 950))
+            openPlatform(for: film)
+        }
+    }
+
+    /// Ouvre l'app native de la plateforme si elle est installée, sinon son
+    /// site.
+    private func openPlatform(for film: CineMatchFilm) {
+        let platformIDs = preferredPlatformIDs
         for candidate in film.watchAppURLCandidates(preferring: platformIDs)
         where UIApplication.shared.canOpenURL(candidate) {
             UIApplication.shared.open(candidate)
@@ -1085,7 +1189,32 @@ struct CineMatchFiveView: View {
         }
     }
 
+    /// La bande-annonce passe sur l'écran de la salle, élargi au format
+    /// cinéma, la salle baissée. Sans clé YouTube, rien à jouer ici : on
+    /// ouvre YouTube, comme avant.
     private func openTrailer(_ film: CineMatchFilm) {
+        guard !isLaunched else { return }
+        guard film.trailerKey?.isEmpty == false else {
+            openTrailerOutside(film)
+            return
+        }
+        isTrailerOpen = true
+        withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.45, dampingFraction: 0.9)) {
+            widen = 1
+        }
+    }
+
+    private func closeTrailer(animated: Bool = true) {
+        guard isTrailerOpen || widen > 0 else { return }
+        isTrailerOpen = false
+        if animated, !reduceMotion {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) { widen = 0 }
+        } else {
+            widen = 0
+        }
+    }
+
+    private func openTrailerOutside(_ film: CineMatchFilm) {
         if let appURL = film.trailerAppURL, UIApplication.shared.canOpenURL(appURL) {
             UIApplication.shared.open(appURL)
         } else if let webURL = film.trailerURL {
@@ -1101,6 +1230,7 @@ struct CineMatchFiveView: View {
             episodes: film.isSeries ? film.episodeCount : nil,
             runtime: film.runtimeMinutes,
             platform: platform(for: film),
+            status: film.status.map(Self.statusLine),
             overview: film.item.overview
         )
     }
@@ -1170,6 +1300,9 @@ private struct SynopsisContent: Identifiable {
     let episodes: Int?
     let runtime: Int?
     let platform: StreamingPlatform?
+    /// Séries : où en est l'histoire. Commencer une série annulée, c'est
+    /// savoir qu'elle n'aura pas de fin.
+    let status: String?
     let overview: String?
 }
 
@@ -1212,6 +1345,14 @@ private struct CineMatchSynopsisSheet: View {
                 FiveMetaRow(episodes: content.episodes, runtime: content.runtime, platform: content.platform, fontSize: 12.5)
                     .padding(.top, 6)
 
+                if let status = content.status {
+                    Text(status)
+                        .planFont(12.5)
+                        .foregroundStyle(Ink.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 4)
+                }
+
                 Text("Synopsis", bundle: .app)
                     .planLabel()
                     .foregroundStyle(Ink.ink2)
@@ -1252,26 +1393,50 @@ private struct FiveMetaRow: View {
     let runtime: Int?
     let platform: StreamingPlatform?
     let fontSize: CGFloat
+    /// Le titre en tête, après le lancement : « Drive · 1h40 · … ».
+    var title: String? = nil
+    /// L'heure de fin : « fin vers 23:47 ». Ses chiffres défilent quand elle
+    /// change.
+    var end: Date? = nil
 
     var body: some View {
         HStack(spacing: 0) {
-            if let episodes, episodes > 0 {
+            if let title {
+                Text(title)
+                    .planFont(fontSize, weight: .medium)
+                    .foregroundStyle(Ink.ink)
+                    .lineLimit(1)
+                if hasEpisodes || hasRuntime || end != nil || platform != nil { dot }
+            }
+            if let episodes, hasEpisodes {
                 Text(episodes == 1
                     ? String(localized: "1 épisode", bundle: .app)
                     : String(localized: "\(episodes) épisodes", bundle: .app))
                     .planFont(fontSize)
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink2)
-                if runtime ?? 0 > 0 || platform != nil { dot }
+                if hasRuntime || end != nil || platform != nil { dot }
             }
-            if let runtime, runtime > 0 {
+            if let runtime, hasRuntime {
                 Text(verbatim: Self.format(runtime))
                     .planFont(fontSize)
                     .monospacedDigit()
                     .foregroundStyle(Ink.ink2)
+                if end != nil || platform != nil { dot }
             }
-            if runtime ?? 0 > 0, platform != nil {
-                dot
+            if let end {
+                HStack(spacing: 4) {
+                    Text("fin vers", bundle: .app)
+                        .planFont(fontSize)
+                        .foregroundStyle(Ink.ink2)
+                    Text(end, format: .dateTime.hour().minute())
+                        .planFont(fontSize, weight: .medium)
+                        .monospacedDigit()
+                        .foregroundStyle(Ink.ink)
+                        .contentTransition(.numericText(value: end.timeIntervalSince1970))
+                        .animation(.snappy(duration: 0.6), value: end)
+                }
+                if platform != nil { dot }
             }
             if let platform {
                 logo(platform)
@@ -1279,6 +1444,9 @@ private struct FiveMetaRow: View {
         }
         .frame(minHeight: 18)
     }
+
+    private var hasEpisodes: Bool { (episodes ?? 0) > 0 }
+    private var hasRuntime: Bool { (runtime ?? 0) > 0 }
 
     private var dot: some View {
         Text(verbatim: "·")
@@ -1316,31 +1484,6 @@ private struct FiveMetaRow: View {
 
 // MARK: - Les glyphes
 
-/// Le « i » du synopsis : un cercle, une hampe, un point.
-private struct FiveInfoGlyph: View {
-    var body: some View {
-        GeometryReader { proxy in
-            let s = min(proxy.size.width, proxy.size.height) / 24
-            ZStack {
-                Circle()
-                    .stroke(lineWidth: 1.5)
-                    .frame(width: 18 * s, height: 18 * s)
-                Path { path in
-                    path.move(to: CGPoint(x: 12 * s, y: 11 * s))
-                    path.addLine(to: CGPoint(x: 12 * s, y: 16.6 * s))
-                }
-                .stroke(style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
-                Circle()
-                    .frame(width: 2.2 * s, height: 2.2 * s)
-                    .position(x: 12 * s, y: 7.7 * s)
-            }
-            .frame(width: 24 * s, height: 24 * s)
-        }
-        .accessibilityHidden(true)
-    }
-}
-
-/// La flèche des chevrons du carrousel, grille de 24.
 private struct FiveArrowGlyph: Shape {
     let pointsRight: Bool
 

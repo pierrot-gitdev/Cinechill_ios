@@ -186,8 +186,15 @@ struct CineMatchView: View {
         case .style, .anchor, .refine, .tweak, .loadingFive: 1
         case .five: 2
         case .daily: 3
-        case .conclusion: 4
+        // Le film lancé reste dans la vue qui l'a proposé : la salle s'y
+        // éteint sans changer de décor.
+        case .conclusion: concludedFromDaily ? 3 : 2
         }
+    }
+
+    private var concludedFromDaily: Bool {
+        guard let film = viewModel.concludedFilm else { return false }
+        return viewModel.dailyFilm?.id == film.id && !viewModel.films.contains { $0.id == film.id }
     }
 
     @ViewBuilder
@@ -197,16 +204,17 @@ struct CineMatchView: View {
             CineMatchHomeView(viewModel: viewModel, onProfileTap: { showProfile = true })
         case .style, .anchor, .refine, .tweak, .loadingFive:
             CineMatchStartView(viewModel: viewModel)
+        case .conclusion where !concludedFromDaily:
+            CineMatchFiveView(viewModel: viewModel, mode: .five)
+                .onDisappear { Task { await viewModel.flushExposure() } }
         case .five:
             CineMatchFiveView(viewModel: viewModel, mode: .five)
                 // L'exposition s'accumule pendant qu'on fait défiler les cartes
                 // et part d'un seul envoi quand on quitte les résultats.
                 .onDisappear { Task { await viewModel.flushExposure() } }
-        case .daily:
+        case .daily, .conclusion:
             CineMatchFiveView(viewModel: viewModel, mode: .daily)
                 .onDisappear { Task { await viewModel.flushExposure() } }
-        case .conclusion:
-            CineMatchConclusionView(viewModel: viewModel)
         }
     }
 
