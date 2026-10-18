@@ -143,8 +143,10 @@ final class SwipeDeckViewModel {
     var backingCards: [SwipeCard] { Array(cards.dropFirst().prefix(2)) }
 
     /// Ce qui ne doit pas revenir dans une mosaïque ou une feuille : ce qui
-    /// est rangé, et ce que le deck a déjà servi.
-    var knownIDs: [String] { Array(libraryIDs) + servedIDs }
+    /// est rangé, ce que le deck a déjà servi, et la réserve qu'il tient de
+    /// côté (une affiche laissée vide dans une grille pourrait sinon revenir
+    /// en carte quelques secondes plus tard).
+    var knownIDs: [String] { Array(libraryIDs) + servedIDs + reserve.map(\.id) }
 
     // MARK: - Chargement
 
@@ -254,13 +256,15 @@ final class SwipeDeckViewModel {
             cards.append(contentsOf: fresh)
             servedIDs.append(contentsOf: fresh.map(\.id))
             servedSet.formUnion(fresh.map(\.id))
-            // La réserve est servie, elle aussi : le serveur ne doit pas la
-            // reproposer dans le lot suivant.
+            // La réserve n'est pas servie : elle ne passe dans le deck qu'après
+            // deux refus, et le lot suivant la remplace. La compter comme
+            // servie écartait du serveur, lot après lot, les cinq films les plus
+            // sûrs du vivier sans qu'ils aient jamais été montrés (15 % de
+            // cartes en plus pour atteindre cent films, rejoué sur le moteur).
+            // Une carte de réserve devient servie en entrant dans le deck.
             reserve = batch.reserve.filter {
                 !servedSet.contains($0.id) && !libraryIDs.contains($0.id)
             }
-            servedIDs.append(contentsOf: reserve.map(\.id))
-            servedSet.formUnion(reserve.map(\.id))
             errorMessage = nil
 
             // Un lot vide isolé peut n'être qu'un creux de l'algo ; deux
@@ -433,11 +437,15 @@ final class SwipeDeckViewModel {
             (candidate.pSeen ?? 0) >= Self.reserveMinPSeen
                 && refused.isDisjoint(with: candidate.families)
                 && !libraryIDs.contains(candidate.id)
-                && !cards.contains(where: { $0.id == candidate.id })
+                && !servedSet.contains(candidate.id)
         }) else { return }
         let card = reserve.remove(at: index)
         reserveIDs.insert(card.id)
         cards.insert(card, at: min(1, cards.count))
+        // Servie à partir d'ici : un lot demandé avant cette seconde peut la
+        // rapporter, et le filtre d'arrivée l'écartera.
+        servedIDs.append(card.id)
+        servedSet.insert(card.id)
         prefetchUpcoming()
     }
 

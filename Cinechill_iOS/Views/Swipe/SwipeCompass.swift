@@ -32,13 +32,26 @@ struct SwipeCompass: View {
         ZStack {
             marker(.up)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            marker(.left)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            marker(.right)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
-            // Le quatrième geste n'a pas de direction : il se pose au centre,
-            // là où on touche, et s'efface dès que la carte part d'un côté.
-            loveMarker
+            // Le quatrième geste n'a pas de direction : il se pose sous la
+            // ligne des deux autres, au milieu de l'affiche, et s'efface dès
+            // que la carte part d'un côté. Centré, il chevauchait « Jamais vu »
+            // et « Galerie » sur toute carte de moins de 350 pt de large.
+            VStack(spacing: 10) {
+                HStack(spacing: 8) {
+                    marker(.left)
+                    Spacer(minLength: 0)
+                    marker(.right)
+                }
+                .alignmentGuide(.compassAxis) { $0[VerticalAlignment.center] }
+                loveMarker
+            }
+            // La ligne des côtés reste au milieu de la carte, quelle que soit
+            // la taille du texte : c'est elle qu'on aligne, pas la pile.
+            .frame(
+                maxWidth: .infinity,
+                maxHeight: .infinity,
+                alignment: Alignment(horizontal: .center, vertical: .compassAxis)
+            )
         }
         .padding(16)
         // Purement indicative : la carte porte déjà son indice d'accessibilité,
@@ -117,6 +130,18 @@ struct SwipeCompass: View {
         guard engaged != nil else { return 1 }
         return isEngaged ? 1 : max(0, 1 - intensity / 0.4)
     }
+}
+
+private extension VerticalAlignment {
+    /// La ligne des repères « Jamais vu » et « Galerie » : le milieu de la
+    /// carte, sur lequel le repère du coup de cœur se cale par en dessous.
+    nonisolated enum CompassAxis: AlignmentID {
+        static func defaultValue(in context: ViewDimensions) -> CGFloat {
+            context[VerticalAlignment.center]
+        }
+    }
+
+    nonisolated static let compassAxis = VerticalAlignment(CompassAxis.self)
 }
 
 /// Le rappel du coup de cœur, posé sur l'affiche : une plaque de la boussole,

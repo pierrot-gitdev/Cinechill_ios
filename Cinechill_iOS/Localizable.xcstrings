@@ -1,7 +1,9 @@
 {
   "sourceLanguage" : "fr",
   "strings" : {
-    "" : {},
+    "" : {
+
+    },
     " [Créer un compte](cinechill-auth://signup) ?" : {
       "localizations" : {
         "en" : {
@@ -2171,6 +2173,7 @@
       }
     },
     "Action" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2426,6 +2429,22 @@
         }
       }
     },
+    "Ajouter %lld coups de cœur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark %lld as loved"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter %lld coups de cœur"
+          }
+        }
+      }
+    },
     "Ajouter %lld films" : {
       "localizations" : {
         "en" : {
@@ -2454,6 +2473,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter %lld saisons"
+          }
+        }
+      }
+    },
+    "Ajouter 1 coup de cœur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark 1 as loved"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter 1 coup de cœur"
           }
         }
       }
@@ -4378,38 +4413,6 @@
         }
       }
     },
-    "Contacter Cinechill" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contact Cinechill"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contacter Cinechill"
-          }
-        }
-      }
-    },
-    "Coupées" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Off"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coupées"
-          }
-        }
-      }
-    },
     "Cœur d'Acier" : {
       "localizations" : {
         "en" : {
@@ -4443,6 +4446,7 @@
       }
     },
     "Comédie" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4714,6 +4718,22 @@
         }
       }
     },
+    "Contacter Cinechill" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contact Cinechill"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contacter Cinechill"
+          }
+        }
+      }
+    },
     "Contenu choquant" : {
       "localizations" : {
         "en" : {
@@ -4806,6 +4826,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coup de cœur"
+          }
+        }
+      }
+    },
+    "Coupées" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coupées"
           }
         }
       }
@@ -8434,6 +8470,22 @@
         }
       }
     },
+    "Lesquels as-tu adorés ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which ones did you love?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesquels as-tu adorés ?"
+          }
+        }
+      }
+    },
     "Lesquels as-tu vus ?" : {
       "localizations" : {
         "en" : {
@@ -9442,22 +9494,6 @@
         }
       }
     },
-    "On cherche…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Searching…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On cherche…"
-          }
-        }
-      }
-    },
     "On cherche un autre film…" : {
       "localizations" : {
         "en" : {
@@ -9486,6 +9522,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On cherche une autre série…"
+          }
+        }
+      }
+    },
+    "On cherche…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searching…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On cherche…"
           }
         }
       }
@@ -11850,6 +11902,22 @@
         }
       }
     },
+    "Recommander « %@ »" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommend “%@”"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommander « %@ »"
+          }
+        }
+      }
+    },
     "Recommander à %lld personnes" : {
       "localizations" : {
         "en" : {
@@ -11918,22 +11986,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recommander un film"
-          }
-        }
-      }
-    },
-    "Recommander « %@ »" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recommend “%@”"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recommander « %@ »"
           }
         }
       }
@@ -14186,6 +14238,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Touche celui à lancer"
+          }
+        }
+      }
+    },
+    "Touche ceux que tu as adorés. On s'en sert d'abord pour te proposer des films." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the ones you loved. We use them first to suggest movies."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touche ceux que tu as adorés. On s'en sert d'abord pour te proposer des films."
           }
         }
       }

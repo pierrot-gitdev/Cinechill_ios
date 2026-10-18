@@ -89,6 +89,28 @@ struct SwipeDeckView: View {
     private static let loveHintStreak = 8
     private static let loveHintRetiredAfter = 5
 
+    /// La planche des coups de cœur — voir `LoveGridSheet`. Elle s'ajoute au
+    /// rappel, qu'elle ne remplace pas : le rappel apprend le geste, la planche
+    /// rattrape les cœurs que le geste a laissé passer.
+    @State private var loveGrid: LoveGridOffer?
+    @State private var cardsSinceLoveGrid = 0
+    /// La dernière planche n'a donné aucun cœur : la suivante attend plus.
+    @State private var lastLoveGridWasEmpty = false
+    /// Le début de la session : les films rangés depuis passent en tête de
+    /// planche, encore frais en mémoire.
+    @State private var sessionStart = Date.now
+    /// Films en galerie avant la première planche : en dessous, un retard de
+    /// cœurs n'est que du bruit.
+    private static let loveGridMinimumGallery = 15
+    /// Cœurs de retard sur le rythme de la Porte qui font poser la question.
+    private static let loveGridMinimumLag = 2
+    /// Cartes entre deux planches, et après une planche sans aucun cœur.
+    private static let loveGridSpacing = 20
+    private static let loveGridSpacingAfterNone = 40
+    /// En dessous, la planche aurait trop peu de films à proposer.
+    private static let loveGridMinimumEntries = 6
+    private static let loveGridOfferedKey = "swipe.loveGrid.offered"
+
     /// Le palier de la galerie tant que CinéMatch est fermé.
     @State private var goalMilestone: Int?
     /// La galerie au moment du premier film rangé de la session : le palier se
@@ -144,6 +166,16 @@ struct SwipeDeckView: View {
                     model.gridRequest = nil
                     model.gridDidFinish(seenFamilies: families)
                 }
+            }
+            // Les coups de cœur attendent leur tour derrière tout le reste :
+            // ils ne sont jamais urgents.
+            .sheet(item: loveGridBinding) { offer in
+                LoveGridSheet(offer: offer) { loved in
+                    lastLoveGridWasEmpty = loved == 0
+                    loveGrid = nil
+                }
+                .environmentObject(libraryStore)
+                .environment(doorStore)
             }
         }
         .task {
@@ -759,6 +791,7 @@ struct SwipeDeckView: View {
         // Une feuille « dans la même veine » arrivée pendant un geste attend
         // le geste suivant, entre deux cartes.
         presentPendingSheetIfIdle()
+        offerLoveGridIfDue(after: direction, card: card)
 
         // Après `swipe`, parce que c'est lui qui sait si un palier vient d'être
         // franchi : la célébration plein écran dit déjà que le film est rangé, et
@@ -816,6 +849,58 @@ struct SwipeDeckView: View {
         guard !offeredSagas.contains(offer.id) else { return }
         offeredSagas.insert(offer.id)
         sagaOffer = offer
+    }
+
+    /// La planche des coups de cœur, quand ils prennent du retard sur les
+    /// films vus.
+    ///
+    /// Le rythme est celui de la Porte : douze cœurs pour cent films. À partir
+    /// de quinze films en galerie, deux cœurs de retard sur ce rythme font
+    /// poser la question, après un « vu », au plus toutes les vingt cartes
+    /// (quarante après une planche sans aucun cœur), jusqu'à ce que l'étape
+    /// soit validée. Jamais sur un geste qui vient d'ouvrir une autre feuille
+    /// ou un palier : la planche attendra le prochain « vu ».
+    private func offerLoveGridIfDue(after direction: SwipeDirection, card: SwipeCard) {
+        cardsSinceLoveGrid += 1
+        let spacing = lastLoveGridWasEmpty ? Self.loveGridSpacingAfterNone : Self.loveGridSpacing
+        guard case .right = direction, format == .film, !card.isSeries,
+              loveGrid == nil, cardsSinceLoveGrid >= spacing,
+              sagaOffer == nil, model.gridRequest == nil, !showGuide,
+              model.celebratedMilestone == nil, goalMilestone == nil
+        else { return }
+
+        let door = doorStore.door(for: .film)
+        guard let coeur = door.artifact(.coeur), !coeur.done else { return }
+        let films = libraryStore.galleryFilms
+        guard films.count >= Self.loveGridMinimumGallery else { return }
+        let memoryTarget = max(1, door.artifact(.memoire)?.target ?? 100)
+        let expected = coeur.target * films.count / memoryTarget
+        guard expected - libraryStore.lovedCount >= Self.loveGridMinimumLag else { return }
+
+        let offered = UserDefaults.standard.stringArray(forKey: Self.loveGridOfferedKey) ?? []
+        let entries = LoveGridOffer.candidates(
+            from: films, excluding: Set(offered), sessionStart: sessionStart
+        )
+        guard entries.count >= Self.loveGridMinimumEntries else { return }
+
+        // Un film montré ne revient pas dans une planche suivante : la
+        // personne a déjà dit qu'il n'était pas un coup de cœur. La liste ne
+        // garde que les quatre cents derniers, de quoi couvrir la galerie.
+        let remembered = offered + entries.map(\.id)
+        UserDefaults.standard.set(Array(remembered.suffix(400)), forKey: Self.loveGridOfferedKey)
+        cardsSinceLoveGrid = 0
+        loveGrid = LoveGridOffer(entries: entries)
+    }
+
+    /// La planche des coups de cœur à présenter, tenue tant qu'autre chose
+    /// occupe l'écran.
+    private var loveGridBinding: Binding<LoveGridOffer?> {
+        Binding(
+            get: {
+                showGuide || sagaOffer != nil || model.gridRequest != nil ? nil : loveGrid
+            },
+            set: { if $0 == nil { loveGrid = nil } }
+        )
     }
 
     /// La mosaïque à présenter, tenue tant qu'autre chose occupe l'écran.
@@ -949,7 +1034,9 @@ struct SwipeDeckView: View {
         // La carte suivante finit d'arriver avant que le rappel s'y pose.
         Task {
             try? await Task.sleep(for: .milliseconds(320))
-            guard model.topCard != nil else { return }
+            // La planche des coups de cœur vient de s'ouvrir sur le même
+            // geste : le rappel ne se pose pas sous elle.
+            guard model.topCard != nil, loveGrid == nil else { return }
             withAnimation(.easeOut(duration: 0.22)) { showsLoveHint = true }
         }
     }
