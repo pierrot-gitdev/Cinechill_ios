@@ -2568,54 +2568,6 @@
         }
       }
     },
-    "Ambiance trop lourde" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mood too heavy"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ambiance trop lourde"
-          }
-        }
-      }
-    },
-    "Ampleur" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scale"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ampleur"
-          }
-        }
-      }
-    },
-    "Angleterre" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "United Kingdom"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Angleterre"
-          }
-        }
-      }
-    },
     "Animation" : {
       "localizations" : {
         "en" : {
@@ -2692,22 +2644,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple n'a pas terminé la connexion."
-          }
-        }
-      }
-    },
-    "Apprendre quelque chose" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Learn something"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apprendre quelque chose"
           }
         }
       }
@@ -2920,22 +2856,6 @@
         }
       }
     },
-    "Aucun film de ce genre ne correspond au reste de tes critères. Essaie un autre genre, ou plus de temps devant toi." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No movie in that genre matches the rest of your criteria. Try another genre, or allow more time."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun film de ce genre ne correspond au reste de tes critères. Essaie un autre genre, ou plus de temps devant toi."
-          }
-        }
-      }
-    },
     "Aucun film de ce genre sur tes plateformes en ce moment." : {
       "localizations" : {
         "en" : {
@@ -2948,22 +2868,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun film de ce genre sur tes plateformes en ce moment."
-          }
-        }
-      }
-    },
-    "Aucun film de ces pays ne correspond au reste de tes critères. Essaie d'ajouter un pays, ou de changer de genre." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No movie from those countries matches the rest of your criteria. Try adding a country, or changing genre."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun film de ces pays ne correspond au reste de tes critères. Essaie d'ajouter un pays, ou de changer de genre."
           }
         }
       }
@@ -3012,22 +2916,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun film ne correspond à ces critères pour le moment."
-          }
-        }
-      }
-    },
-    "Aucun film ne tient dans ta soirée avec ces critères. Allonge la soirée ou change un critère." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No movie fits your evening with these filters. Extend the evening or change a filter."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun film ne tient dans ta soirée avec ces critères. Allonge la soirée ou change un critère."
           }
         }
       }
@@ -3236,22 +3124,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autre chose"
-          }
-        }
-      }
-    },
-    "Autre pays" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Somewhere else"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Autre pays"
           }
         }
       }
@@ -3652,22 +3524,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "C'est parti"
-          }
-        }
-      }
-    },
-    "C'était bien, sans plus" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "It was fine, nothing more"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "C'était bien, sans plus"
           }
         }
       }
@@ -4648,22 +4504,6 @@
         }
       }
     },
-    "Complexité" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Complexity"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Complexité"
-          }
-        }
-      }
-    },
     "Compression de bronze" : {
       "localizations" : {
         "en" : {
@@ -4836,40 +4676,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Contact"
-          }
-        }
-      }
-    },
-    "contentFormat.animated" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Animated"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dessin animé"
-          }
-        }
-      }
-    },
-    "contentFormat.liveAction" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live action"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Film"
           }
         }
       }
@@ -5234,22 +5040,6 @@
         }
       }
     },
-    "Découverte" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Discovery"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Découverte"
-          }
-        }
-      }
-    },
     "Découvrir" : {
       "localizations" : {
         "en" : {
@@ -5442,22 +5232,6 @@
         }
       }
     },
-    "Des acteurs que je connais" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actors I know"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Des acteurs que je connais"
-          }
-        }
-      }
-    },
     "Des épisodes de quelle longueur ?" : {
       "localizations" : {
         "en" : {
@@ -5522,22 +5296,6 @@
         }
       }
     },
-    "Des questions sans réponse" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unanswered questions"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Des questions sans réponse"
-          }
-        }
-      }
-    },
     "Des séries de %lld genres différents" : {
       "localizations" : {
         "en" : {
@@ -5582,22 +5340,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Des séries plus récentes"
-          }
-        }
-      }
-    },
-    "Des visages nouveaux" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New faces"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Des visages nouveaux"
           }
         }
       }
@@ -5922,54 +5664,6 @@
         }
       }
     },
-    "Émotions" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Emotion"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Émotions"
-          }
-        }
-      }
-    },
-    "Émouvant" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moving"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Émouvant"
-          }
-        }
-      }
-    },
-    "En couple" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "As a couple"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En couple"
-          }
-        }
-      }
-    },
     "En cours" : {
       "localizations" : {
         "en" : {
@@ -6030,22 +5724,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "En famille"
-          }
-        }
-      }
-    },
-    "En famille, avec des enfants" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "As a family, with children"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En famille, avec des enfants"
           }
         }
       }
@@ -6158,22 +5836,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enregistrer"
-          }
-        }
-      }
-    },
-    "Entre amis" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "With friends"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Entre amis"
           }
         }
       }
@@ -6578,38 +6240,6 @@
         }
       }
     },
-    "États-Unis" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "United States"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "États-Unis"
-          }
-        }
-      }
-    },
-    "Être surpris·e" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Be surprised"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Être surpris·e"
-          }
-        }
-      }
-    },
     "Exclu" : {
       "localizations" : {
         "en" : {
@@ -6654,38 +6284,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Faire le tri"
-          }
-        }
-      }
-    },
-    "Familial" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Family"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Familial"
-          }
-        }
-      }
-    },
-    "Fantastique" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fantasy"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fantastique"
           }
         }
       }
@@ -6814,22 +6412,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Film suivant à droite"
-          }
-        }
-      }
-    },
-    "Film trop long" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Movie too long"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Film trop long"
           }
         }
       }
@@ -6994,22 +6576,6 @@
         }
       }
     },
-    "France" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "France"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "France"
-          }
-        }
-      }
-    },
     "Galerie" : {
       "localizations" : {
         "en" : {
@@ -7074,22 +6640,6 @@
         }
       }
     },
-    "Gentille, bon enfant" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gentle, good-natured"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gentille, bon enfant"
-          }
-        }
-      }
-    },
     "Glisse à droite" : {
       "localizations" : {
         "en" : {
@@ -7150,22 +6700,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Google n'a pas terminé la connexion."
-          }
-        }
-      }
-    },
-    "Grinçante, qui ne s'interdit rien" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Biting, holding nothing back"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grinçante, qui ne s'interdit rien"
           }
         }
       }
@@ -7714,22 +7248,6 @@
         }
       }
     },
-    "Japon" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Japan"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Japon"
-          }
-        }
-      }
-    },
     "Je choisis celle-là" : {
       "localizations" : {
         "en" : {
@@ -7954,22 +7472,6 @@
         }
       }
     },
-    "Je ne l'ai pas fini" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I didn't finish it"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je ne l'ai pas fini"
-          }
-        }
-      }
-    },
     "Je ne l'ai pas vu, en fait" : {
       "localizations" : {
         "en" : {
@@ -8018,22 +7520,6 @@
         }
       }
     },
-    "L'envie d'en voir plus tout de suite" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The urge to see more right away"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'envie d'en voir plus tout de suite"
-          }
-        }
-      }
-    },
     "L'ÉPISODE N'EST PAS SORTI" : {
       "localizations" : {
         "en" : {
@@ -8046,22 +7532,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L'ÉPISODE N'EST PAS SORTI"
-          }
-        }
-      }
-    },
-    "L'histoire de quelques personnes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The story of a few people"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'histoire de quelques personnes"
           }
         }
       }
@@ -8270,22 +7740,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La suppression a échoué. Reconnecte-toi puis réessaie."
-          }
-        }
-      }
-    },
-    "La tension qui monte lentement" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tension that builds slowly"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La tension qui monte lentement"
           }
         }
       }
@@ -8642,22 +8096,6 @@
         }
       }
     },
-    "Le sourire pendant deux jours" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A smile for two days"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le sourire pendant deux jours"
-          }
-        }
-      }
-    },
     "Le Trieur" : {
       "localizations" : {
         "en" : {
@@ -8702,22 +8140,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Légendaire"
-          }
-        }
-      }
-    },
-    "Léger et drôle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Light and funny"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Léger et drôle"
           }
         }
       }
@@ -8946,22 +8368,6 @@
         }
       }
     },
-    "Les sensations fortes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Raw sensation"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les sensations fortes"
-          }
-        }
-      }
-    },
     "Les séries que tu as passées reviendront plus tard." : {
       "localizations" : {
         "en" : {
@@ -9134,38 +8540,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Matrix"
-          }
-        }
-      }
-    },
-    "Me reconnaître dans l'histoire" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recognise myself in the story"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Me reconnaître dans l'histoire"
-          }
-        }
-      }
-    },
-    "Me vider la tête" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Empty my head"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Me vider la tête"
           }
         }
       }
@@ -11210,22 +10584,6 @@
         }
       }
     },
-    "Personne ne parle pendant une minute" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nobody speaks for a minute"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personne ne parle pendant une minute"
-          }
-        }
-      }
-    },
     "Personne ne peut le recevoir" : {
       "localizations" : {
         "en" : {
@@ -12154,38 +11512,6 @@
         }
       }
     },
-    "Qu'il ne te lâche pas une seconde" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Never lets you go"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qu'il ne te lâche pas une seconde"
-          }
-        }
-      }
-    },
-    "Qu'il prenne son temps" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Takes its time"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qu'il prenne son temps"
-          }
-        }
-      }
-    },
     "Quand quelqu'un te recommande un film, suit ta recommandation ou s'abonne à toi." : {
       "localizations" : {
         "en" : {
@@ -12246,38 +11572,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quels films as-tu adorés ?"
-          }
-        }
-      }
-    },
-    "Qui fait peur" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Frightening"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qui fait peur"
-          }
-        }
-      }
-    },
-    "Qui fait réfléchir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thought-provoking"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qui fait réfléchir"
           }
         }
       }
@@ -12374,22 +11668,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rare"
-          }
-        }
-      }
-    },
-    "Réalisme" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Realism"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réalisme"
           }
         }
       }
@@ -13218,38 +12496,6 @@
         }
       }
     },
-    "Rythme" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pace"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rythme"
-          }
-        }
-      }
-    },
-    "Rythme trop lent" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pace too slow"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rythme trop lent"
-          }
-        }
-      }
-    },
     "Sa galerie" : {
       "localizations" : {
         "en" : {
@@ -13646,22 +12892,6 @@
         }
       }
     },
-    "Scénario trop prévisible" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plot too predictable"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scénario trop prévisible"
-          }
-        }
-      }
-    },
     "Science-fiction" : {
       "localizations" : {
         "en" : {
@@ -13982,22 +13212,6 @@
         }
       }
     },
-    "Seul·e" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On my own"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seul·e"
-          }
-        }
-      }
-    },
     "Si un compte existe pour %@, tu recevras un email dans la minute. Pense à regarder dans tes spams." : {
       "localizations" : {
         "en" : {
@@ -14106,22 +13320,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Spam ou publicité"
-          }
-        }
-      }
-    },
-    "Spectaculaire, qui fait voyager" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spectacular, takes you elsewhere"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spectaculaire, qui fait voyager"
           }
         }
       }
@@ -14622,22 +13820,6 @@
         }
       }
     },
-    "Tendu, avec de l'action" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tense, with action"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tendu, avec de l'action"
-          }
-        }
-      }
-    },
     "Terminé" : {
       "localizations" : {
         "en" : {
@@ -14778,22 +13960,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "toi@exemple.com"
-          }
-        }
-      }
-    },
-    "Ton" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tone"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ton"
           }
         }
       }
@@ -15631,38 +14797,6 @@
         }
       }
     },
-    "Tu enchaînes sur la suite" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You go straight on to the next one"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu enchaînes sur la suite"
-          }
-        }
-      }
-    },
-    "Tu es bien, c'est tout" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You feel good, that's all"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu es bien, c'est tout"
-          }
-        }
-      }
-    },
     "Tu gagnes le premier avec ton premier film." : {
       "localizations" : {
         "en" : {
@@ -16063,22 +15197,6 @@
         }
       }
     },
-    "Tu veux en parler tout de suite" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You want to talk about it right away"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu veux en parler tout de suite"
-          }
-        }
-      }
-    },
     "Tu veux le voir" : {
       "localizations" : {
         "en" : {
@@ -16123,22 +15241,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un compte existe déjà pour cette adresse."
-          }
-        }
-      }
-    },
-    "Un film peu connu" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A little-known movie"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un film peu connu"
           }
         }
       }
@@ -16207,118 +15309,6 @@
         }
       }
     },
-    "Un film qui me fait réfléchir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A movie that makes me think"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un film qui me fait réfléchir"
-          }
-        }
-      }
-    },
-    "Un film qui me fait ressentir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A movie that makes me feel"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un film qui me fait ressentir"
-          }
-        }
-      }
-    },
-    "Un film reconnu" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A well-regarded movie"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un film reconnu"
-          }
-        }
-      }
-    },
-    "Un grand succès" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A big hit"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un grand succès"
-          }
-        }
-      }
-    },
-    "Un monde où se perdre" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A world to get lost in"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un monde où se perdre"
-          }
-        }
-      }
-    },
-    "Un personnage auquel s'attacher" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A character to grow attached to"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un personnage auquel s'attacher"
-          }
-        }
-      }
-    },
-    "Un poids, longtemps après" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A weight, long afterwards"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un poids, longtemps après"
-          }
-        }
-      }
-    },
     "Un profil bloqué ne peut plus te suivre ni t'envoyer de films. Le débloquer ne rétablit pas les abonnements." : {
       "localizations" : {
         "en" : {
@@ -16347,54 +15337,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un souci de notre côté. Réessaie dans un instant."
-          }
-        }
-      }
-    },
-    "Une grande histoire, sur fond d'époque ou de société" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A big story, set against an era or a society"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une grande histoire, sur fond d'époque ou de société"
-          }
-        }
-      }
-    },
-    "Une histoire complètement inventée" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A completely invented story"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une histoire complètement inventée"
-          }
-        }
-      }
-    },
-    "Une histoire vraie" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A true story"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une histoire vraie"
           }
         }
       }
