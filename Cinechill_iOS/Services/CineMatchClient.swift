@@ -35,47 +35,54 @@ nonisolated enum CineMatchClientError: LocalizedError {
 /// Chaque appel porte son format. Films et séries sont deux profils que le
 /// serveur tient à part (galerie, exposition, historique), et leurs
 /// identifiants TMDB se recoupent : un appel sans format parlerait de films.
+///
+/// `evening` : l'identifiant de la soirée en cours (`CineMatchViewModel`). Le
+/// serveur y range chaque écran, ce qu'il montrait et ce qu'on y a touché :
+/// c'est le journal dont le moteur apprend. `nil` hors d'une soirée (les
+/// styles préparés depuis l'accueil).
 protocol CineMatchFetching: Sendable {
     /// Les dix styles, du plus présent dans la galerie au moins présent.
-    func styles(format: MediaFormat) async throws -> [CineMatchStyleTile]
+    func styles(format: MediaFormat, evening: String?) async throws -> [CineMatchStyleTile]
     /// Six films d'un style. `page` passe aux six suivants ; `shownIDs`, les
     /// films déjà montrés, sont écartés quel que soit l'ordre du serveur.
     func starters(style: CineMatchStyle, page: Int, shownIDs: [Int],
-                  format: MediaFormat) async throws -> CineMatchStarterPage
+                  format: MediaFormat, evening: String?) async throws -> CineMatchStarterPage
     /// Les films de la galerie proches de `anchorID`, et les retouches qui
-    /// ont un sens pour lui.
-    func near(anchorID: Int, format: MediaFormat) async throws -> CineMatchNearPage
+    /// ont un sens pour lui. Pas de films quand choisir parmi eux ne
+    /// changerait pas la proposition : l'écran se saute.
+    func near(anchorID: Int, format: MediaFormat, evening: String?) async throws -> CineMatchNearPage
     /// Les cinq, proches de `anchorID` (et de `secondID`, retouchés par
     /// `tweak`), ou d'après les coups de cœur sans film de départ. Avec
     /// `replacing`, le serveur ne renvoie que les remplaçants des films
     /// marqués.
     func picks(situation: CineMatchSituation, anchorID: Int?, secondID: Int?, tweak: CineMatchTweak?,
                style: CineMatchStyle?, format: MediaFormat,
-               replacing: CineMatchReplacement?) async throws -> CineMatchFiveResponse
+               replacing: CineMatchReplacement?, evening: String?) async throws -> CineMatchFiveResponse
     /// `nil` quand aucun film ne correspond au scénario.
-    func daily(situation: CineMatchSituation, format: MediaFormat) async throws -> CineMatchFilm?
-    func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int], format: MediaFormat) async throws
-    func recordLaunch(tmdbID: Int, format: MediaFormat) async throws
+    func daily(situation: CineMatchSituation, format: MediaFormat, evening: String?) async throws -> CineMatchFilm?
+    func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int], format: MediaFormat,
+                        evening: String?) async throws
+    func recordLaunch(tmdbID: Int, format: MediaFormat, evening: String?) async throws
     /// « Pas celui-là » : le refus d'un des cinq, noté dans sa séance.
-    func recordPass(tmdbID: Int, format: MediaFormat) async throws
+    func recordPass(tmdbID: Int, format: MediaFormat, evening: String?) async throws
 }
 
 nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
     /// Le serveur n'accepte pas plus de vingt films par écriture d'exposition.
     private static let exposureBatchLimit = 20
 
-    func styles(format: MediaFormat) async throws -> [CineMatchStyleTile] {
+    func styles(format: MediaFormat, evening: String?) async throws -> [CineMatchStyleTile] {
         #if DEBUG
         if let fixture = DebugFixtures.cineMatchStyles(format: format) { return fixture }
         #endif
-        let data = try await post(to: APIEndpoints.cineMatchStarters(), body: [
+        let data = try await post(to: APIEndpoints.cineMatchStarters(), body: Self.adding(evening, to: [
             "format": format.rawValue,
-        ])
+        ]))
         return try decode(StylesResponseDTO.self, from: data).tiles
     }
 
     func starters(style: CineMatchStyle, page: Int, shownIDs: [Int],
-                  format: MediaFormat) async throws -> CineMatchStarterPage {
+                  format: MediaFormat, evening: String?) async throws -> CineMatchStarterPage {
         #if DEBUG
         if let fixture = DebugFixtures.cineMatchStarters(style: style, page: page, format: format) {
             return fixture
@@ -87,7 +94,7 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
             "page": page,
         ]
         if !shownIDs.isEmpty { body["shownIds"] = shownIDs }
-        let data = try await post(to: APIEndpoints.cineMatchStarters(), body: body)
+        let data = try await post(to: APIEndpoints.cineMatchStarters(), body: Self.adding(evening, to: body))
         let decoded = try decode(StartersResponseDTO.self, from: data)
         return CineMatchStarterPage(
             // Le serveur renvoie le style demandé ; on garde le nôtre s'il en
@@ -100,14 +107,14 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         )
     }
 
-    func near(anchorID: Int, format: MediaFormat) async throws -> CineMatchNearPage {
+    func near(anchorID: Int, format: MediaFormat, evening: String?) async throws -> CineMatchNearPage {
         #if DEBUG
         if let fixture = DebugFixtures.cineMatchNear(anchorID: anchorID, format: format) { return fixture }
         #endif
-        let data = try await post(to: APIEndpoints.cineMatchStarters(), body: [
+        let data = try await post(to: APIEndpoints.cineMatchStarters(), body: Self.adding(evening, to: [
             "format": format.rawValue,
             "nearId": anchorID,
-        ])
+        ]))
         let decoded = try decode(NearResponseDTO.self, from: data)
         return CineMatchNearPage(
             anchorID: anchorID,
@@ -119,7 +126,7 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
 
     func picks(situation: CineMatchSituation, anchorID: Int?, secondID: Int?, tweak: CineMatchTweak?,
                style: CineMatchStyle?, format: MediaFormat,
-               replacing: CineMatchReplacement?) async throws -> CineMatchFiveResponse {
+               replacing: CineMatchReplacement?, evening: String?) async throws -> CineMatchFiveResponse {
         var body: [String: Any] = [
             "situation": Self.payload(for: situation),
             "format": format.rawValue,
@@ -139,7 +146,7 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         }
         let data: Data
         do {
-            data = try await post(to: APIEndpoints.cineMatchPicks(), body: body)
+            data = try await post(to: APIEndpoints.cineMatchPicks(), body: Self.adding(evening, to: body))
         } catch CineMatchClientError.noCandidates {
             throw CineMatchClientError.noCandidates(for: format)
         }
@@ -153,41 +160,50 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         )
     }
 
-    func daily(situation: CineMatchSituation, format: MediaFormat) async throws -> CineMatchFilm? {
-        let data = try await post(to: APIEndpoints.cineMatchDaily(), body: [
+    func daily(situation: CineMatchSituation, format: MediaFormat, evening: String?) async throws -> CineMatchFilm? {
+        let data = try await post(to: APIEndpoints.cineMatchDaily(), body: Self.adding(evening, to: [
             "situation": Self.payload(for: situation),
             "format": format.rawValue,
-        ])
+        ]))
         return try decode(DailyResponseDTO.self, from: data).film?.film
     }
 
-    func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int], format: MediaFormat) async throws {
+    func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int], format: MediaFormat,
+                        evening: String?) async throws {
         guard !tmdbIDs.isEmpty else { return }
         var start = 0
         while start < tmdbIDs.count {
             let end = min(start + Self.exposureBatchLimit, tmdbIDs.count)
-            _ = try await post(to: APIEndpoints.cineMatchExposure(), body: [
+            _ = try await post(to: APIEndpoints.cineMatchExposure(), body: Self.adding(evening, to: [
                 "kind": kind.rawValue,
                 "tmdbIds": Array(tmdbIDs[start..<end]),
                 "format": format.rawValue,
-            ])
+            ]))
             start = end
         }
     }
 
-    func recordLaunch(tmdbID: Int, format: MediaFormat) async throws {
-        _ = try await post(to: APIEndpoints.sessionOutcome(), body: [
+    func recordLaunch(tmdbID: Int, format: MediaFormat, evening: String?) async throws {
+        _ = try await post(to: APIEndpoints.sessionOutcome(), body: Self.adding(evening, to: [
             "kind": "launch", "tmdbId": tmdbID, "format": format.rawValue,
-        ])
+        ]))
     }
 
-    func recordPass(tmdbID: Int, format: MediaFormat) async throws {
-        _ = try await post(to: APIEndpoints.sessionOutcome(), body: [
+    func recordPass(tmdbID: Int, format: MediaFormat, evening: String?) async throws {
+        _ = try await post(to: APIEndpoints.sessionOutcome(), body: Self.adding(evening, to: [
             "kind": "pass", "tmdbId": tmdbID, "format": format.rawValue,
-        ])
+        ]))
     }
 
     // MARK: - Corps de requête
+
+    /// Le corps, avec l'identifiant de la soirée s'il y en a une.
+    static func adding(_ evening: String?, to body: [String: Any]) -> [String: Any] {
+        guard let evening else { return body }
+        var out = body
+        out["eveningId"] = evening
+        return out
+    }
 
     static func payload(for situation: CineMatchSituation) -> [String: Any] {
         [

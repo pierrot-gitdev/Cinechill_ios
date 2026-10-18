@@ -134,6 +134,16 @@ final class CineMatchViewModel {
     private(set) var replaceOutcome: ReplaceOutcome?
     /// La séance écrite par le serveur pour ces cinq films.
     private var sessionID: String?
+    /// La soirée en cours : un identifiant tiré à chaque départ, envoyé avec
+    /// chaque appel. Le serveur y range chaque écran et chaque geste (voir
+    /// `journalEvening`) ; c'est ce journal qui permettra au moteur
+    /// d'apprendre de ce que les gens font vraiment.
+    private(set) var eveningID = CineMatchViewModel.newEveningID()
+
+    /// 32 caractères hexadécimaux, sans tiret : le format que le serveur accepte.
+    static func newEveningID() -> String {
+        UUID().uuidString.replacingOccurrences(of: "-", with: "")
+    }
     /// Le film de départ et le style des cinq affichés : un remplacement se
     /// calcule sur les mêmes.
     private var fiveAnchorID: Int?
@@ -215,7 +225,7 @@ final class CineMatchViewModel {
         let format = format
         isPreparingStyles = true
         defer { isPreparingStyles = false }
-        guard let tiles = try? await client.styles(format: format) else { return }
+        guard let tiles = try? await client.styles(format: format, evening: nil) else { return }
         styleCache[format] = StyleCacheEntry(tiles: tiles, loadedAt: .now)
     }
 
@@ -406,6 +416,7 @@ final class CineMatchViewModel {
         galleryAddState = .idle
         errorMessage = nil
         lastFailedAction = nil
+        eveningID = Self.newEveningID()
         step = .daily
         await perform { [weak self] in await self?.loadDaily() }
     }
@@ -414,7 +425,8 @@ final class CineMatchViewModel {
     func start(_ film: CineMatchFilm) {
         let client = client
         let format = format
-        Task { try? await client.recordLaunch(tmdbID: film.id, format: format) }
+        let evening = eveningID
+        Task { try? await client.recordLaunch(tmdbID: film.id, format: format, evening: evening) }
         concludedFilm = film
         galleryAddState = .idle
         step = .conclusion
@@ -449,7 +461,8 @@ final class CineMatchViewModel {
         replaceOutcome = nil
         let client = client
         let format = format
-        Task { try? await client.recordPass(tmdbID: film.id, format: format) }
+        let evening = eveningID
+        Task { try? await client.recordPass(tmdbID: film.id, format: format, evening: evening) }
     }
 
     func unmark(_ film: CineMatchFilm) {
@@ -478,7 +491,8 @@ final class CineMatchViewModel {
                 style: fiveStyle, format: format,
                 replacing: CineMatchReplacement(
                     sessionID: sessionID, keepIDs: keepIDs, seenIDs: seenIDs, refusedIDs: refusedIDs
-                )
+                ),
+                evening: eveningID
             )
             guard !Task.isCancelled, step == .five else { return }
             var spares = response.films
@@ -517,9 +531,11 @@ final class CineMatchViewModel {
     func backToHome() {
         if step == .anchor { recordStarterExposure() }
         stopInflight()
+        // Avant la remise à zéro : l'exposition appartient à la soirée qui
+        // s'achève, pas à celle qui commence.
+        flushExposureInBackground()
         resetSession()
         step = .home
-        flushExposureInBackground()
     }
 
     /// Rejoue la dernière requête en échec.
@@ -536,7 +552,7 @@ final class CineMatchViewModel {
         guard !pendingFiveExposure.isEmpty else { return }
         let ids = pendingFiveExposure
         pendingFiveExposure = []
-        try? await client.recordExposure(kind: .five, tmdbIDs: ids, format: format)
+        try? await client.recordExposure(kind: .five, tmdbIDs: ids, format: format, evening: eveningID)
     }
 
     // MARK: - Chargements
@@ -551,7 +567,7 @@ final class CineMatchViewModel {
         errorMessage = nil
         let format = format
         do {
-            let tiles = try await client.styles(format: format)
+            let tiles = try await client.styles(format: format, evening: eveningID)
             guard !Task.isCancelled else { return }
             isLoadingStyles = false
             styleCache[format] = StyleCacheEntry(tiles: tiles, loadedAt: .now)
@@ -565,7 +581,8 @@ final class CineMatchViewModel {
         isLoadingStarters = true
         errorMessage = nil
         do {
-            let result = try await client.starters(style: style, page: page, shownIDs: shownIDs, format: format)
+            let result = try await client.starters(style: style, page: page, shownIDs: shownIDs, format: format,
+                                                   evening: eveningID)
             guard !Task.isCancelled else { return }
             isLoadingStarters = false
             pendingStyle = nil
@@ -589,7 +606,7 @@ final class CineMatchViewModel {
         isLoadingNear = true
         errorMessage = nil
         do {
-            let page = try await client.near(anchorID: film.id, format: format)
+            let page = try await client.near(anchorID: film.id, format: format, evening: eveningID)
             guard !Task.isCancelled else { return }
             isLoadingNear = false
             nearPage = page
@@ -610,7 +627,7 @@ final class CineMatchViewModel {
         do {
             let response = try await client.picks(
                 situation: situation, anchorID: anchorID, secondID: secondID, tweak: tweak,
-                style: style, format: format, replacing: nil
+                style: style, format: format, replacing: nil, evening: eveningID
             )
             guard !Task.isCancelled else { return }
             guard !response.films.isEmpty else {
@@ -641,7 +658,7 @@ final class CineMatchViewModel {
     private func loadDaily() async {
         errorMessage = nil
         do {
-            let film = try await client.daily(situation: situation, format: format)
+            let film = try await client.daily(situation: situation, format: format, evening: eveningID)
             guard !Task.isCancelled else { return }
             guard let film else {
                 fail(CineMatchClientError.noCandidates(for: format)) { [weak self] in await self?.loadDaily() }
@@ -650,7 +667,8 @@ final class CineMatchViewModel {
             dailyFilm = film
             let client = client
             let format = format
-            Task { try? await client.recordExposure(kind: .daily, tmdbIDs: [film.id], format: format) }
+            let evening = eveningID
+            Task { try? await client.recordExposure(kind: .daily, tmdbIDs: [film.id], format: format, evening: evening) }
         } catch {
             fail(error) { [weak self] in await self?.loadDaily() }
         }
@@ -708,6 +726,7 @@ final class CineMatchViewModel {
     }
 
     private func resetSession() {
+        eveningID = Self.newEveningID()
         pendingStyle = nil
         selectedStyle = nil
         starterPage = nil
@@ -751,11 +770,20 @@ final class CineMatchViewModel {
         visitStarterIDs = []
         let client = client
         let format = format
-        Task { try? await client.recordExposure(kind: .poster, tmdbIDs: ids, format: format) }
+        let evening = eveningID
+        Task { try? await client.recordExposure(kind: .poster, tmdbIDs: ids, format: format, evening: evening) }
     }
 
+    /// Le tampon et la soirée sont pris tout de suite : la tâche part après
+    /// la remise à zéro qui suit souvent, et elle doit écrire dans la soirée
+    /// qui s'achève.
     private func flushExposureInBackground() {
         guard !pendingFiveExposure.isEmpty else { return }
-        Task { [weak self] in await self?.flushExposure() }
+        let ids = pendingFiveExposure
+        pendingFiveExposure = []
+        let client = client
+        let format = format
+        let evening = eveningID
+        Task { try? await client.recordExposure(kind: .five, tmdbIDs: ids, format: format, evening: evening) }
     }
 }
