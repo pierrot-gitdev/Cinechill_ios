@@ -452,8 +452,15 @@ struct HomeView: View {
                     .buttonStyle(PressableScaleStyle(scale: 0.95))
                 }
             }
-            .padding(.horizontal, 1)
         }
+        // Une pile paresseuse ne crée que les affiches qui tombent dans le
+        // cadre du défilement. Posé dans la marge de l'écran, ce cadre
+        // s'arrêtait à 24 pt du bord : la quatrième affiche, à moitié dans la
+        // marge, n'était jamais créée et laissait un vide que « Tendances »,
+        // en pile ordinaire, n'avait pas. Le cadre va donc jusqu'aux bords et
+        // la marge passe dans le contenu : même dessin, plus de trou.
+        .contentMargins(.horizontal, Metrics.margin, for: .scrollContent)
+        .padding(.horizontal, -Metrics.margin)
         .scrollClipDisabled()
     }
 
