@@ -10538,38 +10538,6 @@
         }
       }
     },
-    "Pierre" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "John"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pierre"
-          }
-        }
-      }
-    },
-    "pierre.robert" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "john.smith"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "pierre.robert"
-          }
-        }
-      }
-    },
     "Pile comme %@" : {
       "localizations" : {
         "en" : {
@@ -12258,22 +12226,6 @@
         }
       }
     },
-    "Robert" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Smith"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Robert"
-          }
-        }
-      }
-    },
     "Romance" : {
       "localizations" : {
         "en" : {
@@ -13802,22 +13754,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "TMDB (HTTP %lld) : %@"
-          }
-        }
-      }
-    },
-    "toi@exemple.com" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "you@example.com"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "toi@exemple.com"
           }
         }
       }

@@ -274,7 +274,6 @@ struct AuthView: View {
             HStack(alignment: .top, spacing: 16) {
                 PlanField(
                     label: String(localized: "Prénom", bundle: .app), text: $firstName, field: .firstName, focus: $focus,
-                    placeholder: String(localized: "Pierre", bundle: .app),
                     contentType: .givenName,
                     error: message(for: .name),
                     isDisabled: isWorking,
@@ -282,7 +281,6 @@ struct AuthView: View {
                 )
                 PlanField(
                     label: String(localized: "Nom", bundle: .app), text: $lastName, field: .lastName, focus: $focus,
-                    placeholder: String(localized: "Robert", bundle: .app),
                     contentType: .familyName,
                     isDisabled: isWorking,
                     onSubmit: { focus = .handle }
@@ -547,7 +545,6 @@ struct AuthView: View {
     ) -> some View {
         PlanField(
             label: String(localized: "Email", bundle: .app), text: $email, field: .email, focus: $focus,
-            placeholder: String(localized: "toi@exemple.com", bundle: .app),
             keyboard: .emailAddress,
             contentType: contentType,
             submitLabel: submitLabel,
@@ -618,7 +615,6 @@ struct AuthView: View {
         VStack(alignment: .leading, spacing: 0) {
             PlanField(
                 label: String(localized: "Pseudo", bundle: .app), text: handleEntry, field: .handle, focus: $focus,
-                placeholder: String(localized: "pierre.robert", bundle: .app),
                 prefix: "@",
                 // `.nickname`, pas `.username` : le trousseau enregistrerait
                 // le pseudo comme identifiant et le proposerait dans le champ Email.

@@ -77,7 +77,6 @@ struct ClaimHandleSheet: View {
 
                     PlanField(
                         label: String(localized: "Pseudo", bundle: .app), text: entry, field: Field.handle, focus: $focus,
-                        placeholder: String(localized: "pierre.robert", bundle: .app),
                         prefix: "@",
                         contentType: .username,
                         submitLabel: .go,

@@ -403,11 +403,11 @@ private struct PlanComponentsPreview: View {
             VStack(alignment: .leading, spacing: 32) {
                 PlanField(
                     label: "Email", text: $email, field: "email", focus: $focus,
-                    placeholder: "toi@exemple.com", keyboard: .emailAddress
+                    keyboard: .emailAddress
                 )
                 PlanField(
                     label: "Pseudo", text: $pseudo, field: "pseudo", focus: $focus,
-                    placeholder: "pierre.robert", prefix: "@",
+                    prefix: "@",
                     accessory: .light,
                     note: "3 à 20 caractères, minuscules, chiffres, point et tiret bas."
                 )
