@@ -17,6 +17,7 @@ struct PublicProfileView: View {
     let profile: PublicProfile
 
     @EnvironmentObject private var socialStore: SocialStore
+    @EnvironmentObject private var libraryStore: LibraryStore
 
     @State private var detail: PublicProfileDetail?
     @State private var isLoading = true
@@ -28,6 +29,9 @@ struct PublicProfileView: View {
     /// Le profil dont on attend la confirmation du blocage.
     @State private var pendingBlock: ReportSubject?
     @State private var reportSubject: ReportSubject?
+    @State private var showsRecommend = false
+    /// Ce qu'a donné le dernier envoi, le temps du bandeau.
+    @State private var outcome: SuggestionOutcome?
 
     private var shown: PublicProfile { detail?.profile ?? profile }
     private var isFollowing: Bool { socialStore.isFollowing(profile.id) }
@@ -81,6 +85,24 @@ struct PublicProfileView: View {
         .sheet(item: $reportSubject) { subject in
             ReportSheet(subject: subject)
                 .environmentObject(socialStore)
+        }
+        .sheet(isPresented: $showsRecommend) {
+            RecommendFilmSheet(profile: shown) { result in
+                guard !result.isSilent else { return }
+                withAnimation(.easeOut(duration: 0.25)) { outcome = result }
+            }
+            .environmentObject(libraryStore)
+            .environmentObject(socialStore)
+        }
+        .overlay(alignment: .bottom) {
+            if let outcome {
+                SuggestionOutcomeBanner(outcome: outcome)
+            }
+        }
+        .task(id: outcome) {
+            guard outcome != nil else { return }
+            try? await Task.sleep(for: .seconds(3))
+            withAnimation(.easeOut(duration: 0.25)) { outcome = nil }
         }
         // Le suivi, le blocage et le déblocage : le message dit déjà ce qui
         // s'est passé, il fait le titre.
@@ -179,19 +201,48 @@ struct PublicProfileView: View {
     /// désabonner n'est pas destructeur, une alerte y ajouterait une
     /// cérémonie injustifiée.
     ///
-    /// Pas de raccourci « recommander » ici : le parcours part du film, pas
-    /// de la personne (galerie → Recommander → choisir l'ami). Un second
-    /// point d'entrée demanderait un sélecteur de film, donc un deuxième
-    /// parcours pour la même action.
+    /// Une fois la personne suivie, l'action de l'écran devient « Lui
+    /// recommander un film », au plein, au-dessus du suivi qui passe en
+    /// contour. Le parcours qui partait du film seul cachait que l'on pouvait
+    /// recommander : on vient sur le profil d'un ami pour ça. Avant le suivi,
+    /// le bouton n'existe pas : le serveur ne laisse recommander qu'aux
+    /// personnes qu'on suit.
     private var actions: some View {
-        HallFollowButton(
-            isFollowing: isFollowing,
-            isBusy: isTogglingFollow || isBlockBusy,
-            fullWidth: true
-        ) {
-            Haptics.impact(.medium)
-            Task { await toggleFollow() }
+        VStack(spacing: 10) {
+            if isFollowing {
+                Button {
+                    Haptics.impact(.light)
+                    showsRecommend = true
+                } label: {
+                    HStack(spacing: 9) {
+                        CinechillHallIconView(.recommander)
+                            .frame(width: 17, height: 17)
+                        Text("Lui recommander un film", bundle: .app)
+                            .planFont(14.5, weight: .semibold)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    .foregroundStyle(Ink.ground)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: Metrics.control)
+                    .background(Ink.paper, in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+                    .contentShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+                }
+                .buttonStyle(PressableScaleStyle(scale: 0.97))
+                .disabled(isBlockBusy)
+                .transition(.opacity)
+            }
+
+            HallFollowButton(
+                isFollowing: isFollowing,
+                isBusy: isTogglingFollow || isBlockBusy,
+                fullWidth: true
+            ) {
+                Haptics.impact(.medium)
+                Task { await toggleFollow() }
+            }
         }
+        .animation(Metrics.shift, value: isFollowing)
     }
 
     // MARK: - Blocage

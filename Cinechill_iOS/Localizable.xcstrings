@@ -2394,6 +2394,22 @@
         }
       }
     },
+    "Ajoute les films que tu as vus pour pouvoir les recommander." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add the movies you've seen so you can recommend them."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute les films que tu as vus pour pouvoir les recommander."
+          }
+        }
+      }
+    },
     "Ajoute ou retire le coup de cœur." : {
       "localizations" : {
         "en" : {
@@ -2838,6 +2854,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun film de ta galerie"
+          }
+        }
+      }
+    },
+    "Aucun film de ta galerie ne correspond." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No movie in your gallery matches."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun film de ta galerie ne correspond."
           }
         }
       }
@@ -3978,6 +4010,22 @@
         }
       }
     },
+    "Chercher dans ta galerie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search your gallery"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chercher dans ta galerie"
+          }
+        }
+      }
+    },
     "Chercher encore" : {
       "localizations" : {
         "en" : {
@@ -4134,6 +4182,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choisis un autre style, ou touche « Peu importe, propose-moi »."
+          }
+        }
+      }
+    },
+    "Choisis un film" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a movie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis un film"
+          }
+        }
+      }
+    },
+    "Choisis un film de ta galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a movie from your gallery."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis un film de ta galerie."
           }
         }
       }
@@ -8418,6 +8498,22 @@
         }
       }
     },
+    "Lui recommander un film" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommend them a movie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lui recommander un film"
+          }
+        }
+      }
+    },
     "Ma génération" : {
       "localizations" : {
         "en" : {
@@ -11114,6 +11210,22 @@
         }
       }
     },
+    "Pour %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour %@"
+          }
+        }
+      }
+    },
     "Pour %@." : {
       "localizations" : {
         "en" : {
@@ -11790,6 +11902,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recommander à un ami"
+          }
+        }
+      }
+    },
+    "Recommander un film" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommend a movie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommander un film"
+          }
+        }
+      }
+    },
+    "Recommander « %@ »" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommend “%@”"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommander « %@ »"
           }
         }
       }
