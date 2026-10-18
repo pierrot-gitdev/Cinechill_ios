@@ -7,7 +7,7 @@ import PhotosUI
 /// capitales et son filet : on ne voyait plus où finissait un sujet. Il tient
 /// maintenant en quatre groupes, dans l'ordre de ce qu'on vient y faire :
 ///
-/// - **Ce qu'on te propose** : les trois déclarations qui changent vraiment
+/// - **Ce qu'on te propose** : les deux déclarations qui changent vraiment
 ///   les recommandations, une ligne chacune.
 /// - **L'app** : notifications, langue, comptes bloqués.
 /// - **Aide** : nous contacter, relire les conditions.
@@ -267,10 +267,12 @@ struct SettingsView: View {
 
     // MARK: - Ce qu'on te propose
 
-    /// Trois lignes, chacune avec ce qui est retenu à droite. Les plateformes
+    /// Deux lignes, chacune avec ce qui est retenu à droite. Les plateformes
     /// et les genres ouvrent leur propre écran : leurs grilles prenaient la
-    /// moitié des réglages pour un choix qu'on fait une fois. La génération
-    /// tient dans un menu.
+    /// moitié des réglages pour un choix qu'on fait une fois.
+    ///
+    /// Plus de décennie de naissance : elle ne servait qu'à Découvrir, qui
+    /// apprend seul des réponses si l'on connaît les vieux films.
     ///
     /// Plus de « Remettre les films passés » : un film passé dans Découvrir
     /// revient de lui-même au bout de 90 jours, il n'y a rien à rattraper.
@@ -291,8 +293,6 @@ struct SettingsView: View {
                 line(String(localized: "Genres exclus", bundle: .app), value: bannedGenresSummary)
             }
             .buttonStyle(PressableScaleStyle(scale: 0.985))
-
-            generationMenu
         }
     }
 
@@ -352,41 +352,6 @@ struct SettingsView: View {
             .compactMap { catalog.genreNames[$0] }
             .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
         return names.isEmpty ? String(localized: "Aucun", bundle: .app) : names.joined(separator: ", ")
-    }
-
-    /// Un menu, comme la langue : cinq tranches et « Ne pas préciser », qui
-    /// tiennent dans une ligne au lieu d'une rangée de puces.
-    private var generationMenu: some View {
-        let current = Generation.allCases.first { $0.decade == libraryStore.birthDecade }
-
-        return Menu {
-            Picker(
-                selection: Binding(
-                    get: { current?.decade ?? 0 },
-                    set: { libraryStore.setBirthDecade($0 == 0 ? nil : $0) }
-                )
-            ) {
-                ForEach(Generation.allCases) { generation in
-                    Text(generation.menuLabel).tag(generation.decade)
-                }
-                Text("Ne pas préciser", bundle: .app).tag(0)
-            } label: {
-                Text("Décennie de naissance", bundle: .app)
-            }
-            .pickerStyle(.inline)
-        } label: {
-            line(
-                String(localized: "Décennie de naissance", bundle: .app),
-                // Le deck ne retire aucun film ancien : il en baisse un peu
-                // la fréquence (`generationFactor`, au plus de moitié). La
-                // note dit ce qu'on gagne, pas ce qu'on perdrait.
-                note: String(localized: "Dans Découvrir, les films de ton époque passent un peu plus souvent. Les classiques restent proposés.", bundle: .app),
-                value: current?.menuLabel ?? String(localized: "Non précisée", bundle: .app),
-                trailing: .menu
-            )
-        }
-        .accessibilityLabel(String(localized: "Décennie de naissance", bundle: .app))
-        .accessibilityValue(current?.menuLabel ?? String(localized: "Non précisée", bundle: .app))
     }
 
     /// Le compte rendu d'une action du compte qui a échoué, sous ses lignes.
@@ -627,38 +592,6 @@ struct SettingsView: View {
             profileStore.setCustomPhoto(jpeg)
         } else {
             profileStore.setCustomPhoto(data)
-        }
-    }
-}
-
-/// Les tranches proposées pour la génération. Volontairement grossières : on
-/// cherche un ordre de grandeur pour pondérer les décennies, pas un âge exact.
-private enum Generation: String, CaseIterable, Identifiable {
-    case before1970
-    case seventies
-    case eighties
-    case nineties
-    case millennium
-
-    var id: String { rawValue }
-
-    var decade: Int {
-        switch self {
-        case .before1970: 1960
-        case .seventies: 1970
-        case .eighties: 1980
-        case .nineties: 1990
-        case .millennium: 2000
-        }
-    }
-
-    var menuLabel: String {
-        switch self {
-        case .before1970: String(localized: "Avant 1970", bundle: .app)
-        case .seventies: String(localized: "Années 70", bundle: .app)
-        case .eighties: String(localized: "Années 80", bundle: .app)
-        case .nineties: String(localized: "Années 90", bundle: .app)
-        case .millennium: String(localized: "2000 et après", bundle: .app)
         }
     }
 }

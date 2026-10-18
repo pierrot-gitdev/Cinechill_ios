@@ -24,8 +24,6 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var preferredPlatformIDs: Set<String> = []
     /// Genres que l'utilisateur ne veut jamais voir proposés.
     @Published private(set) var bannedGenreIDs: Set<Int> = []
-    /// Décennie de naissance déclarée — calibre le score « probablement vu ».
-    @Published private(set) var birthDecade: Int?
     /// Le badge choisi comme signature du profil.
     @Published private(set) var displayedBadgeID: String?
     /// Passe à `true` dès la première réponse du listener Firestore, même si
@@ -327,14 +325,6 @@ final class LibraryStore: ObservableObject {
         bannedGenreIDs = ids
         writePreferences(uid: uid, document: "profile", data: [
             "bannedGenreIds": Array(ids).sorted(),
-        ])
-    }
-
-    func setBirthDecade(_ decade: Int?) {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        birthDecade = decade
-        writePreferences(uid: uid, document: "profile", data: [
-            "birthDecade": decade as Any,
         ])
     }
 
@@ -646,7 +636,6 @@ private extension LibraryStore {
                 self.watchlistItems = []
                 self.preferredPlatformIDs = []
                 self.bannedGenreIDs = []
-                self.birthDecade = nil
                 self.displayedBadgeID = nil
                 self.hasLoadedGalleryOnce = false
                 self.hasLoadedPreferencesOnce = false
@@ -757,12 +746,10 @@ private extension LibraryStore {
                     }
                     guard let data = snapshot?.data(), snapshot?.exists == true else {
                         self.bannedGenreIDs = []
-                        self.birthDecade = nil
                         self.displayedBadgeID = nil
                         return
                     }
                     self.bannedGenreIDs = Set(data["bannedGenreIds"] as? [Int] ?? [])
-                    self.birthDecade = data["birthDecade"] as? Int
                     self.displayedBadgeID = data["displayedBadgeId"] as? String
                 }
             }

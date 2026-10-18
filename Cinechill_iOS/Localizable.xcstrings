@@ -1498,22 +1498,6 @@
         }
       }
     },
-    "2000 et après" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2000 and later"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2000 et après"
-          }
-        }
-      }
-    },
     "< 1h30" : {
       "localizations" : {
         "en" : {
@@ -2635,54 +2619,6 @@
         }
       }
     },
-    "Années 70" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The 70s"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Années 70"
-          }
-        }
-      }
-    },
-    "Années 80" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The 80s"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Années 80"
-          }
-        }
-      }
-    },
-    "Années 90" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The 90s"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Années 90"
-          }
-        }
-      }
-    },
     "Annulée avant la fin : l'histoire reste en suspens." : {
       "localizations" : {
         "en" : {
@@ -3255,22 +3191,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autres"
-          }
-        }
-      }
-    },
-    "Avant 1970" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Before 1970"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avant 1970"
           }
         }
       }
@@ -5036,22 +4956,6 @@
         }
       }
     },
-    "Dans Découvrir, les films de ton époque passent un peu plus souvent. Les classiques restent proposés." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In Discover, movies from your era come up a little more often. Classics are still suggested."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dans Découvrir, les films de ton époque passent un peu plus souvent. Les classiques restent proposés."
-          }
-        }
-      }
-    },
     "Dans la même veine" : {
       "localizations" : {
         "en" : {
@@ -5216,22 +5120,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Débloquer %@"
-          }
-        }
-      }
-    },
-    "Décennie de naissance" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Decade of birth"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Décennie de naissance"
           }
         }
       }
@@ -8980,22 +8868,6 @@
         }
       }
     },
-    "Ne pas préciser" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prefer not to say"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ne pas préciser"
-          }
-        }
-      }
-    },
     "Ne plus proposer %@" : {
       "localizations" : {
         "en" : {
@@ -9056,22 +8928,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Non noté"
-          }
-        }
-      }
-    },
-    "Non précisée" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not set"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non précisée"
           }
         }
       }
