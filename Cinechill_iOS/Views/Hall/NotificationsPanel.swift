@@ -18,6 +18,9 @@ struct NotificationsPanel: View {
     let onClose: () -> Void
     /// Remonte le film accepté, pour que l'appelant puisse confirmer.
     let onAccepted: (String) -> Void
+    /// Ouvre un profil ou une fiche dans la pile de l'onglet. Le panneau
+    /// n'a pas de navigation à lui : c'est l'en-tête qui pousse l'écran.
+    let onOpen: (NotificationsPanelRoute) -> Void
 
     @EnvironmentObject private var socialStore: SocialStore
 
@@ -159,40 +162,61 @@ struct NotificationsPanel: View {
     private func suggestionRow(_ suggestion: Suggestion) -> some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .top, spacing: 9) {
-                HallAvatar(
-                    seed: suggestion.fromUid,
-                    initial: suggestion.senderInitial,
-                    url: suggestion.fromAvatarURL,
-                    size: 30
-                )
+                // La personne mène à son profil, le film à sa fiche : deux
+                // cibles, chacune vers ce qu'elle montre.
+                Button {
+                    onOpen(.sender(uid: suggestion.fromUid))
+                } label: {
+                    HStack(alignment: .top, spacing: 9) {
+                        HallAvatar(
+                            seed: suggestion.fromUid,
+                            initial: suggestion.senderInitial,
+                            url: suggestion.fromAvatarURL,
+                            size: 30
+                        )
 
-                VStack(alignment: .leading, spacing: 3) {
-                    (
-                        Text(suggestion.fromDisplayName)
-                            .fontWeight(.semibold)
-                        + Text(" te recommande", bundle: .app)
-                    )
-                    .planFont(13)
-                    .lineLimit(2)
+                        VStack(alignment: .leading, spacing: 3) {
+                            (
+                                Text(suggestion.fromDisplayName)
+                                    .fontWeight(.semibold)
+                                + Text(" te recommande", bundle: .app)
+                            )
+                            .planFont(13)
+                            .foregroundStyle(Ink.ink)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
 
-                    // Sans année connue, le titre seul : « Titre · — » se lisait
-                    // comme une donnée cassée.
-                    Text(verbatim: suggestion.item.releaseDate.map { $0.count >= 4 } == true
-                         ? "\(suggestion.item.title) · \(suggestion.item.displayYear)"
-                         : suggestion.item.title)
-                        .planFont(11.5)
-                        .foregroundStyle(Ink.ink2)
-                        .lineLimit(2)
+                            // Sans année connue, le titre seul : « Titre · — » se lisait
+                            // comme une donnée cassée.
+                            Text(verbatim: suggestion.item.releaseDate.map { $0.count >= 4 } == true
+                                 ? "\(suggestion.item.title) · \(suggestion.item.displayYear)"
+                                 : suggestion.item.title)
+                                .planFont(11.5)
+                                .foregroundStyle(Ink.ink2)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(PressableScaleStyle(scale: 0.98))
+                .accessibilityHint(String(localized: "Ouvre son profil", bundle: .app))
 
-                Spacer(minLength: 0)
-
-                PosterTile(
-                    posterPath: suggestion.item.posterPath,
-                    title: suggestion.item.title,
-                    width: 30,
-                    cornerRadius: Metrics.radius
-                )
+                Button {
+                    onOpen(.item(suggestion.item))
+                } label: {
+                    PosterTile(
+                        posterPath: suggestion.item.posterPath,
+                        title: suggestion.item.title,
+                        width: 30,
+                        cornerRadius: Metrics.radius
+                    )
+                }
+                .buttonStyle(PressableScaleStyle(scale: 0.94))
+                .accessibilityLabel(suggestion.item.title)
+                .accessibilityHint(String(localized: "Ouvre la fiche", bundle: .app))
 
                 moreMenu(ReportSubject(suggestion: suggestion))
             }
@@ -254,22 +278,33 @@ struct NotificationsPanel: View {
     private func followerRow(_ profile: PublicProfile) -> some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 9) {
-                HallAvatar(
-                    seed: profile.id,
-                    initial: profile.initials,
-                    url: profile.avatarURL,
-                    size: 30
-                )
+                Button {
+                    onOpen(.profile(profile))
+                } label: {
+                    HStack(spacing: 9) {
+                        HallAvatar(
+                            seed: profile.id,
+                            initial: profile.initials,
+                            url: profile.avatarURL,
+                            size: 30
+                        )
 
-                (
-                    Text(profile.displayName)
-                        .fontWeight(.semibold)
-                    + Text(" te suit", bundle: .app)
-                )
-                .planFont(13)
-                .lineLimit(2)
+                        (
+                            Text(profile.displayName)
+                                .fontWeight(.semibold)
+                            + Text(" te suit", bundle: .app)
+                        )
+                        .planFont(13)
+                        .foregroundStyle(Ink.ink)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
 
-                Spacer(minLength: 0)
+                        Spacer(minLength: 0)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableScaleStyle(scale: 0.98))
+                .accessibilityHint(String(localized: "Ouvre son profil", bundle: .app))
 
                 moreMenu(ReportSubject(profile: profile))
             }
@@ -413,6 +448,24 @@ struct NotificationsPanel: View {
         withAnimation(.easeOut(duration: 0.2)) {
             settled[suggestion.id] = nil
             held[suggestion.id] = nil
+        }
+    }
+}
+
+/// Ce qu'une ligne du panneau ouvre.
+enum NotificationsPanelRoute: Hashable, Identifiable {
+    /// Un nouvel abonné : son profil est déjà connu.
+    case profile(PublicProfile)
+    /// L'auteur d'une recommandation : seul son identifiant voyage avec elle.
+    case sender(uid: String)
+    /// Le film recommandé.
+    case item(MediaItem)
+
+    var id: String {
+        switch self {
+        case .profile(let profile): "profile-\(profile.id)"
+        case .sender(let uid): "sender-\(uid)"
+        case .item(let item): "item-\(item.id)"
         }
     }
 }

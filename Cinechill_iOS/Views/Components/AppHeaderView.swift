@@ -27,6 +27,8 @@ struct AppHeaderView: View {
     @Environment(\.isSelectedTab) private var isSelectedTab
     @State private var showNotifications = false
     @State private var showSearch = false
+    /// Le profil ou la fiche ouverts depuis le panneau de notifications.
+    @State private var panelRoute: NotificationsPanelRoute?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -98,6 +100,18 @@ struct AppHeaderView: View {
         // onglet a sa pile, et l'en-tête vit dedans.
         .navigationDestination(isPresented: $showSearch) {
             SearchView()
+        }
+        // Même pile que la recherche : un profil ouvert depuis une
+        // notification se referme d'un chevron, et l'on retrouve l'onglet.
+        .navigationDestination(item: $panelRoute) { route in
+            switch route {
+            case .profile(let profile):
+                PublicProfileView(profile: profile)
+            case .sender(let uid):
+                NotificationProfileView(uid: uid)
+            case .item(let item):
+                ItemDetailView(item: item)
+            }
         }
         // Les nouveaux abonnés s'acquittent à la fermeture du panneau, pas à
         // son ouverture : vidés avant le premier rendu, on ne les voyait jamais.
@@ -254,6 +268,11 @@ struct AppHeaderView: View {
             onAccepted: { _ in
                 // La confirmation vit dans le panneau lui-même, sur la ligne
                 // qu'on vient de trancher : un second bandeau ferait doublon.
+            },
+            onOpen: { route in
+                withAnimation(.easeOut(duration: 0.18)) { showNotifications = false }
+                showSearch = false
+                panelRoute = route
             }
         )
     }

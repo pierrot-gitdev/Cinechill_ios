@@ -10122,6 +10122,38 @@
         }
       }
     },
+    "Ouvre la fiche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the details"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre la fiche"
+          }
+        }
+      }
+    },
+    "Ouvre son profil" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens their profile"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre son profil"
+          }
+        }
+      }
+    },
     "Ouvrir" : {
       "localizations" : {
         "en" : {
