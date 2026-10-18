@@ -46,6 +46,10 @@ struct FilmDetailView: View {
     @State private var scrollOffset: CGFloat = 0
     /// Les réponses du lendemain sont encore affichées.
     @State private var showsVerdict = true
+    /// « Lequel est le plus sombre ? », posée à la place de la question du
+    /// lendemain une fois celle-ci répondue, si le serveur en a une.
+    @State private var darkerQuestion: CineMatchDarkerQuestion?
+    private let cineMatchClient: any CineMatchFetching = BackendCineMatchClient()
 
     private static let heroHeight: CGFloat = 260
     /// La taille réelle du titre, qui suit Dynamic Type. Le héros grandit du
@@ -149,6 +153,12 @@ struct FilmDetailView: View {
                 if asksVerdict, showsVerdict {
                     FilmVerdictPrompt(item: displayItem) {
                         withAnimation(Metrics.unfold) { showsVerdict = false }
+                        Task { await askDarker() }
+                    }
+                    .transition(.opacity)
+                } else if let darkerQuestion {
+                    DarkerQuestionPrompt(question: darkerQuestion, client: cineMatchClient) {
+                        withAnimation(Metrics.unfold) { self.darkerQuestion = nil }
                     }
                     .transition(.opacity)
                 }
@@ -802,6 +812,25 @@ struct FilmDetailView: View {
         guard let url = provider.webURL else { return }
         openURL(url)
     }
+
+    /// La question du jour, s'il y en a une. Une erreur ne se montre pas : la
+    /// question attendra demain, la fiche n'a rien perdu.
+    ///
+    /// Seulement si l'on est encore en haut de la fiche : posé au-dessus de ce
+    /// qu'on est en train de lire, le bloc ferait sauter le texte. Le serveur
+    /// n'est pas appelé dans ce cas, et la question n'est pas perdue pour la
+    /// journée.
+    private func askDarker() async {
+        guard scrollOffset > -Self.askDarkerScrollSlack,
+              let question = try? await cineMatchClient.darkerQuestion(),
+              scrollOffset > -Self.askDarkerScrollSlack
+        else { return }
+        withAnimation(Metrics.unfold) { darkerQuestion = question }
+    }
+
+    /// Le défilement toléré pour poser la question : un geste involontaire,
+    /// pas une lecture.
+    private static let askDarkerScrollSlack: CGFloat = 40
 
     private func loadDetail() async {
         loading = true

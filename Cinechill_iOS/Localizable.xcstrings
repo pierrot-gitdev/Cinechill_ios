@@ -176,6 +176,22 @@
         }
       }
     },
+    "C'est noté." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noted."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C'est noté."
+          }
+        }
+      }
+    },
     "CinéMatch verrouillé, %lld étape sur %lld validée" : {
       "localizations" : {
         "en" : {
@@ -236,6 +252,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "étapes sur %lld"
+          }
+        }
+      }
+    },
+    "Le désigne comme le plus sombre." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marks it as the darker one."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le désigne comme le plus sombre."
+          }
+        }
+      }
+    },
+    "Lequel est le plus sombre ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which one is darker?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lequel est le plus sombre ?"
           }
         }
       }
@@ -3412,6 +3460,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ta réponse compte pour tes prochains films."
+          }
+        }
+      }
+    },
+    "Ta réponse rend « Plus sombre » plus juste." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your answer makes “Darker” more accurate."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta réponse rend « Plus sombre » plus juste."
           }
         }
       }

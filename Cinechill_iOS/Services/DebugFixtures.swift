@@ -124,6 +124,18 @@ nonisolated enum DebugFixtures {
         }
     }
 
+    /// « Lequel est le plus sombre ? ». Le pire cas : un titre de
+    /// quatre-vingts caractères avec son affiche face à un titre d'une
+    /// lettre sans affiche. Le vide : pas de question, la fiche reste nue.
+    static var darkerQuestion: CineMatchDarkerQuestion? {
+        switch mode {
+        case nil, .empty:
+            return nil
+        case .worst:
+            return CineMatchDarkerQuestion(first: worstStarters[0], second: worstStarters[7])
+        }
+    }
+
     // MARK: - Les données
 
     private static func profile(_ id: String, _ handle: String, _ name: String?, seen: Int) -> PublicProfile {

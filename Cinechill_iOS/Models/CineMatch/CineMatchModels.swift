@@ -116,6 +116,14 @@ nonisolated struct CineMatchGalleryFilm: Identifiable, Hashable, Sendable {
     }
 }
 
+/// « Lequel est le plus sombre ? » : deux films de la galerie. Les réponses
+/// apprennent au moteur ce que « Plus sombre » veut dire ; la question ne
+/// revient pas plus d'une fois par jour et s'arrête quand c'est appris.
+nonisolated struct CineMatchDarkerQuestion: Hashable, Sendable {
+    let first: CineMatchGalleryFilm
+    let second: CineMatchGalleryFilm
+}
+
 /// Un des cinq films proposés, ou la proposition du jour. Une série y entre
 /// aussi : `item` en est alors le dossier, et la durée celle d'un épisode.
 nonisolated struct CineMatchFilm: Identifiable, Hashable, Sendable {

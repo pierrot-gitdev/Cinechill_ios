@@ -297,6 +297,16 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "setfilmverdict", queryItems: [])
     }
 
+    static func axisQuestion() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getaxisquestion", queryItems: [])
+    }
+
+    static func axisAnswer() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "recordaxisanswer", queryItems: [])
+    }
+
     private static func buildURL(baseURL: URL, functionName: String, queryItems: [URLQueryItem]) -> URL? {
         guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
             return nil

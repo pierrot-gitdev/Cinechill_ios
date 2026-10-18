@@ -65,6 +65,11 @@ protocol CineMatchFetching: Sendable {
     func recordLaunch(tmdbID: Int, format: MediaFormat, evening: String?) async throws
     /// « Pas celui-là » : le refus d'un des cinq, noté dans sa séance.
     func recordPass(tmdbID: Int, format: MediaFormat, evening: String?) async throws
+    /// La question « Lequel est le plus sombre ? » du jour, ou `nil` : déjà
+    /// posée aujourd'hui, déjà apprise, ou pas deux films à comparer.
+    func darkerQuestion() async throws -> CineMatchDarkerQuestion?
+    /// La réponse : le film désigné, ou `nil` pour « Pareil ».
+    func recordDarker(_ question: CineMatchDarkerQuestion, darkerID: Int?) async throws
 }
 
 nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
@@ -198,6 +203,33 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
     // MARK: - Corps de requête
 
     /// Le corps, avec l'identifiant de la soirée s'il y en a une.
+    func darkerQuestion() async throws -> CineMatchDarkerQuestion? {
+        #if DEBUG
+        if DebugFixtures.mode != nil { return DebugFixtures.darkerQuestion }
+        #endif
+        let data = try await post(to: APIEndpoints.axisQuestion(), body: [:])
+        let films = try decode(AxisQuestionResponseDTO.self, from: data).question?.films ?? []
+        guard films.count == 2 else { return nil }
+        return CineMatchDarkerQuestion(first: films[0].film, second: films[1].film)
+    }
+
+    func recordDarker(_ question: CineMatchDarkerQuestion, darkerID: Int?) async throws {
+        #if DEBUG
+        if DebugFixtures.mode != nil {
+            try await Task.sleep(for: .milliseconds(400))
+            return
+        }
+        #endif
+        _ = try await post(to: APIEndpoints.axisAnswer(), body: [
+            "axis": "dark",
+            "a": question.first.id,
+            "b": question.second.id,
+            // `NSNull` et non l'absence de clé : le serveur distingue « Pareil »
+            // d'une réponse mal formée.
+            "darkerId": darkerID.map { $0 as Any } ?? NSNull(),
+        ])
+    }
+
     static func adding(_ evening: String?, to body: [String: Any]) -> [String: Any] {
         guard let evening else { return body }
         var out = body
@@ -397,6 +429,14 @@ private nonisolated struct FiveResponseDTO: Decodable, Sendable {
     let films: [FiveFilmDTO]
     let widened: WidenedDTO?
     let sessionId: String?
+}
+
+private nonisolated struct AxisQuestionDTO: Decodable, Sendable {
+    let films: [GalleryFilmDTO]
+}
+
+private nonisolated struct AxisQuestionResponseDTO: Decodable, Sendable {
+    let question: AxisQuestionDTO?
 }
 
 private nonisolated struct DailyResponseDTO: Decodable, Sendable {
