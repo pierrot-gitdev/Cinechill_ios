@@ -119,6 +119,11 @@ struct PosterImageView: View {
             }
             .clipped()
             .task(id: url) {
+                // L'URL a changé sous la même vue (la salle de CinéMatch garde
+                // son écran d'un film à l'autre) : l'image de l'ancienne ne
+                // vaut plus. Sans ça, la première affiche restait à l'écran.
+                let cached = PosterImageCache.shared.cached(url)
+                if image !== cached { image = cached }
                 guard image == nil, let url else { return }
                 let loaded = await PosterImageCache.shared.image(for: url)
                 guard !Task.isCancelled else { return }

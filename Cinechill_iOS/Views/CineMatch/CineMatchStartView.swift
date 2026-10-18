@@ -420,6 +420,9 @@ struct CineMatchStartView: View {
                 posterTile(film, from: step, choose: choose)
             }
         }
+        // Le cadre de l'affiche prise déborde de 4 pt : sans cette marge, la
+        // vue défilante le rognait sur les bords (retour de Pierre, 13 oct.).
+        .padding(6)
     }
 
     private func posterTile(
