@@ -7,10 +7,9 @@ import SwiftUI
 
 /// L'onglet CinéMatch : la Porte, puis le parcours de la soirée.
 ///
-/// La Porte est reprise **à l'identique** de `QuestionnaireView` : même état de
-/// session pour le seuil, même profil, même planche des coups de cœur, même
-/// remesure au retour sur l'onglet. Seule nouveauté, l'artéfact « Tes
-/// préférences » ouvre les comparaisons entre films vus.
+/// La Porte garde son état de session pour le seuil, sa planche des coups de
+/// cœur et sa remesure au retour sur l'onglet. Elle compte quatre étapes depuis
+/// le 18 octobre 2026 : les comparaisons entre films vus sont parties.
 ///
 /// Passé le seuil, l'écran n'a plus de décor commun : chaque étape porte le sien
 /// (le salon à l'accueil, une page plate pour le départ, la planche des cinq).
