@@ -256,8 +256,9 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
     // MARK: - Wire helpers
 
     /// Même mécanique que `BackendRecommendationClient.post`, qui est privée.
-    /// Seul le 409 `no_candidates` reçoit ici son propre message : celui du
-    /// questionnaire parle de « critères », CinéMatch parle de la soirée.
+    /// Seul le 409 `no_candidates` reçoit ici son propre message : celui de
+    /// `RecommendationClientError` parle de « critères », CinéMatch parle de la
+    /// soirée.
     private func post(to url: URL?, body: [String: Any]) async throws -> Data {
         guard BackendConfiguration.baseURL != nil else {
             throw RecommendationClientError.missingBaseURL

@@ -116,7 +116,7 @@ struct TMDBDetailWatchProviderItem: Decodable, Sendable {
     }
 
     /// Page web du service pour un `provider_id` TMDB donné. Extrait en fonction statique pour
-    /// être réutilisable sans instance (ex. `RecommendationResult`, qui ne connaît que des IDs).
+    /// être réutilisable sans instance, par qui ne connaît que des identifiants.
     nonisolated static func webURL(forProviderID providerID: Int) -> URL? {
         let map: [Int: String] = [
             8: "https://www.netflix.com",

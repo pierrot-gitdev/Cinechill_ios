@@ -80,39 +80,20 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "setgallerylove", queryItems: [])
     }
 
-    static func candidatePool() -> URL? {
-        guard let baseURL = BackendConfiguration.baseURL else { return nil }
-        return buildURL(baseURL: baseURL, functionName: "getcandidatepool", queryItems: [])
-    }
-
     static func enrichCandidates() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "enrichcandidates", queryItems: [])
     }
 
-    static func finalizeRecommendations() -> URL? {
-        guard let baseURL = BackendConfiguration.baseURL else { return nil }
-        return buildURL(baseURL: baseURL, functionName: "finalizerecommendations", queryItems: [])
-    }
-
-    static func tasteProfile() -> URL? {
+    /// L'état des Portes. Le point d'entrée garde son ancien nom, `gettasteprofile`.
+    static func doors() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "gettasteprofile", queryItems: [])
-    }
-
-    static func tasteCorrection() -> URL? {
-        guard let baseURL = BackendConfiguration.baseURL else { return nil }
-        return buildURL(baseURL: baseURL, functionName: "settastecorrection", queryItems: [])
     }
 
     static func sessionOutcome() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "recordsessionoutcome", queryItems: [])
-    }
-
-    static func galleryAxes() -> URL? {
-        guard let baseURL = BackendConfiguration.baseURL else { return nil }
-        return buildURL(baseURL: baseURL, functionName: "getgalleryaxes", queryItems: [])
     }
 
     static func backfillGallery() -> URL? {

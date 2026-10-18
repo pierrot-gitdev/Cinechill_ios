@@ -7,9 +7,9 @@ import Foundation
 
 /// Un film recommandé par quelqu'un qu'on suit, en attente de réponse.
 ///
-/// Le nom évite délibérément « Recommendation » : `RecommendationResult` et
-/// `BackendRecommendationClient` désignent déjà l'algorithme CinéMatch. Deux
-/// concepts sans rapport sous un même mot rendraient le code illisible.
+/// Le nom évite délibérément « Recommendation » : `BackendRecommendationClient`
+/// porte déjà ce mot pour les appels du serveur. Deux concepts sans rapport
+/// sous un même mot rendraient le code illisible.
 nonisolated struct Suggestion: Identifiable, Hashable, Sendable {
     /// `{fromUid}_{itemId}` — déterministe, ce qui rend « déjà recommandé »
     /// vérifiable sans requête côté serveur.

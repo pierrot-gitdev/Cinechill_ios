@@ -23,8 +23,7 @@ import UIKit
 ///
 /// `nonisolated` : sans ça, hériterait de l'isolation MainActor par défaut du
 /// projet (`SWIFT_DEFAULT_ACTOR_ISOLATION`), et sa conformance `Equatable`
-/// deviendrait inutilisable dans le moindre contexte `nonisolated` du module —
-/// voir la même note dans `QuestionnaireAnswer.swift`.
+/// deviendrait inutilisable dans le moindre contexte `nonisolated` du module.
 ///
 /// L'`==` est écrit à la main plutôt que synthétisé : sur ce toolchain, la
 /// synthèse ne propage pas toujours `nonisolated` au witness généré quand

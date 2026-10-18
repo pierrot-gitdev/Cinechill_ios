@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// Layout qui enchaîne ses enfants horizontalement et passe à la ligne quand la largeur manque —
-/// utilisé pour les grilles de chips (questionnaire, plateformes…) dont le nombre d'items varie.
+/// utilisé pour les grilles de chips (plateformes, genres…) dont le nombre d'items varie.
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
     /// Le fer des rangées. À gauche partout dans l'application, centré dans la

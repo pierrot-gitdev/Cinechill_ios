@@ -121,11 +121,11 @@ final class DoorStore {
         isRefreshing = true
         defer { isRefreshing = false }
 
-        guard let profile = try? await client.fetchTasteProfile(),
-              let fresh = profile.door else { return }
+        guard let reading = try? await client.fetchDoors(),
+              let fresh = reading.door else { return }
         door = fresh
         DoorState.cache(fresh)
-        if let freshSeries = profile.seriesDoor {
+        if let freshSeries = reading.seriesDoor {
             seriesDoor = freshSeries
             DoorState.cache(freshSeries)
         }

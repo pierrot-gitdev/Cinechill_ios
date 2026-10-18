@@ -5,9 +5,10 @@
 
 import Foundation
 
-// Les modèles de CinéMatch v2. Tout est `nonisolated` : ils traversent le
-// client réseau, qui ne tourne pas sur le main actor (voir la note sur
-// `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` dans `QuestionnaireAnswer.swift`).
+// Les modèles de CinéMatch. Tout est `nonisolated` : ils traversent le client
+// réseau, qui ne tourne pas sur le main actor. Le projet isole par défaut
+// tout type sur le main actor (`SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`) ;
+// sans `nonisolated`, ces données pures ne pourraient plus être `Sendable`.
 
 /// Avec qui on regarde. `family` fait écarter au serveur l'horreur et les
 /// films interdits aux moins de 16 ans.

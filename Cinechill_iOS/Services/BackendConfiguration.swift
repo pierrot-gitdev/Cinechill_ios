@@ -1,8 +1,7 @@
 import Foundation
 
-/// `nonisolated` car lu depuis `BackendRecommendationClient`, appelé hors MainActor (voir la note
-/// sur `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` dans `QuestionnaireAnswer.swift`) — sans ça,
-/// hériterait de l'isolation MainActor par défaut du projet.
+/// `nonisolated` car lu depuis les clients réseau, appelés hors du main actor : sans ça, le type
+/// hériterait de l'isolation par défaut du projet (`SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`).
 nonisolated enum BackendConfiguration {
     static var baseURL: URL? {
         #if DEBUG

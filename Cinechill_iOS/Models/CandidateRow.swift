@@ -1,54 +1,13 @@
 //
-//  CandidatePool.swift
+//  CandidateRow.swift
 //  Cinechill_iOS
 //
 
 import Foundation
 
-/// Un jeu de valeurs indexé par axe, tel que le serveur l'envoie.
-///
-/// Les positions et les incertitudes voyagent dans cette même forme mais ne se
-/// lisent pas pareil : une position absente vaut 0 (l'axe ne départage rien),
-/// une incertitude absente vaut 1 (on ne sait pas) — jamais 0, qui voudrait dire
-/// « parfaitement connu » et ferait exploser le score.
-nonisolated struct AxisValues: Equatable, Hashable, Sendable, Codable {
-    private var values: [String: Double]
-
-    static let unknown = AxisValues(values: [:])
-
-    private init(values: [String: Double]) {
-        self.values = values
-    }
-
-    init(from decoder: Decoder) throws {
-        values = try [String: Double](from: decoder)
-    }
-
-    func encode(to encoder: Encoder) throws {
-        try values.encode(to: encoder)
-    }
-
-    /// La position sur un axe. Repli : 0.
-    subscript(axis: Axis) -> Double {
-        values[axis.rawValue] ?? 0
-    }
-
-    /// L'incertitude sur un axe. Repli : 1, et jamais en dessous d'un plancher
-    /// strictement positif.
-    func sigma(_ axis: Axis) -> Double {
-        max(0.05, values[axis.rawValue] ?? 1)
-    }
-
-    var jsonPayload: [String: Double] { values }
-}
-
-/// Un candidat tel que renvoyé par `getCandidatePool` — les champs "bon marché" que TMDB
-/// donne déjà sur ses endpoints de liste, plus la position que le serveur en a déduite
-/// sur les huit axes.
-///
-/// Le client ne calcule jamais cette position lui-même : elle dépend de la distribution
-/// du vivier entier, que seul le serveur a eue en main. Il la reçoit, s'en sert pour
-/// classer localement entre deux questions, et la lui renvoie telle quelle.
+/// Un film de la watchlist tel que `enrichCandidates` le reçoit : les champs que TMDB
+/// donne déjà sur ses listes. Le serveur y ajoute ceux de la fiche détaillée (voir
+/// `EnrichedCandidateRow`).
 nonisolated struct CandidateRow: Identifiable, Hashable, Sendable, Codable {
     let id: Int
     let title: String?
@@ -60,8 +19,6 @@ nonisolated struct CandidateRow: Identifiable, Hashable, Sendable, Codable {
     let genreIds: [Int]
     let releaseDate: String?
     let originCountry: [String]
-    let axes: AxisValues
-    let axisSigma: AxisValues
 
     enum CodingKeys: String, CodingKey {
         case id, title, overview
@@ -72,8 +29,6 @@ nonisolated struct CandidateRow: Identifiable, Hashable, Sendable, Codable {
         case genreIds = "genre_ids"
         case releaseDate = "release_date"
         case originCountry = "origin_country"
-        case axes
-        case axisSigma = "axis_sigma"
     }
 
     init(
@@ -86,9 +41,7 @@ nonisolated struct CandidateRow: Identifiable, Hashable, Sendable, Codable {
         popularity: Double?,
         genreIds: [Int],
         releaseDate: String?,
-        originCountry: [String],
-        axes: AxisValues = .unknown,
-        axisSigma: AxisValues = .unknown
+        originCountry: [String]
     ) {
         self.id = id
         self.title = title
@@ -100,14 +53,10 @@ nonisolated struct CandidateRow: Identifiable, Hashable, Sendable, Codable {
         self.genreIds = genreIds
         self.releaseDate = releaseDate
         self.originCountry = originCountry
-        self.axes = axes
-        self.axisSigma = axisSigma
     }
 
-    /// Décodage explicite plutôt que synthétisé : les deux blocs d'axes doivent
-    /// pouvoir manquer sans faire échouer toute la réponse, et retomber alors sur
-    /// « position neutre, incertitude maximale » — ce qui neutralise le film dans
-    /// le classement au lieu de le faire gagner par accident.
+    /// Décodage explicite plutôt que synthétisé : les champs facultatifs de TMDB
+    /// peuvent manquer sans faire échouer toute la réponse.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(Int.self, forKey: .id)
@@ -120,8 +69,6 @@ nonisolated struct CandidateRow: Identifiable, Hashable, Sendable, Codable {
         genreIds = try container.decodeIfPresent([Int].self, forKey: .genreIds) ?? []
         releaseDate = try container.decodeIfPresent(String.self, forKey: .releaseDate)
         originCountry = try container.decodeIfPresent([String].self, forKey: .originCountry) ?? []
-        axes = try container.decodeIfPresent(AxisValues.self, forKey: .axes) ?? .unknown
-        axisSigma = try container.decodeIfPresent(AxisValues.self, forKey: .axisSigma) ?? .unknown
     }
 
     var posterURL: URL? {
@@ -134,8 +81,8 @@ nonisolated struct CandidateRow: Identifiable, Hashable, Sendable, Codable {
         return Int(releaseDate.prefix(4))
     }
 
-    /// Représentation JSON à renvoyer telle quelle vers `enrichCandidates`/`finalizeRecommendations`
-    /// — le backend échange ce même schéma dans les deux sens plutôt que de le re-dériver.
+    /// Représentation JSON envoyée à `enrichCandidates`, qui renvoie ce même schéma
+    /// complété.
     var jsonPayload: [String: Any] {
         [
             "id": id,
@@ -148,15 +95,12 @@ nonisolated struct CandidateRow: Identifiable, Hashable, Sendable, Codable {
             "genre_ids": genreIds,
             "release_date": releaseDate as Any,
             "origin_country": originCountry,
-            "axes": axes.jsonPayload,
-            "axis_sigma": axisSigma.jsonPayload,
         ]
     }
 }
 
-/// Un candidat enrichi par `enrichCandidates` — les champs qui n'existent que sur l'endpoint de
-/// détail TMDB (un appel par film), disponibles seulement pour le sous-ensemble réduit envoyé en
-/// phase B. Ses axes sont ceux du candidat grossier, resserrés par ce que le détail a appris.
+/// Un film enrichi par `enrichCandidates` : les champs qui n'existent que sur la fiche
+/// détaillée de TMDB (un appel par film).
 nonisolated struct EnrichedCandidateRow: Identifiable, Hashable, Sendable, Codable {
     let base: CandidateRow
     let runtimeMinutes: Int?
@@ -167,8 +111,6 @@ nonisolated struct EnrichedCandidateRow: Identifiable, Hashable, Sendable, Codab
     let budget: Double?
 
     var id: Int { base.id }
-    var axes: AxisValues { base.axes }
-    var axisSigma: AxisValues { base.axisSigma }
 
     enum CodingKeys: String, CodingKey {
         case runtimeMinutes = "runtime_minutes"
