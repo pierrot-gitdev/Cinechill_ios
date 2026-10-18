@@ -108,17 +108,34 @@ corrigé sur `AppTabBar` ; ne pas le réintroduire.
 
 ## Les commits
 
-**Une seule ligne. Pas de corps.** Le dépôt porte un historique de messages
-longs ; on ne le continue pas.
+**Un commit par session de travail, pas par sujet.** Découper chaque
+changement dans son propre commit coûte du temps et des manipulations
+(fichiers partagés reconstruits, catalogue mis en scène par étapes) sans
+rien apporter. Ce qui a été fait ensemble part ensemble.
 
-- Français, verbe en tête au présent : « Ajoute », « Sort », « Relit », « Isole ».
-- Une phrase, 70 caractères au plus.
-- Pas de préfixe (`feat:`, `fix:`), pas d'emoji, pas de liste.
-- Le *pourquoi* va dans les commentaires du code, où il reste lisible au moment
-  où on modifie la ligne. Un message de commit ne se relit jamais au bon moment.
+- **Titre en anglais**, précis, avec le type en tête : `feat:`, `fix:`,
+  `refactor:`, `chore:`, `docs:`. Il dit ce que contient le commit, pas
+  seulement le sujet : `feat: in-app trailers, friend recommendations and
+  clearer film detail actions`.
+- **Corps en liste à puces**, en anglais, dès que le commit couvre plus d'une
+  chose : une puce par changement, qui dit ce qui a été fait et où.
+- Un commit qui ne fait qu'une chose peut se contenter du titre.
+- Le *pourquoi* détaillé reste dans les commentaires du code, où il se relit
+  au moment où l'on modifie la ligne.
 
-Un commit par changement réel : un sujet d'une ligne ne peut pas couvrir
-honnêtement deux sujets. Séparer plutôt qu'allonger.
+Exemple :
+
+```
+feat: settings cleanup, in-app trailers and friend recommendations
+
+- Settings: hide the contact address, drop the account email and TMDB notice
+- Sign-up: remove personal placeholders from name, email and handle fields
+- Film detail: show where the film is stored, make "Recommend" the main action
+- Trailers: play in-app on film, series and season pages
+- Notifications panel: open the follower's profile or the film on tap
+- Public profile: recommend a film from your gallery to someone you follow
+- Home: fix the missing fourth poster in lazy rails
+```
 
 ## Le build appartient à Pierre
 
