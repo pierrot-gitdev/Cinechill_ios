@@ -249,58 +249,6 @@ private struct BlockedAccountRow: View {
     }
 }
 
-// MARK: - Le contact
-
-/// L'adresse où écrire, à poser dans les réglages. La règle 1.2 de l'App
-/// Store demande un moyen de joindre l'équipe à toute app où des gens se
-/// croisent.
-///
-/// L'adresse est affichée en entier et sélectionnable : sans app Mail
-/// configurée, le bouton ne peut rien ouvrir, et il copie alors l'adresse.
-struct ContactRow: View {
-    @Environment(\.openURL) private var openURL
-    @State private var copied = false
-
-    /// Pas une chaîne traduite : une `static let` ne pose ici aucun problème.
-    private static let address = "pierrerobrt@gmail.com"
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            PlanSectionLabel(
-                title: String(localized: "Contact", bundle: .app),
-                note: String(localized: "Une question, un problème avec un profil : on te répond à cette adresse.", bundle: .app)
-            )
-            .padding(.bottom, 14)
-
-            Text(verbatim: Self.address)
-                .planFont(15)
-                .foregroundStyle(Ink.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .textSelection(.enabled)
-
-            PlanSecondaryButton(
-                title: copied
-                    ? String(localized: "Adresse copiée", bundle: .app)
-                    : String(localized: "Écrire un email", bundle: .app),
-                height: Metrics.control
-            ) {
-                write()
-            }
-            .padding(.top, 14)
-        }
-    }
-
-    private func write() {
-        guard let url = URL(string: "mailto:\(Self.address)") else { return }
-        openURL(url) { accepted in
-            guard !accepted else { return }
-            UIPasteboard.general.string = Self.address
-            withAnimation(Metrics.shift) { copied = true }
-        }
-    }
-}
-
 // MARK: - Données de démonstration
 
 #if DEBUG

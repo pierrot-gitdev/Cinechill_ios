@@ -17,14 +17,11 @@ struct ProfileView: View {
 
     @EnvironmentObject private var profileStore: UserProfileStore
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(MediaCatalog.self) private var catalog
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
 
-    @State private var showSettings = false
-    @State private var showSearch = false
     @State private var showHandleSheet = false
 
     /// Le même total que la galerie, films et saisons : « Vus » ne prétend pas
@@ -62,13 +59,6 @@ struct ProfileView: View {
                 }
             }
         }
-        .sheet(isPresented: $showSettings, onDismiss: { profileStore.refresh() }) {
-            SettingsView()
-                .environmentObject(profileStore)
-                .environmentObject(authService)
-                .environmentObject(libraryStore)
-                .environmentObject(socialStore)
-        }
         .sheet(isPresented: $showHandleSheet) {
             ClaimHandleSheet()
                 .environmentObject(socialStore)
@@ -104,11 +94,16 @@ struct ProfileView: View {
                 .buttonStyle(PressableScaleStyle(scale: 0.9))
                 .accessibilityLabel(String(localized: "Rechercher un profil", bundle: .app))
 
-                Button { showSettings = true } label: {
-                    SettingsGlyph()
-                        .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
-                        .foregroundStyle(Ink.ink2)
+                // Poussés et non présentés en feuille : les réglages ont leurs
+                // propres écrans (notifications, comptes bloqués), et une
+                // feuille de la hauteur de l'écran posée sur un plein écran
+                // laissait deux croix l'une au-dessus de l'autre.
+                NavigationLink {
+                    SettingsView()
+                } label: {
+                    CinechillHallIconView(.regler)
                         .frame(width: 18, height: 18)
+                        .foregroundStyle(Ink.ink2)
                         .frame(width: Metrics.control, height: Metrics.control)
                         .contentShape(Rectangle())
                 }
@@ -362,32 +357,5 @@ struct ProfileView: View {
             shares.append(GenreShare(id: -1, name: String(localized: "Autres", bundle: .app), share: Double(remainder) / total, colorIndex: -1))
         }
         return shares
-    }
-}
-
-/// L'icône des réglages, dans l'écriture « La Gravure » : deux glissières et
-/// leurs curseurs. Un engrenage plein aurait été le second élément plein d'une
-/// famille qui n'en admet qu'un, le point de lumière.
-private struct SettingsGlyph: Shape {
-    func path(in rect: CGRect) -> Path {
-        let scale = min(rect.width, rect.height) / 24
-        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-            CGPoint(x: rect.minX + x * scale, y: rect.minY + y * scale)
-        }
-
-        var path = Path()
-        path.move(to: p(3.5, 8.5))
-        path.addLine(to: p(20.5, 8.5))
-        path.move(to: p(3.5, 15.5))
-        path.addLine(to: p(20.5, 15.5))
-        path.addEllipse(in: CGRect(
-            x: p(9, 8.5).x - 2.6 * scale, y: p(9, 8.5).y - 2.6 * scale,
-            width: 5.2 * scale, height: 5.2 * scale
-        ))
-        path.addEllipse(in: CGRect(
-            x: p(15.5, 15.5).x - 2.6 * scale, y: p(15.5, 15.5).y - 2.6 * scale,
-            width: 5.2 * scale, height: 5.2 * scale
-        ))
-        return path
     }
 }

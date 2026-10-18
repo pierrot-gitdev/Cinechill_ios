@@ -229,7 +229,7 @@ struct PlanField<Value: Hashable>: View {
     }
 
     private var capitalization: TextInputAutocapitalization {
-        contentType == .givenName || contentType == .familyName ? .words : .never
+        contentType == .givenName || contentType == .familyName || contentType == .name ? .words : .never
     }
 
     private var ruleTint: Color {

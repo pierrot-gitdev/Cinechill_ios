@@ -1,9 +1,7 @@
 {
   "sourceLanguage" : "fr",
   "strings" : {
-    "" : {
-
-    },
+    "" : {},
     " [Créer un compte](cinechill-auth://signup) ?" : {
       "localizations" : {
         "en" : {
@@ -192,66 +190,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ : c'est fait."
-          }
-        }
-      }
-    },
-    "%@ · %lld films" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ · %#@n@"
-          },
-          "substitutions" : {
-            "n" : {
-              "argNum" : 2,
-              "formatSpecifier" : "lld",
-              "variations" : {
-                "plural" : {
-                  "one" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg movie"
-                    }
-                  },
-                  "other" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg movies"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ · %#@n@"
-          },
-          "substitutions" : {
-            "n" : {
-              "argNum" : 2,
-              "formatSpecifier" : "lld",
-              "variations" : {
-                "plural" : {
-                  "one" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg film"
-                    }
-                  },
-                  "other" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg films"
-                    }
-                  }
-                }
-              }
-            }
           }
         }
       }
@@ -2280,18 +2218,18 @@
         }
       }
     },
-    "Adresse copiée" : {
+    "Adresse copiée : %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Address copied"
+            "value" : "Address copied: %@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adresse copiée"
+            "value" : "Adresse copiée : %@"
           }
         }
       }
@@ -2324,6 +2262,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher sur mon profil"
+          }
+        }
+      }
+    },
+    "Aide" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Help"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aide"
           }
         }
       }
@@ -3544,22 +3498,6 @@
         }
       }
     },
-    "Ça nous aide à te proposer des films de ta génération." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "It helps us suggest movies from your generation."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ça nous aide à te proposer des films de ta génération."
-          }
-        }
-      }
-    },
     "Casting" : {
       "localizations" : {
         "en" : {
@@ -3652,6 +3590,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce pseudo est déjà pris."
+          }
+        }
+      }
+    },
+    "Ce qu'on te propose" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What we suggest"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce qu'on te propose"
           }
         }
       }
@@ -4360,6 +4314,22 @@
         }
       }
     },
+    "Coupées" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coupées"
+          }
+        }
+      }
+    },
     "Cœur d'Acier" : {
       "localizations" : {
         "en" : {
@@ -4660,22 +4630,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Connexion…"
-          }
-        }
-      }
-    },
-    "Contact" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contact"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contact"
           }
         }
       }
@@ -5200,22 +5154,6 @@
         }
       }
     },
-    "Déplié" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expanded"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Déplié"
-          }
-        }
-      }
-    },
     "Depuis %lld j" : {
       "localizations" : {
         "en" : {
@@ -5516,22 +5454,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Écartée"
-          }
-        }
-      }
-    },
-    "Écrire un email" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Write an email"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Écrire un email"
           }
         }
       }
@@ -7216,22 +7138,6 @@
         }
       }
     },
-    "Jamais de…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Never…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jamais de…"
-          }
-        }
-      }
-    },
     "Jamais vu" : {
       "localizations" : {
         "en" : {
@@ -7516,6 +7422,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Jurassic Park"
+          }
+        }
+      }
+    },
+    "L'app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'app"
           }
         }
       }
@@ -7888,22 +7810,6 @@
         }
       }
     },
-    "Le compte" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Account"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le compte"
-          }
-        }
-      }
-    },
     "Le désigne comme le plus sombre." : {
       "localizations" : {
         "en" : {
@@ -8256,6 +8162,22 @@
         }
       }
     },
+    "Les films sortis avant ta naissance te seront moins souvent proposés." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Movies released before you were born will come up less often."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les films sortis avant ta naissance te seront moins souvent proposés."
+          }
+        }
+      }
+    },
     "Les notifications arrivent sans bruit dans le centre de notifications." : {
       "localizations" : {
         "en" : {
@@ -8556,6 +8478,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mes badges"
+          }
+        }
+      }
+    },
+    "Mes genres exclus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My excluded genres"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mes genres exclus"
           }
         }
       }
@@ -9084,6 +9022,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notifications, %lld en attente"
+          }
+        }
+      }
+    },
+    "Nous écrire" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contact us"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous écrire"
           }
         }
       }
@@ -9820,22 +9774,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On ne te propose que ce que tu peux regarder."
-          }
-        }
-      }
-    },
-    "On ne te proposera jamais ces genres." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We'll never suggest these genres."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On ne te proposera jamais ces genres."
           }
         }
       }
@@ -12096,22 +12034,6 @@
         }
       }
     },
-    "Replié" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collapsed"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Replié"
-          }
-        }
-      }
-    },
     "Réponse serveur illisible." : {
       "localizations" : {
         "en" : {
@@ -13964,6 +13886,22 @@
         }
       }
     },
+    "Ton compte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your account"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton compte"
+          }
+        }
+      }
+    },
     "Ton film du soir, **en une minute.**" : {
       "localizations" : {
         "en" : {
@@ -14200,6 +14138,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Touche un film pour en faire un coup de cœur."
+          }
+        }
+      }
+    },
+    "Touche un genre pour qu'on ne te le propose plus." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a genre and we'll stop suggesting it."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touche un genre pour qu'on ne te le propose plus."
           }
         }
       }
@@ -15385,22 +15339,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Une partie des envois a échoué. Réessaie."
-          }
-        }
-      }
-    },
-    "Une question, un problème avec un profil : on te répond à cette adresse." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A question, a problem with a profile: we'll answer you at this address."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une question, un problème avec un profil : on te répond à cette adresse."
           }
         }
       }
