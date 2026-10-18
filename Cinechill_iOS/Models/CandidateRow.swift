@@ -108,7 +108,6 @@ nonisolated struct EnrichedCandidateRow: Identifiable, Hashable, Sendable, Codab
     let castPopularities: [Double]
     let providerIDs: [Int]
     let trailerKey: String?
-    let budget: Double?
 
     var id: Int { base.id }
 
@@ -118,7 +117,6 @@ nonisolated struct EnrichedCandidateRow: Identifiable, Hashable, Sendable, Codab
         case castPopularities = "cast_popularities"
         case providerIDs = "provider_ids"
         case trailerKey = "trailer_key"
-        case budget
     }
 
     init(from decoder: Decoder) throws {
@@ -129,7 +127,6 @@ nonisolated struct EnrichedCandidateRow: Identifiable, Hashable, Sendable, Codab
         castPopularities = try container.decodeIfPresent([Double].self, forKey: .castPopularities) ?? []
         providerIDs = try container.decodeIfPresent([Int].self, forKey: .providerIDs) ?? []
         trailerKey = try container.decodeIfPresent(String.self, forKey: .trailerKey)
-        budget = try container.decodeIfPresent(Double.self, forKey: .budget)
     }
 
     init(
@@ -138,8 +135,7 @@ nonisolated struct EnrichedCandidateRow: Identifiable, Hashable, Sendable, Codab
         belongsToCollection: Bool,
         castPopularities: [Double],
         providerIDs: [Int],
-        trailerKey: String?,
-        budget: Double? = nil
+        trailerKey: String?
     ) {
         self.base = base
         self.runtimeMinutes = runtimeMinutes
@@ -147,7 +143,6 @@ nonisolated struct EnrichedCandidateRow: Identifiable, Hashable, Sendable, Codab
         self.castPopularities = castPopularities
         self.providerIDs = providerIDs
         self.trailerKey = trailerKey
-        self.budget = budget
     }
 
     func encode(to encoder: Encoder) throws {
@@ -158,7 +153,6 @@ nonisolated struct EnrichedCandidateRow: Identifiable, Hashable, Sendable, Codab
         try container.encode(castPopularities, forKey: .castPopularities)
         try container.encode(providerIDs, forKey: .providerIDs)
         try container.encodeIfPresent(trailerKey, forKey: .trailerKey)
-        try container.encodeIfPresent(budget, forKey: .budget)
     }
 
     var jsonPayload: [String: Any] {
@@ -168,7 +162,6 @@ nonisolated struct EnrichedCandidateRow: Identifiable, Hashable, Sendable, Codab
         payload["cast_popularities"] = castPopularities
         payload["provider_ids"] = providerIDs
         payload["trailer_key"] = trailerKey as Any
-        payload["budget"] = budget as Any
         return payload
     }
 }
