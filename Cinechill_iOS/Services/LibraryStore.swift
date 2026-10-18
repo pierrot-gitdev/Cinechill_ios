@@ -442,26 +442,6 @@ final class LibraryStore: ObservableObject {
 
     // MARK: - Compte
 
-    /// Nombre de films encore en cooldown après un swipe « pas vu ».
-    /// Renvoie `nil` si la lecture échoue — l'information est indicative, elle
-    /// ne doit jamais bloquer l'ouverture des réglages.
-    func pendingSkipCount() async -> Int? {
-        guard let uid = Auth.auth().currentUser?.uid else { return nil }
-        let snapshot = try? await db.collection("users")
-            .document(uid)
-            .collection("swipeSkips")
-            .whereField("resurfaceAt", isGreaterThan: Timestamp(date: Date()))
-            .count
-            .getAggregation(source: .server)
-        return snapshot.map { Int(truncating: $0.count) }
-    }
-
-    func resetSwipeSkips() async throws -> Int {
-        let data = try await callAccountFunction(APIEndpoints.resetSwipeSkips())
-        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        return (json?["deleted"] as? Int) ?? 0
-    }
-
     /// Efface le compte côté serveur, puis termine la session locale. La
     /// déconnexion vient en dernier : sans jeton valide, l'appel échouerait.
     func deleteAccount() async throws {

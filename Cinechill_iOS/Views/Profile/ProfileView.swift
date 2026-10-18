@@ -101,9 +101,10 @@ struct ProfileView: View {
                 NavigationLink {
                     SettingsView()
                 } label: {
-                    CinechillHallIconView(.regler)
-                        .frame(width: 18, height: 18)
+                    SettingsGearGlyph()
+                        .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
                         .foregroundStyle(Ink.ink2)
+                        .frame(width: 19, height: 19)
                         .frame(width: Metrics.control, height: Metrics.control)
                         .contentShape(Rectangle())
                 }
@@ -357,5 +358,51 @@ struct ProfileView: View {
             shares.append(GenreShare(id: -1, name: String(localized: "Autres", bundle: .app), share: Double(remainder) / total, colorIndex: -1))
         }
         return shares
+    }
+}
+
+/// La molette des réglages, au trait : huit dents et le moyeu, sur la grille
+/// de 24 des autres glyphes. La forme que tout le monde lit « réglages » sans
+/// réfléchir ; les glissières qu'elle remplace demandaient un temps de
+/// lecture (retour de Pierre, 19 oct. 2026).
+private struct SettingsGearGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        let scale = min(rect.width, rect.height) / 24
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        func point(_ radius: CGFloat, _ degrees: Double) -> CGPoint {
+            let angle = degrees * .pi / 180
+            return CGPoint(
+                x: center.x + radius * scale * CGFloat(cos(angle)),
+                y: center.y + radius * scale * CGFloat(sin(angle))
+            )
+        }
+
+        let teeth = 8
+        let outer: CGFloat = 9.4
+        let root: CGFloat = 7.0
+        let step = 360.0 / Double(teeth)
+
+        var path = Path()
+        for index in 0 ..< teeth {
+            let middle = -90 + Double(index) * step
+            if index == 0 {
+                path.move(to: point(root, middle - 14))
+            }
+            path.addLine(to: point(outer, middle - 8.5))
+            path.addLine(to: point(outer, middle + 8.5))
+            path.addLine(to: point(root, middle + 14))
+            path.addArc(
+                center: center, radius: root * scale,
+                startAngle: .degrees(middle + 14),
+                endAngle: .degrees(middle + step - 14),
+                clockwise: false
+            )
+        }
+        path.closeSubpath()
+        path.addEllipse(in: CGRect(
+            x: center.x - 3 * scale, y: center.y - 3 * scale,
+            width: 6 * scale, height: 6 * scale
+        ))
+        return path
     }
 }

@@ -148,11 +148,6 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "evaluatebadges", queryItems: [])
     }
 
-    static func resetSwipeSkips() -> URL? {
-        guard let baseURL = BackendConfiguration.baseURL else { return nil }
-        return buildURL(baseURL: baseURL, functionName: "resetswipeskips", queryItems: [])
-    }
-
     static func deleteAccount() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "deleteaccount", queryItems: [])

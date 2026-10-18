@@ -8,8 +8,7 @@ import PhotosUI
 /// maintenant en quatre groupes, dans l'ordre de ce qu'on vient y faire :
 ///
 /// - **Ce qu'on te propose** : les trois déclarations qui changent vraiment
-///   les recommandations, et la remise à zéro des films passés, qui en est une
-///   quatrième.
+///   les recommandations, une ligne chacune.
 /// - **L'app** : notifications, langue, comptes bloqués.
 /// - **Aide** : nous contacter, relire les conditions.
 /// - **Ton compte** : tout ce qui touche au compte, ouvert. Le replier cachait
@@ -35,10 +34,8 @@ struct SettingsView: View {
     @State private var nameError: String?
     @State private var photoItem: PhotosPickerItem?
     @State private var showRemovePhotoAlert = false
-    @State private var showResetSkipsAlert = false
     @State private var showDeleteAccountAlert = false
     @State private var showSignOutAlert = false
-    @State private var pendingSkips: Int?
     @State private var isWorking = false
     @State private var actionMessage: String?
     @State private var addressCopied = false
@@ -82,7 +79,6 @@ struct SettingsView: View {
             nameField = profileStore.displayName
             await notifications.refresh()
             await catalog.loadIfNeeded()
-            pendingSkips = await libraryStore.pendingSkipCount()
         }
         .onDisappear { profileStore.refresh() }
         .onChange(of: photoItem) { _, item in
@@ -98,12 +94,6 @@ struct SettingsView: View {
             Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
         } message: {
             Text("On supprimera ta photo de profil.", bundle: .app)
-        }
-        .alert(String(localized: "Remettre les films passés", bundle: .app), isPresented: $showResetSkipsAlert) {
-            Button(String(localized: "Remettre", bundle: .app)) { Task { await resetSkips() } }
-            Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
-        } message: {
-            Text("Les films que tu as passés reviendront dans Découvrir.", bundle: .app)
         }
         .alert(String(localized: "Supprimer ton compte", bundle: .app), isPresented: $showDeleteAccountAlert) {
             Button(String(localized: "Supprimer définitivement", bundle: .app), role: .destructive) {
@@ -142,33 +132,6 @@ struct SettingsView: View {
             content()
         }
         .padding(.top, 40)
-    }
-
-    /// Une déclaration : ce qu'on règle, ce que ça change, puis le contrôle.
-    private func declaration<Content: View>(
-        _ title: String,
-        note: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .planFont(15, weight: .medium)
-                    .foregroundStyle(Ink.ink)
-                Text(note)
-                    .planFont(12.5)
-                    .foregroundStyle(Ink.ink2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .accessibilityElement(children: .combine)
-
-            content()
-                .padding(.top, 14)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 18)
-        .padding(.bottom, 22)
-        .overlay(alignment: .top) { PlanEdge() }
     }
 
     /// Une ligne : un titre, sa note éventuelle, une valeur à droite et le
@@ -286,113 +249,82 @@ struct SettingsView: View {
 
     // MARK: - Ce qu'on te propose
 
+    /// Trois lignes, chacune avec ce qui est retenu à droite. Les plateformes
+    /// et les genres ouvrent leur propre écran : leurs grilles prenaient la
+    /// moitié des réglages pour un choix qu'on fait une fois. La génération
+    /// tient dans un menu.
+    ///
+    /// Plus de « Remettre les films passés » : un film passé dans Découvrir
+    /// revient de lui-même au bout de 90 jours, il n'y a rien à rattraper.
     private var suggestions: some View {
         group(String(localized: "Ce qu'on te propose", bundle: .app)) {
-            declaration(
-                String(localized: "Mes plateformes", bundle: .app),
-                note: String(localized: "On ne te proposera que des films disponibles sur tes plateformes.", bundle: .app)
-            ) {
-                platforms
-            }
-
-            declaration(
-                String(localized: "Mes genres exclus", bundle: .app),
-                note: String(localized: "Touche un genre pour qu'on ne te le propose plus.", bundle: .app)
-            ) {
-                bannedGenres
-            }
-
-            declaration(
-                String(localized: "Ma génération", bundle: .app),
-                note: String(localized: "Les films sortis avant ta naissance te seront moins souvent proposés.", bundle: .app)
-            ) {
-                generation
-            }
-
-            Button { showResetSkipsAlert = true } label: {
-                // Le même nom que l'alerte qu'elle ouvre : « écartés » ici,
-                // « passés » là, pour une seule et même liste.
-                line(
-                    String(localized: "Remettre les films passés", bundle: .app),
-                    note: skipsSubtitle,
-                    trailing: nil
-                )
+            NavigationLink {
+                PlatformSettingsView()
+            } label: {
+                line(String(localized: "Mes plateformes", bundle: .app), value: platformsSummary)
             }
             .buttonStyle(PressableScaleStyle(scale: 0.985))
-            .disabled(isWorking || pendingSkips == 0)
 
-            feedback
+            NavigationLink {
+                BannedGenresSettingsView()
+            } label: {
+                line(String(localized: "Genres exclus", bundle: .app), value: bannedGenresSummary)
+            }
+            .buttonStyle(PressableScaleStyle(scale: 0.985))
+
+            generationMenu
         }
     }
 
-    @ViewBuilder
-    private var platforms: some View {
-        if catalog.platforms.isEmpty {
-            HStack(spacing: 10) {
-                CinechillSpinner(size: 16)
-                Text("Chargement des plateformes…", bundle: .app)
-                    .planFont(13)
-                    .foregroundStyle(Ink.ink2)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        } else {
-            PlatformGrid(
-                platforms: catalog.platforms,
+    /// Les plateformes retenues, par leur nom. La ligne coupe ce qui ne tient
+    /// pas : l'écran d'après montre tout.
+    private var platformsSummary: String {
+        let chosen = libraryStore.preferredPlatformIDs
+        guard !chosen.isEmpty else { return String(localized: "Aucune", bundle: .app) }
+        let names = catalog.platforms.filter { chosen.contains($0.id) }.map(\.name)
+        return names.isEmpty ? String(localized: "\(chosen.count) plateformes", bundle: .app) : names.joined(separator: ", ")
+    }
+
+    private var bannedGenresSummary: String {
+        let names = libraryStore.bannedGenreIDs
+            .compactMap { catalog.genreNames[$0] }
+            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+        return names.isEmpty ? String(localized: "Aucun", bundle: .app) : names.joined(separator: ", ")
+    }
+
+    /// Un menu, comme la langue : cinq tranches et « Ne pas préciser », qui
+    /// tiennent dans une ligne au lieu d'une rangée de puces.
+    private var generationMenu: some View {
+        let current = Generation.allCases.first { $0.decade == libraryStore.birthDecade }
+
+        return Menu {
+            Picker(
                 selection: Binding(
-                    get: { libraryStore.preferredPlatformIDs },
-                    set: { libraryStore.setPreferredPlatforms($0) }
+                    get: { current?.decade ?? 0 },
+                    set: { libraryStore.setBirthDecade($0 == 0 ? nil : $0) }
                 )
+            ) {
+                ForEach(Generation.allCases) { generation in
+                    Text(generation.menuLabel).tag(generation.decade)
+                }
+                Text("Ne pas préciser", bundle: .app).tag(0)
+            } label: {
+                Text("Ma génération", bundle: .app)
+            }
+            .pickerStyle(.inline)
+        } label: {
+            line(
+                String(localized: "Ma génération", bundle: .app),
+                note: String(localized: "Les films sortis avant ta naissance te seront moins souvent proposés.", bundle: .app),
+                value: current?.menuLabel ?? String(localized: "Non précisée", bundle: .app),
+                trailing: .menu
             )
         }
+        .accessibilityLabel(String(localized: "Ma génération", bundle: .app))
+        .accessibilityValue(current?.menuLabel ?? String(localized: "Non précisée", bundle: .app))
     }
 
-    @ViewBuilder
-    private var bannedGenres: some View {
-        if catalog.genreNames.isEmpty {
-            Text("Chargement des genres…", bundle: .app)
-                .planFont(13)
-                .foregroundStyle(Ink.ink2)
-        } else {
-            FlowLayout(spacing: 7) {
-                ForEach(sortedGenres, id: \.id) { genre in
-                    let isBanned = libraryStore.bannedGenreIDs.contains(genre.id)
-                    PlanChip(title: genre.name, isOn: false, isExcluded: isBanned) {
-                        var ids = libraryStore.bannedGenreIDs
-                        if isBanned { ids.remove(genre.id) } else { ids.insert(genre.id) }
-                        libraryStore.setBannedGenres(ids)
-                    }
-                    .accessibilityValue(isBanned ? String(localized: "Exclu", bundle: .app) : String(localized: "Autorisé", bundle: .app))
-                }
-            }
-        }
-    }
-
-    private var sortedGenres: [(id: Int, name: String)] {
-        catalog.genreNames
-            .map { (id: $0.key, name: $0.value) }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-
-    /// Cinq puces sur une rangée ; aux tailles d'accessibilité, elles passent
-    /// à la ligne plutôt que de tronquer « 2000+ ».
-    private var generation: some View {
-        let wraps = typeSize.isAccessibilitySize
-        let layout = wraps ? AnyLayout(FlowLayout(spacing: 7)) : AnyLayout(HStackLayout(spacing: 7))
-
-        return layout {
-            ForEach(Generation.allCases) { generation in
-                let isOn = libraryStore.birthDecade == generation.decade
-                PlanChip(title: generation.label, isOn: isOn, fillsWidth: !wraps) {
-                    libraryStore.setBirthDecade(isOn ? nil : generation.decade)
-                }
-                // « Né dans les années –70 » se lisait tel quel, et accordait
-                // au masculin : chaque tranche a sa phrase.
-                .accessibilityLabel(generation.accessibilityLabel)
-            }
-        }
-    }
-
-    /// Le compte rendu d'une remise à zéro, sous la ligne qui l'a lancée.
+    /// Le compte rendu d'une action du compte qui a échoué, sous ses lignes.
     @ViewBuilder
     private var feedback: some View {
         if isWorking {
@@ -402,17 +334,17 @@ struct SettingsView: View {
                     .planFont(13)
                     .foregroundStyle(Ink.ink2)
             }
-            .padding(.bottom, 14)
+            .padding(.vertical, 14)
         } else if let actionMessage {
             HStack(alignment: .top, spacing: 11) {
-                PlanLight().padding(.top, 6)
+                PlanLight(tint: Ink.warn).padding(.top, 6)
                 Text(actionMessage)
                     .planFont(13)
                     .foregroundStyle(Ink.ink2)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             }
-            .padding(.bottom, 14)
+            .padding(.vertical, 14)
         }
     }
 
@@ -537,6 +469,8 @@ struct SettingsView: View {
             ) {
                 showDeleteAccountAlert = true
             }
+
+            feedback
         }
     }
 
@@ -569,12 +503,6 @@ struct SettingsView: View {
             .overlay(alignment: .top) { PlanEdge() }
     }
 
-    private var skipsSubtitle: String {
-        guard let pendingSkips else { return String(localized: "Ceux que tu as dit ne pas avoir vus", bundle: .app) }
-        guard pendingSkips > 0 else { return String(localized: "Aucun film passé", bundle: .app) }
-        return String(localized: "\(pendingSkips) films passés", bundle: .app)
-    }
-
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
@@ -583,21 +511,6 @@ struct SettingsView: View {
     }
 
     // MARK: - Actions
-
-    private func resetSkips() async {
-        isWorking = true
-        actionMessage = nil
-        defer { isWorking = false }
-        do {
-            let deleted = try await libraryStore.resetSwipeSkips()
-            pendingSkips = 0
-            actionMessage = deleted > 0
-                ? String(localized: "On pourra te reproposer \(deleted) films.", bundle: .app)
-                : String(localized: "Il n'y avait aucun film passé.", bundle: .app)
-        } catch {
-            actionMessage = String(localized: "La réinitialisation a échoué. Réessaie dans un instant.", bundle: .app)
-        }
-    }
 
     private func deleteAccount() async {
         isWorking = true
@@ -675,23 +588,13 @@ private enum Generation: String, CaseIterable, Identifiable {
         }
     }
 
-    var label: String {
+    var menuLabel: String {
         switch self {
-        case .before1970: "–70"
-        case .seventies: "70"
-        case .eighties: "80"
-        case .nineties: "90"
-        case .millennium: "2000+"
-        }
-    }
-
-    var accessibilityLabel: String {
-        switch self {
-        case .before1970: String(localized: "Naissance avant 1970", bundle: .app)
-        case .seventies: String(localized: "Naissance dans les années 70", bundle: .app)
-        case .eighties: String(localized: "Naissance dans les années 80", bundle: .app)
-        case .nineties: String(localized: "Naissance dans les années 90", bundle: .app)
-        case .millennium: String(localized: "Naissance en 2000 ou après", bundle: .app)
+        case .before1970: String(localized: "Avant 1970", bundle: .app)
+        case .seventies: String(localized: "Années 70", bundle: .app)
+        case .eighties: String(localized: "Années 80", bundle: .app)
+        case .nineties: String(localized: "Années 90", bundle: .app)
+        case .millennium: String(localized: "2000 et après", bundle: .app)
         }
     }
 }

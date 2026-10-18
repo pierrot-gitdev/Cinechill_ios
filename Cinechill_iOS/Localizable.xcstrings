@@ -1,9 +1,7 @@
 {
   "sourceLanguage" : "fr",
   "strings" : {
-    "" : {
-
-    },
+    "" : {},
     " [Créer un compte](cinechill-auth://signup) ?" : {
       "localizations" : {
         "en" : {
@@ -80,6 +78,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : " te suit"
+          }
+        }
+      }
+    },
+    "%lld plateformes" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld platform"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld platforms"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld plateforme"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld plateformes"
+                }
+              }
+            }
           }
         }
       }
@@ -1048,46 +1086,6 @@
         }
       }
     },
-    "%lld films passés" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld skipped movie"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld skipped movies"
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld film passé"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld films passés"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "%lld films remplacés." : {
       "localizations" : {
         "en" : {
@@ -1496,6 +1494,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+%lld ce mois"
+          }
+        }
+      }
+    },
+    "2000 et après" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2000 and later"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2000 et après"
           }
         }
       }
@@ -2621,6 +2635,54 @@
         }
       }
     },
+    "Années 70" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The 70s"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Années 70"
+          }
+        }
+      }
+    },
+    "Années 80" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The 80s"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Années 80"
+          }
+        }
+      }
+    },
+    "Années 90" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The 90s"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Années 90"
+          }
+        }
+      }
+    },
     "Annulée avant la fin : l'histoire reste en suspens." : {
       "localizations" : {
         "en" : {
@@ -2745,6 +2807,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Au plus près de %@"
+          }
+        }
+      }
+    },
+    "Aucun" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun"
           }
         }
       }
@@ -2941,22 +3019,6 @@
         }
       }
     },
-    "Aucun film passé" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No skipped movies"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun film passé"
-          }
-        }
-      }
-    },
     "Aucun film pour ce soir" : {
       "localizations" : {
         "en" : {
@@ -3033,6 +3095,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun style à proposer"
+          }
+        }
+      }
+    },
+    "Aucune" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune"
           }
         }
       }
@@ -3177,6 +3255,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autres"
+          }
+        }
+      }
+    },
+    "Avant 1970" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Before 1970"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avant 1970"
           }
         }
       }
@@ -3885,22 +3979,6 @@
         }
       }
     },
-    "Ceux que tu as dit ne pas avoir vus" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The ones you said you hadn't seen"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ceux que tu as dit ne pas avoir vus"
-          }
-        }
-      }
-    },
     "Ceux que tu as vus sont dans ta galerie." : {
       "localizations" : {
         "en" : {
@@ -4409,6 +4487,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coché"
+          }
+        }
+      }
+    },
+    "Coche les genres qu'on ne doit jamais te proposer." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check the genres we should never suggest to you."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coche les genres qu'on ne doit jamais te proposer."
           }
         }
       }
@@ -6678,6 +6772,22 @@
         }
       }
     },
+    "Genres exclus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excluded genres"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genres exclus"
+          }
+        }
+      }
+    },
     "Genres variés" : {
       "localizations" : {
         "en" : {
@@ -6866,22 +6976,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il m'a plu"
-          }
-        }
-      }
-    },
-    "Il n'y avait aucun film passé." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "There were no skipped movies."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il n'y avait aucun film passé."
           }
         }
       }
@@ -7766,22 +7860,6 @@
         }
       }
     },
-    "La réinitialisation a échoué. Réessaie dans un instant." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The reset failed. Try again in a moment."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La réinitialisation a échoué. Réessaie dans un instant."
-          }
-        }
-      }
-    },
     "La saga" : {
       "localizations" : {
         "en" : {
@@ -8326,22 +8404,6 @@
         }
       }
     },
-    "Les films que tu as passés reviendront dans Découvrir." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The movies you skipped will come back in Discover."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les films que tu as passés reviendront dans Découvrir."
-          }
-        }
-      }
-    },
     "Les films que tu as passés reviendront plus tard." : {
       "localizations" : {
         "en" : {
@@ -8646,22 +8708,6 @@
         }
       }
     },
-    "Mes genres exclus" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "My excluded genres"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mes genres exclus"
-          }
-        }
-      }
-    },
     "Mes plateformes" : {
       "localizations" : {
         "en" : {
@@ -8934,86 +8980,6 @@
         }
       }
     },
-    "Naissance avant 1970" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Born before 1970"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Naissance avant 1970"
-          }
-        }
-      }
-    },
-    "Naissance dans les années 70" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Born in the 70s"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Naissance dans les années 70"
-          }
-        }
-      }
-    },
-    "Naissance dans les années 80" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Born in the 80s"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Naissance dans les années 80"
-          }
-        }
-      }
-    },
-    "Naissance dans les années 90" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Born in the 90s"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Naissance dans les années 90"
-          }
-        }
-      }
-    },
-    "Naissance en 2000 ou après" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Born in 2000 or later"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Naissance en 2000 ou après"
-          }
-        }
-      }
-    },
     "Ne laisse plus ton plat refroidir pendant que tu choisis un film, en 60 sec Cinechill te propose la pépite que tu cherches." : {
       "localizations" : {
         "en" : {
@@ -9026,6 +8992,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ne laisse plus ton plat refroidir pendant que tu choisis un film, en 60 sec Cinechill te propose la pépite que tu cherches."
+          }
+        }
+      }
+    },
+    "Ne pas préciser" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prefer not to say"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne pas préciser"
           }
         }
       }
@@ -9090,6 +9072,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Non noté"
+          }
+        }
+      }
+    },
+    "Non précisée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not set"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non précisée"
           }
         }
       }
@@ -10050,46 +10048,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On pourra aussi te proposer des séries de ta watchlist."
-          }
-        }
-      }
-    },
-    "On pourra te reproposer %lld films." : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "We can suggest %lld movie to you again."
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "We can suggest %lld movies to you again."
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "On pourra te reproposer %lld film."
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "On pourra te reproposer %lld films."
-                }
-              }
-            }
           }
         }
       }
@@ -12114,22 +12072,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remettre dans ta watchlist"
-          }
-        }
-      }
-    },
-    "Remettre les films passés" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bring back skipped movies"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remettre les films passés"
           }
         }
       }
@@ -14366,22 +14308,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Touche un film pour en faire un coup de cœur."
-          }
-        }
-      }
-    },
-    "Touche un genre pour qu'on ne te le propose plus." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap a genre and we'll stop suggesting it."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touche un genre pour qu'on ne te le propose plus."
           }
         }
       }
