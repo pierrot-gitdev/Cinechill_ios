@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import FirebaseAuth
 
 /// Les réglages, poussés depuis le profil.
 ///
@@ -12,7 +11,7 @@ import FirebaseAuth
 ///   les recommandations, et la remise à zéro des films passés, qui en est une
 ///   quatrième.
 /// - **L'app** : notifications, langue, comptes bloqués.
-/// - **Aide** : écrire, relire les conditions.
+/// - **Aide** : nous contacter, relire les conditions.
 /// - **Ton compte** : tout ce qui touche au compte, ouvert. Le replier cachait
 ///   « Se déconnecter », qu'on cherche plus souvent qu'on ne le craint ; ce
 ///   qui est irréversible passe de toute façon par une alerte.
@@ -51,10 +50,9 @@ struct SettingsView: View {
 
     /// Pas une chaîne traduite : une `static let` ne pose ici aucun problème.
     /// La règle 1.2 de l'App Store demande un moyen de joindre l'équipe à
-    /// toute app où des gens se croisent.
+    /// toute app où des gens se croisent. Un moyen, pas une adresse à
+    /// l'écran : c'est une adresse personnelle, elle ne s'affiche nulle part.
     private static let contactAddress = "pierrerobrt@gmail.com"
-
-    private var email: String? { Auth.auth().currentUser?.email }
 
     var body: some View {
         ZStack {
@@ -483,16 +481,12 @@ struct SettingsView: View {
 
     private var help: some View {
         group(String(localized: "Aide", bundle: .app)) {
-            // L'adresse reste écrite en entier : sans app Mail configurée, le
-            // tap ne peut rien ouvrir, il la copie alors et le dit.
+            // Sans app Mail configurée, le tap ne peut rien ouvrir : il copie
+            // alors l'adresse, sans l'afficher, et le dit.
             Button(action: writeToUs) {
-                // La confirmation prend la place de la note et non celle de la
-                // valeur : à droite, elle ne tenait pas sur un petit écran.
                 line(
-                    String(localized: "Nous écrire", bundle: .app),
-                    note: addressCopied
-                        ? String(localized: "Adresse copiée : \(Self.contactAddress)", bundle: .app)
-                        : Self.contactAddress,
+                    String(localized: "Contacter Cinechill", bundle: .app),
+                    note: addressCopied ? String(localized: "Adresse copiée", bundle: .app) : nil,
                     trailing: .external
                 )
             }
@@ -526,11 +520,6 @@ struct SettingsView: View {
 
     private var account: some View {
         group(String(localized: "Ton compte", bundle: .app)) {
-            if let email {
-                line(String(localized: "Email", bundle: .app), note: email, trailing: nil)
-                    .accessibilityElement(children: .combine)
-            }
-
             if profileStore.customPhotoData != nil {
                 accountAction(String(localized: "Supprimer la photo de profil", bundle: .app)) {
                     showRemovePhotoAlert = true
@@ -568,22 +557,16 @@ struct SettingsView: View {
 
     // MARK: - Pied de page
 
+    /// La version seule, utile quand on nous écrit. La mention de TMDB que
+    /// demandent ses conditions vit dans les Conditions d'utilisation, liées
+    /// juste au-dessus.
     private var colophon: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(verbatim: appVersion)
-
-            // Les conditions de TMDB exigent cette mention, que la traduction
-            // anglaise reprend mot pour mot ; JustWatch, qui fournit à TMDB les
-            // disponibilités, demande d'être cité. C'est une licence, pas une
-            // règle App Store.
-            Text("Cinechill utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB. Disponibilités sur les plateformes : JustWatch.", bundle: .app)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .planFont(11.5)
-        .foregroundStyle(Ink.ink2)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 22)
-        .overlay(alignment: .top) { PlanEdge() }
+        Text(verbatim: appVersion)
+            .planFont(11.5)
+            .foregroundStyle(Ink.ink2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 22)
+            .overlay(alignment: .top) { PlanEdge() }
     }
 
     private var skipsSubtitle: String {

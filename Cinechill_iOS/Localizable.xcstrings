@@ -2234,18 +2234,18 @@
         }
       }
     },
-    "Adresse copiée : %@" : {
+    "Adresse copiée" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Address copied: %@"
+            "value" : "Address copied"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adresse copiée : %@"
+            "value" : "Adresse copiée"
           }
         }
       }
@@ -4170,22 +4170,6 @@
         }
       }
     },
-    "Cinechill utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB. Disponibilités sur les plateformes : JustWatch." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This product uses the TMDB API but is not endorsed or certified by TMDB. Streaming availability: JustWatch."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cinechill utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB. Disponibilités sur les plateformes : JustWatch."
-          }
-        }
-      }
-    },
     "CinéMatch" : {
       "localizations" : {
         "en" : {
@@ -4310,6 +4294,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coché"
+          }
+        }
+      }
+    },
+    "Contacter Cinechill" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contact Cinechill"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contacter Cinechill"
           }
         }
       }
@@ -8974,22 +8974,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notifications, %lld en attente"
-          }
-        }
-      }
-    },
-    "Nous écrire" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contact us"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nous écrire"
           }
         }
       }
