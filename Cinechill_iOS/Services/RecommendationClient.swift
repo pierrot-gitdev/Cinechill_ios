@@ -102,9 +102,6 @@ protocol RecommendationFetching: Sendable {
     /// Les films de la Galerie, positionnés : la matière des duels entre
     /// films vus. Ne lève jamais pour une galerie pauvre — elle est courte.
     func fetchGalleryAxes() async throws -> [CandidateRow]
-    /// Un duel tranché entre deux films vus : il s'écrit dans le graphe de
-    /// préférence persistant, côté serveur.
-    func recordFilmDuel(winnerID: Int, loserID: Int) async throws
     /// La passe de rattrapage : elle positionne les films déjà en galerie et
     /// transforme les « Je l'ai adoré » passés en coups de cœur. Rend `true`
     /// quand il ne reste plus rien à traiter.
@@ -188,12 +185,6 @@ nonisolated struct BackendRecommendationClient: RecommendationFetching, Sendable
         let data = try await post(to: APIEndpoints.galleryAxes(), body: [:])
         let decoded = try decode(GalleryAxesResponseDTO.self, from: data)
         return decoded.candidates
-    }
-
-    func recordFilmDuel(winnerID: Int, loserID: Int) async throws {
-        _ = try await post(to: APIEndpoints.filmDuel(), body: [
-            "winnerTmdbId": winnerID, "loserTmdbId": loserID,
-        ])
     }
 
     func backfillGallery() async throws -> Bool {

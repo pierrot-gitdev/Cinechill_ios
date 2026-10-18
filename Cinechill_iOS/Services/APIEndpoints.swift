@@ -120,11 +120,6 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "backfillgallery", queryItems: [])
     }
 
-    static func filmDuel() -> URL? {
-        guard let baseURL = BackendConfiguration.baseURL else { return nil }
-        return buildURL(baseURL: baseURL, functionName: "recordfilmduel", queryItems: [])
-    }
-
     // MARK: - CinéMatch v2
 
     static func cineMatchStarters() -> URL? {
