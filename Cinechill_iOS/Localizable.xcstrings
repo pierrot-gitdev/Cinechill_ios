@@ -2202,6 +2202,22 @@
         }
       }
     },
+    "Activer le son et les bannières" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on sound and banners"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activer le son et les bannières"
+          }
+        }
+      }
+    },
     "Activer les notifications" : {
       "localizations" : {
         "en" : {
@@ -2598,22 +2614,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple n'a pas terminé la connexion."
-          }
-        }
-      }
-    },
-    "Après un film" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "After a movie"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Après un film"
           }
         }
       }
@@ -3062,6 +3062,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autorisé"
+          }
+        }
+      }
+    },
+    "Autoriser les notifications" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow notifications"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser les notifications"
           }
         }
       }
@@ -3638,22 +3654,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce soir"
-          }
-        }
-      }
-    },
-    "Ce soir ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tonight?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce soir ?"
           }
         }
       }
@@ -5582,6 +5582,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Email ou mot de passe incorrect."
+          }
+        }
+      }
+    },
+    "En attendant CinéMatch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Until CinéMatch opens"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En attendant CinéMatch"
           }
         }
       }
@@ -7858,18 +7874,34 @@
         }
       }
     },
-    "Le lendemain d'un « Je le regarde », on te demande comment c'était." : {
+    "Le lendemain d'un « Je le regarde », à 19 h, on te demande si le film t'a plu." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The day after “I'm watching it”, we ask how it was."
+            "value" : "The day after “I'm watching it”, at 7 pm, we ask whether you liked the movie."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le lendemain d'un « Je le regarde », on te demande comment c'était."
+            "value" : "Le lendemain d'un « Je le regarde », à 19 h, on te demande si le film t'a plu."
+          }
+        }
+      }
+    },
+    "Le lundi et le mercredi à 20 h, une fois CinéMatch ouvert." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mondays and Wednesdays at 8 pm, once CinéMatch is open."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lundi et le mercredi à 20 h, une fois CinéMatch ouvert."
           }
         }
       }
@@ -8178,54 +8210,6 @@
         }
       }
     },
-    "Les notifications arrivent sans bruit dans le centre de notifications." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notifications arrive quietly in Notification Center."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les notifications arrivent sans bruit dans le centre de notifications."
-          }
-        }
-      }
-    },
-    "Les notifications ne sont pas encore activées." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notifications aren't turned on yet."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les notifications ne sont pas encore activées."
-          }
-        }
-      }
-    },
-    "Les notifications sont coupées dans les réglages de l'iPhone." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notifications are turned off in your iPhone settings."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les notifications sont coupées dans les réglages de l'iPhone."
-          }
-        }
-      }
-    },
     "Les profils que tu bloques s'affichent ici, avec de quoi les débloquer." : {
       "localizations" : {
         "en" : {
@@ -8238,22 +8222,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les profils que tu bloques s'affichent ici, avec de quoi les débloquer."
-          }
-        }
-      }
-    },
-    "Les recevoir normalement" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Receive them normally"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les recevoir normalement"
           }
         }
       }
@@ -8382,22 +8350,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Longueur"
-          }
-        }
-      }
-    },
-    "Lundi et mercredi à 20 h" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Monday and Wednesday at 8 pm"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lundi et mercredi à 20 h"
           }
         }
       }
@@ -11450,22 +11402,6 @@
         }
       }
     },
-    "Quand quelqu'un te recommande un film, suit ta recommandation ou s'abonne à toi." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When someone recommends you a movie, acts on your recommendation or follows you."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quand quelqu'un te recommande un film, suit ta recommandation ou s'abonne à toi."
-          }
-        }
-      }
-    },
     "Quelles saisons as-tu adorées ?" : {
       "localizations" : {
         "en" : {
@@ -11574,22 +11510,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rangé dans ta galerie. Il ne comptera pas dans tes goûts."
-          }
-        }
-      }
-    },
-    "Rappels" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reminders"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rappels"
           }
         }
       }
@@ -13134,6 +13054,22 @@
         }
       }
     },
+    "Si tu n'ouvres pas l'app pendant trois jours, on te dit ce qu'il te reste pour ouvrir CinéMatch." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you don't open the app for three days, we tell you what's left before CinéMatch opens."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si tu n'ouvres pas l'app pendant trois jours, on te dit ce qu'il te reste pour ouvrir CinéMatch."
+          }
+        }
+      }
+    },
     "Si un compte existe pour %@, tu recevras un email dans la minute. Pense à regarder dans tes spams." : {
       "localizations" : {
         "en" : {
@@ -13662,22 +13598,6 @@
         }
       }
     },
-    "Tant que CinéMatch est fermé, on te dit ce qu'il reste à faire." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "While CinéMatch is locked, we tell you what's left to do."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tant que CinéMatch est fermé, on te dit ce qu'il reste à faire."
-          }
-        }
-      }
-    },
     "Tape un pseudo ou un nom pour retrouver quelqu'un que tu connais." : {
       "localizations" : {
         "en" : {
@@ -13806,6 +13726,38 @@
         }
       }
     },
+    "Tes notifications arrivent sans son ni bannière, seulement dans le centre de notifications." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your notifications arrive without sound or banners, only in Notification Center."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes notifications arrivent sans son ni bannière, seulement dans le centre de notifications."
+          }
+        }
+      }
+    },
+    "Tes notifications sont coupées dans les réglages de l'iPhone. Tes choix ci-dessous s'appliqueront dès que tu les réactiveras." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications are off in your iPhone settings. Your choices below will apply as soon as you turn them back on."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes notifications sont coupées dans les réglages de l'iPhone. Tes choix ci-dessous s'appliqueront dès que tu les réactiveras."
+          }
+        }
+      }
+    },
     "Tes plateformes" : {
       "localizations" : {
         "en" : {
@@ -13882,6 +13834,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "toi@exemple.com"
+          }
+        }
+      }
+    },
+    "Ton avis sur un film" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your take on a movie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton avis sur un film"
           }
         }
       }
@@ -14975,6 +14943,22 @@
         }
       }
     },
+    "Tu n'as pas encore autorisé les notifications." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You haven't allowed notifications yet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu n'as pas encore autorisé les notifications."
+          }
+        }
+      }
+    },
     "Tu ne l'as pas vu" : {
       "localizations" : {
         "en" : {
@@ -15247,6 +15231,22 @@
         }
       }
     },
+    "Un film qu'on te recommande, ta recommandation ajoutée ou regardée, un nouvel abonné." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A movie someone recommends to you, your recommendation saved or watched, a new follower."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un film qu'on te recommande, ta recommandation ajoutée ou regardée, un nouvel abonné."
+          }
+        }
+      }
+    },
     "Un film que tu as aimé" : {
       "localizations" : {
         "en" : {
@@ -15291,6 +15291,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un souci de notre côté. Réessaie dans un instant."
+          }
+        }
+      }
+    },
+    "Une idée pour ce soir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An idea for tonight"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une idée pour ce soir"
           }
         }
       }

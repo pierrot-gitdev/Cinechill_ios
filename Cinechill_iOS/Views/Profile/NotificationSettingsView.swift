@@ -41,7 +41,7 @@ struct NotificationSettingsView: View {
 
                         row(
                             String(localized: "Recommandations et abonnés", bundle: .app),
-                            note: String(localized: "Quand quelqu'un te recommande un film, suit ta recommandation ou s'abonne à toi.", bundle: .app),
+                            note: String(localized: "Un film qu'on te recommande, ta recommandation ajoutée ou regardée, un nouvel abonné.", bundle: .app),
                             isOn: Binding(
                                 get: { social },
                                 set: { value in
@@ -51,18 +51,18 @@ struct NotificationSettingsView: View {
                             )
                         )
                         row(
-                            String(localized: "Après un film", bundle: .app),
-                            note: String(localized: "Le lendemain d'un « Je le regarde », on te demande comment c'était.", bundle: .app),
+                            String(localized: "Ton avis sur un film", bundle: .app),
+                            note: String(localized: "Le lendemain d'un « Je le regarde », à 19 h, on te demande si le film t'a plu.", bundle: .app),
                             isOn: $afterFilm
                         )
                         row(
-                            String(localized: "Rappels", bundle: .app),
-                            note: String(localized: "Tant que CinéMatch est fermé, on te dit ce qu'il reste à faire.", bundle: .app),
+                            String(localized: "En attendant CinéMatch", bundle: .app),
+                            note: String(localized: "Si tu n'ouvres pas l'app pendant trois jours, on te dit ce qu'il te reste pour ouvrir CinéMatch.", bundle: .app),
                             isOn: $reminders
                         )
                         row(
-                            String(localized: "Ce soir ?", bundle: .app),
-                            note: String(localized: "Lundi et mercredi à 20 h", bundle: .app),
+                            String(localized: "Une idée pour ce soir", bundle: .app),
+                            note: String(localized: "Le lundi et le mercredi à 20 h, une fois CinéMatch ouvert.", bundle: .app),
                             isOn: $tonight,
                             isLast: true
                         )
@@ -109,7 +109,7 @@ struct NotificationSettingsView: View {
         switch permission.status {
         case .denied:
             notice(
-                String(localized: "Les notifications sont coupées dans les réglages de l'iPhone.", bundle: .app),
+                String(localized: "Tes notifications sont coupées dans les réglages de l'iPhone. Tes choix ci-dessous s'appliqueront dès que tu les réactiveras.", bundle: .app),
                 action: String(localized: "Ouvrir les réglages", bundle: .app)
             ) {
                 if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
@@ -118,14 +118,14 @@ struct NotificationSettingsView: View {
             }
         case .provisional:
             notice(
-                String(localized: "Les notifications arrivent sans bruit dans le centre de notifications.", bundle: .app),
-                action: String(localized: "Les recevoir normalement", bundle: .app),
+                String(localized: "Tes notifications arrivent sans son ni bannière, seulement dans le centre de notifications.", bundle: .app),
+                action: String(localized: "Activer le son et les bannières", bundle: .app),
                 perform: askForFull
             )
         case .notDetermined:
             notice(
-                String(localized: "Les notifications ne sont pas encore activées.", bundle: .app),
-                action: String(localized: "Activer les notifications", bundle: .app),
+                String(localized: "Tu n'as pas encore autorisé les notifications.", bundle: .app),
+                action: String(localized: "Autoriser les notifications", bundle: .app),
                 perform: askForFull
             )
         default:
