@@ -7250,6 +7250,22 @@
         }
       }
     },
+    "Je l'ai vu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I've seen it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je l'ai vu"
+          }
+        }
+      }
+    },
     "Je l'ai vu aussi" : {
       "localizations" : {
         "en" : {
@@ -7422,6 +7438,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Je ne l'ai pas vue, en fait"
+          }
+        }
+      }
+    },
+    "Je veux le voir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I want to see it"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je veux le voir"
           }
         }
       }
@@ -7870,6 +7902,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le film que tu viens d'ajouter est dans ta galerie."
+          }
+        }
+      }
+    },
+    "Le film quitte ta galerie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The movie leaves your gallery"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le film quitte ta galerie"
+          }
+        }
+      }
+    },
+    "Le film quitte ta galerie, et ton coup de cœur avec lui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The movie leaves your gallery, and your favorite mark goes with it."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le film quitte ta galerie, et ton coup de cœur avec lui."
           }
         }
       }
@@ -11794,6 +11858,38 @@
         }
       }
     },
+    "Remettre dans ma watchlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move back to my watchlist"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remettre dans ma watchlist"
+          }
+        }
+      }
+    },
+    "Remettre dans ta watchlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move back to your watchlist"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remettre dans ta watchlist"
+          }
+        }
+      }
+    },
     "Remettre les films passés" : {
       "localizations" : {
         "en" : {
@@ -14062,22 +14158,6 @@
         }
       }
     },
-    "Toucher à nouveau pour retirer de tes listes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap again to remove from your lists"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toucher à nouveau pour retirer de tes listes"
-          }
-        }
-      }
-    },
     "Toujours en cours : d'autres saisons arrivent." : {
       "localizations" : {
         "en" : {
@@ -15763,6 +15843,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "VU"
+          }
+        }
+      }
+    },
+    "Vu, dans ta galerie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seen, in your gallery"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vu, dans ta galerie"
           }
         }
       }

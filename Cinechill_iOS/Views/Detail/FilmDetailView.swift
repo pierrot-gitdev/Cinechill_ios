@@ -9,8 +9,8 @@ import SwiftUI
 /// Trois décisions structurent le dessin :
 ///
 /// - **La décision tient le plancher, et n'en bouge plus.** On peut dérouler le
-///   synopsis, le casting, les plateformes : « Vu » et « À voir » restent sous le
-///   pouce. C'était le seul écran de l'app dont l'action principale pouvait
+///   synopsis, le casting, les plateformes : où est le film, et ce qu'on peut en
+///   faire, restent sous le pouce. C'était le seul écran de l'app dont l'action principale pouvait
 ///   sortir du champ.
 /// - **Un seul accent.** L'écran comptait le vert du « vu », le bleu du « à
 ///   voir », l'indigo du bloc galerie et des plateformes, le jaune de l'étoile et
@@ -35,6 +35,9 @@ struct FilmDetailView: View {
     @State private var loading = true
     @State private var errorMessage: String?
     @State private var showComposer = false
+    /// « Remettre dans ma watchlist » sur un film adoré : le cœur partirait
+    /// avec la galerie, on le demande avant.
+    @State private var confirmsBackToWatchlist = false
     @State private var outcome: SuggestionOutcome?
     /// La saga proposée après un « Vu », s'il y en a une. Elle ne se propose
     /// qu'une fois par visite de la fiche : on ne la repose pas à chaque
@@ -568,61 +571,193 @@ struct FilmDetailView: View {
 
     // MARK: - Le plancher de décision
 
-    /// **Le cœur de l'écran.** Deux issues, toujours atteignables.
+    /// **Le cœur de l'écran.** Il dit où est le film, puis ce qu'on peut en
+    /// faire, et rien d'autre.
     ///
-    /// L'état retenu est un aplat d'encre, l'autre un contour : c'est une
-    /// hiérarchie, pas une convention de couleur à apprendre. Le point posé sur
-    /// l'aplat dit lequel — plein pour « vu », creux pour « à voir » — si bien
-    /// que l'écran reste lisible en niveaux de gris.
+    /// L'ancien plancher posait « Vu » et « À voir » côte à côte, à égalité,
+    /// et rien ne disait qu'ils rangeaient le film dans deux endroits qui
+    /// s'excluent, ni lequel il occupait. Désormais :
     ///
-    /// Retaper le choix courant le retire. L'ancienne barre offrait un quatrième
-    /// bouton `✕` pour ça : un contrôle de plus pour une action que le bouton
-    /// déjà présent pouvait porter.
+    /// - une ligne nomme l'endroit (« Dans ta watchlist », « Vu, dans ta
+    ///   galerie ») et porte le geste inverse, écrit en toutes lettres ;
+    /// - sous elle, l'action suivante, une seule, au plein : « Je l'ai vu »
+    ///   pour un film en attente, « Recommander à un ami » pour un film vu.
+    ///   Recommander devient l'action principale d'un film vu : c'est ce
+    ///   qu'on peut encore en faire, et un bouton-icône ne le disait pas.
     private var decisionFloor: some View {
         VStack(spacing: 0) {
             PlanEdge()
 
-            HStack(spacing: Metrics.gutter) {
-                decisionButton(.seen, label: String(localized: "Vu", bundle: .app))
-                decisionButton(.toWatch, label: String(localized: "À voir", bundle: .app))
-
-                // Le coup de cœur et « Recommander » n'apparaissent que si le
-                // film est vu : « on n'aime et on ne recommande que ce qu'on a
-                // vu » n'est jamais énoncé, c'est simplement vrai à l'écran.
-                if currentStatus == .seen {
-                    loveButton
-
-                    Button {
-                        Haptics.impact(.light)
-                        showComposer = true
-                    } label: {
-                        CinechillHallIconView(.recommander)
-                            .frame(width: 18, height: 18)
-                            .foregroundStyle(Ink.ink)
-                            .frame(width: 48, height: Metrics.control)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-                                    .strokeBorder(Ink.ruleSet, lineWidth: 1)
-                            )
-                    }
-                    .buttonStyle(PressableScaleStyle(scale: 0.94))
-                    .transition(.opacity)
-                    .accessibilityLabel(String(localized: "Recommander à un ami", bundle: .app))
+            VStack(alignment: .leading, spacing: 10) {
+                if currentStatus != .none {
+                    placementLine
+                        .transition(.opacity)
                 }
+                actionRow
             }
             .padding(.horizontal, Metrics.margin)
-            .padding(.top, 14)
+            .padding(.top, 12)
             .padding(.bottom, 10)
         }
         .background(Ink.ground)
         .animation(Metrics.shift, value: currentStatus)
-        .animation(Metrics.shift, value: waitingButton)
+        .animation(Metrics.shift, value: pendingTarget)
+        .alert(
+            String(localized: "Remettre dans ta watchlist", bundle: .app),
+            isPresented: $confirmsBackToWatchlist
+        ) {
+            Button(String(localized: "Remettre", bundle: .app)) { moveBackToWatchlist() }
+            Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
+        } message: {
+            Text("Le film quitte ta galerie, et ton coup de cœur avec lui.", bundle: .app)
+        }
     }
 
-    /// Le coup de cœur, dans le même gabarit que « Recommander ». Le cœur
-    /// tracé dit « rien déclaré », le cœur plein en cramoisi dit « adoré » :
-    /// c'est le remplissage qui porte l'état, la teinte — une couleur de
-    /// données, celle de l'artéfact du Cœur — ne fait que l'appuyer.
+    /// Où est le film, et le chemin du retour. Le point dit la même chose
+    /// que partout : plein pour « vu », creux pour « prévu ». Quand les deux
+    /// ne tiennent pas sur une ligne (petit écran, texte agrandi), le lien
+    /// passe dessous plutôt que de se tronquer.
+    private var placementLine: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 10) {
+                placementLabel
+                Spacer(minLength: 8)
+                placementReturn
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                placementLabel
+                placementReturn
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var placementLabel: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Group {
+                if currentStatus == .seen { PlanLight() } else { PlanLightOutline() }
+            }
+            .accessibilityHidden(true)
+
+            Text(currentStatus == .seen
+                 ? String(localized: "Vu, dans ta galerie", bundle: .app)
+                 : String(localized: "Dans ta watchlist", bundle: .app))
+                .planFont(13)
+                .foregroundStyle(Ink.ink2)
+                .fixedSize()
+        }
+    }
+
+    @ViewBuilder
+    private var placementReturn: some View {
+        if isPending, pendingTarget != .seen {
+            CinechillSpinner(size: 13)
+                .frame(height: 28)
+        } else {
+            Button {
+                Haptics.impact(.light)
+                if currentStatus == .seen {
+                    // Le coup de cœur part avec la galerie : on le dit
+                    // avant, seulement quand il y en a un à perdre.
+                    if libraryStore.isLoved(displayItem) {
+                        confirmsBackToWatchlist = true
+                    } else {
+                        moveBackToWatchlist()
+                    }
+                } else {
+                    libraryStore.removeFromWatchlist(displayItem)
+                }
+            } label: {
+                Text(currentStatus == .seen
+                     ? String(localized: "Remettre dans ma watchlist", bundle: .app)
+                     : String(localized: "Retirer", bundle: .app))
+                    .planFont(13, weight: .medium)
+                    .foregroundStyle(Ink.ink)
+                    .fixedSize()
+                    .overlay(alignment: .bottom) {
+                        Rectangle().fill(Ink.ruleSet).frame(height: 1).offset(y: 2)
+                    }
+                    .frame(minHeight: 28)
+                    // 44 pt de cible autour d'un lien de 13 pt.
+                    .contentShape(Rectangle().inset(by: -8))
+            }
+            .buttonStyle(PressableScaleStyle(scale: 0.96))
+            .disabled(isPending)
+            .accessibilityHint(currentStatus == .seen
+                               ? String(localized: "Le film quitte ta galerie", bundle: .app)
+                               : "")
+        }
+    }
+
+    @ViewBuilder
+    private var actionRow: some View {
+        switch currentStatus {
+        case .none:
+            HStack(spacing: Metrics.gutter) {
+                DetailFloorButton(
+                    title: String(localized: "Je l'ai vu", bundle: .app),
+                    style: .line,
+                    isWaiting: pendingTarget == .seen
+                ) { markSeen() }
+                DetailFloorButton(
+                    title: String(localized: "Je veux le voir", bundle: .app),
+                    style: .line,
+                    isWaiting: pendingTarget == .toWatch
+                ) {
+                    Haptics.impact(.medium)
+                    libraryStore.addToWatchlist(displayItem)
+                }
+            }
+            .disabled(isPending)
+
+        case .toWatch:
+            DetailFloorButton(
+                title: String(localized: "Je l'ai vu", bundle: .app),
+                style: .paper,
+                isWaiting: pendingTarget == .seen
+            ) { markSeen() }
+            .disabled(isPending)
+
+        case .seen:
+            // Le coup de cœur et la recommandation n'existent que pour un film
+            // vu : « on n'aime et on ne recommande que ce qu'on a vu » n'est
+            // jamais énoncé, c'est simplement vrai à l'écran.
+            HStack(spacing: Metrics.gutter) {
+                loveButton
+                recommendButton
+            }
+        }
+    }
+
+    /// L'action principale d'un film vu : le seul aplat clair du plancher,
+    /// avec son verbe. L'icône seule ne se lisait pas comme « recommander ».
+    private var recommendButton: some View {
+        Button {
+            Haptics.impact(.light)
+            showComposer = true
+        } label: {
+            HStack(spacing: 9) {
+                CinechillHallIconView(.recommander)
+                    .frame(width: 17, height: 17)
+                Text("Recommander à un ami", bundle: .app)
+                    .planFont(14.5, weight: .semibold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(Ink.ground)
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: Metrics.control)
+            .background(Ink.paper, in: RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.97))
+        .transition(.opacity)
+    }
+
+    /// Le coup de cœur, à côté de la recommandation. Le cœur tracé dit « rien
+    /// déclaré », le cœur plein en cramoisi dit « adoré » : c'est le
+    /// remplissage qui porte l'état, la teinte (une couleur de données, celle
+    /// de l'artéfact du Cœur) ne fait que l'appuyer.
     private var loveButton: some View {
         let loved = libraryStore.isLoved(displayItem)
         let isPending = libraryStore.isLovePending(displayItem)
@@ -631,8 +766,8 @@ struct FilmDetailView: View {
             Haptics.impact(.light, intensity: loved ? 0.5 : 0.8)
             libraryStore.setLove(displayItem, loved: !loved)
         } label: {
-            // Pendant l'écriture le faisceau prend la place du cœur, comme sur
-            // Vu / À voir : le cœur ne change qu'une fois Firestore revenu.
+            // Pendant l'écriture le faisceau prend la place du cœur : le cœur
+            // ne change qu'une fois Firestore revenu.
             Group {
                 if isPending {
                     CinechillSpinner(size: 14)
@@ -649,7 +784,7 @@ struct FilmDetailView: View {
                         .frame(width: 18, height: 16)
                 }
             }
-            .frame(width: 48, height: Metrics.control)
+            .frame(width: 52, height: Metrics.control)
             .overlay(
                 RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
                     .strokeBorder(Ink.ruleSet, lineWidth: 1)
@@ -657,7 +792,7 @@ struct FilmDetailView: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.94))
         // Un second tap pendant l'écriture en lançait une seconde, contraire,
-        // dont personne ne contrôle l'ordre d'arrivée : même règle que Vu / À voir.
+        // dont personne ne contrôle l'ordre d'arrivée.
         .disabled(isPending)
         .transition(.opacity)
         .animation(Metrics.shift, value: loved)
@@ -670,95 +805,31 @@ struct FilmDetailView: View {
         .accessibilityValue(isPending ? String(localized: "Enregistrement…", bundle: .app) : "")
     }
 
-    /// Le bouton qui doit montrer l'attente : celui qu'on vient de toucher.
-    ///
-    /// Retirer un film vise l'état « aucun », qui n'a pas de bouton à lui ; l'attente se montre
-    /// alors sur celui qui est encore allumé, c'est-à-dire celui qu'on est en train d'éteindre.
-    private var waitingButton: DetailStatus? {
-        guard let target = libraryStore.pendingStatus(for: displayItem) else { return nil }
-        switch target {
-        case .seen: return .seen
-        case .toWatch: return .toWatch
-        case .none: return currentStatus
-        }
+    /// L'écriture en cours, s'il y en a une. Tout le plancher se fige
+    /// pendant ce temps : deux écritures concurrentes sur le même film
+    /// arriveraient dans un ordre que personne ne contrôle.
+    private var pendingTarget: LibraryStore.MediaStatus? {
+        libraryStore.pendingStatus(for: displayItem)
     }
 
-    private func decisionButton(_ status: DetailStatus, label: String) -> some View {
-        let isOn = currentStatus == status
-        let isWaiting = waitingButton == status
-        return Button {
-            Haptics.impact(isOn ? .light : .medium)
-            toggle(status)
-        } label: {
-            HStack(spacing: 7) {
-                Text(label)
-                    .planFont(14, weight: isOn ? .semibold : .regular)
+    private var isPending: Bool { pendingTarget != nil }
 
-                // Le point de lumière s'ouvre en faisceau qui tourne : c'est le même signe,
-                // arrêté d'un côté, en train de travailler de l'autre. Le bouton garde sa
-                // largeur, seul le libellé glisse de trois points, que l'animation porte.
-                if isWaiting {
-                    CinechillSpinner(size: 12, tint: isOn ? .onPaper : .brand)
-                } else if isOn {
-                    if status == .seen {
-                        PlanLight(tint: Ink.ground)
-                    } else {
-                        PlanLightOutline(tint: Ink.ground)
-                    }
-                }
-            }
-            .foregroundStyle(isOn ? Ink.ground : Ink.ink)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: Metrics.control)
-            .background {
-                if isOn {
-                    RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-                        .fill(Ink.ink)
-                } else {
-                    RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-                        .strokeBorder(Ink.ruleSet, lineWidth: 1)
-                }
-            }
-            .contentShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
-        }
-        .buttonStyle(PressableScaleStyle(scale: 0.96))
-        // Les deux boutons sont figés, pas seulement celui qui attend : deux écritures
-        // concurrentes sur le même film arriveraient dans un ordre que personne ne contrôle.
-        .disabled(waitingButton != nil)
-        .accessibilityAddTraits(isOn ? [.isSelected] : [])
-        .accessibilityHint(hint(isOn: isOn, isWaiting: isWaiting))
+    private func markSeen() {
+        Haptics.impact(.medium)
+        // La fiche est le seul écran à connaître le réalisateur et la saga :
+        // c'est ici qu'ils entrent en galerie, pour les badges « Signature »
+        // et « L'Intégrale ».
+        libraryStore.addToGallery(
+            displayItem,
+            director: detail?.director,
+            collectionID: detail?.collectionID,
+            collectionTotal: detail?.collectionCount
+        )
+        offerSagaIfAny()
     }
 
-    private func hint(isOn: Bool, isWaiting: Bool) -> String {
-        if isWaiting { return String(localized: "Enregistrement…", bundle: .app) }
-        if isOn { return String(localized: "Toucher à nouveau pour retirer de tes listes", bundle: .app) }
-        return ""
-    }
-
-    private func toggle(_ status: DetailStatus) {
-        guard currentStatus != status else {
-            if status == .seen {
-                libraryStore.removeFromGallery(displayItem)
-            } else {
-                libraryStore.removeFromWatchlist(displayItem)
-            }
-            return
-        }
-
-        if status == .seen {
-            // La fiche est le seul écran à connaître le réalisateur et la saga :
-            // c'est ici qu'ils entrent en galerie, pour les badges « Signature »
-            // et « L'Intégrale ».
-            libraryStore.addToGallery(
-                displayItem,
-                director: detail?.director,
-                collectionID: detail?.collectionID,
-                collectionTotal: detail?.collectionCount
-            )
-            offerSagaIfAny()
-        } else {
-            libraryStore.addToWatchlist(displayItem)
-        }
+    private func moveBackToWatchlist() {
+        libraryStore.addToWatchlist(displayItem)
     }
 
     /// « Tu l'as vu. Et le reste de la saga ? » La question ne se pose qu'une
