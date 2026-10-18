@@ -11146,23 +11146,6 @@
         }
       }
     },
-    "Passer" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Skip"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Passer"
-          }
-        }
-      }
-    },
     "Passer l'ouverture" : {
       "localizations" : {
         "en" : {
@@ -11479,23 +11462,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plus qu'un film avant CinéMatch"
-          }
-        }
-      }
-    },
-    "Plus qu'une étape" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "One step left"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plus qu'une étape"
           }
         }
       }
@@ -13804,23 +13770,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Secrets"
-          }
-        }
-      }
-    },
-    "Sélectionnée" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selected"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sélectionnée"
           }
         }
       }
