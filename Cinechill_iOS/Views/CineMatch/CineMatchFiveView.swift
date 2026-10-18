@@ -1230,7 +1230,7 @@ struct CineMatchFiveView: View {
             episodes: film.isSeries ? film.episodeCount : nil,
             runtime: film.runtimeMinutes,
             platform: platform(for: film),
-            status: film.status.map(Self.statusLine),
+            status: film.status.map { Self.statusLine($0) },
             overview: film.item.overview
         )
     }
