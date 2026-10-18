@@ -186,8 +186,14 @@ struct CineMatchFiveView: View {
             showCurrentCard()
             playEntrance()
         }
-        .onChange(of: films.map(\.id)) { _, _ in
+        .onChange(of: films.map(\.id)) { _, ids in
             guard !isLaunched else { return }
+            // Plus aucun film (la proposition du jour se remplace) : la
+            // suivante fera son entrée, comme à l'ouverture.
+            guard !ids.isEmpty else {
+                isRevealed = false
+                return
+            }
             PosterImageCache.shared.prefetch(films.map(\.item.posterURL))
             showCurrentCard()
             // Les films arrivent (proposition du jour), ou l'un d'eux est
@@ -201,7 +207,12 @@ struct CineMatchFiveView: View {
     }
 
     private var waitingText: String {
-        switch (mode, isSeries) {
+        if mode == .daily, viewModel.dailyReplacedSeen {
+            return isSeries
+                ? String(localized: "On cherche une autre série…", bundle: .app)
+                : String(localized: "On cherche un autre film…", bundle: .app)
+        }
+        return switch (mode, isSeries) {
         case (.daily, false): String(localized: "On cherche ton film du jour…", bundle: .app)
         case (.daily, true): String(localized: "On cherche ta série du jour…", bundle: .app)
         case (.five, false): String(localized: "On cherche tes cinq films…", bundle: .app)
@@ -280,6 +291,19 @@ struct CineMatchFiveView: View {
 
             if mode == .five, !isLaunched, let outcome = viewModel.replaceOutcome {
                 replaceLine(outcome)
+            }
+
+            // Le film d'avant n'a pas disparu : il est rangé.
+            if mode == .daily, !isLaunched, viewModel.dailyReplacedSeen, current != nil {
+                Text(isSeries
+                     ? String(localized: "Celle que tu as vue est dans ta galerie.", bundle: .app)
+                     : String(localized: "Celui que tu as vu est dans ta galerie.", bundle: .app))
+                    .planFont(13)
+                    .foregroundStyle(Ink.ink2)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                    .transition(.opacity)
             }
 
             if mode == .five, !isLaunched, let widening = viewModel.widening {
@@ -763,7 +787,7 @@ struct CineMatchFiveView: View {
     @ViewBuilder
     private func actions(for film: CineMatchFilm) -> some View {
         Group {
-            if mode == .five, askingSeenID == film.id {
+            if askingSeenID == film.id {
                 seenQuestion(for: film)
             } else if mode == .five, let mark = viewModel.marks[film.id] {
                 markedActions(for: film, mark: mark)
@@ -791,7 +815,11 @@ struct CineMatchFiveView: View {
             case .five:
                 markLinks(for: film)
             case .daily:
-                backLink
+                // Un film du jour déjà vu : on le range, et un autre arrive.
+                VStack(spacing: 0) {
+                    alreadySeenLink(for: film)
+                    backLink
+                }
             }
         }
     }
@@ -1058,26 +1086,41 @@ struct CineMatchFiveView: View {
     }
 
     /// Le film part en galerie tout de suite : vu, il l'est, qu'on remplace ou
-    /// non. Le cœur attend que la galerie le connaisse, faute de quoi le
-    /// serveur n'aurait rien sur quoi le poser.
+    /// non. Parmi les cinq, il se marque et sera remplacé avec les autres ;
+    /// proposé comme film du jour, un autre film du jour le remplace aussitôt.
     private func markSeen(_ film: CineMatchFilm, loved: Bool) {
         askingSeenID = nil
-        viewModel.markSeen(film, loved: loved)
         let item = galleryItem(for: film)
-        libraryStore.addToGallery(item)
-        if loved {
-            Task {
-                let clock = ContinuousClock()
-                let deadline = clock.now + .seconds(8)
-                while !libraryStore.isInGallery(item), clock.now < deadline {
-                    try? await Task.sleep(for: .milliseconds(150))
-                }
-                // Rien n'a été annulé entre-temps.
-                guard viewModel.marks[film.id] == .seen(loved: true) else { return }
-                libraryStore.setLove(item, loved: true)
+        switch mode {
+        case .five:
+            viewModel.markSeen(film, loved: loved)
+            libraryStore.addToGallery(item)
+            if loved {
+                // Rien n'a été annulé entre-temps : il est toujours marqué.
+                loveOnceInGallery(item) { viewModel.marks[film.id] == .seen(loved: true) }
             }
+            advanceAfterMark()
+        case .daily:
+            libraryStore.addToGallery(item)
+            if loved {
+                loveOnceInGallery(item) { true }
+            }
+            Task { await viewModel.replaceSeenDaily(film) }
         }
-        advanceAfterMark()
+    }
+
+    /// Le cœur attend que la galerie connaisse le film, faute de quoi le
+    /// serveur n'aurait rien sur quoi le poser.
+    private func loveOnceInGallery(_ item: MediaItem, stillWanted: @escaping () -> Bool) {
+        Task {
+            let clock = ContinuousClock()
+            let deadline = clock.now + .seconds(8)
+            while !libraryStore.isInGallery(item), clock.now < deadline {
+                try? await Task.sleep(for: .milliseconds(150))
+            }
+            guard stillWanted() else { return }
+            libraryStore.setLove(item, loved: true)
+        }
     }
 
     /// Après « Pas celui-là » ou « Je l'ai déjà vu » : la carte se montre

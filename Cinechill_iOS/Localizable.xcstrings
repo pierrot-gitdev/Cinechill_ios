@@ -10034,6 +10034,38 @@
         }
       }
     },
+    "On cherche un autre film…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finding another movie…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On cherche un autre film…"
+          }
+        }
+      }
+    },
+    "On cherche une autre série…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finding another show…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On cherche une autre série…"
+          }
+        }
+      }
+    },
     "On choisit d'après les films que tu as vus. Ajoutes-en 100 à ta galerie pour ouvrir CinéMatch." : {
       "localizations" : {
         "en" : {

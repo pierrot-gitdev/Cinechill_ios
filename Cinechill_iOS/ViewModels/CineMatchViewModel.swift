@@ -107,6 +107,9 @@ final class CineMatchViewModel {
     private(set) var currentIndex = 0
     private(set) var widening: CineMatchWidening?
     private(set) var dailyFilm: CineMatchFilm?
+    /// La proposition du jour remplace un film qu'on vient de ranger en
+    /// galerie : l'écran le dit, et l'attente parle d'un autre film.
+    private(set) var dailyReplacedSeen = false
     private(set) var concludedFilm: CineMatchFilm?
     /// Non nil : la vue affiche `PlanEmptyState` et « Réessayer ».
     private(set) var errorMessage: String?
@@ -209,6 +212,7 @@ final class CineMatchViewModel {
         currentIndex = 0
         widening = nil
         dailyFilm = nil
+        dailyReplacedSeen = false
         concludedFilm = nil
         pendingFiveExposure = []
         step = .home
@@ -408,6 +412,7 @@ final class CineMatchViewModel {
         guard step == .home else { return }
         stopInflight()
         dailyFilm = nil
+        dailyReplacedSeen = false
         concludedFilm = nil
         errorMessage = nil
         lastFailedAction = nil
@@ -639,13 +644,26 @@ final class CineMatchViewModel {
         }
     }
 
-    private func loadDaily() async {
+    /// « Je l'ai déjà vu » sur la proposition du jour : la vue l'a rangé en
+    /// galerie, on en tire une autre. Le serveur l'écarte de lui-même, sans
+    /// attendre que la galerie le montre.
+    func replaceSeenDaily(_ film: CineMatchFilm) async {
+        guard step == .daily, dailyFilm?.id == film.id else { return }
+        dailyFilm = nil
+        dailyReplacedSeen = true
+        await perform { [weak self] in await self?.loadDaily(replacingSeen: film.id) }
+    }
+
+    private func loadDaily(replacingSeen seenID: Int? = nil) async {
         errorMessage = nil
         do {
-            let film = try await client.daily(situation: situation, format: format, evening: eveningID)
+            let film = try await client.daily(situation: situation, format: format,
+                                              replacingSeen: seenID, evening: eveningID)
             guard !Task.isCancelled else { return }
             guard let film else {
-                fail(CineMatchClientError.noCandidates(for: format)) { [weak self] in await self?.loadDaily() }
+                fail(CineMatchClientError.noCandidates(for: format)) { [weak self] in
+                    await self?.loadDaily(replacingSeen: seenID)
+                }
                 return
             }
             dailyFilm = film
@@ -654,7 +672,7 @@ final class CineMatchViewModel {
             let evening = eveningID
             Task { try? await client.recordExposure(kind: .daily, tmdbIDs: [film.id], format: format, evening: evening) }
         } catch {
-            fail(error) { [weak self] in await self?.loadDaily() }
+            fail(error) { [weak self] in await self?.loadDaily(replacingSeen: seenID) }
         }
     }
 

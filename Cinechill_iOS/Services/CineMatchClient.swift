@@ -58,8 +58,11 @@ protocol CineMatchFetching: Sendable {
     func picks(situation: CineMatchSituation, anchorID: Int?, secondID: Int?, tweak: CineMatchTweak?,
                style: CineMatchStyle?, format: MediaFormat,
                replacing: CineMatchReplacement?, evening: String?) async throws -> CineMatchFiveResponse
-    /// `nil` quand aucun film ne correspond au scénario.
-    func daily(situation: CineMatchSituation, format: MediaFormat, evening: String?) async throws -> CineMatchFilm?
+    /// `nil` quand aucun film ne correspond au scénario. `replacingSeen` : le
+    /// film du jour qu'on vient de ranger en galerie (« Je l'ai déjà vu ») ;
+    /// le serveur en tire alors un autre au lieu de resservir le même.
+    func daily(situation: CineMatchSituation, format: MediaFormat, replacingSeen: Int?,
+               evening: String?) async throws -> CineMatchFilm?
     func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int], format: MediaFormat,
                         evening: String?) async throws
     func recordLaunch(tmdbID: Int, format: MediaFormat, evening: String?) async throws
@@ -165,11 +168,14 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         )
     }
 
-    func daily(situation: CineMatchSituation, format: MediaFormat, evening: String?) async throws -> CineMatchFilm? {
-        let data = try await post(to: APIEndpoints.cineMatchDaily(), body: Self.adding(evening, to: [
+    func daily(situation: CineMatchSituation, format: MediaFormat, replacingSeen: Int?,
+               evening: String?) async throws -> CineMatchFilm? {
+        var body: [String: Any] = [
             "situation": Self.payload(for: situation),
             "format": format.rawValue,
-        ]))
+        ]
+        if let replacingSeen { body["seenId"] = replacingSeen }
+        let data = try await post(to: APIEndpoints.cineMatchDaily(), body: Self.adding(evening, to: body))
         return try decode(DailyResponseDTO.self, from: data).film?.film
     }
 
