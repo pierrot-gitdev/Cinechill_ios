@@ -32,7 +32,8 @@ nonisolated extension StreamingPlatform {
         CurationRule(displayName: "HBO Max", aliases: ["hbomax", "max"]),
         CurationRule(displayName: "Paramount +", aliases: ["paramount+", "paramountplus"]),
         CurationRule(displayName: "Arte", aliases: ["arte"]),
-        CurationRule(displayName: "TF1", aliases: ["tf1plus"]),
+        // TMDB l'écrit « TF1+ » : sans « tf1+ », la plateforme n'apparaissait jamais.
+        CurationRule(displayName: "TF1", aliases: ["tf1plus", "tf1+"]),
         CurationRule(displayName: "Molotov TV", aliases: ["molotovtv", "molotov"])
     ]
 
