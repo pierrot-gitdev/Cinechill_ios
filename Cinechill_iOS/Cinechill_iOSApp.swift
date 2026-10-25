@@ -21,6 +21,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         UNUserNotificationCenter.current().delegate = NotificationCenterDelegate.shared
         NotificationCategories.register()
         PushRegistration.shared.start()
+        // Un démarrage à froid repart d'un CinéMatch vierge : l'activité d'un
+        // film lancé par le processus précédent n'a plus de résultat derrière
+        // elle.
+        CineMatchLiveActivity.endAll()
         return true
     }
 
@@ -120,6 +124,9 @@ struct Cinechill_iOSApp: App {
             // l'apprend, les libellés des actions et la question du lendemain
             // déjà programmée se réécrivent.
             .onChange(of: language.selection) { _, _ in
+                // Changer de langue reconstruit l'app, résultat de CinéMatch
+                // compris : son activité part avec lui.
+                CineMatchLiveActivity.endAll()
                 NotificationCategories.register()
                 Task {
                     await PushRegistration.shared.sync()

@@ -214,6 +214,11 @@ final class WatchlistViewModel {
 
     // MARK: - Composition
 
+    /// Zéro épisode n'est pas un nombre connu.
+    private func positive(_ value: Int?) -> Int? {
+        value.flatMap { $0 > 0 ? $0 : nil }
+    }
+
     private func rebuild() {
         items = entries.map { entry in
             if let facts = entry.seasonFacts {
@@ -226,7 +231,8 @@ final class WatchlistViewModel {
                     providerIDs: fresh?.providerIds ?? facts.providerIds,
                     trailerKey: fresh?.trailerKey,
                     airedEpisodes: fresh?.airedEpisodes ?? facts.airedEpisodes,
-                    nextAirDate: fresh?.nextAirDate ?? facts.nextAirDate
+                    nextAirDate: fresh?.nextAirDate ?? facts.nextAirDate,
+                    episodes: positive(fresh?.episodes) ?? positive(facts.episodes)
                 )
             }
             let enriched = enrichment[entry.tmdbId]
@@ -234,7 +240,10 @@ final class WatchlistViewModel {
                 entry: entry,
                 runtimeMinutes: enriched?.runtimeMinutes,
                 providerIDs: enriched?.providerIDs ?? [],
-                trailerKey: enriched?.trailerKey
+                trailerKey: enriched?.trailerKey,
+                // Une saison rangée sans ses informations : celles rafraîchies
+                // depuis peuvent porter le nombre d'épisodes.
+                episodes: entry.isSeason ? positive(seasonEnrichment[entry.id]?.episodes) : nil
             )
         }
 

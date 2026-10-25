@@ -407,7 +407,8 @@ struct WatchlistView: View {
                 libraryStore.addToGallery(item.entry.mediaItem)
             }
         }
-        if item.entry.isOnLastEpisode {
+        // Nombre d'épisodes inconnu : le glissement range la saison et le dit.
+        if item.isOnLastEpisode != false {
             return PlanRowAction(label: String(localized: "Saison vue", bundle: .app), tint: Ink.paper) {
                 libraryStore.addToGallery(item.entry.mediaItem)
             }
@@ -475,7 +476,9 @@ struct WatchlistView: View {
     private func watch(_ item: WatchlistItem) {
         Haptics.success()
         if item.entry.isSeason {
-            if item.entry.isOnLastEpisode {
+            // Sans nombre d'épisodes connu, on avance d'un épisode : un bouton
+            // qui ne dit pas « saison vue » ne doit jamais fermer la saison.
+            if item.isOnLastEpisode == true {
                 libraryStore.addToGallery(item.entry.mediaItem)
             } else {
                 libraryStore.setNextEpisode(item.entry, to: item.entry.episodeToPlay + 1)

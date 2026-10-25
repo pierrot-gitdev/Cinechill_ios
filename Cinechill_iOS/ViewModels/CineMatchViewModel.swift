@@ -220,6 +220,7 @@ final class CineMatchViewModel {
     func setFormat(_ newFormat: MediaFormat) {
         deferredFormat = nil
         guard newFormat != format else { return }
+        leaveResult()
         recordStarterExposure()
         stopInflight()
         resetSession()
@@ -542,6 +543,7 @@ final class CineMatchViewModel {
     /// Conclusion, proposition du jour, erreur ou « Annuler » → accueil.
     func backToHome() {
         if step == .anchor { recordStarterExposure() }
+        leaveResult()
         stopInflight()
         // Avant la remise à zéro : l'exposition appartient à la soirée qui
         // s'achève, pas à celle qui commence.
@@ -751,6 +753,16 @@ final class CineMatchViewModel {
             return true
         }
         return false
+    }
+
+    /// Le résultat de la soirée vit tant que l'app vit : changer d'onglet ou
+    /// passer en arrière-plan le garde, et l'activité de l'écran verrouillé
+    /// avec lui. Il ne part que sur un geste qui remet CinéMatch à zéro ;
+    /// l'activité du film lancé part alors aussi, au lieu de rester « En
+    /// cours » des heures après. Lancer un autre film la remplace de lui-même.
+    private func leaveResult() {
+        guard step == .conclusion else { return }
+        CineMatchLiveActivity.endAll()
     }
 
     private func resetSession() {

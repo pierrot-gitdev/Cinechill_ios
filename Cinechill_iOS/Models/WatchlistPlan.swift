@@ -47,10 +47,21 @@ struct WatchlistItem: Identifiable, Hashable {
     var airedEpisodes: Int? = nil
     /// Date du prochain épisode à sortir, pour une saison qui l'attend.
     var nextAirDate: String? = nil
+    /// Le nombre d'épisodes de la saison, rafraîchi ou rangé. `nil` pour un
+    /// film, ou quand TMDB n'a répondu ni à l'écriture ni depuis.
+    var episodes: Int? = nil
 
     /// L'identité de bibliothèque, et non `tmdbId` : deux saisons d'une même
     /// série partagent leur `tmdbId`, et une série peut porter celui d'un film.
     var id: String { entry.id }
+
+    /// L'épisode à lancer est le dernier de la saison. `nil` quand le nombre
+    /// d'épisodes est inconnu : `WatchlistEntry.isOnLastEpisode` répondait
+    /// alors oui, et « Je le regarde » rangeait toute la saison.
+    var isOnLastEpisode: Bool? {
+        guard let episodes, episodes > 0 else { return nil }
+        return entry.episodeToPlay >= episodes
+    }
 
     /// L'épisode à lancer n'est pas encore sorti : la ligne ne se lance pas ce
     /// soir, quoi que dise sa plateforme.
