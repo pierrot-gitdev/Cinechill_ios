@@ -29,7 +29,9 @@ struct ProbeGridSheet: View {
     /// Ce qui est rangé ou déjà servi : rien de cela ne doit revenir ici.
     let excludedIDs: [String]
     /// Appelé à la fermeture, avec les familles des affiches touchées.
-    let onFinish: (Set<String>) -> Void
+    /// Les familles des affiches touchées, et les films cochés : le deck
+    /// propose ensuite le reste de leur saga.
+    let onFinish: (Set<String>, [SwipeCard]) -> Void
 
     private let client: any SwipeFeedFetching = BackendSwipeFeedClient()
 
@@ -44,11 +46,12 @@ struct ProbeGridSheet: View {
     /// Les affiches des grilles précédentes : elles ne reviennent pas.
     @State private var shownIDs: [String] = []
     @State private var tickedFamilies: Set<String> = []
+    @State private var tickedCards: [SwipeCard] = []
     @State private var query = ""
     /// Le serveur sait déjà que la mosaïque de départ est faite.
     @State private var startGridMarked = false
 
-    init(kind: ProbeGridKind, excludedIDs: [String], onFinish: @escaping (Set<String>) -> Void) {
+    init(kind: ProbeGridKind, excludedIDs: [String], onFinish: @escaping (Set<String>, [SwipeCard]) -> Void) {
         self.kind = kind
         self.excludedIDs = excludedIDs
         self.onFinish = onFinish
@@ -392,6 +395,7 @@ struct ProbeGridSheet: View {
         }
         if !ticked.isEmpty { Haptics.success() }
         for card in ticked { tickedFamilies.formUnion(card.families) }
+        tickedCards += ticked
         shownIDs.append(contentsOf: pool.keys)
         await advance(tickedAny: !ticked.isEmpty)
     }
@@ -410,7 +414,7 @@ struct ProbeGridSheet: View {
             // Une dernière grille vide termine aussi le départ, sans rien
             // avoir écrit : il faut le dire au serveur.
             markStartGridDone()
-            onFinish(tickedFamilies)
+            onFinish(tickedFamilies, tickedCards)
             return
         }
         query = ""
@@ -427,7 +431,7 @@ struct ProbeGridSheet: View {
     /// mosaïque de départ ne se rouvrira pas.
     private func close() {
         markStartGridDone()
-        onFinish(tickedFamilies)
+        onFinish(tickedFamilies, tickedCards)
     }
 
     private func markStartGridDone() {

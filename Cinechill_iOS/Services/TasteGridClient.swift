@@ -1,19 +1,20 @@
 //
-//  DeceptionClient.swift
+//  TasteGridClient.swift
 //  Cinechill_iOS
 //
 
 import FirebaseAuth
 import Foundation
 
-/// Un film de la galerie proposé dans la planche des déceptions.
-nonisolated struct DeceptionFilm: Identifiable, Hashable, Sendable, Decodable {
-    /// L'identifiant de bibliothèque (`movie-603`).
+/// Un film (ou une saison) de la galerie proposé dans une planche de goût.
+nonisolated struct TasteFilm: Identifiable, Hashable, Sendable, Decodable {
+    /// L'identifiant de bibliothèque (`movie-603`, `tv-1399-s2`).
     let id: String
     let tmdbId: Int
     let title: String
     let posterPath: String?
     let releaseDate: String?
+    let season: Int?
 
     var displayYear: String {
         guard let releaseDate, releaseDate.count >= 4 else { return "—" }
@@ -21,18 +22,28 @@ nonisolated struct DeceptionFilm: Identifiable, Hashable, Sendable, Decodable {
     }
 }
 
-/// Les deux appels de l'étape « Tes déceptions » : la planche, choisie par le
-/// serveur sur la carte des goûts, et la réponse.
-nonisolated struct DeceptionClient: Sendable {
+/// Les appels des planches de goût. Le serveur compose chaque page (voir
+/// `getTasteGrid`) : une saga par page, plus aucune saga déjà répondue, un
+/// genre par case. La réponse aux déceptions passe par `record`, celle aux
+/// coups de cœur par `LibraryStore.saveLoves`.
+nonisolated struct TasteGridClient: Sendable {
     private struct GridResponse: Decodable {
-        let films: [DeceptionFilm]
+        let films: [TasteFilm]
     }
 
-    func grid() async throws -> [DeceptionFilm] {
-        let data = try await post(APIEndpoints.deceptionGrid(), body: [:])
+    /// - Parameters:
+    ///   - excluding: films déjà montrés dans une planche des coups de cœur.
+    func grid(kind: TasteGridKind, format: MediaFormat, excluding: [String]) async throws -> [TasteFilm] {
+        let data = try await post(APIEndpoints.tasteGrid(), body: [
+            "kind": kind == .loved ? "loved" : "disliked",
+            "format": format == .series ? "series" : "film",
+            "excludeIds": excluding,
+        ])
         return try JSONDecoder().decode(GridResponse.self, from: data).films
     }
 
+    /// La réponse à une planche des déceptions.
+    ///
     /// - Parameters:
     ///   - shown: les films montrés, qui passent en revue.
     ///   - disliked: ceux qui ont été touchés, qui deviennent « Pas aimé ».

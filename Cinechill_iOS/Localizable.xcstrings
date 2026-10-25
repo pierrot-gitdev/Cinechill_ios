@@ -2315,38 +2315,6 @@
         }
       }
     },
-    "Ajoute dans Découvrir les films que tu as vus. Tu pourras ensuite choisir tes coups de cœur ici." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add the movies you've seen from Discover. Then you can pick the ones you loved here."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajoute dans Découvrir les films que tu as vus. Tu pourras ensuite choisir tes coups de cœur ici."
-          }
-        }
-      }
-    },
-    "Ajoute dans Découvrir les séries que tu as vues. Tu pourras ensuite choisir tes saisons préférées ici." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add the series you've seen from Discover. Then you can pick your favorite seasons here."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajoute dans Découvrir les séries que tu as vues. Tu pourras ensuite choisir tes saisons préférées ici."
-          }
-        }
-      }
-    },
     "Ajoute les films que tu as vus pour pouvoir les recommander." : {
       "localizations" : {
         "en" : {
@@ -2359,38 +2327,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajoute les films que tu as vus pour pouvoir les recommander."
-          }
-        }
-      }
-    },
-    "Ajoute ou retire le coup de cœur." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adds or removes the loved mark."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajoute ou retire le coup de cœur."
-          }
-        }
-      }
-    },
-    "Ajouter %lld coups de cœur" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mark %lld as loved"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter %lld coups de cœur"
           }
         }
       }
@@ -2423,22 +2359,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter %lld saisons"
-          }
-        }
-      }
-    },
-    "Ajouter 1 coup de cœur" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mark 1 as loved"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter 1 coup de cœur"
           }
         }
       }
@@ -3031,22 +2951,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucune série dans ce style"
-          }
-        }
-      }
-    },
-    "Aucune série dans ta galerie" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No series in your gallery"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune série dans ta galerie"
           }
         }
       }
@@ -8308,22 +8212,6 @@
         }
       }
     },
-    "Lesquels as-tu adorés ?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Which ones did you love?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lesquels as-tu adorés ?"
-          }
-        }
-      }
-    },
     "Lesquels as-tu vus ?" : {
       "localizations" : {
         "en" : {
@@ -10272,22 +10160,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pas regardé"
-          }
-        }
-      }
-    },
-    "pas un coup de cœur" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "not loved"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "pas un coup de cœur"
           }
         }
       }
@@ -13992,38 +13864,6 @@
         }
       }
     },
-    "Touche un film pour en faire un coup de cœur." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap a movie to mark it as loved."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touche un film pour en faire un coup de cœur."
-          }
-        }
-      }
-    },
-    "Touche une saison pour en faire un coup de cœur." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap a season to mark it as loved."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touche une saison pour en faire un coup de cœur."
-          }
-        }
-      }
-    },
     "Toujours en cours : d'autres saisons arrivent." : {
       "localizations" : {
         "en" : {
@@ -15953,38 +15793,6 @@
         }
       }
     },
-    "1 film ne m'a pas plu" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 movie let me down"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 film ne m'a pas plu"
-          }
-        }
-      }
-    },
-    "%lld films ne m'ont pas plu" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld movies let me down"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld films ne m'ont pas plu"
-          }
-        }
-      }
-    },
     "%lld films de ta galerie passés en revue" : {
       "localizations" : {
         "en" : {
@@ -16049,22 +15857,6 @@
         }
       }
     },
-    "Je les ai tous aimés" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I liked them all"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je les ai tous aimés"
-          }
-        }
-      }
-    },
     "Lesquels n'as-tu pas aimés ?" : {
       "localizations" : {
         "en" : {
@@ -16125,6 +15917,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tous les films de ta galerie ont été vus ici."
+          }
+        }
+      }
+    },
+    "Aucun coup de cœur ici" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No favorites here"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun coup de cœur ici"
+          }
+        }
+      }
+    },
+    "Aucune déception ici" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No letdowns here"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune déception ici"
           }
         }
       }

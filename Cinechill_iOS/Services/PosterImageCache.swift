@@ -34,6 +34,12 @@ final class PosterImageCache: @unchecked Sendable {
         return cache.object(forKey: url as NSURL)
     }
 
+    /// Pose une affiche déjà en main (embarquée dans l'app) : l'écran qui la
+    /// demandera la trouvera sans réseau.
+    func seed(_ image: UIImage, for url: URL) {
+        cache.setObject(image, forKey: url as NSURL)
+    }
+
     func image(for url: URL) async -> UIImage? {
         if let hit = cache.object(forKey: url as NSURL) { return hit }
 

@@ -36,8 +36,8 @@ struct CineMatchView: View {
     @AppStorage(MediaFormat.storageKey) private var formatRaw = MediaFormat.film.rawValue
 
     @State private var showProfile = false
-    @State private var showLovePicker = false
-    @State private var showDeceptionGrid = false
+    /// La planche de goût ouverte depuis la Porte.
+    @State private var tasteGrid: TasteGridKind?
     /// Les formats dont le seuil a été franchi **dans cette ouverture de
     /// l'app**. Volontairement un état de session et non une préférence
     /// gardée : la cérémonie se rejoue à chaque lancement, elle ne se consomme
@@ -69,31 +69,20 @@ struct CineMatchView: View {
                     .environmentObject(authService)
                     .environmentObject(socialStore)
             }
-            .sheet(isPresented: $showDeceptionGrid, onDismiss: {
+            // Les deux étapes de goût, sur la même planche que Découvrir :
+            // elle enchaîne ici les pages jusqu'à l'étape faite.
+            .sheet(item: $tasteGrid, onDismiss: {
                 Task { await doorStore.refresh() }
-            }) {
-                DeceptionGridSheet(onClose: { showDeceptionGrid = false })
+            }) { kind in
+                TasteGridSheet(kind: kind, format: format, onClose: { _ in tasteGrid = nil })
+                    .environmentObject(libraryStore)
                     .environment(doorStore)
-            }
-            .sheet(isPresented: $showLovePicker) {
-                LovePickerView(
-                    target: door.artifact(.coeur)?.target ?? (format == .series ? 4 : 12),
-                    format: format,
-                    onClose: { showLovePicker = false }
-                )
-                .environmentObject(libraryStore)
             }
         }
         // Chaque retour sur l'onglet remesure la porte : la galerie a pu se
         // remplir depuis Découvrir, et la jauge doit le raconter sans attendre.
         .onChange(of: selectedTab) { _, tab in
             guard tab == 1 else { return }
-            Task { await doorStore.refresh() }
-        }
-        // La planche refermée, on remesure aussi : c'est peut-être elle qui
-        // vient d'allumer le Cœur.
-        .onChange(of: showLovePicker) { _, isOpen in
-            guard !isOpen else { return }
             Task { await doorStore.refresh() }
         }
         // Les plateformes vivent dans la bibliothèque, pas dans la séance : un
@@ -144,8 +133,8 @@ struct CineMatchView: View {
                 lovedCount: lovedCount,
                 onProfileTap: { showProfile = true },
                 onDiscover: { selectedTab = 2 },
-                onLovePicker: { showLovePicker = true },
-                onDeceptionGrid: { showDeceptionGrid = true },
+                onLovePicker: { tasteGrid = .loved },
+                onDeceptionGrid: { tasteGrid = .disliked },
                 onEnter: {
                     let crossed = format
                     withAnimation(.easeOut(duration: 0.45)) { _ = crossedFormats.insert(crossed) }

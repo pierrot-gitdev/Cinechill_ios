@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import UIKit
 
 /// Un film montré par l'onboarding. Rien n'est écrit nulle part : ni la
 /// bibliothèque ni Firestore ne voient ces films.
@@ -18,6 +19,12 @@ nonisolated struct OnboardingFilm: Identifiable, Hashable, Sendable {
     /// La taille du mur et de la carte de démonstration : à 3x, une affiche
     /// d'un tiers d'écran demande à peine plus de 342 pixels de large.
     var posterURL: URL? { URL(string: "https://image.tmdb.org/t/p/w342\(posterPath)") }
+
+    /// L'affiche embarquée dans l'app (`Onboarding/onboarding-<id>`). Le mur
+    /// de l'accueil est le tout premier écran : téléchargées à son ouverture,
+    /// juste après l'inscription et sur un réseau lent, les affiches
+    /// arrivaient après lui, et il restait noir.
+    var bundledPoster: UIImage? { UIImage(named: "onboarding-\(id)") }
 
     /// La carte de Découvrir, pour l'écran des gestes : la vraie, pas une
     /// imitation. Elle ne passe jamais par le deck.
@@ -127,5 +134,15 @@ enum OnboardingFilms {
     /// Les cartes de l'écran des gestes, dans l'ordre où elles passent.
     static var gestureDeck: [OnboardingFilm] {
         [backToTheFuture, titanic, lionKing, forrestGump, fightClub]
+    }
+
+    /// Pose les affiches embarquées dans le cache des affiches : la carte de
+    /// l'écran des gestes, qui lit ce cache, les trouve aussi sans réseau.
+    static func seedPosterCache() {
+        let films = Set(wallColumns.flatMap { $0 } + gestureDeck)
+        for film in films {
+            guard let url = film.posterURL, let image = film.bundledPoster else { continue }
+            PosterImageCache.shared.seed(image, for: url)
+        }
     }
 }

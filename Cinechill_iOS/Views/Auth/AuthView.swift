@@ -279,6 +279,32 @@ struct AuthView: View {
         AuthService.isPlausibleEmail(AuthService.normalize(email)) && !password.isEmpty
     }
 
+    /// Tout ce que `runSignUp` vérifie, lu en direct. Un pseudo dont la
+    /// disponibilité est encore en cours de vérification attend ; un pseudo
+    /// qu'on n'a pas pu vérifier (hors ligne) passe, `claimHandle` tranchera.
+    private var canSignUp: Bool {
+        !firstName.trimmingCharacters(in: .whitespaces).isEmpty
+            && PlanHandle.isValid(handle)
+            && handleAvailability != .taken
+            && handleAvailability != .checking
+            && AuthService.isPlausibleEmail(AuthService.normalize(email))
+            && passwordsMatch
+    }
+
+    /// Un mot de passe conforme, confirmé à l'identique.
+    private var passwordsMatch: Bool {
+        PlanCriteria.isAcceptable(password) && !confirmation.isEmpty && confirmation == password
+    }
+
+    /// La confirmation est aussi longue que le mot de passe mais diffère : le
+    /// bouton reste éteint, et ceci dit pourquoi. Plus courte, c'est une
+    /// saisie en cours, on ne la reproche pas.
+    private var confirmationMismatch: String? {
+        guard !confirmation.isEmpty, confirmation.count >= password.count,
+              confirmation != password else { return nil }
+        return String(localized: "Les deux mots de passe ne correspondent pas.", bundle: .app)
+    }
+
     // MARK: Inscription
 
     @ViewBuilder
@@ -334,7 +360,11 @@ struct AuthView: View {
         actions {
             PlanButton(
                 title: String(localized: "Créer mon compte", bundle: .app), loadingTitle: String(localized: "Création…", bundle: .app),
-                isLoading: isWorking, action: submit
+                isLoading: isWorking,
+                // Comme « Entrer » : utilisable seulement quand le compte peut
+                // être créé tel quel.
+                isEnabled: canSignUp,
+                action: submit
             )
             doors
             Text(legalNotice)
@@ -363,7 +393,9 @@ struct AuthView: View {
         actions {
             PlanButton(
                 title: String(localized: "Envoyer le lien", bundle: .app), loadingTitle: String(localized: "Envoi…", bundle: .app),
-                isLoading: isWorking, action: submit
+                isLoading: isWorking,
+                isEnabled: AuthService.isPlausibleEmail(AuthService.normalize(email)),
+                action: submit
             )
             PlanSecondaryButton(title: String(localized: "Revenir à la connexion", bundle: .app)) { go(.signIn) }
         }
@@ -434,7 +466,9 @@ struct AuthView: View {
         actions {
             PlanButton(
                 title: String(localized: "Enregistrer", bundle: .app), loadingTitle: String(localized: "Enregistrement…", bundle: .app),
-                isLoading: isWorking, action: submit
+                isLoading: isWorking,
+                isEnabled: passwordsMatch,
+                action: submit
             )
         }
     }
@@ -614,9 +648,9 @@ struct AuthView: View {
             // attendre la validation. Tant qu'elles diffèrent, rien ne
             // s'affiche : on ne reproche pas une saisie inachevée.
             accessory: !confirmation.isEmpty && confirmation == password ? .light : .none,
-            error: message(for: .confirmation),
+            error: message(for: .confirmation) ?? confirmationMismatch,
             isDisabled: isWorking,
-            onSubmit: submit
+            onSubmit: { if step == .signUp ? canSignUp : passwordsMatch { submit() } }
         )
         .animation(AuthMetrics.shift, value: confirmation == password)
     }

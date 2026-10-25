@@ -22,6 +22,8 @@ struct OnboardingFlowView: View {
     var body: some View {
         ZStack {
             Ink.ground.ignoresSafeArea()
+                // Les affiches embarquées, posées avant la première page.
+                .onAppear { OnboardingFilms.seedPosterCache() }
 
             if let step = tour.step {
                 page(step)

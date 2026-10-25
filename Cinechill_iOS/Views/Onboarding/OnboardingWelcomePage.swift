@@ -280,8 +280,14 @@ struct OnboardingPosterWall: View {
     }
 
     private nonisolated static func prepared(_ film: OnboardingFilm, pixelWidth: CGFloat) async -> (Int, UIImage?) {
-        guard let url = film.posterURL,
-              let raw = await PosterImageCache.shared.image(for: url) else { return (film.id, nil) }
+        // L'affiche embarquée d'abord, le réseau seulement à défaut.
+        let bundled = film.bundledPoster
+        let downloaded: UIImage? = if bundled == nil, let url = film.posterURL {
+            await PosterImageCache.shared.image(for: url)
+        } else {
+            nil
+        }
+        guard let raw = bundled ?? downloaded else { return (film.id, nil) }
         let size = CGSize(width: pixelWidth, height: pixelWidth * 1.5)
         return (film.id, await raw.byPreparingThumbnail(ofSize: size) ?? raw)
     }

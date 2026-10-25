@@ -33,7 +33,7 @@ nonisolated enum DoorArtifactKey: String, Codable, CaseIterable, Sendable {
         case .memoire: "ArtefactMemoire"
         case .eventail: "ArtefactEventail"
         case .coeur: "ArtefactCoeur"
-        // Le dessin de l'ancienne Promesse, en attendant le sien.
+        // Le losange de l'ancienne Promesse, en ardoise, au cœur brisé.
         case .deceptions: "ArtefactDeceptions"
         }
     }
@@ -48,7 +48,7 @@ nonisolated enum DoorArtifactKey: String, Codable, CaseIterable, Sendable {
         case .memoire: 0xA98CE8
         case .eventail: 0xE0B24A
         case .coeur: 0xC25562
-        case .deceptions: 0x35C4A8
+        case .deceptions: 0x5072A8
         }
     }
 
@@ -58,7 +58,7 @@ nonisolated enum DoorArtifactKey: String, Codable, CaseIterable, Sendable {
         case .memoire: 0xA854F7
         case .eventail: 0xFFA826
         case .coeur: 0xFF6B7E
-        case .deceptions: 0x78FFDB
+        case .deceptions: 0x9DB8F0
         }
     }
 }

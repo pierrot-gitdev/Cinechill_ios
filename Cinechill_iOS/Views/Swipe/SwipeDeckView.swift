@@ -91,31 +91,28 @@ struct SwipeDeckView: View {
     private static let loveHintStreak = 8
     private static let loveHintRetiredAfter = 5
 
-    /// La planche des coups de cœur — voir `LoveGridSheet`. Elle s'ajoute au
+    /// La planche des coups de cœur — voir `TasteGridSheet`. Elle s'ajoute au
     /// rappel, qu'elle ne remplace pas : le rappel apprend le geste, la planche
     /// rattrape les cœurs que le geste a laissé passer.
-    @State private var loveGrid: LoveGridOffer?
+    @State private var loveGrid: TasteGridKind?
     @State private var cardsSinceLoveGrid = 0
-    /// La dernière planche n'a donné aucun cœur : la suivante attend plus.
-    @State private var lastLoveGridWasEmpty = false
-    /// Le début de la session : les films rangés depuis passent en tête de
-    /// planche, encore frais en mémoire.
-    @State private var sessionStart = Date.now
-    /// Films en galerie avant la première planche : en dessous, un retard de
-    /// cœurs n'est que du bruit.
+    /// Films en galerie avant la première planche des coups de cœur : en
+    /// dessous, un retard n'est que du bruit.
     private static let loveGridMinimumGallery = 15
-    /// Cœurs de retard sur le rythme de la Porte qui font poser la question.
-    private static let loveGridMinimumLag = 2
-    /// Cartes entre deux planches, et après une planche sans aucun cœur.
-    private static let loveGridSpacing = 20
-    private static let loveGridSpacingAfterNone = 40
+    /// Films en galerie avant la première planche des déceptions : en dessous,
+    /// la carte des goûts n'a pas assez de « oui » pour qu'un « non » corrige
+    /// quoi que ce soit.
+    private static let deceptionGridMinimumGallery = 30
+    /// Le retard qui fait poser la question : 2 cœurs sur 12, 4 films à revoir
+    /// sur 24.
+    private static let lovedMinimumLag = 2.0 / 12
+    private static let dislikedMinimumLag = 4.0 / 24
     /// En dessous, la planche aurait trop peu de films à proposer.
     private static let loveGridMinimumEntries = 6
-    private static let loveGridOfferedKey = "swipe.loveGrid.offered"
     /// Ce qui s'efface quand un autre compte se connecte : ses paliers fêtés
     /// et les planches déjà proposées ne sont pas ceux du suivant.
     static var accountScopedKeys: [String] {
-        [loveGridOfferedKey] + MediaFormat.allCases.map { goalMilestonesKey($0) }
+        TasteGridSheet.accountScopedKeys + MediaFormat.allCases.map { goalMilestonesKey($0) }
     }
 
     private static func goalMilestonesKey(_ format: MediaFormat) -> String {
@@ -125,6 +122,8 @@ struct SwipeDeckView: View {
     /// Le nombre de films à annoncer quand un palier de la galerie est franchi,
     /// tant que CinéMatch est fermé.
     @State private var goalMilestone: Int?
+    /// Les feuilles de saga des films cochés dans une mosaïque, en attente.
+    @State private var queuedSagaOffers: [SagaOffer] = []
     /// Films ou séries : le réglage que Découvrir partage avec CinéMatch.
     @AppStorage(MediaFormat.storageKey) private var formatRaw = MediaFormat.film.rawValue
 
@@ -161,7 +160,15 @@ struct SwipeDeckView: View {
             // improbables — les cartes issues de la règle de saga portent
             // toutes la même source, que l'ordonnancement du lot écarte les
             // unes des autres.
-            .sheet(item: $sagaOffer, onDismiss: { popupQueue.finish(.saga) }) { offer in
+            .sheet(item: $sagaOffer, onDismiss: {
+                popupQueue.finish(.saga)
+                // La feuille suivante d'une mosaïque attend que le guichet ait
+                // respiré : demandée tout de suite, elle serait écartée.
+                Task {
+                    try? await Task.sleep(for: .milliseconds(450))
+                    presentNextQueuedSaga()
+                }
+            }) { offer in
                 SagaSheet(offer: offer, onClose: { sagaOffer = nil })
                     .environmentObject(libraryStore)
             }
@@ -172,22 +179,25 @@ struct SwipeDeckView: View {
             // c'est la suite du parcours, pas une feuille qu'on écarte, et elle
             // n'a pas de croix. La relance, en plein deck, reste une feuille.
             .fullScreenCover(item: gridBinding(.start), onDismiss: { popupQueue.finish(.startGrid) }) { kind in
-                ProbeGridSheet(kind: kind, excludedIDs: model.knownIDs) { families in
+                ProbeGridSheet(kind: kind, excludedIDs: model.knownIDs) { families, ticked in
                     model.gridRequest = nil
                     model.gridDidFinish(seenFamilies: families)
+                    offerSagasAfterGrid(ticked)
                 }
             }
             .sheet(item: gridBinding(.relance), onDismiss: { popupQueue.finish(.relanceGrid) }) { kind in
-                ProbeGridSheet(kind: kind, excludedIDs: model.knownIDs) { families in
+                ProbeGridSheet(kind: kind, excludedIDs: model.knownIDs) { families, ticked in
                     model.gridRequest = nil
                     model.gridDidFinish(seenFamilies: families)
+                    offerSagasAfterGrid(ticked)
                 }
             }
             // Les coups de cœur attendent leur tour derrière tout le reste :
             // ils ne sont jamais urgents.
-            .sheet(item: loveGridBinding, onDismiss: { popupQueue.finish(.loveGrid) }) { offer in
-                LoveGridSheet(offer: offer) { loved in
-                    lastLoveGridWasEmpty = loved == 0
+            .sheet(item: loveGridBinding, onDismiss: { popupQueue.finish(.loveGrid) }) { kind in
+                // La même planche que celle de la Porte, en une page : on est
+                // venu balayer.
+                TasteGridSheet(kind: kind, singlePage: true) { _ in
                     loveGrid = nil
                 }
                 .environmentObject(libraryStore)
@@ -337,11 +347,16 @@ struct SwipeDeckView: View {
     private var goalLine: some View {
         let door = doorStore.door(for: format)
         if !door.unlocked, let memory = door.artifact(.memoire) {
+            // Le même compte que la planche des paliers : la galerie du
+            // téléphone, carte en main comprise. Celui du serveur retardait
+            // d'un film (la dernière décision part au balayage suivant), et
+            // l'en-tête contredisait la planche.
+            let current = libraryStore.hasLoadedGalleryOnce ? localMemoryCount : memory.current
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(format == .series
-                         ? String(localized: "\(min(memory.current, memory.target)) sur \(memory.target) séries", bundle: .app)
-                         : String(localized: "\(min(memory.current, memory.target)) sur \(memory.target) films", bundle: .app))
+                         ? String(localized: "\(min(current, memory.target)) sur \(memory.target) séries", bundle: .app)
+                         : String(localized: "\(min(current, memory.target)) sur \(memory.target) films", bundle: .app))
                         .planLabel()
                         .monospacedDigit()
                         .foregroundStyle(Ink.ink)
@@ -352,12 +367,12 @@ struct SwipeDeckView: View {
                         .foregroundStyle(Ink.ink3)
                 }
                 PlanProgressRule(
-                    fraction: memory.target > 0 ? Double(memory.current) / Double(memory.target) : 0
+                    fraction: memory.target > 0 ? min(1, Double(current) / Double(memory.target)) : 0
                 )
             }
             .padding(.horizontal, Metrics.margin)
             .padding(.top, 8)
-            .animation(Metrics.shift, value: memory.current)
+            .animation(Metrics.shift, value: current)
             .accessibilityElement(children: .combine)
         }
     }
@@ -899,49 +914,126 @@ struct SwipeDeckView: View {
         }
     }
 
-    /// La planche des coups de cœur, quand ils prennent du retard sur les
-    /// films vus.
+    /// Le reste de la saga des films cochés dans une mosaïque.
     ///
-    /// Le rythme est celui de la Porte : douze cœurs pour cent films. À partir
-    /// de quinze films en galerie, deux cœurs de retard sur ce rythme font
-    /// poser la question, après un « vu », au plus toutes les vingt cartes
-    /// (quarante après une planche sans aucun cœur), jusqu'à ce que l'étape
-    /// soit validée. Jamais sur un geste qui vient d'ouvrir une autre feuille
-    /// ou un palier : la planche attendra le prochain « vu ».
+    /// La feuille ne s'ouvrait qu'après un « vu » dans le deck : Harry Potter
+    /// ou Star Wars, cochés dans une mosaïque où ils passent souvent les
+    /// premiers, ne la déclenchaient jamais, et la mosaïque suivante écarte
+    /// les sagas déjà en galerie. Deux feuilles au plus, la saga qui a le plus
+    /// de films à cocher d'abord : au-delà, le deck reprendra la suite.
+    private func offerSagasAfterGrid(_ ticked: [SwipeCard]) {
+        var seenCollections = Set<Int>()
+        let offers = ticked.compactMap { card -> SagaOffer? in
+            guard !card.isSeries, let collection = card.collectionID,
+                  seenCollections.insert(collection).inserted else { return nil }
+            let offer = SagaOffer(source: .collection(collection), originID: card.mediaItem.id, title: card.title)
+            return offeredSagas.contains(offer.id) ? nil : offer
+        }
+        guard !offers.isEmpty else { return }
+        Task {
+            // Les films cochés partent au serveur avec la mosaïque ; la galerie
+            // du téléphone les reçoit un instant plus tard. Le temps aussi que
+            // la mosaïque se referme et que le guichet respire.
+            try? await Task.sleep(for: .milliseconds(900))
+            let owned = Set(libraryStore.galleryItems.map(\.id)).union(ticked.map(\.mediaItem.id))
+            var ready: [SagaOffer] = []
+            for offer in offers {
+                if let prepared = await offer.prepared(excluding: owned) { ready.append(prepared) }
+            }
+            let remaining: (SagaOffer) -> Int = { offer in
+                (offer.preloaded?.parts ?? []).filter { !owned.contains($0.libraryID) }.count
+            }
+            queuedSagaOffers = Array(ready.sorted { remaining($0) > remaining($1) }.prefix(2))
+            presentNextQueuedSaga()
+        }
+    }
+
+    /// La suivante des feuilles de saga d'une mosaïque, une fois la
+    /// précédente refermée.
+    ///
+    /// Une mosaïque fait grossir la galerie d'un coup : une étape de la Porte
+    /// ou un badge s'annonce souvent juste après. La feuille attend alors que
+    /// l'écran se libère, une demi-minute au plus, au lieu de se perdre comme
+    /// celle d'un simple balayage.
+    private func presentNextQueuedSaga(attempt: Int = 0) {
+        guard sagaOffer == nil, !queuedSagaOffers.isEmpty else { return }
+        guard !popupQueue.isBusy else {
+            guard attempt < 50 else {
+                queuedSagaOffers = []
+                return
+            }
+            Task {
+                try? await Task.sleep(for: .milliseconds(600))
+                presentNextQueuedSaga(attempt: attempt + 1)
+            }
+            return
+        }
+        let next = queuedSagaOffers.removeFirst()
+        guard !offeredSagas.contains(next.id), popupQueue.request(.saga) else {
+            presentNextQueuedSaga(attempt: attempt + 1)
+            return
+        }
+        offeredSagas.insert(next.id)
+        toast = nil
+        sagaOffer = next
+    }
+
+    /// Une planche de goût, seulement quand elle compte pour ouvrir CinéMatch.
+    ///
+    /// Le rythme : les quatre étapes de la Porte s'allument ensemble à cent
+    /// films. À N films, chaque étape de goût devrait en être à N %. Son retard
+    /// est l'écart entre cette part attendue et la part faite. La planche posée
+    /// est celle de l'étape la plus en retard, si le retard est réel (2 cœurs,
+    /// ou 4 films à revoir). Une étape faite, ou à l'heure, n'est jamais
+    /// demandée.
+    ///
+    /// Au plus une planche toutes les vingt cartes, après un « vu », pour ne
+    /// pas freiner le balayage qui remplit la galerie. Toutes les dix dès
+    /// quatre-vingt-cinq films, pour que le goût ne retarde pas l'ouverture.
+    /// Une question restée vide deux pages de suite attend quarante cartes.
+    /// Toujours par le guichet : jamais sur un geste qui vient d'ouvrir une
+    /// autre fenêtre.
     private func offerLoveGridIfDue(after direction: SwipeDirection, card: SwipeCard) {
         cardsSinceLoveGrid += 1
-        let spacing = lastLoveGridWasEmpty ? Self.loveGridSpacingAfterNone : Self.loveGridSpacing
-        guard case .right = direction, format == .film, !card.isSeries,
-              loveGrid == nil, cardsSinceLoveGrid >= spacing
-        else { return }
+        guard case .right = direction, format == .film, !card.isSeries, loveGrid == nil else { return }
 
         let door = doorStore.door(for: .film)
-        guard let coeur = door.artifact(.coeur), !coeur.done else { return }
         let films = libraryStore.galleryFilms
-        guard films.count >= Self.loveGridMinimumGallery else { return }
-        let memoryTarget = max(1, door.artifact(.memoire)?.target ?? 100)
-        let expected = coeur.target * films.count / memoryTarget
-        guard expected - libraryStore.lovedCount >= Self.loveGridMinimumLag else { return }
+        let pace = min(1, Double(films.count) / Double(max(1, door.artifact(.memoire)?.target ?? 100)))
+        let open = films.filter { !$0.isLoved && $0.dislikedAt == nil }.count
+        guard open >= Self.loveGridMinimumEntries else { return }
 
-        let offered = UserDefaults.standard.stringArray(forKey: Self.loveGridOfferedKey) ?? []
-        let entries = LoveGridOffer.candidates(
-            from: films, excluding: Set(offered), sessionStart: sessionStart
-        )
-        guard entries.count >= Self.loveGridMinimumEntries,
-              popupQueue.request(.loveGrid) else { return }
+        func spacing(_ kind: TasteGridKind) -> Int {
+            if films.count >= 85 { return 10 }
+            return TasteGridSheet.emptyPages(kind) >= 2 ? 40 : 20
+        }
+        /// Le retard d'une étape de goût, ou `nil` si elle n'est pas à poser.
+        func lag(_ kind: TasteGridKind) -> Double? {
+            let key: DoorArtifactKey = kind == .loved ? .coeur : .deceptions
+            let minimumGallery = kind == .loved ? Self.loveGridMinimumGallery : Self.deceptionGridMinimumGallery
+            guard let artifact = door.artifact(key), !artifact.done, artifact.target > 0,
+                  films.count >= minimumGallery, cardsSinceLoveGrid >= spacing(kind) else { return nil }
+            let current = kind == .loved ? max(artifact.current, libraryStore.lovedCount) : artifact.current
+            let value = pace - Double(current) / Double(artifact.target)
+            let minimum = kind == .loved ? Self.lovedMinimumLag : Self.dislikedMinimumLag
+            return value >= minimum ? value : nil
+        }
 
-        // Un film montré ne revient pas dans une planche suivante : la
-        // personne a déjà dit qu'il n'était pas un coup de cœur. La liste ne
-        // garde que les quatre cents derniers, de quoi couvrir la galerie.
-        let remembered = offered + entries.map(\.id)
-        UserDefaults.standard.set(Array(remembered.suffix(400)), forKey: Self.loveGridOfferedKey)
+        let kind: TasteGridKind
+        switch (lag(.loved), lag(.disliked)) {
+        case let (loved?, disliked?): kind = loved >= disliked ? .loved : .disliked
+        case (.some, nil): kind = .loved
+        case (nil, .some): kind = .disliked
+        case (nil, nil): return
+        }
+        guard popupQueue.request(.loveGrid) else { return }
         cardsSinceLoveGrid = 0
-        loveGrid = LoveGridOffer(entries: entries)
+        loveGrid = kind
     }
 
     /// La planche des coups de cœur à présenter, tenue tant qu'autre chose
     /// occupe l'écran.
-    private var loveGridBinding: Binding<LoveGridOffer?> {
+    private var loveGridBinding: Binding<TasteGridKind?> {
         Binding(
             get: { popupQueue.current == .loveGrid ? loveGrid : nil },
             set: { if $0 == nil { loveGrid = nil } }

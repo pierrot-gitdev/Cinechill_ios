@@ -271,6 +271,33 @@ final class LibraryStore: ObservableObject {
         }
     }
 
+    /// Enregistre plusieurs coups de cœur d'un geste, et rend la main quand le
+    /// serveur les a tous écrits. Vrai si tout est passé. L'écran des coups de
+    /// cœur de la Porte s'en sert : il ne se referme qu'une fois enregistré.
+    func saveLoves(_ changes: [(item: MediaItem, loved: Bool)]) async -> Bool {
+        let writable = changes.filter { isInGallery($0.item) }
+        for change in writable { pendingLoveByItemID[change.item.id] = change.loved }
+        var failed = false
+        await withTaskGroup(of: Bool.self) { group in
+            for change in writable {
+                group.addTask { [weak self] in
+                    guard let self else { return false }
+                    do {
+                        try await self.callSetGalleryLove(itemID: change.item.id, loved: change.loved)
+                        return true
+                    } catch {
+                        return false
+                    }
+                }
+            }
+            for await ok in group where !ok { failed = true }
+        }
+        // Le listener confirme d'ordinaire avant ce point ; sinon, l'attente
+        // ne doit pas rester affichée sur une écriture réussie.
+        for change in writable { clearPendingLove(for: change.item.id, ifStill: change.loved) }
+        return !failed
+    }
+
     func isInWatchlist(_ item: MediaItem) -> Bool {
         watchlistIndex.contains(item)
     }
