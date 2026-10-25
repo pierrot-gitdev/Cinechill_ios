@@ -8,8 +8,9 @@ import SwiftUI
 /// L'onglet CinéMatch : la Porte, puis le parcours de la soirée.
 ///
 /// La Porte garde son état de session pour le seuil, sa planche des coups de
-/// cœur et sa remesure au retour sur l'onglet. Elle compte quatre étapes depuis
-/// le 18 octobre 2026 : les comparaisons entre films vus sont parties.
+/// cœur et sa remesure au retour sur l'onglet. Elle compte trois étapes depuis
+/// le 25 octobre 2026 : les comparaisons entre films vus sont parties le 18,
+/// la watchlist le 25.
 ///
 /// Passé le seuil, l'écran n'a plus de décor commun : chaque étape porte le sien
 /// (le salon à l'accueil, une page plate pour le départ, la planche des cinq).
@@ -36,6 +37,7 @@ struct CineMatchView: View {
 
     @State private var showProfile = false
     @State private var showLovePicker = false
+    @State private var showDeceptionGrid = false
     /// Les formats dont le seuil a été franchi **dans cette ouverture de
     /// l'app**. Volontairement un état de session et non une préférence
     /// gardée : la cérémonie se rejoue à chaque lancement, elle ne se consomme
@@ -66,6 +68,12 @@ struct CineMatchView: View {
                     .environmentObject(libraryStore)
                     .environmentObject(authService)
                     .environmentObject(socialStore)
+            }
+            .sheet(isPresented: $showDeceptionGrid, onDismiss: {
+                Task { await doorStore.refresh() }
+            }) {
+                DeceptionGridSheet(onClose: { showDeceptionGrid = false })
+                    .environment(doorStore)
             }
             .sheet(isPresented: $showLovePicker) {
                 LovePickerView(
@@ -137,6 +145,7 @@ struct CineMatchView: View {
                 onProfileTap: { showProfile = true },
                 onDiscover: { selectedTab = 2 },
                 onLovePicker: { showLovePicker = true },
+                onDeceptionGrid: { showDeceptionGrid = true },
                 onEnter: {
                     let crossed = format
                     withAnimation(.easeOut(duration: 0.45)) { _ = crossedFormats.insert(crossed) }

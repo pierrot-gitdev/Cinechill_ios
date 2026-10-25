@@ -1014,22 +1014,6 @@
         }
       }
     },
-    "%lld films dans ta watchlist" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld movies in your watchlist"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld films dans ta watchlist"
-          }
-        }
-      }
-    },
     "%lld films dépassent %@ · Tout voir" : {
       "localizations" : {
         "en" : {
@@ -1258,22 +1242,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld saisons"
-          }
-        }
-      }
-    },
-    "%lld saisons dans ta watchlist" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld seasons in your watchlist"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld saisons dans ta watchlist"
           }
         }
       }
@@ -1734,22 +1702,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "3 à 20 caractères, minuscules, chiffres, point et tiret bas."
-          }
-        }
-      }
-    },
-    "8 caractères" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "8 characters"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "8 caractères"
           }
         }
       }
@@ -6820,22 +6772,6 @@
         }
       }
     },
-    "Il devrait te plaire." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You'll probably like it."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il devrait te plaire."
-          }
-        }
-      }
-    },
     "Il est dans ta liste depuis un moment." : {
       "localizations" : {
         "en" : {
@@ -7952,22 +7888,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le désigne comme le plus sombre."
-          }
-        }
-      }
-    },
-    "Le film de ce soir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tonight's movie"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le film de ce soir"
           }
         }
       }
@@ -9824,38 +9744,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On peut quand même te proposer cinq séries."
-          }
-        }
-      }
-    },
-    "On pourra aussi te proposer des films de ta watchlist." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We can also suggest movies from your watchlist."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On pourra aussi te proposer des films de ta watchlist."
-          }
-        }
-      }
-    },
-    "On pourra aussi te proposer des séries de ta watchlist." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We'll also be able to suggest series from your watchlist."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On pourra aussi te proposer des séries de ta watchlist."
           }
         }
       }
@@ -14296,22 +14184,6 @@
         }
       }
     },
-    "Trouve ton film avec Cinechill." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Find your movie with Cinechill."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trouve ton film avec Cinechill."
-          }
-        }
-      }
-    },
     "Trouver des films" : {
       "localizations" : {
         "en" : {
@@ -15289,22 +15161,6 @@
         }
       }
     },
-    "une majuscule ou un chiffre" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "one capital or one digit"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "une majuscule ou un chiffre"
-          }
-        }
-      }
-    },
     "Une notification à 19 h. Ta réponse range le film dans ta galerie et compte pour tes prochains films." : {
       "localizations" : {
         "en" : {
@@ -15589,22 +15445,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vider une watchlist d'au moins 15 films."
-          }
-        }
-      }
-    },
-    "Voir ce qu'il reste" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See what's left"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voir ce qu'il reste"
           }
         }
       }
@@ -16077,6 +15917,214 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "En continuant avec Apple ou Google, tu acceptes les [conditions d'utilisation](%1$@) et la [politique de confidentialité](%2$@)."
+          }
+        }
+      }
+    },
+    "8 caractères minimum" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At least 8 characters"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "8 caractères minimum"
+          }
+        }
+      }
+    },
+    "Une majuscule ou un chiffre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An uppercase letter or a number"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une majuscule ou un chiffre"
+          }
+        }
+      }
+    },
+    "1 film ne m'a pas plu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 movie let me down"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 film ne m'a pas plu"
+          }
+        }
+      }
+    },
+    "%lld films ne m'ont pas plu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld movies let me down"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld films ne m'ont pas plu"
+          }
+        }
+      }
+    },
+    "%lld films de ta galerie passés en revue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld movies from your gallery reviewed"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld films de ta galerie passés en revue"
+          }
+        }
+      }
+    },
+    "Avec les films qui t'ont déçu, on sait ce qu'il ne faut pas te proposer." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With the movies that let you down, we know what not to suggest."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec les films qui t'ont déçu, on sait ce qu'il ne faut pas te proposer."
+          }
+        }
+      }
+    },
+    "Dire ce qui m'a déçu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tell what let me down"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dire ce qui m'a déçu"
+          }
+        }
+      }
+    },
+    "Déceptions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letdowns"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déceptions"
+          }
+        }
+      }
+    },
+    "Je les ai tous aimés" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I liked them all"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je les ai tous aimés"
+          }
+        }
+      }
+    },
+    "Lesquels n'as-tu pas aimés ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which ones didn't you like?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesquels n'as-tu pas aimés ?"
+          }
+        }
+      }
+    },
+    "Plus rien à passer en revue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing left to review"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus rien à passer en revue"
+          }
+        }
+      }
+    },
+    "Touche ceux qui t'ont déçu. On ne te proposera plus de films comme eux." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the ones that let you down. We won't suggest movies like them anymore."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touche ceux qui t'ont déçu. On ne te proposera plus de films comme eux."
+          }
+        }
+      }
+    },
+    "Tous les films de ta galerie ont été vus ici." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every movie in your gallery has been reviewed here."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tous les films de ta galerie ont été vus ici."
           }
         }
       }

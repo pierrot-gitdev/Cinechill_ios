@@ -280,14 +280,17 @@ struct PlanAlert: View {
 
 // MARK: - Les critères
 
-/// Les exigences du mot de passe, écrites plutôt que jaugées.
+/// Les exigences du mot de passe, écrites plutôt que jaugées, une par ligne.
 ///
-/// Chaque critère atteint passe de l'ardoise à l'étain. Une jauge à segments
-/// colorés dirait la même chose en inventant un composant et deux couleurs, et
-/// surtout elle ne dirait pas *ce qui manque* — un utilisateur devant deux
-/// barres oranges ne sait pas quoi taper de plus.
+/// Chaque critère atteint reçoit sa coche. Une jauge à segments colorés dirait
+/// la même chose en inventant un composant, et surtout elle ne dirait pas *ce
+/// qui manque* : un utilisateur devant deux barres oranges ne sait pas quoi
+/// taper de plus. Les deux critères sur une seule ligne grise, eux, ne se
+/// lisaient pas avant un refus.
 struct PlanCriteria: View {
     let password: String
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     static func isLongEnough(_ value: String) -> Bool { value.count >= 8 }
     static func hasVariety(_ value: String) -> Bool {
@@ -298,13 +301,11 @@ struct PlanCriteria: View {
     }
 
     var body: some View {
-        HStack(spacing: 6) {
-            item(String(localized: "8 caractères", bundle: .app), met: Self.isLongEnough(password))
-            Text(verbatim: "·").foregroundStyle(AuthInk.ink3)
-            item(String(localized: "une majuscule ou un chiffre", bundle: .app), met: Self.hasVariety(password))
+        VStack(alignment: .leading, spacing: 7) {
+            item(String(localized: "8 caractères minimum", bundle: .app), met: Self.isLongEnough(password))
+            item(String(localized: "Une majuscule ou un chiffre", bundle: .app), met: Self.hasVariety(password))
         }
-        .planFont(12)
-        .padding(.top, 9)
+        .padding(.top, 10)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
             Self.isAcceptable(password)
@@ -314,9 +315,17 @@ struct PlanCriteria: View {
     }
 
     private func item(_ title: String, met: Bool) -> some View {
-        Text(title)
-            .foregroundStyle(met ? AuthInk.ink2 : AuthInk.ink3)
-            .animation(AuthMetrics.shift, value: met)
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: met ? "checkmark.circle.fill" : "circle")
+                .planFont(12.5, weight: .medium)
+                .foregroundStyle(met ? AuthInk.light : AuthInk.ink3)
+                .contentTransition(reduceMotion ? .opacity : .symbolEffect(.replace))
+            Text(title)
+                .planFont(12.5)
+                .foregroundStyle(met ? AuthInk.ink : AuthInk.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .animation(AuthMetrics.shift, value: met)
     }
 }
 

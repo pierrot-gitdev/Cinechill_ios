@@ -72,6 +72,15 @@ struct OnboardingGesturesPage: View {
         let back = deck[(index + 1) % deck.count]
 
         return ZStack {
+            // Les deux issues latérales, hors de la carte : sur une carte de
+            // 165 pt, les repères de la boussole se serraient l'un contre
+            // l'autre, et la carte partait sans qu'on voie de quel côté.
+            HStack(spacing: 0) {
+                sideCue(.left)
+                Color.clear.frame(width: size.width)
+                sideCue(.right)
+            }
+
             card(back)
                 .frame(width: size.width, height: size.height)
                 .scaleEffect(0.95)
@@ -109,6 +118,27 @@ struct OnboardingGesturesPage: View {
         return (drag.width > 0 ? .seen : .notSeen, min(1, Double(abs(drag.width) / 56)))
     }
 
+    /// La flèche et la destination du côté où part la carte. Elles s'allument
+    /// au rythme du geste et glissent d'un pas dans sa direction.
+    private func sideCue(_ direction: SwipeDirection) -> some View {
+        let verdictHere: SwipeVerdict = direction == .right ? .seen : .notSeen
+        let intensity = verdict.map { $0.0 == verdictHere ? $0.1 : 0 } ?? 0
+        let step: CGFloat = reduceMotion ? 0 : (direction == .right ? 1 : -1) * 8 * intensity
+
+        return VStack(spacing: 7) {
+            SwipeArrowGlyph(direction: direction.arrow, side: 24)
+            Text(direction.destination)
+                .planLabel()
+                .lineLimit(2)
+                .minimumScaleFactor(0.75)
+                .multilineTextAlignment(.center)
+        }
+        .foregroundStyle(direction == .right ? Ink.light : Ink.ink2)
+        .frame(maxWidth: .infinity)
+        .offset(x: step)
+        .opacity(intensity)
+    }
+
     // MARK: - La légende
 
     private var legend: some View {
@@ -116,7 +146,7 @@ struct OnboardingGesturesPage: View {
             row(.seen, glyph: AnyView(SwipeArrowGlyph(direction: .right, side: 14)),
                 what: String(localized: "Tu l'as vu", bundle: .app),
                 how: String(localized: "Glisse à droite", bundle: .app),
-                destination: String(localized: "Galerie", bundle: .app))
+                destination: SwipeDirection.right.destination)
             row(.watchlist, glyph: AnyView(SwipeArrowGlyph(direction: .up, side: 14)),
                 what: String(localized: "Tu veux le voir", bundle: .app),
                 how: String(localized: "Glisse vers le haut", bundle: .app),
@@ -124,7 +154,7 @@ struct OnboardingGesturesPage: View {
             row(.notSeen, glyph: AnyView(SwipeArrowGlyph(direction: .left, side: 14)),
                 what: String(localized: "Tu ne l'as pas vu", bundle: .app),
                 how: String(localized: "Glisse à gauche", bundle: .app),
-                destination: String(localized: "Plus tard", bundle: .app))
+                destination: SwipeDirection.left.destination)
             row(.love, glyph: AnyView(SwipeDoubleTapGlyph(side: 14)),
                 what: String(localized: "Tu l'as adoré", bundle: .app),
                 how: String(localized: "Touche deux fois l'affiche", bundle: .app),
@@ -193,8 +223,9 @@ struct OnboardingGesturesPage: View {
         }
 
         let target: CGSize = switch gesture {
-        case .seen: CGSize(width: 58, height: 4)
-        case .notSeen: CGSize(width: -58, height: 4)
+        // Un pas assez long pour que la direction se lise avant le départ.
+        case .seen: CGSize(width: 84, height: 4)
+        case .notSeen: CGSize(width: -84, height: 4)
         default: CGSize(width: 0, height: -62)
         }
 
@@ -203,10 +234,11 @@ struct OnboardingGesturesPage: View {
             drag = target
             try? await Task.sleep(for: .milliseconds(900))
         } else {
-            withAnimation(.timingCurve(0.45, 0, 0.2, 1, duration: 0.62)) { drag = target }
-            try? await Task.sleep(for: .milliseconds(620))
+            withAnimation(.timingCurve(0.45, 0, 0.2, 1, duration: 0.7)) { drag = target }
+            try? await Task.sleep(for: .milliseconds(700))
             withAnimation(SwipeMotion.lock) { isArmed = true }
-            try? await Task.sleep(for: .milliseconds(240))
+            // Le temps de lire la destination allumée avant que la carte parte.
+            try? await Task.sleep(for: .milliseconds(450))
         }
 
         let away: CGSize = switch gesture {

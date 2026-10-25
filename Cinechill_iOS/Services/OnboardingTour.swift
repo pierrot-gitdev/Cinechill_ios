@@ -30,13 +30,16 @@ final class OnboardingTour {
 
     enum Step: Int, CaseIterable {
         case welcome = 0
-        case cinematch
+        // L'écran « Trouve ton film avec Cinechill. », qui suivait l'accueil,
+        // a été retiré le 25 oct. 2026 : il proposait un film avant
+        // d'expliquer qu'il faut d'abord connaître les goûts. Le parcours
+        // commence par cette explication.
         case tastes
         case platforms
         case gestures
 
         /// Le cran de la barre de progression : l'accueil n'en a pas, les
-        /// quatre écrans suivants la remplissent.
+        /// trois écrans suivants la remplissent.
         var progress: Double { Double(rawValue) / Double(Step.allCases.count - 1) }
     }
 
@@ -50,7 +53,7 @@ final class OnboardingTour {
 
     /// La version du parcours. Une visite de l'ancienne version restée en
     /// cours reprend au début : ses numéros d'étape ne veulent plus rien dire.
-    private static let version = 2
+    private static let version = 3
 
     private let defaults: UserDefaults
     private var uid: String?

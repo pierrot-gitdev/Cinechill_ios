@@ -19,10 +19,11 @@ import SwiftUI
 ///   seconde vers les familles de niche si rien n'est touché, avec une
 ///   recherche pour nommer soi-même un film aimé.
 ///
-/// Ce qui est touché part en « vu ». Ce qui ne l'est pas n'est écrit nulle
-/// part : le serveur l'apprend comme un demi-« pas vu », et la bibliothèque
-/// n'en garde aucune trace. Un film cherché et touché part en coup de cœur :
-/// on l'a cherché parce qu'on l'a aimé.
+/// Ce qui est touché part en « vu ». Ce qui ne l'est pas part en « pas vu » :
+/// la question est « lesquels as-tu vus ? », et une affiche laissée vide y
+/// répond. Envoyée comme un demi-« pas vu » qui n'écrivait rien, elle
+/// revenait ensuite dans le deck de Découvrir. Un film cherché et touché part
+/// en coup de cœur : on l'a cherché parce qu'on l'a aimé.
 struct ProbeGridSheet: View {
     let kind: ProbeGridKind
     /// Ce qui est rangé ou déjà servi : rien de cela ne doit revenir ici.
@@ -66,13 +67,18 @@ struct ProbeGridSheet: View {
             VStack(spacing: 0) {
                 PlanHeader(
                     String(localized: "Lesquels as-tu vus ?", bundle: .app),
-                    leading: .close,
+                    // La mosaïque de départ ne se ferme pas : « Aucun de
+                    // ceux-là » fait avancer, et l'échec garde son « Fermer ».
+                    leading: kind == .start ? .none : .close,
                     onLeading: close
                 ) {
                     if let step {
                         PlanHeaderCount(value: step)
                     }
                 }
+                // En feuille, l'en-tête touchait presque le bord du haut. En
+                // plein écran, la zone sûre fait déjà cet écart.
+                .padding(.top, kind == .start ? 0 : 14)
 
                 if isLoading {
                     loadingState
@@ -372,7 +378,7 @@ struct ProbeGridSheet: View {
         let decisions = ticked.map {
             PendingSwipe(card: $0, decision: .seen, loved: searched.contains($0.id), via: .grid)
         } + untouched.map {
-            PendingSwipe(card: $0, decision: .skipped, via: .grid, soft: true)
+            PendingSwipe(card: $0, decision: .skipped, via: .grid)
         }
 
         let finishing = isLastStage(tickedAny: !ticked.isEmpty)

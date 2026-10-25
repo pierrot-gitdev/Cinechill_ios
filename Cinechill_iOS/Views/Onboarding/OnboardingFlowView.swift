@@ -41,7 +41,6 @@ struct OnboardingFlowView: View {
     private func page(_ step: OnboardingTour.Step) -> some View {
         switch step {
         case .welcome: OnboardingWelcomePage()
-        case .cinematch: OnboardingCineMatchPage()
         case .tastes: OnboardingTastesPage()
         case .platforms: OnboardingPlatformsPage()
         case .gestures: OnboardingGesturesPage()

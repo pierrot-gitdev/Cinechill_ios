@@ -206,7 +206,7 @@ enum LocalReminders {
                 : String(localized: "Plus que \(missing) films avant CinéMatch", bundle: .app)
             return (title, String(localized: "Ajoute ceux que tu as déjà vus, en quelques swipes.", bundle: .app), "decouvrir")
         }
-        let steps = DoorArtifactKey.allCases.filter { door.artifact($0)?.done != true }.count
+        let steps = door.keys.filter { door.artifact($0)?.done != true }.count
         guard steps > 0 else { return nil }
         let title = steps == 1
             ? String(localized: "Plus qu'une étape avant CinéMatch", bundle: .app)

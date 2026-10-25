@@ -660,8 +660,11 @@ private extension LibraryStore {
     private static func adoptAccount(_ uid: String) {
         let defaults = UserDefaults.standard
         guard defaults.string(forKey: lastAccountKey) != uid else { return }
-        // Les anciens noms de la Porte, d'avant le passage à quatre étapes.
-        let legacy = ["cinematch.door", "cinematch.seriesDoor"]
+        // Les anciens noms de la Porte, à cinq puis quatre étapes.
+        let legacy = [
+            "cinematch.door", "cinematch.seriesDoor",
+            "cinematch.door.v2", "cinematch.seriesDoor.v2",
+        ]
         for key in legacy + DoorStore.accountScopedKeys + SwipeDeckView.accountScopedKeys {
             defaults.removeObject(forKey: key)
         }

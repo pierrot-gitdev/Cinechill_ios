@@ -840,11 +840,14 @@ struct FilmDetailView: View {
               let collectionID = detail?.collectionID,
               (detail?.collectionCount ?? 0) >= 2 else { return }
         hasOfferedSaga = true
-        sagaOffer = SagaOffer(
+        let offer = SagaOffer(
             source: .collection(collectionID),
             originID: displayItem.id,
             title: displayItem.title
         )
+        let owned = Set(libraryStore.galleryItems.map(\.id))
+        // Ne s'ouvre que s'il reste un autre opus à cocher.
+        Task { sagaOffer = await offer.prepared(excluding: owned) }
     }
 
     // MARK: - Confirmation

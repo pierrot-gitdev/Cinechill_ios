@@ -249,7 +249,7 @@ struct AuthView: View {
                 accessory: .action(String(localized: "Oublié ?", bundle: .app)) { go(.resetRequest) },
                 error: message(for: .password),
                 isDisabled: isWorking,
-                onSubmit: submit
+                onSubmit: { if canSignIn { submit() } }
             )
         }
         .padding(.top, AuthMetrics.formGap)
@@ -259,7 +259,12 @@ struct AuthView: View {
         actions {
             PlanButton(
                 title: String(localized: "Entrer", bundle: .app), loadingTitle: String(localized: "Connexion…", bundle: .app),
-                isLoading: isWorking, action: submit
+                isLoading: isWorking,
+                // Utilisable dès qu'une adresse plausible et un mot de passe
+                // sont là, pas avant : à l'arrivée sur l'écran, le bouton
+                // paraissait prêt devant deux champs vides.
+                isEnabled: canSignIn,
+                action: submit
             )
             doors
             Text(signInLegalNotice)
@@ -268,6 +273,10 @@ struct AuthView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 8)
         }
+    }
+
+    private var canSignIn: Bool {
+        AuthService.isPlausibleEmail(AuthService.normalize(email)) && !password.isEmpty
     }
 
     // MARK: Inscription
@@ -583,10 +592,15 @@ struct AuthView: View {
                 // « Suivant » ne mène au champ « Confirmer » que s'il existe.
                 onSubmit: { if PlanCriteria.isAcceptable(password) { focus = .confirmation } else { submit() } }
             )
-            if message(for: .password) == nil {
+            // Dès que le champ prend la main, et tant qu'il porte quelque
+            // chose : les exigences se lisent avant la première lettre, pas
+            // après un refus.
+            if message(for: .password) == nil, focus == .password || !password.isEmpty {
                 PlanCriteria(password: password)
+                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
             }
         }
+        .animation(AuthMetrics.unfold, value: focus == .password || !password.isEmpty)
     }
 
     private var confirmationField: some View {

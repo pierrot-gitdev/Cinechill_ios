@@ -268,6 +268,17 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "setfilmverdict", queryItems: [])
     }
 
+    /// La planche « Lesquels n'as-tu pas aimés ? » de la Porte.
+    static func deceptionGrid() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "getdeceptiongrid", queryItems: [])
+    }
+
+    static func recordDeceptionGrid() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "recorddeceptiongrid", queryItems: [])
+    }
+
     static func axisQuestion() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }
         return buildURL(baseURL: baseURL, functionName: "getaxisquestion", queryItems: [])

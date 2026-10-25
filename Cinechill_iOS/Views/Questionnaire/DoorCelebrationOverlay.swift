@@ -22,14 +22,14 @@ struct DoorCelebrationOverlay: View {
     /// yeux : c'est le seul mouvement de la planche.
     let unlocked: DoorArtifactKey
     let onDismiss: () -> Void
-    /// « Voir ce qu'il reste » : la Porte, dans l'onglet CinéMatch.
+    /// « Ouvrir CinéMatch », une fois la dernière étape gagnée.
     let onShowDoor: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var revealed = false
 
     private var series: Bool { door.series }
-    private var left: Int { max(0, DoorState.stepCount - door.litCount) }
+    private var left: Int { max(0, door.stepCount - door.litCount) }
     private var isUnlocked: Bool { left == 0 }
 
     var body: some View {
@@ -123,8 +123,8 @@ struct DoorCelebrationOverlay: View {
 
     private var countText: String {
         door.litCount <= 1
-            ? String(localized: "\(door.litCount) étape sur \(DoorState.stepCount)", bundle: .app)
-            : String(localized: "\(door.litCount) étapes sur \(DoorState.stepCount)", bundle: .app)
+            ? String(localized: "\(door.litCount) étape sur \(door.stepCount)", bundle: .app)
+            : String(localized: "\(door.litCount) étapes sur \(door.stepCount)", bundle: .app)
     }
 
     /// Ce que la planche dit en clair : ce qu'il reste, et ce que CinéMatch
@@ -135,7 +135,7 @@ struct DoorCelebrationOverlay: View {
                 ? String(localized: "Il te propose une série à commencer, d'après tes goûts.", bundle: .app)
                 : String(localized: "Il te propose le film de ce soir, d'après tes goûts.", bundle: .app)
         }
-        if left == 1, let missing = DoorArtifactKey.allCases.first(where: { door.artifact($0)?.done != true }) {
+        if left == 1, let missing = door.keys.first(where: { door.artifact($0)?.done != true }) {
             return String(localized: "Plus qu'une étape avant que CinéMatch s'ouvre : \(missing.displayName(series: series)).", bundle: .app)
         }
         return series
@@ -151,20 +151,10 @@ struct DoorCelebrationOverlay: View {
             PlanButton(title: String(localized: "Ouvrir CinéMatch", bundle: .app), action: onShowDoor)
             textButton(String(localized: "Plus tard", bundle: .app), action: onDismiss)
         } else {
-            Button(action: onDismiss) {
-                Text("Continuer", bundle: .app)
-                    .planFont(15, weight: .semibold)
-                    .foregroundStyle(Ink.ink)
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: Metrics.buttonSecondary)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-                            .strokeBorder(Ink.ruleSet, lineWidth: 1)
-                    )
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(PressableScaleStyle(scale: 0.97))
-            textButton(String(localized: "Voir ce qu'il reste", bundle: .app), action: onShowDoor)
+            // Une seule issue : la rangée dit déjà ce qu'il reste, et « Voir ce
+            // qu'il reste » emmenait vers la Porte en coupant ce qu'on faisait.
+            // Seule, l'action prend l'aplat de l'action principale.
+            PlanButton(title: String(localized: "Continuer", bundle: .app), action: onDismiss)
         }
     }
 
@@ -183,13 +173,13 @@ struct DoorCelebrationOverlay: View {
 
     // MARK: - La rangée
 
-    /// Les quatre artéfacts, à leur place et nommés. Les acquis sont pleins, les
+    /// Les trois artéfacts, à leur place et nommés. Les acquis sont pleins, les
     /// autres en pierre — la même grammaire que sur la porte, pour qu'on
     /// reconnaisse l'objet sans avoir à l'apprendre deux fois. Les noms disent
     /// ce qui reste sans qu'on ait à toucher la porte.
     private var row: some View {
         HStack(alignment: .top, spacing: 8) {
-            ForEach(DoorArtifactKey.allCases, id: \.self) { key in
+            ForEach(door.keys, id: \.self) { key in
                 VStack(spacing: 7) {
                     artifact(key)
                     Text(key.displayName(series: series))
@@ -238,7 +228,7 @@ struct DoorCelebrationOverlay: View {
 
     private var gauge: some View {
         HStack(spacing: 6) {
-            ForEach(DoorArtifactKey.allCases, id: \.self) { key in
+            ForEach(door.keys, id: \.self) { key in
                 let lit = (door.artifact(key)?.done == true) && (key != unlocked || revealed)
                 Rectangle()
                     .fill(lit ? Color(hex: key.hue) : Ink.rule)

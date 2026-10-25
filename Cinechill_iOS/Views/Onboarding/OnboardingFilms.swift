@@ -124,9 +124,6 @@ enum OnboardingFilms {
         ]
     }
 
-    /// Le film de l'écran CinéMatch.
-    static var tonight: OnboardingFilm { inception }
-
     /// Les cartes de l'écran des gestes, dans l'ordre où elles passent.
     static var gestureDeck: [OnboardingFilm] {
         [backToTheFuture, titanic, lionKing, forrestGump, fightClub]

@@ -26,6 +26,9 @@ struct MainTabView: View {
     /// L'état de la porte pour toute l'application : un artéfact se gagne
     /// ailleurs que dans l'onglet CinéMatch, et doit s'annoncer là où l'on est.
     @State private var doorStore = DoorStore()
+    /// Le guichet des fenêtres : badges, Porte, feuilles et planches de
+    /// Découvrir passent une à la fois, dans l'ordre de `PopupQueue.Kind`.
+    @State private var popupQueue = PopupQueue()
     @State private var selectedTab = 0
     /// Onglets déjà ouverts au moins une fois. Ils restent montés pour garder
     /// leur état — position de scroll, pile de navigation, réponses en cours —
@@ -89,6 +92,7 @@ struct MainTabView: View {
         .environment(catalog)
         .environment(badgesModel)
         .environment(doorStore)
+        .environment(popupQueue)
         .overlay(alignment: .top) { writeFailureToast }
         .overlay { celebrationOverlay }
         .overlay { doorOverlay }
@@ -116,8 +120,29 @@ struct MainTabView: View {
                 .environment(badgesModel)
                 .environment(doorStore)
         }
-        .sheet(item: $notificationPermission.pendingPrompt) { moment in
+        .sheet(item: notificationPromptBinding, onDismiss: { popupQueue.finish(.notificationPrompt) }) { moment in
             NotificationPromptSheet(moment: moment)
+        }
+        // Chaque annonce demande son tour au guichet. Deux badges d'affilée
+        // repassent par lui : le second attend la respiration.
+        .onChange(of: badgesModel.currentCelebration?.id, initial: true) { old, new in
+            if old != nil { popupQueue.finish(.badge) }
+            if new != nil { popupQueue.request(.badge) }
+        }
+        .onChange(of: doorStore.celebration, initial: true) { old, new in
+            if old != nil { popupQueue.finish(.door) }
+            if new != nil { popupQueue.request(.door) }
+        }
+        .onChange(of: notificationPermission.pendingPrompt, initial: true) { _, moment in
+            guard moment != nil else {
+                popupQueue.withdraw(.notificationPrompt)
+                return
+            }
+            // Écartée parce qu'une autre fenêtre vient de partir : la demande
+            // reviendra au prochain moment qui la justifie.
+            if !popupQueue.request(.notificationPrompt) {
+                notificationPermission.pendingPrompt = nil
+            }
         }
         // « Ce soir ? » et les rappels se réécrivent à chaque départ, sur l'état
         // de la Porte et de la galerie à cet instant ; les rappels tombent au
@@ -208,6 +233,14 @@ struct MainTabView: View {
                 ).post()
             }
         }
+    }
+
+    /// La demande d'autorisation des notifications, à son tour seulement.
+    private var notificationPromptBinding: Binding<NotificationPermission.Moment?> {
+        Binding(
+            get: { popupQueue.current == .notificationPrompt ? notificationPermission.pendingPrompt : nil },
+            set: { if $0 == nil { notificationPermission.pendingPrompt = nil } }
+        )
     }
 
     /// Ce qui, dans la bibliothèque, peut faire bouger un artéfact.
@@ -333,7 +366,7 @@ struct MainTabView: View {
 
     @ViewBuilder
     private var celebrationOverlay: some View {
-        if let celebration = badgesModel.currentCelebration {
+        if popupQueue.current == .badge, let celebration = badgesModel.currentCelebration {
             AchievementCelebrationOverlay(
                 celebration: celebration,
                 onEquip: {
@@ -358,12 +391,11 @@ struct MainTabView: View {
 
     /// L'artéfact gagné, annoncé où que l'on soit.
     ///
-    /// Il attend qu'un éventuel badge ait fini de se montrer : deux planches
-    /// l'une sur l'autre ne se lisent pas, et la galerie qui grossit peut très
-    /// bien déclencher les deux d'un même geste.
+    /// Il attend son tour au guichet : la galerie qui grossit peut déclencher
+    /// un badge et une étape d'un même geste, et l'étape passe la première.
     @ViewBuilder
     private var doorOverlay: some View {
-        if let key = doorStore.celebration, badgesModel.currentCelebration == nil {
+        if popupQueue.current == .door, let key = doorStore.celebration {
             let format: MediaFormat = doorStore.celebrationDoor.series ? .series : .film
             DoorCelebrationOverlay(
                 door: doorStore.celebrationDoor,

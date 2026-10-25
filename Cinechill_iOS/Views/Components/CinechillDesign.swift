@@ -345,7 +345,10 @@ struct PlanButton: View {
                 .background(Ink.paper)
                 .overlay(alignment: .bottomLeading) { progress }
                 .clipShape(RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous))
-                .opacity(isEnabled && !isLoading ? 1 : 0.6)
+                // Désactivé se lit plus pâle qu'en attente : à 0,6 comme le
+                // chargement, un bouton pas encore utilisable paraissait prêt.
+                .opacity(isLoading ? 0.6 : (isEnabled ? 1 : 0.3))
+                .animation(Metrics.shift, value: isEnabled)
         }
         .buttonStyle(PressableScaleStyle(scale: 0.985))
         .disabled(isLoading || !isEnabled)

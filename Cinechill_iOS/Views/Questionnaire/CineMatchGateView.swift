@@ -5,13 +5,13 @@
 
 import SwiftUI
 
-/// La porte de CinéMatch — l'écran verrouillé aux quatre artéfacts.
+/// La porte de CinéMatch — l'écran verrouillé aux trois artéfacts.
 ///
 /// Une porte monumentale garde l'onglet tant que le profil n'est pas prêt. Son
-/// montant central est une serrure sertie de quatre médaillons ; chacun est lié
+/// montant central est une serrure sertie de trois médaillons ; chacun est lié
 /// à une condition mesurée par le serveur, s'allume quand elle est remplie, et
 /// un conduit de lumière monte de médaillon en médaillon comme une jauge à
-/// quatre crans. Le dernier posé, la clé de voûte — le C de la Salle —
+/// trois crans. Le dernier posé, la clé de voûte — le C de la Salle —
 /// s'embrase et la porte s'ouvre.
 ///
 /// **La cérémonie entière ne se joue qu'une fois par format** ; ensuite, à
@@ -51,6 +51,8 @@ struct CineMatchGateView: View {
     let onDiscover: () -> Void
     /// Vers la planche des coups de cœur.
     let onLovePicker: () -> Void
+    /// La planche « Lesquels n'as-tu pas aimés ? ».
+    let onDeceptionGrid: () -> Void
     /// Les battants sont grands ouverts : la place est à l'entrée de séance.
     /// Appelé par la cérémonie elle-même — on ne demande pas à quelqu'un de
     /// confirmer qu'il veut franchir une porte qu'il vient de voir s'ouvrir.
@@ -151,6 +153,7 @@ struct CineMatchGateView: View {
                 pendingDetailAction = nil
                 switch key {
                 case .coeur: onLovePicker()
+                case .deceptions: onDeceptionGrid()
                 default: onDiscover()
                 }
             }
@@ -399,9 +402,9 @@ struct CineMatchGateView: View {
                 Group {
                     // En français, zéro prend le singulier.
                     if door.litCount <= 1 {
-                        Text("étape sur \(DoorState.stepCount)", bundle: .app)
+                        Text("étape sur \(door.stepCount)", bundle: .app)
                     } else {
-                        Text("étapes sur \(DoorState.stepCount)", bundle: .app)
+                        Text("étapes sur \(door.stepCount)", bundle: .app)
                     }
                 }
                 .planLabel()
@@ -434,7 +437,7 @@ struct CineMatchGateView: View {
     /// La première étape qui manque, dans l'ordre de la porte. Toutes se
     /// commencent tout de suite : aucune n'attend les autres.
     private var nextStep: DoorArtifactKey? {
-        DoorArtifactKey.allCases.first { door.artifact($0)?.done != true }
+        door.keys.first { door.artifact($0)?.done != true }
     }
 
     /// Ce qu'il reste à faire, nommé, avec sa mesure. « Termine les
@@ -474,7 +477,7 @@ struct CineMatchGateView: View {
             }
             .accessibilityElement(children: .combine)
         } else {
-            Text("Termine les \(DoorState.stepCount) étapes.", bundle: .app)
+            Text("Termine les \(door.stepCount) étapes.", bundle: .app)
                 .planTitle(22)
                 .foregroundStyle(Ink.ink)
         }
@@ -485,7 +488,7 @@ struct CineMatchGateView: View {
     /// poser l'envoyait au mauvais endroit.
     private var primaryTitle: String {
         switch nextStep {
-        case .coeur?, .promesse?:
+        case .coeur?, .deceptions?:
             return nextStep?.actionTitle ?? ""
         case .memoire?, .eventail?, nil:
             return door.series
@@ -497,17 +500,18 @@ struct CineMatchGateView: View {
     private func primaryAction() {
         switch nextStep {
         case .coeur?: onLovePicker()
-        case .memoire?, .eventail?, .promesse?, nil: onDiscover()
+        case .deceptions?: onDeceptionGrid()
+        case .memoire?, .eventail?, nil: onDiscover()
         }
     }
 
-    /// La jauge à quatre crans, dans les quatre teintes : le seul endroit du bas
+    /// La jauge à trois crans, dans les trois teintes : le seul endroit du bas
     /// d'écran où la couleur des artéfacts descend, cran par cran. Chaque
     /// cellule suit **son** artéfact, pas un compte : rien n'impose que la
     /// porte s'allume dans l'ordre.
     private var gauge: some View {
         HStack(spacing: 6) {
-            ForEach(DoorArtifactKey.allCases, id: \.self) { key in
+            ForEach(door.keys, id: \.self) { key in
                 Rectangle()
                     .fill(
                         door.artifact(key)?.done == true
@@ -525,7 +529,7 @@ struct CineMatchGateView: View {
 
 /// La porte elle-même : chambranle de bronze riveté, fronton en gradins,
 /// vantaux émaillés à filets d'or, poignées et gonds, et le montant-serrure aux
-/// quatre médaillons. Tout le trait est dessiné dans un repère de 390 × 404
+/// trois médaillons. Tout le trait est dessiné dans un repère de 390 × 404
 /// puis mis à l'échelle de la largeur disponible.
 private struct DoorSceneView: View {
     let door: DoorState
@@ -542,24 +546,30 @@ private struct DoorSceneView: View {
     /// Centre vertical et rayon de monture de chaque médaillon, de bas en haut,
     /// dans l'ordre de `DoorArtifactKey`.
     ///
-    /// Quatre places sur la hauteur où il y en avait cinq : un pas régulier de
-    /// 73 à 75 points, et des montures un peu plus grandes (21 au lieu de 20)
-    /// pour que le montant ne paraisse pas dégarni. La Mémoire garde la plus
-    /// large, en socle. Entre deux montures, le conduit garde 26 points de
-    /// lumière à chaque étage : la jauge se lit à pas égaux.
-    private static let seats: [(key: DoorArtifactKey, y: CGFloat, r: CGFloat)] = [
-        (.memoire, 320, 24),
-        (.eventail, 245, 21),
-        (.coeur, 172, 21),
-        (.promesse, 99, 21),
-    ]
+    /// Quatre places pour la Porte des films : un pas régulier de 73 à 75
+    /// points, des montures de 21 points, la Mémoire la plus large, en socle.
+    /// Entre deux montures, le conduit garde 26 points de lumière à chaque
+    /// étage : la jauge se lit à pas égaux.
+    ///
+    /// Trois pour la Porte des séries, qui n'a pas « Tes déceptions » : le
+    /// Cœur se pose sous la couronne, l'Éventail au milieu, des montures de
+    /// 22 points et 65 points de conduit par étage.
+    private static func seats(for door: DoorState) -> [(key: DoorArtifactKey, y: CGFloat, r: CGFloat)] {
+        if door.keys.count >= 4 {
+            return [(.memoire, 320, 24), (.eventail, 245, 21), (.coeur, 172, 21), (.deceptions, 99, 21)]
+        }
+        return [(.memoire, 320, 24), (.eventail, 209, 22), (.coeur, 100, 22)]
+    }
 
     /// Les segments du conduit, de bas en haut : un par artéfact, du bas du
     /// montant ou de la monture d'en dessous jusqu'à la sienne, puis la
     /// couronne vers la clé de voûte.
-    private static let conduits: [(y: CGFloat, h: CGFloat)] = [
-        (346, 26), (268, 26), (195, 26), (122, 26), (46, 30),
-    ]
+    fileprivate static func conduits(for door: DoorState) -> [(y: CGFloat, h: CGFloat)] {
+        if door.keys.count >= 4 {
+            return [(346, 26), (268, 26), (195, 26), (122, 26), (46, 30)]
+        }
+        return [(346, 26), (231, 65), (122, 65), (46, 30)]
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -572,7 +582,7 @@ private struct DoorSceneView: View {
                 // la serrure n'a plus de raison d'être une fois la porte
                 // gagnée, et les laisser voler avec les battants ferait lire
                 // la scène comme un décor qui se démonte.
-                ForEach(Array(Self.seats.enumerated()), id: \.element.key) { index, seat in
+                ForEach(Array(Self.seats(for: door).enumerated()), id: \.element.key) { index, seat in
                     medallion(seat, index: index, scale: s)
                 }
                 .opacity(1 - min(1, openProgress * 2.5))
@@ -581,14 +591,14 @@ private struct DoorSceneView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(door.litCount <= 1
-            ? String(localized: "CinéMatch verrouillé, \(door.litCount) étape sur \(DoorState.stepCount) validée", bundle: .app)
-            : String(localized: "CinéMatch verrouillé, \(door.litCount) étapes sur \(DoorState.stepCount) validées", bundle: .app))
+            ? String(localized: "CinéMatch verrouillé, \(door.litCount) étape sur \(door.stepCount) validée", bundle: .app)
+            : String(localized: "CinéMatch verrouillé, \(door.litCount) étapes sur \(door.stepCount) validées", bundle: .app))
     }
 
     /// Le prochain à viser : le premier médaillon éteint en montant. C'est un
     /// index d'artéfact, jamais un compte — rien n'impose l'ordre d'allumage.
     private var nextIndex: Int? {
-        Self.seats.firstIndex { door.artifact($0.key)?.done != true }
+        Self.seats(for: door).firstIndex { door.artifact($0.key)?.done != true }
     }
 
     private func medallion(
@@ -665,7 +675,7 @@ private struct DoorCanvas: View, Animatable {
     /// vient qu'avec l'ouverture : la lumière du conduit raconte exactement ce
     /// que racontent les médaillons juste au-dessus, quel que soit l'ordre.
     private var litSegments: [Bool] {
-        DoorArtifactKey.allCases.map { door.artifact($0)?.done == true } + [isOpen]
+        door.keys.map { door.artifact($0)?.done == true } + [isOpen]
     }
 
     var body: some View {
@@ -873,7 +883,7 @@ private struct DoorCanvas: View, Animatable {
 
                     // Le conduit, segment par segment.
                     let lit = litSegments
-                    for (index, segment) in DoorSceneView.conduitSegments.enumerated()
+                    for (index, segment) in DoorSceneView.conduits(for: door).enumerated()
                     where index < lit.count && lit[index] {
                         inner.fill(
                             rect(192.7, segment.y, 4.6, segment.h),
@@ -938,11 +948,6 @@ private struct DoorCanvas: View, Animatable {
             }
         }
     }
-}
-
-private extension DoorSceneView {
-    /// Exposés au canvas, qui ne voit pas les membres privés de la scène.
-    static var conduitSegments: [(y: CGFloat, h: CGFloat)] { conduits }
 }
 
 // MARK: - Le raccord avec l'accueil
@@ -1037,7 +1042,7 @@ private struct DoorArtifactSheet: View {
     private var isDone: Bool { artifact?.done == true || (target > 0 && current >= target) }
 
     private var rank: Int {
-        (DoorArtifactKey.allCases.firstIndex(of: artifactKey) ?? 0) + 1
+        (door.keys.firstIndex(of: artifactKey) ?? 0) + 1
     }
 
     var body: some View {
@@ -1052,7 +1057,7 @@ private struct DoorArtifactSheet: View {
                     .shadow(color: Color(hex: artifactKey.halo).opacity(isDone ? 0.45 : 0), radius: 10)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Étape \(rank) sur \(DoorState.stepCount)", bundle: .app)
+                    Text("Étape \(rank) sur \(door.stepCount)", bundle: .app)
                         .planLabel()
                         .foregroundStyle(Color(hex: artifactKey.hue))
                     Text(artifactKey.displayName(series: door.series))
@@ -1136,7 +1141,7 @@ extension DoorArtifactKey: Identifiable {
         case .memoire: String(localized: "Films vus", bundle: .app)
         case .eventail: String(localized: "Genres variés", bundle: .app)
         case .coeur: String(localized: "Coups de cœur", bundle: .app)
-        case .promesse: String(localized: "Watchlist", bundle: .app)
+        case .deceptions: String(localized: "Déceptions", bundle: .app)
         }
     }
 
@@ -1159,8 +1164,8 @@ extension DoorArtifactKey: Identifiable {
             return String(localized: "Avec des genres variés, on voit aussi ce que tu aimes moins.", bundle: .app)
         case .coeur:
             return String(localized: "Avec tes saisons préférées, on sait ce qui te plaît le plus.", bundle: .app)
-        case .promesse:
-            return String(localized: "On pourra aussi te proposer des séries de ta watchlist.", bundle: .app)
+        case .deceptions:
+            return consequence
         }
     }
 
@@ -1175,8 +1180,8 @@ extension DoorArtifactKey: Identifiable {
                 return String(localized: "Des séries de \(target) genres différents", bundle: .app)
             case .coeur:
                 return String(localized: "\(target) saisons en coup de cœur", bundle: .app)
-            case .promesse:
-                return String(localized: "\(target) saisons dans ta watchlist", bundle: .app)
+            case .deceptions:
+                break
             }
         }
         switch self {
@@ -1186,8 +1191,8 @@ extension DoorArtifactKey: Identifiable {
             return String(localized: "Des films de \(target) genres différents", bundle: .app)
         case .coeur:
             return String(localized: "\(target) coups de cœur dans ta galerie", bundle: .app)
-        case .promesse:
-            return String(localized: "\(target) films dans ta watchlist", bundle: .app)
+        case .deceptions:
+            return String(localized: "\(target) films de ta galerie passés en revue", bundle: .app)
         }
     }
 
@@ -1200,8 +1205,8 @@ extension DoorArtifactKey: Identifiable {
             String(localized: "Avec des genres variés, on voit aussi ce que tu aimes moins.", bundle: .app)
         case .coeur:
             String(localized: "Avec tes coups de cœur, on sait ce qui te plaît le plus.", bundle: .app)
-        case .promesse:
-            String(localized: "On pourra aussi te proposer des films de ta watchlist.", bundle: .app)
+        case .deceptions:
+            String(localized: "Avec les films qui t'ont déçu, on sait ce qu'il ne faut pas te proposer.", bundle: .app)
         }
     }
 
@@ -1209,6 +1214,7 @@ extension DoorArtifactKey: Identifiable {
     var actionTitle: String {
         switch self {
         case .coeur: String(localized: "Choisir mes coups de cœur", bundle: .app)
+        case .deceptions: String(localized: "Dire ce qui m'a déçu", bundle: .app)
         default: String(localized: "Ouvrir Découvrir", bundle: .app)
         }
     }
@@ -1224,6 +1230,7 @@ extension DoorArtifactKey: Identifiable {
             onProfileTap: {},
             onDiscover: {},
             onLovePicker: {},
+            onDeceptionGrid: {},
             onEnter: {}
         )
     }

@@ -46,6 +46,8 @@ struct LoveGridSheet: View {
                         PlanHeaderCount(value: progress)
                     }
                 }
+                // Un pas sous le bord de la feuille, que l'en-tête touchait.
+                .padding(.top, 14)
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {

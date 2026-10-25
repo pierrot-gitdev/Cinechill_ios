@@ -16,6 +16,8 @@ struct SwipeDeckView: View {
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(MediaCatalog.self) private var catalog
     @Environment(DoorStore.self) private var doorStore
+    /// Le guichet des fenêtres (voir `PopupQueue`) : une à la fois.
+    @Environment(PopupQueue.self) private var popupQueue
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
@@ -120,14 +122,9 @@ struct SwipeDeckView: View {
         "swipe.goalMilestones.\(format.rawValue)"
     }
 
-    /// Le palier de la galerie tant que CinéMatch est fermé.
+    /// Le nombre de films à annoncer quand un palier de la galerie est franchi,
+    /// tant que CinéMatch est fermé.
     @State private var goalMilestone: Int?
-    /// La galerie au moment du premier film rangé de la session : le palier se
-    /// compte à partir d'elle, plus les films rangés depuis. La galerie seule
-    /// retarde d'une carte (la dernière décision reste en main jusqu'à la
-    /// suivante) et peut sauter d'un coup à son chargement, ce qui ferait
-    /// fêter un palier qu'aucun geste n'a franchi.
-    @State private var goalBase: Int?
     /// Films ou séries : le réglage que Découvrir partage avec CinéMatch.
     @AppStorage(MediaFormat.storageKey) private var formatRaw = MediaFormat.film.rawValue
 
@@ -164,13 +161,23 @@ struct SwipeDeckView: View {
             // improbables — les cartes issues de la règle de saga portent
             // toutes la même source, que l'ordonnancement du lot écarte les
             // unes des autres.
-            .sheet(item: $sagaOffer) { offer in
+            .sheet(item: $sagaOffer, onDismiss: { popupQueue.finish(.saga) }) { offer in
                 SagaSheet(offer: offer, onClose: { sagaOffer = nil })
                     .environmentObject(libraryStore)
             }
             // La mosaïque attend son tour : derrière la planche des gestes à
             // la première venue, derrière une feuille de saga ouverte.
-            .sheet(item: gridBinding) { kind in
+            //
+            // Celle de départ, juste après l'onboarding, prend tout l'écran :
+            // c'est la suite du parcours, pas une feuille qu'on écarte, et elle
+            // n'a pas de croix. La relance, en plein deck, reste une feuille.
+            .fullScreenCover(item: gridBinding(.start), onDismiss: { popupQueue.finish(.startGrid) }) { kind in
+                ProbeGridSheet(kind: kind, excludedIDs: model.knownIDs) { families in
+                    model.gridRequest = nil
+                    model.gridDidFinish(seenFamilies: families)
+                }
+            }
+            .sheet(item: gridBinding(.relance), onDismiss: { popupQueue.finish(.relanceGrid) }) { kind in
                 ProbeGridSheet(kind: kind, excludedIDs: model.knownIDs) { families in
                     model.gridRequest = nil
                     model.gridDidFinish(seenFamilies: families)
@@ -178,7 +185,7 @@ struct SwipeDeckView: View {
             }
             // Les coups de cœur attendent leur tour derrière tout le reste :
             // ils ne sont jamais urgents.
-            .sheet(item: loveGridBinding) { offer in
+            .sheet(item: loveGridBinding, onDismiss: { popupQueue.finish(.loveGrid) }) { offer in
                 LoveGridSheet(offer: offer) { loved in
                     lastLoveGridWasEmpty = loved == 0
                     loveGrid = nil
@@ -205,6 +212,20 @@ struct SwipeDeckView: View {
         .onChange(of: model.pendingSheet) { _, sheet in
             guard sheet != nil else { return }
             presentPendingSheetIfIdle()
+        }
+        // Les mosaïques et le palier de la session naissent dans le modèle :
+        // ils demandent leur tour ici.
+        .onChange(of: model.gridRequest, initial: true) { old, new in
+            if let old { popupQueue.finish(old == .start ? .startGrid : .relanceGrid) }
+            if let new { popupQueue.request(new == .start ? .startGrid : .relanceGrid) }
+        }
+        .onChange(of: model.celebratedMilestone) { old, new in
+            if old != nil { popupQueue.finish(.sessionMilestone) }
+            // Un palier de session ne vaut qu'à l'instant : l'écran pris, il se
+            // perd.
+            if new != nil, !popupQueue.request(.sessionMilestone) {
+                model.celebratedMilestone = nil
+            }
         }
         // L'interrupteur a pu basculer ici ou dans CinéMatch : le deck suit.
         .onChange(of: formatRaw) { _, _ in
@@ -354,7 +375,7 @@ struct SwipeDeckView: View {
     private var helpButton: some View {
         Button {
             Haptics.impact(.light, intensity: 0.6)
-            withAnimation(.easeOut(duration: 0.2)) { showGuide = true }
+            presentGuide()
         } label: {
             SwipeHelpGlyph()
                 .foregroundStyle(showGuide ? Ink.ink : Ink.ink2)
@@ -573,7 +594,7 @@ struct SwipeDeckView: View {
 
     @ViewBuilder
     private var guideOverlay: some View {
-        if showGuide {
+        if showGuide, popupQueue.current == .guide {
             SwipeGuideOverlay(onClose: closeGuide)
                 // La séquence tourne tant que la planche est là ; son retrait
                 // annule la `task` qui la fait tourner.
@@ -603,7 +624,7 @@ struct SwipeDeckView: View {
 
     @ViewBuilder
     private var milestoneOverlay: some View {
-        if let milestone = model.celebratedMilestone {
+        if popupQueue.current == .sessionMilestone, let milestone = model.celebratedMilestone {
             ZStack {
                 Ink.ground.opacity(0.55)
                     .ignoresSafeArea()
@@ -626,7 +647,7 @@ struct SwipeDeckView: View {
 
     @ViewBuilder
     private var goalMilestoneOverlay: some View {
-        if let milestone = goalMilestone, let target = memoryArtifact?.target {
+        if popupQueue.current == .goal, let milestone = goalMilestone, let target = memoryArtifact?.target {
             ZStack {
                 Ink.ground.opacity(0.55)
                     .ignoresSafeArea()
@@ -644,6 +665,7 @@ struct SwipeDeckView: View {
                 withAnimation(.easeOut(duration: 0.25)) {
                     goalMilestone = nil
                 }
+                popupQueue.finish(.goal)
             }
         }
     }
@@ -817,8 +839,7 @@ struct SwipeDeckView: View {
         // Après `swipe`, parce que c'est lui qui sait si un palier vient d'être
         // franchi : la célébration plein écran dit déjà que le film est rangé, et
         // deux accusés de réception pour le même geste en font un de trop.
-        if let confirmation = direction.confirmation, model.celebratedMilestone == nil,
-           goalMilestone == nil, sagaOffer == nil {
+        if let confirmation = direction.confirmation, !popupQueue.isBusy {
             toast = ToastMark(
                 title: card.title,
                 // Le cœur s'ajoute à la destination, il ne la remplace pas :
@@ -857,8 +878,6 @@ struct SwipeDeckView: View {
         guard case .right = direction else { return }
         // Un palier occupe déjà l'écran : deux planches l'une sur l'autre ne
         // se lisent pas, et la saga passe son tour.
-        guard model.celebratedMilestone == nil, goalMilestone == nil else { return }
-
         let offer: SagaOffer
         if card.hasSeasonsToOffer {
             offer = SagaOffer(source: .series(card.tmdbId), originID: card.mediaItem.id, title: card.title)
@@ -869,7 +888,15 @@ struct SwipeDeckView: View {
         }
         guard !offeredSagas.contains(offer.id) else { return }
         offeredSagas.insert(offer.id)
-        sagaOffer = offer
+        let owned = Set(libraryStore.galleryItems.map(\.id))
+        Task {
+            guard let ready = await offer.prepared(excluding: owned) else { return }
+            // Le temps du chargement, une autre fenêtre a pu prendre l'écran :
+            // la saga passe alors son tour (elle ne vaut qu'à l'instant).
+            guard popupQueue.request(.saga) else { return }
+            toast = nil
+            sagaOffer = ready
+        }
     }
 
     /// La planche des coups de cœur, quand ils prennent du retard sur les
@@ -885,9 +912,7 @@ struct SwipeDeckView: View {
         cardsSinceLoveGrid += 1
         let spacing = lastLoveGridWasEmpty ? Self.loveGridSpacingAfterNone : Self.loveGridSpacing
         guard case .right = direction, format == .film, !card.isSeries,
-              loveGrid == nil, cardsSinceLoveGrid >= spacing,
-              sagaOffer == nil, model.gridRequest == nil, !showGuide,
-              model.celebratedMilestone == nil, goalMilestone == nil
+              loveGrid == nil, cardsSinceLoveGrid >= spacing
         else { return }
 
         let door = doorStore.door(for: .film)
@@ -902,7 +927,8 @@ struct SwipeDeckView: View {
         let entries = LoveGridOffer.candidates(
             from: films, excluding: Set(offered), sessionStart: sessionStart
         )
-        guard entries.count >= Self.loveGridMinimumEntries else { return }
+        guard entries.count >= Self.loveGridMinimumEntries,
+              popupQueue.request(.loveGrid) else { return }
 
         // Un film montré ne revient pas dans une planche suivante : la
         // personne a déjà dit qu'il n'était pas un coup de cœur. La liste ne
@@ -917,17 +943,20 @@ struct SwipeDeckView: View {
     /// occupe l'écran.
     private var loveGridBinding: Binding<LoveGridOffer?> {
         Binding(
-            get: {
-                showGuide || sagaOffer != nil || model.gridRequest != nil ? nil : loveGrid
-            },
+            get: { popupQueue.current == .loveGrid ? loveGrid : nil },
             set: { if $0 == nil { loveGrid = nil } }
         )
     }
 
     /// La mosaïque à présenter, tenue tant qu'autre chose occupe l'écran.
-    private var gridBinding: Binding<ProbeGridKind?> {
+    /// Celle de départ en plein écran, la relance en feuille.
+    private func gridBinding(_ kind: ProbeGridKind) -> Binding<ProbeGridKind?> {
         Binding(
-            get: { showGuide || sagaOffer != nil ? nil : model.gridRequest },
+            get: {
+                let turn: PopupQueue.Kind = kind == .start ? .startGrid : .relanceGrid
+                guard model.gridRequest == kind, popupQueue.current == turn else { return nil }
+                return kind
+            },
             set: { if $0 == nil { model.gridRequest = nil } }
         )
     }
@@ -941,14 +970,12 @@ struct SwipeDeckView: View {
     private func presentPendingSheetIfIdle() {
         guard let pending = model.pendingSheet, drag == .zero, !isPressing else { return }
         model.pendingSheet = nil
-        guard sagaOffer == nil, model.gridRequest == nil, !showGuide,
-              model.celebratedMilestone == nil, goalMilestone == nil else { return }
         let offer = SagaOffer(
             source: .picks(pending.offer),
             originID: pending.originID,
             title: pending.originTitle
         )
-        guard !offeredSagas.contains(offer.id) else { return }
+        guard !offeredSagas.contains(offer.id), popupQueue.request(.saga) else { return }
         offeredSagas.insert(offer.id)
         toast = nil
         sagaOffer = offer
@@ -1057,7 +1084,7 @@ struct SwipeDeckView: View {
             try? await Task.sleep(for: .milliseconds(320))
             // La planche des coups de cœur vient de s'ouvrir sur le même
             // geste : le rappel ne se pose pas sous elle.
-            guard model.topCard != nil, loveGrid == nil else { return }
+            guard model.topCard != nil, !popupQueue.isBusy else { return }
             withAnimation(.easeOut(duration: 0.22)) { showsLoveHint = true }
         }
     }
@@ -1088,12 +1115,15 @@ struct SwipeDeckView: View {
 
     /// Le palier franchi par ce « vu », s'il y en a un, une fois par palier et
     /// par format dans la vie du compte : annuler puis reranger ne le refête pas.
+    ///
+    /// Le compte vient de la galerie, carte en main comprise. Il partait de la
+    /// galerie du premier film de la session plus les balayages suivants : les
+    /// films cochés dans une mosaïque ou une feuille de saga n'y entraient
+    /// jamais, et la planche annonçait 25 films à qui en avait 34.
     private func checkGoalMilestone() {
-        guard !memoryIsDone, let target = memoryArtifact?.target, target > 0 else { return }
-        if model.addedThisSession <= 1 || goalBase == nil {
-            goalBase = localMemoryCount - model.addedThisSession
-        }
-        let count = (goalBase ?? 0) + model.addedThisSession
+        guard !memoryIsDone, libraryStore.hasLoadedGalleryOnce,
+              let target = memoryArtifact?.target, target > 0 else { return }
+        let count = localMemoryCount
         let storageKey = Self.goalMilestonesKey(format)
         var celebrated = Set(UserDefaults.standard.array(forKey: storageKey) as? [Int] ?? [])
         guard let step = SwipeGoalMilestoneOverlay.steps(for: target).last(where: { $0 <= count }),
@@ -1101,7 +1131,9 @@ struct SwipeDeckView: View {
         else { return }
         celebrated.insert(step)
         UserDefaults.standard.set(Array(celebrated).sorted(), forKey: storageKey)
-        goalMilestone = step
+        // Le vrai nombre, pas le palier : à 27, la planche dit 27.
+        goalMilestone = count
+        popupQueue.request(.goal)
     }
 
     private func toggleSynopsis() {
@@ -1133,7 +1165,7 @@ struct SwipeDeckView: View {
         try? await Task.sleep(for: .milliseconds(280))
         guard !guideSeen, selectedTab == 2 else { return }
         guideSeen = true
-        withAnimation(.easeOut(duration: 0.24)) { showGuide = true }
+        presentGuide()
     }
 
     /// Le doigt se lève : la boussole s'efface, quelle que soit l'issue du
@@ -1174,6 +1206,14 @@ struct SwipeDeckView: View {
     private func closeGuide() {
         guard showGuide else { return }
         withAnimation(.easeOut(duration: 0.22)) { showGuide = false }
+        popupQueue.finish(.guide)
+    }
+
+    /// La planche des gestes passe par le guichet comme les autres : appelée
+    /// pendant qu'une fenêtre est ouverte, elle attend son tour.
+    private func presentGuide() {
+        guard popupQueue.request(.guide) else { return }
+        withAnimation(.easeOut(duration: 0.2)) { showGuide = true }
     }
 
     /// Ce qui est déjà rangé, dans l'identité des cartes. Une série compte dès

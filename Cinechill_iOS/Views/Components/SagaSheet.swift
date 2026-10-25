@@ -39,6 +39,12 @@ struct SagaSheet: View {
     @State private var isLoading = true
     @State private var isSaving = false
     @State private var errorMessage: String?
+    /// Les hauteurs mesurées de l'en-tête, de la liste et du plancher : la
+    /// feuille prend la hauteur de ce qu'elle montre.
+    @State private var headerHeight: CGFloat = 0
+    @State private var listHeight: CGFloat = 0
+    @State private var floorHeight: CGFloat = 0
+    @State private var bottomInset: CGFloat = 0
 
     private let client: any SagaFetching = BackendSagaClient()
     private let tvClient = TVClient()
@@ -61,7 +67,12 @@ struct SagaSheet: View {
             Ink.ground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                PlanHeader(headerTitle, leading: .close, onLeading: onClose)
+                // Pas de croix : la feuille se baisse du doigt, et ses deux
+                // actions la referment. Un pas sous la poignée, que l'en-tête
+                // ne touchait presque pas.
+                PlanHeader(headerTitle, leading: .none)
+                    .padding(.top, 14)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
 
                 if isLoading {
                     loadingState
@@ -74,8 +85,20 @@ struct SagaSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { bottomInset = $0 }
+        // La hauteur de la liste, jusqu'au plein écran au-delà duquel elle
+        // défile. À mi-hauteur fixe, la liste était dessinée pour le grand
+        // format : sa dernière ligne restait sous le bas de l'écran, hors
+        // d'atteinte du défilement.
+        .presentationDetents([fittedDetent])
+        .presentationDragIndicator(.visible)
         .task { await load() }
+    }
+
+    /// Une hauteur au-delà de l'écran est ramenée par iOS au plein format.
+    private var fittedDetent: PresentationDetent {
+        guard listHeight > 0 else { return .medium }
+        return .height(headerHeight + listHeight + floorHeight + bottomInset)
     }
 
     private var headerTitle: String {
@@ -139,9 +162,12 @@ struct SagaSheet: View {
                 }
                 .padding(.top, 20)
                 .padding(.bottom, 20)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listHeight = $0 }
             }
+            .scrollBounceBehavior(.basedOnSize)
 
             floor
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { floorHeight = $0 }
         }
     }
 
@@ -390,12 +416,16 @@ struct SagaSheet: View {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
+        if let preloaded = offer.preloaded {
+            saga = preloaded
+            return
+        }
         do {
             switch offer.source {
             case .collection(let id):
                 saga = try await client.saga(id: id)
             case .series(let id):
-                saga = sagaOfSeasons(try await tvClient.series(id: id))
+                saga = Self.sagaOfSeasons(try await tvClient.series(id: id))
             case .picks(let picks):
                 saga = Saga(id: 0, name: picks.name ?? "", parts: picks.cards.map(SagaPart.init(card:)))
             }
@@ -453,7 +483,7 @@ struct SagaSheet: View {
 
     /// Une série est une saga de saisons : ses saisons sorties, chacune comme
     /// un opus.
-    private func sagaOfSeasons(_ series: TVSeriesDetail) -> Saga {
+    static func sagaOfSeasons(_ series: TVSeriesDetail) -> Saga {
         Saga(
             id: series.id,
             name: series.name,
@@ -495,6 +525,9 @@ struct SagaOffer: Identifiable, Equatable {
     let originID: String
     /// Le titre du film rangé, ou le nom de la série.
     let title: String
+    /// La saga déjà chargée par `prepared(excluding:)` : la feuille s'ouvre
+    /// sur elle sans second chargement.
+    var preloaded: Saga? = nil
 
     var id: String {
         switch source {
@@ -515,5 +548,36 @@ struct SagaCheckGlyph: Shape {
         path.addLine(to: CGPoint(x: rect.minX + rect.width * 0.38, y: rect.maxY))
         path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
         return path
+    }
+}
+
+extension SagaOffer {
+    /// L'offre prête à s'ouvrir, ou `nil` s'il n'y a rien à proposer.
+    ///
+    /// La feuille s'ouvrait dès que TMDB annonçait une saga de deux films ou
+    /// plus, avant de la charger. Quand les autres opus n'étaient pas sortis,
+    /// ou déjà tous en galerie, elle s'ouvrait pour dire « Tu as toute la
+    /// saga » sans rien montrer. Elle se charge donc d'abord, et ne s'ouvre
+    /// que s'il reste un opus à cocher. Une panne réseau vaut « rien à
+    /// proposer » : la question ne vaut pas un message d'erreur.
+    func prepared(excluding libraryIDs: Set<String>) async -> SagaOffer? {
+        let saga: Saga
+        do {
+            switch source {
+            case .collection(let id):
+                saga = try await BackendSagaClient().saga(id: id)
+            case .series(let id):
+                saga = SagaSheet.sagaOfSeasons(try await TVClient().series(id: id))
+            case .picks:
+                return self
+            }
+        } catch {
+            return nil
+        }
+        let excluded = libraryIDs.union([originID])
+        guard saga.parts.contains(where: { !excluded.contains($0.libraryID) }) else { return nil }
+        var ready = self
+        ready.preloaded = saga
+        return ready
     }
 }

@@ -38,7 +38,7 @@ final class DoorStore {
     private(set) var hasMeasured = false
     /// L'artéfact tout juste gagné, à célébrer puis à remettre à `nil`.
     private(set) var celebration: DoorArtifactKey?
-    /// La Porte des séries : mêmes quatre étapes, à l'échelle des séries.
+    /// La Porte des séries : mêmes trois étapes, à l'échelle des séries.
     private(set) var seriesDoor: DoorState
     /// L'étape gagnée l'a été sur la Porte des séries.
     private(set) var celebrationIsSeries = false
