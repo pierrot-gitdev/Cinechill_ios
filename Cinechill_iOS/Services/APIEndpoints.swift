@@ -268,6 +268,12 @@ enum APIEndpoints {
         return buildURL(baseURL: baseURL, functionName: "setfilmverdict", queryItems: [])
     }
 
+    /// Publie ou retire la photo de profil.
+    static func setAvatar() -> URL? {
+        guard let baseURL = BackendConfiguration.baseURL else { return nil }
+        return buildURL(baseURL: baseURL, functionName: "setavatar", queryItems: [])
+    }
+
     /// La planche « Lesquels n'as-tu pas aimés ? » de la Porte.
     static func deceptionGrid() -> URL? {
         guard let baseURL = BackendConfiguration.baseURL else { return nil }

@@ -92,6 +92,7 @@ struct RootView: View {
             // suivant voyait la photo du précédent tant qu'il n'ouvrait pas son
             // profil.
             profileStore.refresh()
+            Task { await profileStore.publishAvatarIfNeeded() }
             await preloadHome()
         }
     }

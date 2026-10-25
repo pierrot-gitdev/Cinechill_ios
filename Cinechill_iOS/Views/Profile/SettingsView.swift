@@ -665,7 +665,7 @@ private struct LineGlyph: Shape {
     }
 }
 
-private extension UIImage {
+extension UIImage {
     func resized(toMaxDimension max: CGFloat) -> UIImage? {
         let scale = min(max / size.width, max / size.height, 1)
         let newSize = CGSize(width: size.width * scale, height: size.height * scale)
