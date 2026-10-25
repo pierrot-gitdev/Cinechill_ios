@@ -160,10 +160,10 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
     /// l'autre : l'onglet s'ouvre sur un état plausible au lieu d'attendre le
     /// réseau, et la réponse ne fait que le rafraîchir.
     ///
-    /// Clés en `.v3` depuis le passage à trois étapes : une porte gardée avec
-    /// une étape retirée compterait encore son médaillon allumé.
-    private static let cacheKey = "cinematch.door.v3"
-    private static let seriesCacheKey = "cinematch.seriesDoor.v3"
+    /// Clés en `.v4` depuis l'arrivée de « Tes déceptions » : une porte gardée
+    /// sans cette étape se croirait ouverte hors ligne.
+    private static let cacheKey = "cinematch.door.v4"
+    private static let seriesCacheKey = "cinematch.seriesDoor.v4"
 
     /// Les deux caches, à effacer quand un autre compte se connecte.
     static var cacheKeys: [String] { [cacheKey, seriesCacheKey] }

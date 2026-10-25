@@ -109,10 +109,24 @@ final class DoorStore {
         await measure(announcing: true)
     }
 
+    /// Une mesure demandée pendant qu'une autre tourne : elle repart à la fin,
+    /// sans quoi la planche qui vient d'allumer une étape attendait le
+    /// balayage suivant pour la voir comptée et fêtée.
+    private var remeasure = false
+
     private func measure(announcing: Bool) async {
-        guard !isRefreshing else { return }
+        guard !isRefreshing else {
+            remeasure = true
+            return
+        }
         isRefreshing = true
-        defer { isRefreshing = false }
+        defer {
+            isRefreshing = false
+            if remeasure {
+                remeasure = false
+                Task { await measure(announcing: announcing) }
+            }
+        }
 
         guard let reading = try? await client.fetchDoors(),
               let fresh = reading.door else { return }

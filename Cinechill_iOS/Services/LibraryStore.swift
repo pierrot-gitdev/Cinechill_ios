@@ -691,6 +691,7 @@ private extension LibraryStore {
         let legacy = [
             "cinematch.door", "cinematch.seriesDoor",
             "cinematch.door.v2", "cinematch.seriesDoor.v2",
+            "cinematch.door.v3", "cinematch.seriesDoor.v3",
         ]
         for key in legacy + DoorStore.accountScopedKeys + SwipeDeckView.accountScopedKeys {
             defaults.removeObject(forKey: key)

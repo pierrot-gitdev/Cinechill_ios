@@ -252,7 +252,9 @@ struct MainTabView: View {
         let seasons = libraryStore.galleryItems.count - gallery
         let queued = libraryStore.watchlistItems.count - watchlist
         let lovedSeasons = libraryStore.galleryItems.filter { $0.isSeason && $0.isLoved }.count
-        return "\(gallery)-\(libraryStore.lovedCount)-\(watchlist)-\(seasons)-\(lovedSeasons)-\(queued)"
+        // Les « Pas aimé » aussi : l'étape des déceptions en dépend.
+        let disliked = libraryStore.galleryItems.filter { $0.dislikedAt != nil }.count
+        return "\(gallery)-\(libraryStore.lovedCount)-\(watchlist)-\(seasons)-\(lovedSeasons)-\(queued)-\(disliked)"
     }
 
     // MARK: - L'onboarding

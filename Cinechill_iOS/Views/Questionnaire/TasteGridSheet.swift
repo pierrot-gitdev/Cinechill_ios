@@ -62,6 +62,9 @@ struct TasteGridSheet: View {
     @State private var savedHere = 0
     /// Films passés en revue depuis l'ouverture (déceptions).
     @State private var reviewedHere = 0
+    /// Le compte du serveur à l'ouverture. Ajouter `reviewedHere` à un compte
+    /// déjà rafraîchi comptait deux fois la page enregistrée.
+    @State private var reviewedAtOpen: Int?
     /// Pages laissées vides d'affilée depuis l'ouverture.
     @State private var emptyStreak = 0
 
@@ -156,7 +159,7 @@ struct TasteGridSheet: View {
         case .loved:
             isSeries ? libraryStore.lovedSeasonCount : libraryStore.lovedCount
         case .disliked:
-            (artifact?.current ?? 0) + reviewedHere
+            max(artifact?.current ?? 0, (reviewedAtOpen ?? artifact?.current ?? 0) + reviewedHere)
         }
     }
 
@@ -363,15 +366,28 @@ struct TasteGridSheet: View {
         loadFailed = false
         selection = []
         defer { isLoading = false }
+        if reviewedAtOpen == nil { reviewedAtOpen = artifact?.current ?? 0 }
         let offered = kind == .loved
             ? UserDefaults.standard.stringArray(forKey: Self.lovedOfferedKey) ?? []
             : []
         do {
-            let films = try await TasteGridClient().grid(
-                kind: kind, format: isSeries ? .series : .film, excluding: offered
-            )
-            if kind == .loved { Self.rememberOffered(films.map(\.id)) }
+            let client = TasteGridClient()
+            let format: MediaFormat = isSeries ? .series : .film
+            var films = try await client.grid(kind: kind, format: format, excluding: offered)
+            // Tous les films déjà montrés : l'étape des cœurs ne doit pas
+            // rester sans planche. La liste repart de zéro, ce qui n'a pas reçu
+            // de cœur peut revenir.
+            if films.isEmpty, kind == .loved, !offered.isEmpty, !isStepDone {
+                UserDefaults.standard.removeObject(forKey: Self.lovedOfferedKey)
+                films = try await client.grid(kind: kind, format: format, excluding: [])
+            }
             items = films.map(TasteGridItem.init(film:))
+            // Proposée par Découvrir, une planche vide ne s'ouvre pas : elle
+            // se referme sans un mot, et compte comme restée vide.
+            if items.isEmpty, singlePage {
+                Self.recordPage(kind, empty: true)
+                onClose(savedHere)
+            }
         } catch is CancellationError {
             return
         } catch {
@@ -388,6 +404,7 @@ struct TasteGridSheet: View {
         defer { isSaving = false }
 
         let picked = items.filter { selection.contains($0.id) }
+        let shownIDs = items.map(\.id)
         switch kind {
         case .loved:
             let changes = picked.compactMap { item in
@@ -414,6 +431,9 @@ struct TasteGridSheet: View {
             Task { await doorStore.refresh() }
         }
 
+        // Montrés et répondus : ces films ne reviennent plus. Marqués au
+        // chargement, une planche baissée du doigt les brûlait sans réponse.
+        if kind == .loved { Self.rememberOffered(shownIDs) }
         if !picked.isEmpty { Haptics.success() }
         savedHere += picked.count
         emptyStreak = picked.isEmpty ? emptyStreak + 1 : 0
@@ -428,7 +448,6 @@ struct TasteGridSheet: View {
             return
         }
         await load()
-        if singlePage, items.isEmpty, !loadFailed { onClose(savedHere) }
     }
 
     // MARK: - La mémoire des planches

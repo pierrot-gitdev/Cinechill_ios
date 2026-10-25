@@ -240,6 +240,8 @@ struct SwipeDeckView: View {
         // L'interrupteur a pu basculer ici ou dans CinéMatch : le deck suit.
         .onChange(of: formatRaw) { _, _ in
             toast = nil
+            // Les cartes de séries ne comptent pas pour les planches de films.
+            cardsSinceLoveGrid = 0
             Task { await model.setFormat(format) }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -274,6 +276,7 @@ struct SwipeDeckView: View {
                 return
             }
             closeGuide()
+            queuedSagaOffers = []
             Task { await model.flushPending() }
         }
         // Au tout premier lancement, l'écran arrive avant ses cartes : la
@@ -352,22 +355,36 @@ struct SwipeDeckView: View {
             // d'un film (la dernière décision part au balayage suivant), et
             // l'en-tête contredisait la planche.
             let current = libraryStore.hasLoadedGalleryOnce ? localMemoryCount : memory.current
+            // La galerie pleine, l'en-tête disait « 100 sur 100 films » sans
+            // dire ce qui manquait encore : il nomme alors l'étape suivante.
+            let missing = current >= memory.target
+                ? door.keys.first { $0 != .memoire && door.artifact($0)?.done != true }
+                : nil
+            let step = missing.flatMap { door.artifact($0) }
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(format == .series
-                         ? String(localized: "\(min(current, memory.target)) sur \(memory.target) séries", bundle: .app)
-                         : String(localized: "\(min(current, memory.target)) sur \(memory.target) films", bundle: .app))
-                        .planLabel()
-                        .monospacedDigit()
-                        .foregroundStyle(Ink.ink)
-                        .contentTransition(.numericText())
+                    Group {
+                        if let missing, let step {
+                            Text(verbatim: "\(missing.displayName(series: door.series)) · "
+                                 + String(localized: "\(min(step.current, step.target)) sur \(step.target)", bundle: .app))
+                        } else {
+                            Text(format == .series
+                                 ? String(localized: "\(min(current, memory.target)) sur \(memory.target) séries", bundle: .app)
+                                 : String(localized: "\(min(current, memory.target)) sur \(memory.target) films", bundle: .app))
+                        }
+                    }
+                    .planLabel()
+                    .monospacedDigit()
+                    .foregroundStyle(Ink.ink)
+                    .contentTransition(.numericText())
                     Spacer(minLength: 8)
                     Text("pour ouvrir CinéMatch", bundle: .app)
                         .planLabel()
                         .foregroundStyle(Ink.ink3)
                 }
                 PlanProgressRule(
-                    fraction: memory.target > 0 ? min(1, Double(current) / Double(memory.target)) : 0
+                    fraction: step.map { $0.target > 0 ? min(1, Double($0.current) / Double($0.target)) : 0 }
+                        ?? (memory.target > 0 ? min(1, Double(current) / Double(memory.target)) : 0)
                 )
             }
             .padding(.horizontal, Metrics.margin)
@@ -902,13 +919,15 @@ struct SwipeDeckView: View {
             return
         }
         guard !offeredSagas.contains(offer.id) else { return }
-        offeredSagas.insert(offer.id)
         let owned = Set(libraryStore.galleryItems.map(\.id))
         Task {
             guard let ready = await offer.prepared(excluding: owned) else { return }
-            // Le temps du chargement, une autre fenêtre a pu prendre l'écran :
-            // la saga passe alors son tour (elle ne vaut qu'à l'instant).
-            guard popupQueue.request(.saga) else { return }
+            // Le temps du chargement, une autre fenêtre a pu prendre l'écran,
+            // ou la personne a quitté Découvrir : la saga passe alors son tour
+            // (elle ne vaut qu'à l'instant). Elle n'est comptée comme proposée
+            // qu'une fois réellement montrée.
+            guard isDiscoverFront, sagaOffer == nil, popupQueue.request(.saga) else { return }
+            offeredSagas.insert(ready.id)
             toast = nil
             sagaOffer = ready
         }
@@ -957,7 +976,9 @@ struct SwipeDeckView: View {
     /// celle d'un simple balayage.
     private func presentNextQueuedSaga(attempt: Int = 0) {
         guard sagaOffer == nil, !queuedSagaOffers.isEmpty else { return }
-        guard !popupQueue.isBusy else {
+        // Ailleurs que sur Découvrir (autre onglet, profil ouvert), la feuille
+        // ne pourrait pas se présenter : elle attend comme si l'écran était pris.
+        guard !popupQueue.isBusy, isDiscoverFront else {
             guard attempt < 50 else {
                 queuedSagaOffers = []
                 return
@@ -990,12 +1011,17 @@ struct SwipeDeckView: View {
     /// Au plus une planche toutes les vingt cartes, après un « vu », pour ne
     /// pas freiner le balayage qui remplit la galerie. Toutes les dix dès
     /// quatre-vingt-cinq films, pour que le goût ne retarde pas l'ouverture.
-    /// Une question restée vide deux pages de suite attend quarante cartes.
+    /// Des coups de cœur restés vides deux pages de suite attendent quarante
+    /// cartes ; les déceptions avancent même vides et ne sont pas espacées.
     /// Toujours par le guichet : jamais sur un geste qui vient d'ouvrir une
     /// autre fenêtre.
     private func offerLoveGridIfDue(after direction: SwipeDirection, card: SwipeCard) {
         cardsSinceLoveGrid += 1
-        guard case .right = direction, format == .film, !card.isSeries, loveGrid == nil else { return }
+        // Une carte qui ouvre sa saga lui laisse la place : la feuille de saga
+        // arrive après le réseau, et la planche, demandée tout de suite,
+        // l'aurait écartée alors qu'elle passe avant elle.
+        guard case .right = direction, format == .film, !card.isSeries, loveGrid == nil,
+              !card.hasSagaToOffer, isDiscoverFront else { return }
 
         let door = doorStore.door(for: .film)
         let films = libraryStore.galleryFilms
@@ -1003,9 +1029,12 @@ struct SwipeDeckView: View {
         let open = films.filter { !$0.isLoved && $0.dislikedAt == nil }.count
         guard open >= Self.loveGridMinimumEntries else { return }
 
+        // Une page de déceptions fait avancer l'étape même vide : rien ne
+        // l'espace. Une page de coups de cœur vide n'apporte rien : deux de
+        // suite, la question attend quarante cartes, même près des cent films.
         func spacing(_ kind: TasteGridKind) -> Int {
-            if films.count >= 85 { return 10 }
-            return TasteGridSheet.emptyPages(kind) >= 2 ? 40 : 20
+            if kind == .loved, TasteGridSheet.emptyPages(kind) >= 2 { return 40 }
+            return films.count >= 85 ? 10 : 20
         }
         /// Le retard d'une étape de goût, ou `nil` si elle n'est pas à poser.
         func lag(_ kind: TasteGridKind) -> Double? {
@@ -1067,11 +1096,16 @@ struct SwipeDeckView: View {
             originID: pending.originID,
             title: pending.originTitle
         )
-        guard !offeredSagas.contains(offer.id), popupQueue.request(.saga) else { return }
+        guard !offeredSagas.contains(offer.id), isDiscoverFront, sagaOffer == nil,
+              popupQueue.request(.saga) else { return }
         offeredSagas.insert(offer.id)
         toast = nil
         sagaOffer = offer
     }
+
+    /// Découvrir est à l'écran, sans rien présenté par-dessus hors guichet :
+    /// une feuille du deck peut s'y présenter.
+    private var isDiscoverFront: Bool { selectedTab == 2 && !showProfile }
 
     /// Le retour arrière. La carte rentre par le bord d'où elle est sortie : sans
     /// ça, annuler fait apparaître un film au centre de l'écran, et rien ne dit
@@ -1192,17 +1226,16 @@ struct SwipeDeckView: View {
     /// Ce que la Porte compte, d'après la bibliothèque locale : des films, ou
     /// des séries distinctes. La carte encore en main compte déjà.
     private var localMemoryCount: Int {
-        let held = model.heldSeenCard
+        // La carte en main, et les « vu » partis mais pas encore revenus.
+        let pending = model.sentSeenCards + [model.heldSeenCard].compactMap { $0 }
         if format == .series {
             var ids = Set(libraryStore.gallerySeasons.map(\.tmdbId))
-            if let held, held.isSeries { ids.insert(held.tmdbId) }
+            for card in pending where card.isSeries { ids.insert(card.tmdbId) }
             return ids.count
         }
-        let films = libraryStore.galleryFilms
-        guard let held, !held.isSeries, !films.contains(where: { $0.tmdbId == held.tmdbId }) else {
-            return films.count
-        }
-        return films.count + 1
+        var ids = Set(libraryStore.galleryFilms.map(\.tmdbId))
+        for card in pending where !card.isSeries { ids.insert(card.tmdbId) }
+        return ids.count
     }
 
     /// Le palier franchi par ce « vu », s'il y en a un, une fois par palier et

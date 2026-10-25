@@ -182,6 +182,7 @@ final class SwipeDeckViewModel {
     ///   `tv-1399` dès qu'une saison de la série est rangée).
     func syncLibrary(_ ids: Set<String>) {
         libraryIDs = ids
+        sentSeenCards.removeAll { ids.contains($0.id) }
         // Une carte peut avoir été classée ailleurs pendant que le deck est
         // ouvert : on la retire plutôt que de la faire trancher deux fois.
         let stale = cards.filter { ids.contains($0.id) && $0.id != heldSwipe?.card.id }
@@ -333,6 +334,11 @@ final class SwipeDeckViewModel {
 
     /// La carte rangée « vu » qui n'est pas encore partie au serveur : la
     /// galerie ne la compte pas encore, l'écran si.
+    /// Les « vu » partis au serveur et pas encore revenus par la galerie. En
+    /// balayant vite, le compte de la galerie retardait d'autant : la planche
+    /// des paliers annonçait 25 pendant que l'en-tête passait à 26.
+    private(set) var sentSeenCards: [SwipeCard] = []
+
     var heldSeenCard: SwipeCard? {
         guard let held = heldSwipe, held.decision == .seen else { return nil }
         return held.card
@@ -370,6 +376,9 @@ final class SwipeDeckViewModel {
         guard let held = heldSwipe else { return }
         heldSwipe = nil
         canUndo = false
+        if held.decision == .seen {
+            sentSeenCards = Array((sentSeenCards + [held.card]).suffix(30))
+        }
         Task { await queue.enqueue(held) }
     }
 

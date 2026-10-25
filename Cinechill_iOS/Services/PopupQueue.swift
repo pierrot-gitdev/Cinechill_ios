@@ -90,7 +90,11 @@ final class PopupQueue {
     ///   si elle est écartée : l'appelant oublie alors sa demande.
     @discardableResult
     func request(_ kind: Kind) -> Bool {
-        if current == kind || waiting.contains(kind) { return true }
+        // Une fenêtre momentanée déjà à l'écran ne se remplace pas : la
+        // nouvelle feuille prenait sa place, la fermeture de la première
+        // libérait le guichet, et la suivante ne pouvait plus se présenter.
+        if current == kind { return !kind.isMomentary }
+        if waiting.contains(kind) { return true }
         if kind.isOptional, Date.now.timeIntervalSince(lastClosedAt) < Self.optionalGap {
             return false
         }
