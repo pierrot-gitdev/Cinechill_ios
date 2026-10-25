@@ -54,9 +54,13 @@ struct NotificationsPanel: View {
         VStack(alignment: .leading, spacing: 10) {
             header
 
+            // `held` aussi : la recommandation qu'on vient d'accepter quitte le
+            // magasin avant sa confirmation, et le panneau se disait vide le
+            // temps de l'appel.
             if socialStore.suggestions.isEmpty
                 && socialStore.recentFollowers.isEmpty
-                && settled.isEmpty {
+                && settled.isEmpty
+                && held.isEmpty {
                 emptyState
             } else {
                 rows

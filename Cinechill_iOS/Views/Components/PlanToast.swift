@@ -24,6 +24,9 @@ struct PlanToast: View {
     let destination: String
     /// Acquis (point plein) plutôt que prévu (point creux).
     var isAcquired: Bool = true
+    /// Le point dit un état de la bibliothèque. Un échec n'en a pas : rien n'a
+    /// été rangé, ni acquis ni prévu.
+    var showsMark: Bool = true
     /// Le bord contre lequel l'appelant le pose. Il entre par là : un toast qui
     /// arriverait du côté opposé à son ancrage se lirait comme un objet qui passe
     /// devant l'écran, pas comme un mot glissé au bord.
@@ -42,14 +45,16 @@ struct PlanToast: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Group {
-                if isAcquired {
-                    PlanLight()
-                } else {
-                    PlanLightOutline()
+            if showsMark {
+                Group {
+                    if isAcquired {
+                        PlanLight()
+                    } else {
+                        PlanLightOutline()
+                    }
                 }
+                .padding(.top, 5)
             }
-            .padding(.top, 5)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)

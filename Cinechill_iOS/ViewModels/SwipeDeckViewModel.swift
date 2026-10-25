@@ -151,6 +151,8 @@ final class SwipeDeckViewModel {
     // MARK: - Chargement
 
     func start() async {
+        // Des décisions d'une session précédente ont pu rester sur le disque.
+        Task { await queue.flush() }
         guard cards.isEmpty else {
             await refillIfNeeded()
             return
@@ -355,6 +357,12 @@ final class SwipeDeckViewModel {
     /// quitté, sans quoi la dernière décision resterait en main.
     func flushPending() async {
         commitHeldSwipe()
+        await queue.flush()
+    }
+
+    /// Relance l'envoi de ce qui attend encore, sans toucher à la décision
+    /// gardée en main : le retour arrière reste possible.
+    func resumePending() async {
         await queue.flush()
     }
 

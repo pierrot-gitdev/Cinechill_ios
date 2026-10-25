@@ -70,7 +70,10 @@ struct ProfileView: View {
             // Rattrape les profils publics créés avant que le nom affiché ne
             // soit synchronisé avec les réglages — sans ça, un profil déjà
             // existant resterait cherchable par pseudo seulement.
-            await socialStore.syncDisplayName(profileStore.displayName)
+            // Le nom choisi seulement : jamais le repli tiré de l'adresse e-mail.
+            if let name = profileStore.chosenName {
+                await socialStore.syncDisplayName(name)
+            }
         }
     }
 

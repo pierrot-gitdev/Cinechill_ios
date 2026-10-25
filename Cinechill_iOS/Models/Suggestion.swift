@@ -52,6 +52,14 @@ extension Suggestion {
             .first { !$0.isEmpty }
         self.fromDisplayName = name ?? String(localized: "Quelqu'un", bundle: .app)
         self.fromAvatarURL = PublicProfile.trustedAvatarURL(data["fromAvatarURL"])
+        // Une saison recommandée se reconnaît à son identifiant (`tv-1399-s2`),
+        // comme dans `NotificationItem.mediaItem` : sans elle, l'affiche
+        // ouvrait la série entière.
+        var season: Int?
+        if mediaType == .tv, let itemID = itemData["id"] as? String,
+           let marker = itemID.range(of: "-s", options: .backwards) {
+            season = Int(itemID[marker.upperBound...])
+        }
         self.item = MediaItem(
             tmdbId: tmdbId,
             mediaType: mediaType,
@@ -61,7 +69,8 @@ extension Suggestion {
             voteAverage: itemData["voteAverage"] as? Double,
             voteCount: nil,
             genreIds: itemData["genreIds"] as? [Int] ?? [],
-            releaseDate: itemData["releaseDate"] as? String
+            releaseDate: itemData["releaseDate"] as? String,
+            season: season
         )
         self.createdAt = (data["createdAt"] as? Date) ?? .distantPast
     }

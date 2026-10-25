@@ -89,6 +89,7 @@ struct MainTabView: View {
         .environment(catalog)
         .environment(badgesModel)
         .environment(doorStore)
+        .overlay(alignment: .top) { writeFailureToast }
         .overlay { celebrationOverlay }
         .overlay { doorOverlay }
         .overlay { onboarding }
@@ -157,8 +158,13 @@ struct MainTabView: View {
         .task {
             // Filet de sécurité : si la galerie était déjà chargée avant que
             // cette vue n'existe, l'`onChange` ci-dessus ne se déclenchera
-            // jamais et personne ne serait jamais pris en main.
-            if libraryStore.hasLoadedGalleryOnce { await startTourIfNeeded() }
+            // jamais et personne ne serait jamais pris en main, ni aucune
+            // référence de badges posée : le premier badge de la session
+            // aurait alors servi de référence au lieu d'être fêté.
+            if libraryStore.hasLoadedGalleryOnce {
+                Task { await badgesModel.checkForNewAchievements(galleryCount: libraryStore.galleryFilms.count) }
+                await startTourIfNeeded()
+            }
         }
         // La mise à niveau de l'existant, dès que la bibliothèque est là et
         // avant toute annonce : ce que le rattrapage remonte est un dû.
@@ -175,6 +181,32 @@ struct MainTabView: View {
             try? await Task.sleep(for: .milliseconds(1200))
             guard !Task.isCancelled else { return }
             await doorStore.refresh()
+        }
+    }
+
+    /// Une écriture de la bibliothèque qui n'a pas abouti. Le bouton touché est
+    /// déjà revenu à son état d'avant : ce mot dit pourquoi, quel que soit
+    /// l'onglet d'où elle est partie.
+    @ViewBuilder
+    private var writeFailureToast: some View {
+        if let failure = libraryStore.writeFailure {
+            PlanToast(
+                title: String(localized: "Pas enregistré", bundle: .app),
+                destination: String(localized: "Vérifie ta connexion et réessaie.", bundle: .app),
+                showsMark: false
+            ) {
+                libraryStore.acknowledgeWriteFailure(failure)
+            }
+            .id(failure)
+            .padding(.horizontal, Metrics.margin)
+            .padding(.top, 10)
+            .task(id: failure) {
+                // Le toast se tait pour ne pas doubler l'annonce du deck ; un
+                // échec, lui, n'est annoncé par personne d'autre.
+                AccessibilityNotification.Announcement(
+                    String(localized: "Pas enregistré. Vérifie ta connexion et réessaie.", bundle: .app)
+                ).post()
+            }
         }
     }
 
@@ -210,6 +242,20 @@ struct MainTabView: View {
     /// panneau des recommandations de l'en-tête.
     private func routeNotificationIfPossible() {
         guard canRouteNotifications, let destination = notificationRouter.consume() else { return }
+        // Une feuille ou un plein écran ouvert ailleurs (le profil, une
+        // recommandation en cours) cachait la destination, ou empêchait la
+        // feuille de la notification de se présenter. Il se ferme d'abord.
+        guard !dismissForeignPresentation() else {
+            Task {
+                try? await Task.sleep(for: .milliseconds(450))
+                route(destination)
+            }
+            return
+        }
+        route(destination)
+    }
+
+    private func route(_ destination: NotificationRouter.Destination) {
         switch destination {
         case .suggestions:
             showTab(0)
@@ -227,6 +273,20 @@ struct MainTabView: View {
         case .followers:
             presentNotificationSheet(.followers)
         }
+    }
+
+    /// Ferme ce qui est présenté par-dessus les onglets, sauf la feuille d'une
+    /// notification précédente, que `presentNotificationSheet` remplace
+    /// lui-même. Vrai si quelque chose se ferme.
+    private func dismissForeignPresentation() -> Bool {
+        guard notificationSheet == nil,
+              let root = UIApplication.shared.connectedScenes
+                .compactMap({ ($0 as? UIWindowScene)?.keyWindow })
+                .first?.rootViewController,
+              root.presentedViewController != nil
+        else { return false }
+        root.dismiss(animated: true)
+        return true
     }
 
     private func showTab(_ tab: Int) {

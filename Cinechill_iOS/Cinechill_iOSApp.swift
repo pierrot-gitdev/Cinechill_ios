@@ -110,6 +110,7 @@ struct Cinechill_iOSApp: App {
                 // réglages de l'iPhone pendant l'absence.
                 if phase == .active {
                     Task {
+                        await authService.verifyAppleCredential()
                         await NotificationPermission.shared.refresh()
                         await PushRegistration.shared.sync()
                     }

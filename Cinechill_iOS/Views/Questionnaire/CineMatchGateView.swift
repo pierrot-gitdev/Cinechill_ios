@@ -63,6 +63,10 @@ struct CineMatchGateView: View {
     var format: MediaFormat = .film
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Les onglets restent montés quand on les quitte : sans lui, la Porte
+    /// gagnée depuis Découvrir s'ouvrait dans l'onglet caché, et sa
+    /// cérémonie, qui ne se joue en entier qu'une fois, était perdue.
+    @Environment(\.isSelectedTab) private var isSelectedTab
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var detailArtifact: DoorArtifactKey?
     /// L'action demandée depuis la feuille, jouée à sa fermeture complète :
@@ -212,7 +216,7 @@ struct CineMatchGateView: View {
     /// Ce qui peut relancer la séquence : la porte qui se gagne, ou la planche
     /// de célébration qui se retire.
     private var openingTrigger: String {
-        "\(door.unlocked)-\(isCelebrating)"
+        "\(door.unlocked)-\(isCelebrating)-\(isSelectedTab)"
     }
 
     /// Le raccord avec l'accueil, dès que la scène et l'accueil sont mesurés.
@@ -235,7 +239,7 @@ struct CineMatchGateView: View {
             openingSkipped = false
             return
         }
-        guard !isCelebrating, !hasPlayedOpening else { return }
+        guard !isCelebrating, !hasPlayedOpening, isSelectedTab else { return }
         hasPlayedOpening = true
 
         guard !reduceMotion else {

@@ -63,10 +63,10 @@ struct FilmDetailView: View {
     @ScaledMetric(relativeTo: .title2) private var heroTitleSize: CGFloat = 24
     private var heroFrameHeight: CGFloat { Self.heroHeight + max(0, heroTitleSize - 24) * 3 }
 
-    /// Le détail complète l'item sans l'écraser. La réponse détail ne porte
-    /// pas les identifiants de genre : en prendre l'item tel quel envoyait
-    /// `genreIds: []` à l'écriture de « Vu » ou « À voir », et faussait genres
-    /// exclus, badges et profil CinéMatch.
+    /// Le détail complète l'item sans l'écraser. Les genres de l'item passent
+    /// d'abord, ceux du détail quand l'item arrive sans (un récent de la
+    /// recherche) : `genreIds: []` à l'écriture de « Vu » ou « À voir »
+    /// faussait genres exclus, badges et profil CinéMatch.
     private var displayItem: MediaItem {
         guard let detail else { return item }
         let fresh = detail.asMediaItem(mediaType: item.mediaType)
@@ -78,7 +78,7 @@ struct FilmDetailView: View {
             overview: fresh.overview ?? item.overview,
             voteAverage: fresh.voteAverage ?? item.voteAverage,
             voteCount: fresh.voteCount ?? item.voteCount,
-            genreIds: item.genreIds,
+            genreIds: item.genreIds.isEmpty ? fresh.genreIds : item.genreIds,
             releaseDate: fresh.releaseDate ?? item.releaseDate
         )
     }

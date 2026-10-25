@@ -65,7 +65,10 @@ enum CineMatchLiveActivity {
         guard let posterURL = film.item.posterURL else { return }
         // L'app part en arrière-plan dès que la plateforme s'ouvre ; ce délai
         // de grâce laisse à l'affiche le temps d'arriver.
-        let grace = UIApplication.shared.beginBackgroundTask()
+        // Il se rend de lui-même si iOS le reprend avant la fin : un délai
+        // dépassé sans être rendu fait tuer l'app.
+        let grace = BackgroundTask()
+        grace.begin(name: "liveActivityPoster")
         Task {
             if let name = await storePoster(from: posterURL, tmdbID: film.id) {
                 await activity.update(ActivityContent(
@@ -73,7 +76,7 @@ enum CineMatchLiveActivity {
                     staleDate: staleDate
                 ))
             }
-            UIApplication.shared.endBackgroundTask(grace)
+            grace.end()
         }
     }
 
@@ -93,6 +96,20 @@ enum CineMatchLiveActivity {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }
             await removePosters(keeping: kept)
+        }
+    }
+
+    /// Retire toutes les activités et leurs affiches. À la déconnexion et à
+    /// la suppression du compte : le film lancé par un compte ne reste pas sur
+    /// l'écran verrouillé de celui qui se connecte ensuite.
+    static func endAll() {
+        let activities = Activity<CineMatchActivityAttributes>.activities
+        guard !activities.isEmpty else { return }
+        Task {
+            for activity in activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+            await removePosters(keeping: [])
         }
     }
 

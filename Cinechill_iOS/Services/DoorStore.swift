@@ -24,6 +24,11 @@ final class DoorStore {
     /// ouvrirait sur une rafale de célébrations.
     private static let celebratedKey = "cinematch.doorCelebratedKeys"
     private static let seriesCelebratedKey = "cinematch.seriesDoorCelebratedKeys"
+    /// Ce qui s'efface quand un autre compte se connecte : la Porte en cache
+    /// et l'historique de ses célébrations.
+    static var accountScopedKeys: [String] {
+        [celebratedKey, seriesCelebratedKey] + DoorState.cacheKeys
+    }
 
     private let client: any RecommendationFetching
 

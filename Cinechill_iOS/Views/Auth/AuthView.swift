@@ -125,7 +125,19 @@ struct AuthView: View {
     private var legalNotice: AttributedString {
         let terms = LegalPage.terms.url.absoluteString
         let privacy = LegalPage.privacy.url.absoluteString
-        let source = String(localized: "En créant un compte, tu acceptes les [conditions d'utilisation](\(terms)) et la [politique de confidentialité](\(privacy)).", bundle: .app)
+        return linkedNotice(String(localized: "En créant un compte, tu acceptes les [conditions d'utilisation](\(terms)) et la [politique de confidentialité](\(privacy)).", bundle: .app))
+    }
+
+    /// La même mention sous l'écran de connexion : « Continuer avec Apple » y
+    /// crée un compte au premier passage, sans être jamais passé par
+    /// l'inscription.
+    private var signInLegalNotice: AttributedString {
+        let terms = LegalPage.terms.url.absoluteString
+        let privacy = LegalPage.privacy.url.absoluteString
+        return linkedNotice(String(localized: "En continuant avec Apple ou Google, tu acceptes les [conditions d'utilisation](\(terms)) et la [politique de confidentialité](\(privacy)).", bundle: .app))
+    }
+
+    private func linkedNotice(_ source: String) -> AttributedString {
         var text = (try? AttributedString(markdown: source)) ?? AttributedString(source)
         for run in text.runs where run.link != nil {
             text[run.range].underlineStyle = .single
@@ -250,6 +262,11 @@ struct AuthView: View {
                 isLoading: isWorking, action: submit
             )
             doors
+            Text(signInLegalNotice)
+                .planFont(11)
+                .foregroundStyle(AuthInk.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
         }
     }
 

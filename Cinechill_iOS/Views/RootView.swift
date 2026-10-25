@@ -26,6 +26,7 @@ import GoogleSignIn
 struct RootView: View {
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var profileStore: UserProfileStore
 
     /// Le répertoire et l'accueil sont tenus ici plutôt que dans `MainTabView` : c'est ce qui
     /// leur permet d'exister, et donc de charger, avant que le moindre onglet ne soit monté.
@@ -87,6 +88,10 @@ struct RootView: View {
         // suivant sur le même téléphone voyait l'accueil personnalisé du
         // précédent, « parce que tu as vu » compris.
         .task(id: authService.currentUID) {
+            // Le nom et la photo de l'en-tête suivent le compte : sans ça, le
+            // suivant voyait la photo du précédent tant qu'il n'ouvrait pas son
+            // profil.
+            profileStore.refresh()
             await preloadHome()
         }
     }

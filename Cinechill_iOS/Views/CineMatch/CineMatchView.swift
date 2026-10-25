@@ -30,6 +30,7 @@ struct CineMatchView: View {
     @EnvironmentObject private var socialStore: SocialStore
     @Environment(BadgesViewModel.self) private var badgesModel
     @Environment(DoorStore.self) private var doorStore
+    @Environment(\.isSelectedTab) private var isSelectedTab
 
     @AppStorage(MediaFormat.storageKey) private var formatRaw = MediaFormat.film.rawValue
 
@@ -94,9 +95,15 @@ struct CineMatchView: View {
             syncPlatforms()
         }
         // L'interrupteur a pu basculer ici ou dans Découvrir : le parcours
-        // repart sur l'autre profil.
+        // repart sur l'autre profil. Basculé depuis Découvrir pendant une
+        // recherche, il attend son retour à l'accueil : le changement effaçait
+        // sinon la sélection en cours, sans qu'on l'ait vu.
         .onChange(of: formatRaw) { _, _ in
-            viewModel.setFormat(format)
+            if isSelectedTab {
+                viewModel.setFormat(format)
+            } else {
+                viewModel.requestFormat(format)
+            }
         }
         .task {
             viewModel.setFormat(format)
@@ -178,6 +185,14 @@ struct CineMatchView: View {
         return viewModel.dailyFilm?.id == film.id && !viewModel.films.contains { $0.id == film.id }
     }
 
+    private var fiveMode: CineMatchFiveMode {
+        switch viewModel.step {
+        case .daily: .daily
+        case .conclusion: concludedFromDaily ? .daily : .five
+        default: .five
+        }
+    }
+
     @ViewBuilder
     private var stepContent: some View {
         switch viewModel.step {
@@ -185,16 +200,16 @@ struct CineMatchView: View {
             CineMatchHomeView(viewModel: viewModel, onProfileTap: { showProfile = true })
         case .style, .anchor, .refine, .tweak, .loadingFive:
             CineMatchStartView(viewModel: viewModel)
-        case .conclusion where !concludedFromDaily:
-            CineMatchFiveView(viewModel: viewModel, mode: .five)
-                .onDisappear { Task { await viewModel.flushExposure() } }
-        case .five:
-            CineMatchFiveView(viewModel: viewModel, mode: .five)
+        // Une seule branche, dont l'identité suit le mode : les cinq et leur
+        // conclusion sont la même vue, comme la proposition du jour et la
+        // sienne. Deux branches faisaient deux vues pour SwiftUI, et « Je le
+        // regarde » reconstruisait l'écran au lieu d'éteindre la salle, heure
+        // de lancement comprise.
+        case .five, .daily, .conclusion:
+            CineMatchFiveView(viewModel: viewModel, mode: fiveMode)
+                .id(fiveMode)
                 // L'exposition s'accumule pendant qu'on fait défiler les cartes
                 // et part d'un seul envoi quand on quitte les résultats.
-                .onDisappear { Task { await viewModel.flushExposure() } }
-        case .daily, .conclusion:
-            CineMatchFiveView(viewModel: viewModel, mode: .daily)
                 .onDisappear { Task { await viewModel.flushExposure() } }
         }
     }

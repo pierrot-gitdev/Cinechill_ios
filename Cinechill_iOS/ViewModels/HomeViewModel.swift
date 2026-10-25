@@ -84,6 +84,7 @@ final class HomeViewModel {
         guard !loading else { return }
         loading = true
         errorMessage = nil
+        let account = accountID
 
         // Les rangées sont indépendantes du socle et partent en parallèle ;
         // « populaire » attend les plateformes, que seul le socle connaît.
@@ -93,6 +94,17 @@ final class HomeViewModel {
         await rowsTask
 
         loading = false
+        // Un autre compte s'est connecté pendant le chargement, dont la
+        // demande a été écartée par `loading`. Ce qui vient d'arriver est à
+        // l'ancien, « parce que tu as vu » compris : on repart pour le nouveau.
+        guard accountID == account else {
+            rows = .empty
+            rawPopularItems = []
+            popularItems = []
+            loadedPopularProviderIDs = nil
+            await loadAll(preferredPlatformIDs: preferredPlatformIDs)
+            return
+        }
         hasLoadedOnce = true
     }
 

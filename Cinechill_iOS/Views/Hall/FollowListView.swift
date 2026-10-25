@@ -200,8 +200,10 @@ struct FollowListView: View {
             case .followers: ids = try await socialStore.followerUIDs(of: target)
             }
             let me = socialStore.myUID
+            // Ceux que j'ai bloqués n'apparaissent nulle part, pas plus ici
+            // que dans la recherche ou les suggestions.
             profiles = try await socialStore.profiles(uids: ids)
-                .filter { $0.id != me }
+                .filter { $0.id != me && !socialStore.isBlocked($0.id) }
                 .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
         } catch is CancellationError {
             return

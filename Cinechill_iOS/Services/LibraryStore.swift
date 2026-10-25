@@ -14,8 +14,16 @@ final class LibraryStore: ObservableObject {
         case toWatch, seen, none
     }
 
-    @Published private(set) var galleryItems: [GalleryEntry] = []
-    @Published private(set) var watchlistItems: [WatchlistEntry] = []
+    @Published private(set) var galleryItems: [GalleryEntry] = [] {
+        didSet { galleryIndex = LibraryIndex(galleryItems.map { (id: $0.id, mediaType: $0.mediaType, tmdbId: $0.tmdbId) }) }
+    }
+    @Published private(set) var watchlistItems: [WatchlistEntry] = [] {
+        didSet { watchlistIndex = LibraryIndex(watchlistItems.map { (id: $0.id, mediaType: $0.mediaType, tmdbId: $0.tmdbId) }) }
+    }
+    /// Chaque affiche demande si son film est rangé, à chaque rendu : parcourir
+    /// une galerie de mille films pour cent affiches se sentait au défilement.
+    private var galleryIndex = LibraryIndex([])
+    private var watchlistIndex = LibraryIndex([])
     /// Les plateformes que l'utilisateur a déclaré avoir chez lui.
     ///
     /// Vide ne veut pas dire « toutes » mais « pas encore déclaré » : chaque
@@ -32,6 +40,9 @@ final class LibraryStore: ObservableObject {
     /// lui, la transition 0 → N du premier chargement se ferait passer pour
     /// un ajout massif aux yeux de tout ce qui célèbre la progression.
     @Published private(set) var hasLoadedGalleryOnce = false
+    /// Le premier instantané de la watchlist est arrivé. Avant, une liste
+    /// vide ne dit pas « rien en attente » mais « pas encore chargé ».
+    @Published private(set) var hasLoadedWatchlistOnce = false
     /// Même rôle pour les préférences, et pour un besoin précis : l'accueil est préchargé
     /// pendant l'ouverture de l'app, avant que le moindre écran n'existe, et « populaire »
     /// dépend des plateformes déclarées. Sans ce signal, le préchargement partirait sur une
@@ -60,6 +71,15 @@ final class LibraryStore: ObservableObject {
     /// fois Firestore revenu, et l'attente se montre en place d'ici là.
     @Published private(set) var pendingNextEpisodeByItemID: [String: Int] = [:]
     @Published private(set) var errorMessage: String?
+    /// Une écriture demandée par la personne qui n'a pas abouti : statut,
+    /// cœur, épisode, réglage. Le bouton revient à son état d'avant, et sans
+    /// ce signal rien ne disait pourquoi. Les erreurs d'écoute, elles, restent
+    /// dans `errorMessage` : une déconnexion en produit, sans rien à annoncer.
+    @Published private(set) var writeFailure: UUID?
+
+    func acknowledgeWriteFailure(_ id: UUID) {
+        if writeFailure == id { writeFailure = nil }
+    }
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
     private var galleryListener: ListenerRegistration?
@@ -157,10 +177,7 @@ final class LibraryStore: ObservableObject {
     /// plein d'une affiche de série dit « tu la connais » sans qu'aucun écran
     /// n'ait à le calculer.
     func isInGallery(_ item: MediaItem) -> Bool {
-        if item.isSeries {
-            return galleryItems.contains { $0.mediaType == .tv && $0.tmdbId == item.tmdbId }
-        }
-        return galleryItems.contains { $0.id == item.id }
+        galleryIndex.contains(item)
     }
 
     /// Les films seuls de la galerie.
@@ -248,16 +265,14 @@ final class LibraryStore: ObservableObject {
                 await MainActor.run {
                     self.clearPendingLove(for: item.id, ifStill: loved)
                     self.errorMessage = error.localizedDescription
+                    self.writeFailure = UUID()
                 }
             }
         }
     }
 
     func isInWatchlist(_ item: MediaItem) -> Bool {
-        if item.isSeries {
-            return watchlistItems.contains { $0.mediaType == .tv && $0.tmdbId == item.tmdbId }
-        }
-        return watchlistItems.contains { $0.id == item.id }
+        watchlistIndex.contains(item)
     }
 
     /// Met une saison dans la file en disant d'emblée quel épisode lancer : un
@@ -291,6 +306,7 @@ final class LibraryStore: ObservableObject {
                 await MainActor.run {
                     self.clearPendingNextEpisode(for: entry.id, ifStill: episode)
                     self.errorMessage = error.localizedDescription
+                    self.writeFailure = UUID()
                 }
             }
         }
@@ -435,7 +451,13 @@ final class LibraryStore: ObservableObject {
     /// Efface le compte côté serveur, puis termine la session locale. La
     /// déconnexion vient en dernier : sans jeton valide, l'appel échouerait.
     func deleteAccount() async throws {
+        let uid = Auth.auth().currentUser?.uid
         _ = try await callAccountFunction(APIEndpoints.deleteAccount())
+        // La photo de profil choisie ne vivait que sur ce téléphone : elle part
+        // avec le compte.
+        if let uid {
+            UserDefaults.standard.removeObject(forKey: UserProfileStore.photoKey(uid: uid))
+        }
         // Le serveur a oublié l'appareil avec le compte ; les rappels
         // programmés sur le téléphone, eux, partiraient encore.
         LocalReminders.cancelAll()
@@ -451,6 +473,7 @@ final class LibraryStore: ObservableObject {
                 guard let error else { return }
                 DispatchQueue.main.async {
                     self?.errorMessage = error.localizedDescription
+                    self?.writeFailure = UUID()
                 }
             }
     }
@@ -491,6 +514,7 @@ private extension LibraryStore {
                 await MainActor.run {
                     self.clearPendingStatus(for: item.id, ifStill: status)
                     self.errorMessage = error.localizedDescription
+                    self.writeFailure = UUID()
                 }
             }
         }
@@ -624,6 +648,26 @@ private extension LibraryStore {
 
     var db: Firestore { Firestore.firestore() }
 
+    /// La Porte de CinéMatch, ses célébrations et les paliers du deck sont un
+    /// état de compte, pas d'appareil : un autre compte qui se connecte sur ce
+    /// téléphone ne doit pas les hériter.
+    ///
+    /// L'effacement n'a lieu qu'au vrai changement de compte. Fait à chaque
+    /// événement de connexion, lancement compris, il viderait la Porte en
+    /// cache à chaque ouverture de l'app.
+    private static let lastAccountKey = "library.lastAccountID"
+
+    private static func adoptAccount(_ uid: String) {
+        let defaults = UserDefaults.standard
+        guard defaults.string(forKey: lastAccountKey) != uid else { return }
+        // Les anciens noms de la Porte, d'avant le passage à quatre étapes.
+        let legacy = ["cinematch.door", "cinematch.seriesDoor"]
+        for key in legacy + DoorStore.accountScopedKeys + SwipeDeckView.accountScopedKeys {
+            defaults.removeObject(forKey: key)
+        }
+        defaults.set(uid, forKey: lastAccountKey)
+    }
+
     func observeAuthState() {
         authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             DispatchQueue.main.async { [weak self] in
@@ -638,20 +682,21 @@ private extension LibraryStore {
                 self.bannedGenreIDs = []
                 self.displayedBadgeID = nil
                 self.hasLoadedGalleryOnce = false
+                self.hasLoadedWatchlistOnce = false
                 self.hasLoadedPreferencesOnce = false
                 self.pendingStatusByItemID = [:]
                 self.pendingLoveByItemID = [:]
-                // La porte de CinéMatch est un état de compte, pas d'appareil :
-                // changer d'utilisateur ne doit léguer ni la porte en cache, ni
-                // l'historique des célébrations.
-                for key in [
-                    "cinematch.door", "cinematch.doorCelebratedKeys",
-                    "cinematch.seriesDoor", "cinematch.seriesDoorCelebratedKeys",
-                ] {
-                    UserDefaults.standard.removeObject(forKey: key)
-                }
+                self.pendingNextEpisodeByItemID = [:]
+                self.errorMessage = nil
+                self.writeFailure = nil
 
-                guard let uid = user?.uid else { return }
+                guard let uid = user?.uid else {
+                    // Déconnexion ou compte supprimé.
+                    CineMatchLiveActivity.endAll()
+                    NotificationRouter.shared.discardPending()
+                    return
+                }
+                Self.adoptAccount(uid)
                 self.startGalleryListener(uid: uid)
                 self.startWatchlistListener(uid: uid)
                 self.startPreferencesListener(uid: uid)
@@ -700,6 +745,7 @@ private extension LibraryStore {
                         .sorted(by: { $0.addedAt > $1.addedAt })
                     self.resolvePendingStatuses()
                     self.resolvePendingNextEpisodes()
+                    self.hasLoadedWatchlistOnce = true
                 }
             }
     }
@@ -853,3 +899,18 @@ private extension LibraryStore {
     }
 }
 
+/// Ce qui est rangé, consultable sans parcourir la liste. Une série compte dès
+/// qu'une de ses saisons est là.
+private struct LibraryIndex {
+    private let ids: Set<String>
+    private let seriesIDs: Set<Int>
+
+    init(_ entries: [(id: String, mediaType: MediaType, tmdbId: Int)]) {
+        ids = Set(entries.map(\.id))
+        seriesIDs = Set(entries.filter { $0.mediaType == .tv }.map(\.tmdbId))
+    }
+
+    func contains(_ item: MediaItem) -> Bool {
+        item.isSeries ? seriesIDs.contains(item.tmdbId) : ids.contains(item.id)
+    }
+}

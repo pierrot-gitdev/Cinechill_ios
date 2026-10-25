@@ -3643,22 +3643,6 @@
         }
       }
     },
-    "Ce profil n'existe plus." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This profile no longer exists."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce profil n'existe plus."
-          }
-        }
-      }
-    },
     "Ce profil ne pourra plus te suivre ni t'envoyer de films, et tu ne le suivras plus." : {
       "localizations" : {
         "en" : {
@@ -7808,22 +7792,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La série du jour"
-          }
-        }
-      }
-    },
-    "La suppression a échoué. Reconnecte-toi puis réessaie." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deletion failed. Sign in again, then retry."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La suppression a échoué. Reconnecte-toi puis réessaie."
           }
         }
       }
@@ -15949,6 +15917,166 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Watchlist"
+          }
+        }
+      }
+    },
+    "Ce profil n'est pas accessible." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This profile isn't available."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce profil n'est pas accessible."
+          }
+        }
+      }
+    },
+    "Données de films fournies par TMDB" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Movie data provided by TMDB"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Données de films fournies par TMDB"
+          }
+        }
+      }
+    },
+    "Impossible de charger les genres." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load genres."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de charger les genres."
+          }
+        }
+      }
+    },
+    "On n'a pas pu supprimer ton compte. Vérifie ta connexion et réessaie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't delete your account. Check your connection and try again."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On n'a pas pu supprimer ton compte. Vérifie ta connexion et réessaie."
+          }
+        }
+      }
+    },
+    "Pas enregistré" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not saved"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas enregistré"
+          }
+        }
+      }
+    },
+    "Pas enregistré. Vérifie ta connexion et réessaie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not saved. Check your connection and try again."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas enregistré. Vérifie ta connexion et réessaie."
+          }
+        }
+      }
+    },
+    "Retirer de ta galerie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from your gallery"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer de ta galerie"
+          }
+        }
+      }
+    },
+    "Un compte existe déjà avec cette adresse. Connecte-toi avec ton mot de passe." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An account already exists with this email. Sign in with your password."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un compte existe déjà avec cette adresse. Connecte-toi avec ton mot de passe."
+          }
+        }
+      }
+    },
+    "Vérifie ta connexion et réessaie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check your connection and try again."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérifie ta connexion et réessaie."
+          }
+        }
+      }
+    },
+    "En continuant avec Apple ou Google, tu acceptes les [conditions d'utilisation](%@) et la [politique de confidentialité](%@)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By continuing with Apple or Google, you accept the [terms of use](%1$@) and the [privacy policy](%2$@)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En continuant avec Apple ou Google, tu acceptes les [conditions d'utilisation](%1$@) et la [politique de confidentialité](%2$@)."
           }
         }
       }

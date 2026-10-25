@@ -26,6 +26,9 @@ struct GalleryView: View {
 
     @State private var showProfile = false
     @State private var composerItem: MediaItem?
+    /// Un film à cœur dont on a demandé le retrait : le cœur part avec lui,
+    /// on le demande d'abord, comme la fiche.
+    @State private var pendingRemoval: MediaItem?
     @State private var outcome: SuggestionOutcome?
 
     var body: some View {
@@ -33,7 +36,11 @@ struct GalleryView: View {
             ZStack {
                 Ink.ground.ignoresSafeArea()
 
-                if libraryStore.galleryItems.isEmpty {
+                // Avant le premier instantané, une liste vide n'est pas un
+                // état vide : il clignotait au lancement d'un compte neuf.
+                if libraryStore.galleryItems.isEmpty && !libraryStore.hasLoadedGalleryOnce {
+                    CinechillSpinner(size: 26)
+                } else if libraryStore.galleryItems.isEmpty {
                     emptyState.padding(.horizontal, 34)
                 } else {
                     content
@@ -43,6 +50,12 @@ struct GalleryView: View {
                 AppHeaderView(title: String(localized: "Galerie", bundle: .app), onProfileTap: { showProfile = true })
             }
             .navigationBarHidden(true)
+            // Des liens par valeur, et non par destination : retirer un film de
+            // la frise depuis sa fiche retirait le lien qui l'avait poussée, et
+            // la fiche pouvait se refermer seule.
+            .navigationDestination(for: MediaItem.self) { item in
+                ItemDetailView(item: item)
+            }
             .fullScreenCover(isPresented: $showProfile) {
                 ProfileView(badgesModel: badgesModel)
                     .environmentObject(profileStore)
@@ -62,6 +75,10 @@ struct GalleryView: View {
             .environmentObject(socialStore)
         }
         .task {
+            // Les bandes se rangent sans attendre le répertoire des genres :
+            // sur un réseau lent, la galerie restait sans bandes jusqu'à sa
+            // réponse. Les noms de genres les rejoignent à son arrivée.
+            syncModel()
             await catalog.loadIfNeeded()
             syncModel()
         }
@@ -69,6 +86,22 @@ struct GalleryView: View {
             guard outcome != nil else { return }
             try? await Task.sleep(for: .seconds(3))
             withAnimation(.easeOut(duration: 0.25)) { outcome = nil }
+        }
+        .alert(
+            String(localized: "Retirer de ta galerie", bundle: .app),
+            isPresented: Binding(
+                get: { pendingRemoval != nil },
+                set: { if !$0 { pendingRemoval = nil } }
+            ),
+            presenting: pendingRemoval
+        ) { item in
+            Button(String(localized: "Retirer", bundle: .app), role: .destructive) {
+                libraryStore.removeFromGallery(item)
+                pendingRemoval = nil
+            }
+            Button(String(localized: "Annuler", bundle: .app), role: .cancel) {}
+        } message: { _ in
+            Text("Le film quitte ta galerie, et ton coup de cœur avec lui.", bundle: .app)
         }
         .onChange(of: libraryStore.galleryItems) { _, _ in syncModel() }
         .onChange(of: catalog.genreNames) { _, _ in syncModel() }
@@ -183,7 +216,7 @@ struct GalleryView: View {
         switch tile {
         case .series:
             if let destination = tile.destination {
-                NavigationLink(destination: ItemDetailView(item: destination)) {
+                NavigationLink(value: destination) {
                     PosterTile(posterPath: tile.posterPath, title: tile.title, width: posterWidth)
                         .overlay(alignment: .bottomLeading) {
                             if let plate = tile.plate, posterWidth >= 66 {
@@ -220,7 +253,7 @@ struct GalleryView: View {
         // sa place, et le cœur ne bouge qu'une fois Firestore revenu.
         let loved = entry.isLoved
         let isPending = libraryStore.isLovePending(id: entry.id)
-        return NavigationLink(destination: ItemDetailView(item: entry.mediaItem)) {
+        return NavigationLink(value: entry.mediaItem) {
             PosterTile(
                 posterPath: entry.posterPath,
                 title: entry.title,
@@ -288,7 +321,11 @@ struct GalleryView: View {
 
             Button(role: .destructive) {
                 Haptics.impact(.light)
-                libraryStore.removeFromGallery(entry.mediaItem)
+                if libraryStore.isLoved(entry.mediaItem) {
+                    pendingRemoval = entry.mediaItem
+                } else {
+                    libraryStore.removeFromGallery(entry.mediaItem)
+                }
             } label: {
                 Label(String(localized: "Retirer de ma galerie", bundle: .app), systemImage: "xmark")
             }

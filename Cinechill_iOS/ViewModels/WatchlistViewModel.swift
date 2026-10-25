@@ -171,7 +171,9 @@ final class WatchlistViewModel {
         await cache.store(data, for: cacheKey(row.id))
     }
 
-    private func cacheKey(_ id: Int) -> String { "enrich-\(id)" }
+    /// La langue en fait partie : la bande-annonce et le synopsis restaient
+    /// dans l'ancienne langue jusqu'à l'expiration du cache.
+    private func cacheKey(_ id: Int) -> String { "enrich-\(id)-\(AppLanguage.current.tmdbTag)" }
 
     /// Les saisons, par leur propre point d'accès et leur propre cache. Même
     /// affichage progressif que les films : chaque lot enrichit l'écran visible.

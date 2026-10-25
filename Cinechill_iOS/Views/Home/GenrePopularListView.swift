@@ -33,6 +33,10 @@ struct GenrePopularListView: View {
     @State private var ignoresPlatforms = false
     /// Les plateformes de la dernière requête, pour ne recharger que si elles changent.
     @State private var loadedPlatformIDs: Set<String>?
+    /// Le réglage des plateformes vu au dernier passage. Les `task` repartent à
+    /// chaque retour depuis une fiche : sans lui, un retour défaisait « Voir
+    /// sans filtre » alors que rien n'avait changé.
+    @State private var seenPlatformSetting: Set<String>?
     @State private var errorMessage: String?
     @State private var showPlatforms = false
 
@@ -46,7 +50,9 @@ struct GenrePopularListView: View {
             LazyVStack(alignment: .leading, spacing: 0) {
                 platformRow
 
-                if loading {
+                // Un rechargement garde la grille : la position de défilement
+                // et les affiches restent là pendant qu'il passe.
+                if loading && items.isEmpty {
                     loadingState
                 } else if errorMessage != nil {
                     // La conséquence et non la cause : le message du serveur
@@ -88,8 +94,17 @@ struct GenrePopularListView: View {
                 .environmentObject(libraryStore)
                 .environment(catalog)
         }
-        .task(id: category.id) { await load() }
+        // Une seule fois : la `task` repart à chaque retour depuis une fiche,
+        // et rechargeait la grille en perdant la position.
+        .task(id: category.id) {
+            guard loadedPlatformIDs == nil else { return }
+            await load()
+        }
         .task(id: libraryStore.preferredPlatformIDs) {
+            let setting = libraryStore.preferredPlatformIDs
+            let previous = seenPlatformSetting
+            seenPlatformSetting = setting
+            guard let previous, previous != setting else { return }
             // Un réglage changé reprend la main sur « Voir sans filtre ».
             ignoresPlatforms = false
             guard let loadedPlatformIDs, loadedPlatformIDs != effectivePlatformIDs else { return }
@@ -233,8 +248,8 @@ struct GenrePopularListView: View {
         defer { loading = false }
         do {
             let platformIDs = effectivePlatformIDs
-            loadedPlatformIDs = platformIDs
             items = try await homeModel.loadTopForCategory(category, platformIDs: platformIDs)
+            loadedPlatformIDs = platformIDs
         } catch {
             if error is CancellationError { return }
             // Le texte affiché est fixe ; on garde la cause pour le débogage.

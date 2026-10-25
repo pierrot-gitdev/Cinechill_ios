@@ -142,7 +142,11 @@ struct HomeView: View {
             .task {
                 await socialStore.loadFollowSuggestions()
             }
-            .task(id: libraryStore.preferredPlatformIDs) {
+            // Aussi à la fin du premier chargement : des plateformes arrivées
+            // après l'attente de l'ouverture laissaient « Populaire » sans
+            // filtre sous la ligne « Mes plateformes ». Une liste déjà filtrée
+            // pour ces plateformes ne repart pas.
+            .task(id: PopularFilterKey(loaded: homeModel.hasLoadedOnce, platforms: libraryStore.preferredPlatformIDs)) {
                 guard homeModel.hasLoadedOnce else { return }
                 await homeModel.refreshPopular(using: libraryStore.preferredPlatformIDs)
             }
@@ -628,6 +632,11 @@ struct TheaterCardView: View {
     private var freshness: String? {
         guard let releaseDate = item.releaseDate else { return nil }
         let formatter = DateFormatter()
+        // Une date de TMDB, pas une date d'affichage : sous un calendrier
+        // japonais ou bouddhiste, « yyyy » se lisait dans l'ère du téléphone et
+        // l'ancienneté devenait « depuis 198 000 j ».
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.timeZone = TimeZone(identifier: "UTC")
         guard let date = formatter.date(from: releaseDate) else { return nil }
@@ -637,4 +646,10 @@ struct TheaterCardView: View {
         if days <= 7 { return String(localized: "Cette semaine", bundle: .app) }
         return String(localized: "Depuis \(days) j", bundle: .app)
     }
+}
+
+/// Ce qui relance le filtre de « Populaire ».
+private struct PopularFilterKey: Equatable {
+    let loaded: Bool
+    let platforms: Set<String>
 }

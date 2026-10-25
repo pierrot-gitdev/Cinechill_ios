@@ -359,13 +359,19 @@ struct SeriesDetailView: View {
                 HStack(spacing: Metrics.gutter) {
                     if let entry {
                         if !entry.isAwaitingEpisode {
+                            let total = episodeTotal(entry, season: season)
                             DetailFloorButton(
-                                title: String(localized: "J'ai vu l'épisode \(entry.episodeToPlay)", bundle: .app),
+                                // Sans nombre d'épisodes connu, le bouton range la
+                                // saison entière : il le dit, au lieu de promettre
+                                // un seul épisode.
+                                title: total == nil
+                                    ? String(localized: "Saison vue", bundle: .app)
+                                    : String(localized: "J'ai vu l'épisode \(entry.episodeToPlay)", bundle: .app),
                                 style: .paper,
                                 isWaiting: waitingEpisode || waitingStatus
                             ) {
                                 Haptics.impact(.medium)
-                                advance(entry, item: seasonItem)
+                                advance(entry, item: seasonItem, total: total)
                             }
                         }
                         DetailFloorButton(
@@ -441,10 +447,17 @@ struct SeriesDetailView: View {
         }
     }
 
+    /// Le nombre d'épisodes de la saison. Celui de l'entrée manque quand TMDB
+    /// n'a pas répondu à son écriture : la fiche de la série le connaît aussi.
+    private func episodeTotal(_ entry: WatchlistEntry, season: TVSeasonListing) -> Int? {
+        if let episodes = entry.seasonFacts?.episodes, episodes > 0 { return episodes }
+        return season.episodeCount > 0 ? season.episodeCount : nil
+    }
+
     /// Un épisode de plus. Passé le dernier, il n'y a plus d'épisode à lancer :
     /// c'est la saison qui est vue, et elle quitte la file pour la galerie.
-    private func advance(_ entry: WatchlistEntry, item seasonItem: MediaItem) {
-        if entry.isOnLastEpisode {
+    private func advance(_ entry: WatchlistEntry, item seasonItem: MediaItem, total: Int?) {
+        if entry.episodeToPlay >= (total ?? 0) {
             libraryStore.addToGallery(seasonItem)
         } else {
             libraryStore.setNextEpisode(entry, to: entry.episodeToPlay + 1)

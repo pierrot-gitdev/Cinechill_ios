@@ -110,8 +110,10 @@ final class BadgesViewModel {
         progressByID[badge.id] ?? .locked(id: badge.id)
     }
 
-    func refresh() async {
-        guard !isLoading else { return }
+    /// Vrai si l'état des badges vient d'être relu sur le serveur.
+    @discardableResult
+    func refresh() async -> Bool {
+        guard !isLoading else { return false }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -121,8 +123,10 @@ final class BadgesViewModel {
                 uniquingKeysWith: { first, _ in first }
             )
             errorMessage = nil
+            return true
         } catch {
             errorMessage = String(localized: "Impossible de mettre à jour tes badges.", bundle: .app)
+            return false
         }
     }
 
@@ -149,23 +153,34 @@ final class BadgesViewModel {
         let previousDistinction = lastKnownGalleryCount.map(Distinction.distinction(for:))
         let previousProgress = progressByID
 
-        await refresh()
-        hasEstablishedBaseline = true
+        let refreshed = await refresh()
         lastKnownGalleryCount = galleryCount
 
-        guard !isFirstCheck else { return }
+        // La distinction se lit sur la galerie, qui est sur le téléphone : elle
+        // se fête même quand le serveur des badges n'a pas répondu.
+        let newDistinction = Distinction.distinction(for: galleryCount)
+        let promotion = previousDistinction.flatMap {
+            newDistinction.rawValue > $0.rawValue ? Celebration.distinction(newDistinction) : nil
+        }
 
-        for badge in BadgeCatalog.all {
-            let wasUnlocked = previousProgress[badge.id]?.unlocked ?? false
-            let isUnlocked = progressByID[badge.id]?.unlocked ?? false
-            if !wasUnlocked, isUnlocked {
-                pendingCelebrations.append(.badge(badge, unlockedBy: progressByID[badge.id]?.unlockedBy))
+        // Une lecture ratée ne pose pas de référence. Posée sur un état vide
+        // (démarrage hors ligne), elle faisait fêter d'affilée, au film
+        // suivant, chaque badge déjà obtenu.
+        if refreshed {
+            hasEstablishedBaseline = true
+            if !isFirstCheck {
+                for badge in BadgeCatalog.all {
+                    let wasUnlocked = previousProgress[badge.id]?.unlocked ?? false
+                    let isUnlocked = progressByID[badge.id]?.unlocked ?? false
+                    if !wasUnlocked, isUnlocked {
+                        pendingCelebrations.append(.badge(badge, unlockedBy: progressByID[badge.id]?.unlockedBy))
+                    }
+                }
             }
         }
 
-        let newDistinction = Distinction.distinction(for: galleryCount)
-        if let previousDistinction, newDistinction.rawValue > previousDistinction.rawValue {
-            pendingCelebrations.append(.distinction(newDistinction))
+        if let promotion {
+            pendingCelebrations.append(promotion)
         }
     }
 

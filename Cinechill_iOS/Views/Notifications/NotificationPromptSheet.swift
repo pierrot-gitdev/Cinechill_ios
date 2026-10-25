@@ -336,7 +336,7 @@ struct NotificationProfileView: View {
         } catch is CancellationError {
             return
         } catch SocialError.targetNotFound {
-            failure = String(localized: "Ce profil n'existe plus.", bundle: .app)
+            failure = String(localized: "Ce profil n'est pas accessible.", bundle: .app)
         } catch {
             failure = (error as? LocalizedError)?.errorDescription
                 ?? String(localized: "On n'a pas pu charger ce profil.", bundle: .app)

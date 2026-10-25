@@ -135,6 +135,10 @@ final class CineMatchViewModel {
     private(set) var replaceOutcome: ReplaceOutcome?
     /// La séance écrite par le serveur pour ces cinq films.
     private var sessionID: String?
+    /// Change à chaque nouveau remplacement et à chaque proposition effacée.
+    /// « Retour » n'annule pas un remplacement en route : sa réponse,
+    /// arrivée après cinq films neufs, s'appliquait à eux.
+    private var replaceGeneration = 0
     /// La soirée en cours : un identifiant tiré à chaque départ, envoyé avec
     /// chaque appel. Le serveur y range chaque écran et chaque geste (voir
     /// `journalEvening`) ; c'est ce journal qui permettra au moteur
@@ -200,7 +204,21 @@ final class CineMatchViewModel {
     /// L'interrupteur a basculé. Il ne se montre qu'à l'accueil et devant la
     /// Porte, jamais au milieu d'une recherche : la séance en cours, s'il en
     /// reste une, est abandonnée, puisqu'elle ne parlait pas du même profil.
+    /// Le format demandé depuis un autre onglet pendant une recherche,
+    /// appliqué au retour à l'accueil.
+    private var deferredFormat: MediaFormat?
+
+    /// Applique le format tout de suite à l'accueil, plus tard ailleurs.
+    func requestFormat(_ newFormat: MediaFormat) {
+        if step == .home {
+            setFormat(newFormat)
+        } else {
+            deferredFormat = newFormat == format ? nil : newFormat
+        }
+    }
+
     func setFormat(_ newFormat: MediaFormat) {
+        deferredFormat = nil
         guard newFormat != format else { return }
         recordStarterExposure()
         stopInflight()
@@ -471,9 +489,13 @@ final class CineMatchViewModel {
         let refusedIDs = marked.filter { marks[$0.id] == .refused }.map(\.id)
         let seenIDs = marked.filter { marks[$0.id] != .refused }.map(\.id)
 
+        replaceGeneration += 1
+        let generation = replaceGeneration
         isReplacing = true
         replaceOutcome = nil
-        defer { isReplacing = false }
+        defer {
+            if replaceGeneration == generation { isReplacing = false }
+        }
         do {
             let response = try await client.picks(
                 situation: situation, anchorID: fiveAnchorID, secondID: fiveSecondID, tweak: fiveTweak,
@@ -483,7 +505,7 @@ final class CineMatchViewModel {
                 ),
                 evening: eveningID
             )
-            guard !Task.isCancelled, step == .five else { return }
+            guard !Task.isCancelled, step == .five, replaceGeneration == generation else { return }
             var spares = response.films
                 .filter { !keepIDs.contains($0.id) && marks[$0.id] == nil }
                 .makeIterator()
@@ -512,6 +534,7 @@ final class CineMatchViewModel {
             queueFiveExposure(films[currentIndex].id)
         } catch {
             if error is CancellationError || Task.isCancelled { return }
+            guard replaceGeneration == generation else { return }
             replaceOutcome = .failed
         }
     }
@@ -525,6 +548,9 @@ final class CineMatchViewModel {
         flushExposureInBackground()
         resetSession()
         step = .home
+        if let deferredFormat {
+            setFormat(deferredFormat)
+        }
     }
 
     /// Rejoue la dernière requête en échec.
@@ -752,6 +778,7 @@ final class CineMatchViewModel {
         freshFilmIDs = []
         replaceOutcome = nil
         isReplacing = false
+        replaceGeneration += 1
         sessionID = nil
         fiveAnchorID = nil
         fiveSecondID = nil

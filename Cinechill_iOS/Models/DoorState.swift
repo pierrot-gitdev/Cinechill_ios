@@ -150,6 +150,9 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
     private static let cacheKey = "cinematch.door.v2"
     private static let seriesCacheKey = "cinematch.seriesDoor.v2"
 
+    /// Les deux caches, à effacer quand un autre compte se connecte.
+    static var cacheKeys: [String] { [cacheKey, seriesCacheKey] }
+
     static var cached: DoorState? { read(cacheKey) }
     static var cachedSeries: DoorState? { read(seriesCacheKey)?.markedAsSeries() }
 

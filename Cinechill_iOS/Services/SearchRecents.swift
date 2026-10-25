@@ -30,6 +30,8 @@ nonisolated enum SearchRecent: Codable, Hashable, Sendable, Identifiable {
         let posterPath: String?
         let releaseDate: String?
         let seasonCount: Int?
+        /// Optionnel : les récents gardés avant le 25 oct. 2026 n'en ont pas.
+        let genreIds: [Int]?
 
         init(_ item: MediaItem) {
             tmdbId = item.tmdbId
@@ -38,6 +40,7 @@ nonisolated enum SearchRecent: Codable, Hashable, Sendable, Identifiable {
             posterPath = item.posterPath
             releaseDate = item.releaseDate
             seasonCount = item.seasonCount
+            genreIds = item.genreIds
         }
 
         var item: MediaItem {
@@ -49,7 +52,7 @@ nonisolated enum SearchRecent: Codable, Hashable, Sendable, Identifiable {
                 overview: nil,
                 voteAverage: nil,
                 voteCount: nil,
-                genreIds: [],
+                genreIds: genreIds ?? [],
                 releaseDate: releaseDate,
                 seasonCount: seasonCount
             )

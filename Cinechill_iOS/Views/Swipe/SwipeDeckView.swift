@@ -110,6 +110,15 @@ struct SwipeDeckView: View {
     /// En dessous, la planche aurait trop peu de films à proposer.
     private static let loveGridMinimumEntries = 6
     private static let loveGridOfferedKey = "swipe.loveGrid.offered"
+    /// Ce qui s'efface quand un autre compte se connecte : ses paliers fêtés
+    /// et les planches déjà proposées ne sont pas ceux du suivant.
+    static var accountScopedKeys: [String] {
+        [loveGridOfferedKey] + MediaFormat.allCases.map { goalMilestonesKey($0) }
+    }
+
+    private static func goalMilestonesKey(_ format: MediaFormat) -> String {
+        "swipe.goalMilestones.\(format.rawValue)"
+    }
 
     /// Le palier de la galerie tant que CinéMatch est fermé.
     @State private var goalMilestone: Int?
@@ -203,8 +212,20 @@ struct SwipeDeckView: View {
             Task { await model.setFormat(format) }
         }
         .onChange(of: scenePhase) { _, phase in
-            guard phase != .active else { return }
-            Task { await model.flushPending() }
+            guard phase != .active else {
+                // Ce qui n'était pas parti avant la fermeture, ou avant un
+                // relancement, repart au retour.
+                Task { await model.resumePending() }
+                return
+            }
+            // iOS suspend l'app sitôt quittée : sans ce délai, l'envoi de la
+            // dernière décision s'arrêtait en route.
+            let grace = BackgroundTask()
+            grace.begin(name: "swipes")
+            Task {
+                await model.flushPending()
+                grace.end()
+            }
         }
         // L'onglet reste monté quand on le quitte (voir `MainTabView`), donc
         // `onDisappear` ne suffit pas : c'est le changement d'onglet qui dit
@@ -1073,7 +1094,7 @@ struct SwipeDeckView: View {
             goalBase = localMemoryCount - model.addedThisSession
         }
         let count = (goalBase ?? 0) + model.addedThisSession
-        let storageKey = "swipe.goalMilestones.\(format.rawValue)"
+        let storageKey = Self.goalMilestonesKey(format)
         var celebrated = Set(UserDefaults.standard.array(forKey: storageKey) as? [Int] ?? [])
         guard let step = SwipeGoalMilestoneOverlay.steps(for: target).last(where: { $0 <= count }),
               count - step < 3, !celebrated.contains(step)

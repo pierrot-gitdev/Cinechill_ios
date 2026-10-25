@@ -390,6 +390,25 @@ final class AuthService: ObservableObject {
         return true
     }
 
+    /// Déconnecte quand l'autorisation Apple a été retirée depuis les réglages
+    /// de l'iPhone (Identifiant Apple › Se connecter avec Apple). Sans ce
+    /// contrôle, la session Firebase restait ouverte au nom d'une
+    /// autorisation que la personne venait de reprendre. Appelé au retour au
+    /// premier plan, là où le retrait a eu lieu.
+    func verifyAppleCredential() async {
+#if canImport(FirebaseAuth)
+        guard let user = Auth.auth().currentUser,
+              let apple = user.providerData.first(where: { $0.providerID == "apple.com" })
+        else { return }
+        // `.notFound` n'est pas un retrait : seul `.revoked` en est un.
+        guard let state = try? await ASAuthorizationAppleIDProvider().credentialState(forUserID: apple.uid),
+              state == .revoked,
+              Auth.auth().currentUser?.uid == user.uid
+        else { return }
+        try? signOut()
+#endif
+    }
+
     // MARK: - Google
 
     func signInWithGoogle() async throws {
@@ -480,6 +499,17 @@ final class AuthService: ObservableObject {
             return AuthFailure(
                 field: .email,
                 message: String(localized: "Un compte existe déjà pour cette adresse.", bundle: .app),
+                repair: .signIn
+            )
+
+        case AuthErrorCode.accountExistsWithDifferentCredential.rawValue,
+             AuthErrorCode.credentialAlreadyInUse.rawValue:
+            // Apple ou Google sur une adresse déjà inscrite par mot de passe :
+            // Firebase n'accepte qu'un compte par adresse. « Réessayer » ne
+            // mènerait nulle part, c'est le mot de passe qu'il faut.
+            return AuthFailure(
+                field: .email,
+                message: String(localized: "Un compte existe déjà avec cette adresse. Connecte-toi avec ton mot de passe.", bundle: .app),
                 repair: .signIn
             )
 

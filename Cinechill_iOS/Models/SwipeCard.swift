@@ -16,7 +16,7 @@ import Foundation
 /// meilleur proxy de « combien de gens ont vraiment vu ce film », donc ce qui
 /// permet au backend d'apprendre le niveau de « niche » de l'utilisateur au fil
 /// des swipes.
-nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
+nonisolated struct SwipeCard: Identifiable, Hashable, Sendable, Codable {
     let tmdbId: Int
     let title: String
     let posterPath: String?
@@ -180,7 +180,7 @@ nonisolated struct SwipeCard: Identifiable, Hashable, Sendable {
 /// L'app ne s'en sert que pour deux choses : choisir une carte de réserve
 /// après une série de refus, et le renvoyer avec la décision, pour que le
 /// journal du deck dise ce qui a été servi et ce qui en est sorti.
-nonisolated struct SwipeServing: Hashable, Sendable {
+nonisolated struct SwipeServing: Hashable, Sendable, Codable {
     let pSeen: Double?
     let families: [String]
     let kind: String?
@@ -205,7 +205,7 @@ nonisolated struct SwipeServing: Hashable, Sendable {
 /// D'où vient une décision. Seules celles du deck et de sa réserve disent si
 /// le deck sert bien : le serveur n'en compte pas d'autres dans son
 /// rendement.
-nonisolated enum SwipeVia: String, Sendable, Hashable {
+nonisolated enum SwipeVia: String, Sendable, Hashable, Codable {
     case deck
     case reserve
     /// Une mosaïque « lesquels as-tu vus ? ».
@@ -219,15 +219,16 @@ nonisolated enum SwipeVia: String, Sendable, Hashable {
 /// Le verdict porté sur une carte. `skipped` n'est pas un rejet de goût : il dit
 /// « je ne l'ai pas vu », ce qui met le film en cooldown et apprend au backend
 /// où l'utilisateur n'a pas de vécu.
-nonisolated enum SwipeDecision: String, Sendable, Hashable {
+nonisolated enum SwipeDecision: String, Sendable, Hashable, Codable {
     case seen
     case skipped
     case watchlist
 }
 
 /// Une décision en attente d'envoi, gardée telle quelle pour pouvoir être
-/// rejouée si le réseau échoue.
-nonisolated struct PendingSwipe: Sendable, Hashable {
+/// rejouée si le réseau échoue, y compris après un relancement de l'app :
+/// `SwipeDecisionQueue` l'écrit sur le disque.
+nonisolated struct PendingSwipe: Sendable, Hashable, Codable {
     let card: SwipeCard
     let decision: SwipeDecision
     /// Le double tap sur l'affiche : vu ET adoré. Un modificateur de

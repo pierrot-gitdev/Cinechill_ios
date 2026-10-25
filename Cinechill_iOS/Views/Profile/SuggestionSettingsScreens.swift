@@ -13,6 +13,7 @@ import SwiftUI
 struct PlatformSettingsView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(MediaCatalog.self) private var catalog
+    @State private var loadFailed = false
 
     var body: some View {
         SettingsSubpage(
@@ -20,13 +21,12 @@ struct PlatformSettingsView: View {
             note: String(localized: "On ne te proposera que des films disponibles sur tes plateformes.", bundle: .app)
         ) {
             if catalog.platforms.isEmpty {
-                HStack(spacing: 10) {
-                    CinechillSpinner(size: 16)
-                    Text("Chargement des plateformes…", bundle: .app)
-                        .planFont(13)
-                        .foregroundStyle(Ink.ink2)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                CatalogLoadingRow(
+                    loading: String(localized: "Chargement des plateformes…", bundle: .app),
+                    failure: String(localized: "Impossible de charger les plateformes.", bundle: .app),
+                    failed: loadFailed,
+                    retry: { Task { await load() } }
+                )
             } else {
                 PlatformGrid(
                     platforms: catalog.platforms,
@@ -37,7 +37,13 @@ struct PlatformSettingsView: View {
                 )
             }
         }
-        .task { await catalog.loadIfNeeded() }
+        .task { await load() }
+    }
+
+    private func load() async {
+        loadFailed = false
+        await catalog.loadIfNeeded()
+        loadFailed = catalog.platforms.isEmpty
     }
 }
 
@@ -49,6 +55,7 @@ struct PlatformSettingsView: View {
 struct BannedGenresSettingsView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(MediaCatalog.self) private var catalog
+    @State private var loadFailed = false
 
     private var sortedGenres: [(id: Int, name: String)] {
         catalog.genreNames
@@ -62,13 +69,12 @@ struct BannedGenresSettingsView: View {
             note: String(localized: "Coche les genres qu'on ne doit jamais te proposer.", bundle: .app)
         ) {
             if catalog.genreNames.isEmpty {
-                HStack(spacing: 10) {
-                    CinechillSpinner(size: 16)
-                    Text("Chargement des genres…", bundle: .app)
-                        .planFont(13)
-                        .foregroundStyle(Ink.ink2)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                CatalogLoadingRow(
+                    loading: String(localized: "Chargement des genres…", bundle: .app),
+                    failure: String(localized: "Impossible de charger les genres.", bundle: .app),
+                    failed: loadFailed,
+                    retry: { Task { await load() } }
+                )
             } else {
                 VStack(spacing: 0) {
                     ForEach(sortedGenres, id: \.id) { genre in
@@ -77,7 +83,13 @@ struct BannedGenresSettingsView: View {
                 }
             }
         }
-        .task { await catalog.loadIfNeeded() }
+        .task { await load() }
+    }
+
+    private func load() async {
+        loadFailed = false
+        await catalog.loadIfNeeded()
+        loadFailed = catalog.genreNames.isEmpty
     }
 
     private func row(_ genre: (id: Int, name: String)) -> some View {
@@ -165,5 +177,44 @@ private struct SettingsSubpage<Content: View>: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
+    }
+}
+
+/// L'attente du répertoire, puis son échec : hors ligne, la roue tournait sans
+/// fin. Même ligne que l'onboarding, qui le disait déjà.
+private struct CatalogLoadingRow: View {
+    let loading: String
+    let failure: String
+    let failed: Bool
+    let retry: () -> Void
+
+    var body: some View {
+        Group {
+            if failed {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(failure)
+                        .planFont(13)
+                        .foregroundStyle(Ink.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    Button(action: retry) {
+                        Text("Réessayer", bundle: .app)
+                            .planLabel()
+                            .foregroundStyle(Ink.ink)
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PressableScaleStyle())
+                }
+            } else {
+                HStack(spacing: 10) {
+                    CinechillSpinner(size: 16)
+                    Text(loading)
+                        .planFont(13)
+                        .foregroundStyle(Ink.ink2)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

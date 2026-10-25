@@ -56,6 +56,14 @@ final class NotificationRouter {
         return pending
     }
 
+    /// Oublie ce qui attendait. Une notification touchée sans compte connecté
+    /// était adressée à quelqu'un d'autre : elle ne doit pas s'ouvrir dans le
+    /// compte qui se connecte ensuite.
+    func discardPending() {
+        pending = nil
+        panelRequest = nil
+    }
+
     func requestPanel() {
         panelRequest = .now
     }

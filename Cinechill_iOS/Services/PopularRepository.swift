@@ -26,7 +26,11 @@ actor PopularRepository {
     private let maxPages: Int
     private let pageDelayNanoseconds: UInt64
 
-    private var topCache: [String: [MediaItem]] = [:]
+    /// `limit` : la taille demandée quand la liste a été chargée. Une liste
+    /// filtrée par plateformes compte souvent moins de films que demandé ;
+    /// jugée sur son seul nombre de films, elle n'était jamais servie du cache
+    /// et repartait à chaque retour sur l'écran.
+    private var topCache: [String: (items: [MediaItem], limit: Int)] = [:]
 
     private let client: any PopularPageFetching
 
@@ -44,12 +48,15 @@ actor PopularRepository {
     ) async throws -> [MediaItem] {
         let normalizedProviderIDs = providerIDs.sorted()
         let key = topCacheKey(mediaType: type, genreID: genreID, providerIDs: normalizedProviderIDs)
-        if let hit = topCache[key], hit.count >= limit {
-            return Array(hit.prefix(limit))
+        if let hit = topCache[key], hit.limit >= limit || hit.items.count >= limit {
+            return Array(hit.items.prefix(limit))
         }
 
         var combined: [MediaItem] = []
         combined.reserveCapacity(maxItems)
+        // Deux pages qui se recouvrent (le classement bouge entre deux appels)
+        // donnaient deux fois le même film, et deux cellules au même identifiant.
+        var seen = Set<Int>()
 
         let requiredPages = max(1, (limit + 19) / 20)
         let targetPages = min(maxPages, requiredPages + 1)
@@ -61,7 +68,7 @@ actor PopularRepository {
                 genreID: genreID,
                 providerIDs: normalizedProviderIDs
             )
-            for row in paged.results {
+            for row in paged.results where seen.insert(row.id).inserted {
                 combined.append(MediaItem(tmdbListRow: row, mediaType: type))
                 if combined.count >= limit { break }
             }
@@ -72,7 +79,7 @@ actor PopularRepository {
         }
 
         let top = Array(combined.prefix(limit))
-        topCache[key] = top
+        topCache[key] = (top, limit)
         return top
     }
 

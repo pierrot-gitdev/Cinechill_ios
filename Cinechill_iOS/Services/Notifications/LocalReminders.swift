@@ -246,11 +246,11 @@ enum LocalReminders {
 
 /// Quelques secondes de plus accordées par iOS après le départ de l'app,
 /// rendues dès que le travail est fait, ou quand iOS les reprend.
-private final class BackgroundTask {
+final class BackgroundTask {
     private var identifier = UIBackgroundTaskIdentifier.invalid
 
-    func begin() {
-        identifier = UIApplication.shared.beginBackgroundTask(withName: "notifications") { [self] in
+    func begin(name: String = "notifications") {
+        identifier = UIApplication.shared.beginBackgroundTask(withName: name) { [self] in
             end()
         }
     }

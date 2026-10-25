@@ -26,6 +26,10 @@ struct PublicProfileView: View {
     /// Le chargement a échoué : on le dit sur place, avec de quoi réessayer,
     /// au lieu d'une alerte « Impossible » sur un écran qui restait à moitié vide.
     @State private var loadFailed = false
+    /// Le serveur ne sert plus ce profil : il a bloqué la personne, ou le
+    /// compte a été supprimé. Ce n'est pas une panne, « Réessayer » n'y
+    /// changerait rien, et « Suivre » échouerait.
+    @State private var isUnavailable = false
     /// Le profil dont on attend la confirmation du blocage.
     @State private var pendingBlock: ReportSubject?
     @State private var reportSubject: ReportSubject?
@@ -46,7 +50,7 @@ struct PublicProfileView: View {
                 identity
                 stats
                 // On ne se suit pas soi-même.
-                if !isOwnProfile {
+                if !isOwnProfile && !isUnavailable {
                     if isBlocked {
                         blockedState
                             .transition(.opacity)
@@ -57,6 +61,11 @@ struct PublicProfileView: View {
                 }
                 if isLoading {
                     loadingRow
+                } else if isUnavailable {
+                    Text("Ce profil n'est pas accessible.", bundle: .app)
+                        .planFont(13)
+                        .foregroundStyle(Ink.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
                 } else if loadFailed {
                     loadFailedRow
                 } else {
@@ -419,6 +428,8 @@ struct PublicProfileView: View {
             detail = try await socialStore.profileDetail(uid: profile.id)
         } catch is CancellationError {
             return
+        } catch SocialError.targetNotFound {
+            isUnavailable = true
         } catch {
             loadFailed = true
         }

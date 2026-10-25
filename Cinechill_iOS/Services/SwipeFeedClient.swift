@@ -110,6 +110,12 @@ extension SwipeFeedFetching {
 }
 
 nonisolated struct BackendSwipeFeedClient: SwipeFeedFetching, Sendable {
+    /// Le compte connecté, auquel `SwipeDecisionQueue` rattache chaque
+    /// décision.
+    static func currentAccountID() -> String? {
+        Auth.auth().currentUser?.uid
+    }
+
     func fetchFeed(
         excludedIDs: [String],
         format: MediaFormat,

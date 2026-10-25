@@ -500,13 +500,14 @@ final class SocialStore: ObservableObject {
     ///
     /// Les sous-collections `following`/`followers` ne portent qu'une date : le
     /// profil affichable vit dans `publicProfiles`. On les recharge par paquets
-    /// de dix, la limite d'un `in` Firestore. Un paquet en échec fait échouer
+    /// de trente, la limite d'un `in` Firestore (dix jusqu'en 2023 : mille
+    /// abonnés coûtaient cent allers-retours). Un paquet en échec fait échouer
     /// l'ensemble : une liste amputée sans le dire mentirait autant qu'une
     /// liste vide.
     func profiles(uids: [String]) async throws -> [PublicProfile] {
         guard !uids.isEmpty else { return [] }
         var out: [PublicProfile] = []
-        for chunk in uids.chunked(into: 10) {
+        for chunk in uids.chunked(into: 30) {
             do {
                 let snapshot = try await db.collection("publicProfiles")
                     .whereField(FieldPath.documentID(), in: chunk)
@@ -706,8 +707,12 @@ final class SocialStore: ObservableObject {
                     // snapshot réessaiera, et vider la liste ferait croire
                     // qu'ils sont partis.
                     do {
+                        let profiles = try await self.profiles(uids: fresh)
+                        // Un autre compte a pu se connecter pendant la lecture :
+                        // ces abonnés étaient ceux du précédent.
+                        guard self.myUID == uid else { return }
                         // Relu après l'attente : un blocage a pu tomber pendant.
-                        self.recentFollowers = try await self.profiles(uids: fresh)
+                        self.recentFollowers = profiles
                             .filter { !self.blockedUIDs.contains($0.id) }
                     } catch {
                         self.errorMessage = error.localizedDescription

@@ -39,8 +39,10 @@ final class MediaCatalog {
     func loadIfNeeded() async {
         let language = AppLanguage.current
         // Un premier chargement raté se retente : la langue n'est notée comme
-        // chargée qu'une fois les plateformes arrivées.
-        guard loadedLanguage != language || platforms.isEmpty else { return }
+        // chargée qu'une fois les genres et les plateformes arrivés. Les
+        // plateformes seules ne suffisaient pas : des genres ratés ne se
+        // retentaient jamais.
+        guard loadedLanguage != language || platforms.isEmpty || genreNames.isEmpty else { return }
         loadedLanguage = language
 
         if let genres = try? await client.movieGenres() {
@@ -52,7 +54,7 @@ final class MediaCatalog {
         if let providers = try? await client.movieProviders() {
             platforms = StreamingPlatform.curated(from: providers)
         }
-        if platforms.isEmpty { loadedLanguage = nil }
+        if platforms.isEmpty || genreNames.isEmpty { loadedLanguage = nil }
     }
 
     func name(forGenre id: Int) -> String? {

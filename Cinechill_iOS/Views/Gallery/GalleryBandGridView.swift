@@ -26,7 +26,7 @@ struct GalleryBandGridView: View {
                 // même série restent une affiche, ici comme dans la bande.
                 ForEach(band.tiles) { tile in
                     if let destination = tile.destination {
-                        NavigationLink(destination: ItemDetailView(item: destination)) {
+                        NavigationLink(value: destination) {
                             PosterCell(
                                 posterPath: tile.posterPath,
                                 title: tile.title

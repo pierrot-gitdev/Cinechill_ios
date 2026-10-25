@@ -76,11 +76,18 @@ struct SettingsView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .task {
-            nameField = profileStore.displayName
+            nameField = profileStore.chosenName ?? ""
             await notifications.refresh()
             await catalog.loadIfNeeded()
         }
-        .onDisappear { profileStore.refresh() }
+        // Un nom tapé puis un retour arrière, sans valider : le focus ne
+        // change pas avant la disparition, et le nom se perdait.
+        .onDisappear {
+            Task {
+                await saveNameIfNeeded()
+                profileStore.refresh()
+            }
+        }
         .onChange(of: photoItem) { _, item in
             guard let item else { return }
             Task { await loadPhoto(from: item) }
@@ -523,13 +530,31 @@ struct SettingsView: View {
     /// La version seule, utile quand on nous écrit. La mention de TMDB que
     /// demandent ses conditions vit dans les Conditions d'utilisation, liées
     /// juste au-dessus.
+    /// La version, et la source des données. Les conditions de TMDB demandent
+    /// son nom et son logo dans l'app elle-même, pas seulement dans les
+    /// conditions en ligne. Au pied, à la taille de la version : c'est un
+    /// crédit, pas une fonction.
     private var colophon: some View {
-        Text(verbatim: appVersion)
-            .planFont(11.5)
-            .foregroundStyle(Ink.ink2)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 22)
-            .overlay(alignment: .top) { PlanEdge() }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image("TMDBLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 10)
+                    // Le texte à côté nomme TMDB : VoiceOver ne le lirait pas deux fois.
+                    .accessibilityHidden(true)
+                Text("Données de films fournies par TMDB", bundle: .app)
+                    .planFont(11.5)
+                    .foregroundStyle(Ink.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Text(verbatim: appVersion)
+                .planFont(11.5)
+                .foregroundStyle(Ink.ink2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 22)
+        .overlay(alignment: .top) { PlanEdge() }
     }
 
     private var appVersion: String {
@@ -550,7 +575,7 @@ struct SettingsView: View {
             try await libraryStore.deleteAccount()
             dismiss()
         } catch {
-            actionMessage = String(localized: "La suppression a échoué. Reconnecte-toi puis réessaie.", bundle: .app)
+            actionMessage = String(localized: "On n'a pas pu supprimer ton compte. Vérifie ta connexion et réessaie.", bundle: .app)
         }
     }
 
@@ -559,10 +584,10 @@ struct SettingsView: View {
         // Un champ vidé n'efface pas le nom : il le retrouve, au lieu de
         // laisser croire qu'un nom vide a été enregistré.
         guard !trimmed.isEmpty else {
-            nameField = profileStore.displayName
+            nameField = profileStore.chosenName ?? ""
             return
         }
-        guard trimmed != profileStore.displayName else { return }
+        guard trimmed != profileStore.chosenName else { return }
         nameError = nil
         nameSaved = false
         do {

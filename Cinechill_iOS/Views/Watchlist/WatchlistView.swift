@@ -36,7 +36,11 @@ struct WatchlistView: View {
             ZStack {
                 Ink.ground.ignoresSafeArea()
 
-                if libraryStore.watchlistItems.isEmpty {
+                // Avant le premier instantané, une liste vide n'est pas un
+                // état vide : il clignotait au lancement d'un compte neuf.
+                if libraryStore.watchlistItems.isEmpty && !libraryStore.hasLoadedWatchlistOnce {
+                    CinechillSpinner(size: 26)
+                } else if libraryStore.watchlistItems.isEmpty {
                     emptyState.padding(.horizontal, 34)
                 } else {
                     content
@@ -480,7 +484,11 @@ struct WatchlistView: View {
         }
         Task {
             if await NotificationPermission.shared.filmStarted(item.entry.mediaItem) {
-                openPlatform(for: item)
+                // Aucune plateforme connue, ou aucune qu'on sache ouvrir : rien
+                // ne se passait à l'écran. La fiche dit où le trouver.
+                if !openPlatform(for: item) {
+                    opened = item.entry.mediaItem
+                }
             } else {
                 libraryStore.addToGallery(item.entry.mediaItem)
             }
@@ -488,8 +496,10 @@ struct WatchlistView: View {
     }
 
     /// L'app de la plateforme si elle est installée, sinon son site. Tes
-    /// plateformes d'abord, comme sur la fiche et dans CinéMatch.
-    private func openPlatform(for item: WatchlistItem) {
+    /// plateformes d'abord, comme sur la fiche et dans CinéMatch. Faux quand
+    /// il n'y avait rien à ouvrir.
+    @discardableResult
+    private func openPlatform(for item: WatchlistItem) -> Bool {
         let preferred = Set(libraryStore.preferredPlatformIDs.compactMap(Int.init))
         let providers = item.providerIDs.filter { preferred.contains($0) }
             + item.providerIDs.filter { !preferred.contains($0) }
@@ -497,12 +507,13 @@ struct WatchlistView: View {
             for candidate in StreamingProviderLink.appURLs(forProviderID: providerID, title: item.entry.title)
             where UIApplication.shared.canOpenURL(candidate) {
                 UIApplication.shared.open(candidate)
-                return
+                return true
             }
         }
         guard let webURL = providers.lazy.compactMap(TMDBDetailWatchProviderItem.webURL(forProviderID:)).first
-        else { return }
+        else { return false }
         openURL(webURL)
+        return true
     }
 
     private func preferredPlatform(for item: WatchlistItem) -> StreamingPlatform? {

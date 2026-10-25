@@ -51,7 +51,7 @@ enum SocialError: LocalizedError, Equatable {
         case .ownProfileMissing:
             return String(localized: "Choisis d'abord un pseudo.", bundle: .app)
         case .targetNotFound:
-            return String(localized: "Ce profil n'existe plus.", bundle: .app)
+            return String(localized: "Ce profil n'est pas accessible.", bundle: .app)
         case .notFollowing:
             return String(localized: "Tu ne suis plus cette personne.", bundle: .app)
         case .notInGallery:
@@ -447,8 +447,12 @@ private nonisolated struct TargetDTO: Decodable {
             avatarURL: PublicProfile.trustedAvatarURL(avatarURL),
             alreadySeen: alreadySeen,
             alreadySuggested: alreadySuggested,
+            // `toISOString()` côté serveur écrit les millisecondes, que le
+            // format par défaut refuse : la date tombait toujours à `nil`.
             suggestedAt: suggestedAt.flatMap {
-                ISO8601DateFormatter().date(from: $0)
+                let parser = ISO8601DateFormatter()
+                parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                return parser.date(from: $0) ?? ISO8601DateFormatter().date(from: $0)
             }
         )
     }

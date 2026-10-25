@@ -154,6 +154,9 @@ struct TMDBDetailResponse: Decodable, Sendable {
     let director: String?
     let trailerKey: String?
     let genreNames: [String]?
+    /// Absent des réponses antérieures au 25 oct. 2026 : sans lui, un film
+    /// ouvert depuis les récents de la recherche se rangeait sans genres.
+    let genreIds: [Int]?
     /// La saga et son nombre d'épisodes — alimentent le badge « L'Intégrale ».
     let collectionID: Int?
     let collectionCount: Int?
@@ -176,6 +179,7 @@ struct TMDBDetailResponse: Decodable, Sendable {
         case director
         case trailerKey = "trailer_key"
         case genreNames = "genre_names"
+        case genreIds = "genre_ids"
         case collectionID = "collection_id"
         case collectionCount = "collection_count"
         case credits
@@ -193,7 +197,7 @@ struct TMDBDetailResponse: Decodable, Sendable {
             overview: overview,
             voteAverage: voteAverage,
             voteCount: voteCount,
-            genreIds: [],
+            genreIds: genreIds ?? [],
             releaseDate: date
         )
     }

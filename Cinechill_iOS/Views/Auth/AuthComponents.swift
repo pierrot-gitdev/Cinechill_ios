@@ -392,9 +392,12 @@ enum PlanHandle {
     }
 }
 
+#if DEBUG
+// Réservé au Debug : l'aperçu et ses valeurs d'exemple n'ont rien à faire
+// dans l'app publiée.
 private struct PlanComponentsPreview: View {
     @FocusState private var focus: String?
-    @State private var email = "pierre@footbar.com"
+    @State private var email = "camille@exemple.fr"
     @State private var pseudo = ""
 
     var body: some View {
@@ -423,3 +426,4 @@ private struct PlanComponentsPreview: View {
 #Preview("Composants") {
     PlanComponentsPreview()
 }
+#endif

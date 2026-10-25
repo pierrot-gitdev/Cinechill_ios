@@ -49,7 +49,13 @@ private struct BadgeProgressDTO: Decodable, Sendable {
         BadgeProgress(
             id: id,
             unlocked: unlocked,
-            unlockedAt: unlockedAt.flatMap { ISO8601DateFormatter().date(from: $0) },
+            // `toISOString()` écrit les millisecondes, que le format par défaut
+            // refuse : la vitrine du profil ne savait pas trier par date.
+            unlockedAt: unlockedAt.flatMap {
+                let parser = ISO8601DateFormatter()
+                parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                return parser.date(from: $0) ?? ISO8601DateFormatter().date(from: $0)
+            },
             current: current,
             target: target,
             detail: detail,
