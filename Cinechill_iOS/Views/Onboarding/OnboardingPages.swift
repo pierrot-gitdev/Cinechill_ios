@@ -7,22 +7,22 @@ import SwiftUI
 
 // MARK: - Tes goûts d'abord
 
-/// Pourquoi CinéMatch est fermé : il lui faut 100 films vus. Les 100 cases se
+/// Pourquoi CinéMatch est fermé : il lui faut 50 films vus. Les 50 cases se
 /// remplissent sous les yeux, puis le cadenas s'ouvre : on voit la cible avant
 /// de la lire.
 struct OnboardingTastesPage: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var filled = 0
 
-    private static let target = 100
-    private static let columns = 20
+    private static let target = 50
+    private static let columns = 10
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             OnboardingHeading(
                 eyebrow: String(localized: "Avant ton premier CinéMatch", bundle: .app),
                 title: String(localized: "D'abord, on doit connaître tes goûts.", bundle: .app),
-                text: String(localized: "On choisit d'après les films que tu as vus. Ajoutes-en 100 à ta galerie pour ouvrir CinéMatch.", bundle: .app)
+                text: String(localized: "On choisit d'après les films que tu as vus. Ajoutes-en 50 à ta galerie pour ouvrir CinéMatch.", bundle: .app)
             )
 
             cells
@@ -53,7 +53,7 @@ struct OnboardingTastesPage: View {
             }
             .padding(.top, 14)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(String(localized: "100 films vus pour ouvrir CinéMatch", bundle: .app))
+            .accessibilityLabel(String(localized: "50 films vus pour ouvrir CinéMatch", bundle: .app))
 
             Text("Tu auras ensuite trois étapes plus courtes à valider.", bundle: .app)
                 .planFont(13)
@@ -72,7 +72,7 @@ struct OnboardingTastesPage: View {
         .task { await fill() }
     }
 
-    /// Vingt colonnes, cinq rangées : cent affiches miniatures.
+    /// Dix colonnes, cinq rangées : cinquante affiches miniatures.
     private var cells: some View {
         VStack(spacing: 3) {
             ForEach(0 ..< Self.target / Self.columns, id: \.self) { row in
@@ -98,15 +98,15 @@ struct OnboardingTastesPage: View {
             filled = Self.target
             return
         }
-        // Une case toutes les 14 millisecondes : 1,4 seconde pour cent films.
+        // Une case toutes les 28 millisecondes : 1,4 seconde pour cinquante films.
         while filled < Self.target, !Task.isCancelled {
             filled += 1
-            try? await Task.sleep(for: .milliseconds(14))
+            try? await Task.sleep(for: .milliseconds(28))
         }
     }
 }
 
-/// Le cadenas de CinéMatch : fermé, puis ouvert à cent films.
+/// Le cadenas de CinéMatch : fermé, puis ouvert à cinquante films.
 struct OnboardingLockGlyph: Shape {
     var isOpen: Bool
 

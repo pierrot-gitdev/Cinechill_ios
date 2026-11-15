@@ -1850,22 +1850,6 @@
         }
       }
     },
-    "100 films vus pour ouvrir CinéMatch" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "100 movies seen to open CinéMatch"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "100 films vus pour ouvrir CinéMatch"
-          }
-        }
-      }
-    },
     "500 films dans ta galerie." : {
       "localizations" : {
         "en" : {
@@ -9156,22 +9140,6 @@
         }
       }
     },
-    "On choisit d'après les films que tu as vus. Ajoutes-en 100 à ta galerie pour ouvrir CinéMatch." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We pick based on the movies you've seen. Add 100 to your gallery to unlock CinéMatch."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On choisit d'après les films que tu as vus. Ajoutes-en 100 à ta galerie pour ouvrir CinéMatch."
-          }
-        }
-      }
-    },
     "On effacera ta galerie, ta watchlist et ton profil. Tu ne pourras pas les récupérer." : {
       "localizations" : {
         "en" : {
@@ -16013,6 +15981,182 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Proche de %@ : %@"
+          }
+        }
+      }
+    },
+    "On choisit d'après les films que tu as vus. Ajoutes-en 50 à ta galerie pour ouvrir CinéMatch." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We pick based on the movies you've seen. Add 50 to your gallery to unlock CinéMatch."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On choisit d'après les films que tu as vus. Ajoutes-en 50 à ta galerie pour ouvrir CinéMatch."
+          }
+        }
+      }
+    },
+    "50 films vus pour ouvrir CinéMatch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "50 movies seen to open CinéMatch"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "50 films vus pour ouvrir CinéMatch"
+          }
+        }
+      }
+    },
+    "Question %lld sur 4" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question %lld of 4"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question %lld sur 4"
+          }
+        }
+      }
+    },
+    "Choisis un genre." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a genre."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis un genre."
+          }
+        }
+      }
+    },
+    "Choisis le plus proche de ton envie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick the closest to what you feel like."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis le plus proche de ton envie."
+          }
+        }
+      }
+    },
+    "Choisis un second film, ou garde %@ seul." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a second movie, or keep %@ alone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis un second film, ou garde %@ seul."
+          }
+        }
+      }
+    },
+    "Choisis une seconde série, ou garde %@ seule." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a second show, or keep %@ alone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis une seconde série, ou garde %@ seule."
+          }
+        }
+      }
+    },
+    "Choisis ce qui doit changer." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick what should change."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis ce qui doit changer."
+          }
+        }
+      }
+    },
+    "Comme %@ : %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Like %1$@: %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comme %@ : %@"
+          }
+        }
+      }
+    },
+    "Proche de %@, un de tes coups de cœur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close to %@, one of your favorites"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proche de %@, un de tes coups de cœur"
+          }
+        }
+      }
+    },
+    "Un film proche de %@ : %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A movie close to %1$@: %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un film proche de %@ : %@"
           }
         }
       }

@@ -95,8 +95,42 @@ struct CineMatchStartView: View {
             .buttonStyle(PressableScaleStyle(scale: 0.96))
 
             Spacer(minLength: 0)
+
+            if let number = questionNumber {
+                // Les quatre questions sont annoncées : on sait où l'on en est,
+                // et qu'il n'y en aura pas d'autre. Pas d'animation : le chiffre
+                // change avec la page, qui a déjà la sienne.
+                Text(String(localized: "Question \(number) sur 4", bundle: .app))
+                    .planFont(12)
+                    .monospacedDigit()
+                    .foregroundStyle(Ink.ink3)
+            }
         }
         .frame(minHeight: 34)
+    }
+
+    /// La question affichée, de 1 à 4. Un écran que le serveur saute (pas de
+    /// retouche possible) garde la numérotation des autres : la quatrième
+    /// n'apparaît simplement pas.
+    private var questionNumber: Int? {
+        guard viewModel.errorMessage == nil else { return nil }
+        switch viewModel.step {
+        case .style: return 1
+        case .anchor: return 2
+        case .refine: return 3
+        case .tweak: return 4
+        default: return nil
+        }
+    }
+
+    /// Ce que la question attend, en une action : sous chaque titre, au même
+    /// endroit, dans le même ton.
+    private func actionLine(_ text: String) -> some View {
+        Text(text)
+            .planFont(12.5)
+            .foregroundStyle(Ink.ink2)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 6)
     }
 
     /// Des styles, on ressort ; plus loin, on revient d'un pas.
@@ -171,6 +205,7 @@ struct CineMatchStartView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     questionTitle(String(localized: "Tu as envie de quoi ce soir ?", bundle: .app))
+                    actionLine(String(localized: "Choisis un genre.", bundle: .app))
 
                     styleGrid(viewModel.mainStyles)
                         .padding(.top, 18)
@@ -335,11 +370,12 @@ struct CineMatchStartView: View {
                     questionTitle(isSeries
                         ? String(localized: "Une série proche de… ?", bundle: .app)
                         : String(localized: "Un film proche de… ?", bundle: .app))
+                    actionLine(String(localized: "Choisis le plus proche de ton envie.", bundle: .app))
 
                     Text(starters.style.title)
                         .planLabel()
                         .foregroundStyle(Ink.ink2)
-                        .padding(.top, 6)
+                        .padding(.top, 10)
 
                     posterGrid(starters.films, from: .anchor) { film in
                         await viewModel.chooseAnchor(film)
@@ -510,13 +546,9 @@ struct CineMatchStartView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     questionTitle(String(localized: "Plutôt du côté de… ?", bundle: .app))
-
-                    Text(String(localized: "Proche de \(anchor.title)", bundle: .app))
-                        .planFont(12.5)
-                        .foregroundStyle(Ink.ink2)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 6)
+                    actionLine(isSeries
+                        ? String(localized: "Choisis une seconde série, ou garde \(anchor.title) seule.", bundle: .app)
+                        : String(localized: "Choisis un second film, ou garde \(anchor.title) seul.", bundle: .app))
 
                     posterGrid(near.films, from: .refine) { film in
                         await viewModel.chooseSecond(film)
@@ -549,11 +581,7 @@ struct CineMatchStartView: View {
             VStack(alignment: .leading, spacing: 0) {
                 questionTitle(String(localized: "Tu veux retrouver quoi de \(anchor.title) ?", bundle: .app))
 
-                Text(String(localized: "Choisis ce qui compte le plus.", bundle: .app))
-                    .planFont(12.5)
-                    .foregroundStyle(Ink.ink2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 6)
+                actionLine(String(localized: "Choisis ce qui compte le plus.", bundle: .app))
 
                 VStack(spacing: 7) {
                     ForEach(facets) { facet in
@@ -599,6 +627,7 @@ struct CineMatchStartView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     questionTitle(String(localized: "Comme \(anchor.title), mais… ?", bundle: .app))
+                    actionLine(String(localized: "Choisis ce qui doit changer.", bundle: .app))
 
                     if let facet = viewModel.chosenFacet {
                         Text(String(localized: "Proche de \(anchor.title) : \(facet.label)", bundle: .app))

@@ -319,6 +319,19 @@ struct CineMatchFiveView: View {
         }
     }
 
+    /// La raison d'un des cinq, mise en phrase.
+    private func reasonLine(for film: CineMatchFilm) -> String? {
+        switch film.reason {
+        case nil:
+            return nil
+        case .facet(let formule), .shared(let formule):
+            guard let anchor = viewModel.anchor else { return formule }
+            return String(localized: "Comme \(anchor.title) : \(formule)", bundle: .app)
+        case .loved(let title):
+            return String(localized: "Proche de \(title), un de tes coups de cœur", bundle: .app)
+        }
+    }
+
     /// « Un film proche de Heat et Drive, plus récent ».
     private var requestLine: String? {
         guard let anchor = viewModel.anchor else { return nil }
@@ -328,7 +341,11 @@ struct CineMatchFiveView: View {
         case (let second?, true):
             String(localized: "Une série proche de \(anchor.title) et \(second.title)", bundle: .app)
         case (nil, false):
-            String(localized: "Un film proche de \(anchor.title)", bundle: .app)
+            if let facet = viewModel.chosenFacet {
+                String(localized: "Un film proche de \(anchor.title) : \(facet.label)", bundle: .app)
+            } else {
+                String(localized: "Un film proche de \(anchor.title)", bundle: .app)
+            }
         case (nil, true):
             String(localized: "Une série proche de \(anchor.title)", bundle: .app)
         }
@@ -534,6 +551,17 @@ struct CineMatchFiveView: View {
             }
             .buttonStyle(PressableScaleStyle(scale: 0.97))
             .accessibilityLabel(String(localized: "Synopsis de \(film.item.title)", bundle: .app))
+
+            // Pourquoi ce film-là, en une ligne (décision du 13 novembre
+            // 2026). Absente quand le serveur n'a pas de raison solide.
+            if mode == .five, let reason = reasonLine(for: film) {
+                Text(reason)
+                    .planFont(13)
+                    .foregroundStyle(Ink.ink2)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             TimelineView(.everyMinute) { context in
                 FiveMetaRow(

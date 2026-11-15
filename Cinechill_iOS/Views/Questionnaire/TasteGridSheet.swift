@@ -151,7 +151,7 @@ struct TasteGridSheet: View {
         doorStore.door(for: kind == .loved ? format : .film).artifact(artifactKey)
     }
 
-    private var target: Int { artifact?.target ?? (kind == .loved ? 12 : 24) }
+    private var target: Int { artifact?.target ?? (kind == .loved ? 6 : 12) }
 
     /// Où en est l'étape, enregistrements de cette planche compris.
     private var current: Int {

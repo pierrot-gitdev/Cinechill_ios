@@ -399,9 +399,10 @@ private nonisolated struct FiveFilmDTO: Decodable, Sendable {
     let seasonCount: Int?
     let episodeCount: Int?
     let status: String?
+    let reason: ReasonDTO?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, overview, status
+        case id, title, overview, status, reason
         case posterPath = "poster_path"
         case releaseDate = "release_date"
         case genreIds = "genre_ids"
@@ -434,8 +435,26 @@ private nonisolated struct FiveFilmDTO: Decodable, Sendable {
             providerIDs: providerIds ?? [],
             trailerKey: trailerKey,
             episodeCount: isSeries ? episodeCount : nil,
-            status: isSeries ? status.flatMap(CineMatchSeriesStatus.init(rawValue:)) : nil
+            status: isSeries ? status.flatMap(CineMatchSeriesStatus.init(rawValue:)) : nil,
+            reason: reason?.reason
         )
+    }
+}
+
+/// La raison telle que le serveur l'envoie. Une sorte inconnue, ou un texte
+/// vide, ne donne pas de ligne.
+private nonisolated struct ReasonDTO: Decodable, Sendable {
+    let kind: String?
+    let formule: String?
+    let title: String?
+
+    var reason: CineMatchReason? {
+        switch kind {
+        case "facet": formule.flatMap { $0.isEmpty ? nil : .facet($0) }
+        case "shared": formule.flatMap { $0.isEmpty ? nil : .shared($0) }
+        case "loved": title.flatMap { $0.isEmpty ? nil : .loved(title: $0) }
+        default: nil
+        }
     }
 }
 

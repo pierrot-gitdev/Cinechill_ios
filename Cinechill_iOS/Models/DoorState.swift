@@ -108,8 +108,8 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
     /// zéro, tout éteint. C'est l'état honnête d'un profil inconnu, et il
     /// évite de faire clignoter l'entrée avant de la refermer.
     ///
-    /// Les seuils sont ceux du serveur : 100 films, 6 genres, 12 coups de
-    /// cœur, 24 films passés en revue.
+    /// Les seuils sont ceux du serveur : 50 films, 6 genres, 6 coups de cœur,
+    /// 12 films passés en revue (depuis le 16 novembre 2026).
     static let initial = DoorState(
         unlocked: false,
         artifacts: DoorArtifactKey.allCases.map { key in
@@ -147,10 +147,10 @@ nonisolated struct DoorState: Codable, Equatable, Sendable {
     /// Le seuil de chaque artéfact tant que le serveur ne l'a pas donné.
     private static func initialTarget(_ key: DoorArtifactKey) -> Int {
         switch key {
-        case .memoire: 100
+        case .memoire: 50
         case .eventail: 6
-        case .coeur: 12
-        case .deceptions: 24
+        case .coeur: 6
+        case .deceptions: 12
         }
     }
 

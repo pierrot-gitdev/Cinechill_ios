@@ -1025,7 +1025,7 @@ struct SwipeDeckView: View {
 
         let door = doorStore.door(for: .film)
         let films = libraryStore.galleryFilms
-        let pace = min(1, Double(films.count) / Double(max(1, door.artifact(.memoire)?.target ?? 100)))
+        let pace = min(1, Double(films.count) / Double(max(1, door.artifact(.memoire)?.target ?? 50)))
         let open = films.filter { !$0.isLoved && $0.dislikedAt == nil }.count
         guard open >= Self.loveGridMinimumEntries else { return }
 

@@ -152,6 +152,19 @@ nonisolated struct CineMatchDarkerQuestion: Hashable, Sendable {
 
 /// Un des cinq films proposés, ou la proposition du jour. Une série y entre
 /// aussi : `item` en est alors le dossier, et la durée celle d'un épisode.
+/// Pourquoi un des cinq est là, dit sous son titre. Le serveur ne la donne
+/// que s'il en a une solide ; les deux premières ne viennent qu'en français,
+/// la langue des fiches.
+nonisolated enum CineMatchReason: Hashable, Sendable {
+    /// Le film porte ce qu'on a voulu retrouver du film de départ ; la
+    /// formule est la sienne (« Des banques vidées en deux minutes »).
+    case facet(String)
+    /// Il partage avec le film de départ quelque chose de rare.
+    case shared(String)
+    /// Il ressemble surtout à ce coup de cœur.
+    case loved(title: String)
+}
+
 nonisolated struct CineMatchFilm: Identifiable, Hashable, Sendable {
     let item: MediaItem
     /// La durée du film, ou celle d'un épisode.
@@ -162,6 +175,8 @@ nonisolated struct CineMatchFilm: Identifiable, Hashable, Sendable {
     var episodeCount: Int? = nil
     /// Séries seulement.
     var status: CineMatchSeriesStatus? = nil
+    /// La ligne de raison, s'il y en a une.
+    var reason: CineMatchReason? = nil
 
     var id: Int { item.tmdbId }
 
