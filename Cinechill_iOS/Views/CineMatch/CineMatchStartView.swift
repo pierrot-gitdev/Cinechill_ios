@@ -6,9 +6,9 @@
 import SwiftUI
 
 /// Le départ de CinéMatch : un style, un de ses films comme point de départ,
-/// un second film pour préciser la direction, puis « Comme Heat, mais… ? ».
-/// Quatre touchers au plus, rien à écrire ; les deux derniers se passent
-/// d'un toucher (« Pile comme Heat », « Pareil »).
+/// ce qu'on veut en retrouver (ou, sans fiche pour ce film, un second film),
+/// puis « Comme Heat, mais… ? ». Quatre touchers au plus, rien à écrire ;
+/// les deux derniers se passent d'un toucher (« Un peu de tout », « Pareil »).
 ///
 /// Il remplace les deux questions et les quatre comparaisons (lot 1,
 /// octobre 2026). L'écran des styles ne montre que ceux de la galerie, illustrés
@@ -34,6 +34,8 @@ struct CineMatchStartView: View {
     @State private var pressedFilmID: Int?
     /// La retouche touchée, `nil` dans la clé pour « Pareil ».
     @State private var pressedTweak: String?
+    /// La facette touchée, « all » pour « Un peu de tout ».
+    @State private var pressedFacet: String?
     /// La hauteur du titre sous l'affiche suit la taille du texte : à 30 pt
     /// fixes, deux lignes agrandies étaient coupées à mi-hauteur.
     @ScaledMetric(relativeTo: .caption) private var captionHeight: CGFloat = 30
@@ -57,6 +59,7 @@ struct CineMatchStartView: View {
         .onChange(of: viewModel.step) { _, _ in
             pressedFilmID = nil
             pressedTweak = nil
+            pressedFacet = nil
         }
         .onChange(of: viewModel.format) { _, _ in
             showsOtherStyles = false
@@ -501,7 +504,9 @@ struct CineMatchStartView: View {
     /// l'écran.
     @ViewBuilder
     private var refinePage: some View {
-        if let anchor = viewModel.anchor, let near = viewModel.nearPage {
+        if let anchor = viewModel.anchor, let near = viewModel.nearPage, near.asksFacets {
+            facetPage(near.facets, anchor: anchor)
+        } else if let anchor = viewModel.anchor, let near = viewModel.nearPage {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     questionTitle(String(localized: "Plutôt du côté de… ?", bundle: .app))
@@ -534,6 +539,55 @@ struct CineMatchStartView: View {
         }
     }
 
+    // MARK: Les facettes
+
+    /// « Tu veux retrouver quoi de Heat ? » : ce que les cinq doivent avoir
+    /// en commun avec le film de départ, dit avec les mots de ce film.
+    /// « Un peu de tout » garde le film entier.
+    private func facetPage(_ facets: [CineMatchFacet], anchor: CineMatchGalleryFilm) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                questionTitle(String(localized: "Tu veux retrouver quoi de \(anchor.title) ?", bundle: .app))
+
+                Text(String(localized: "Choisis ce qui compte le plus.", bundle: .app))
+                    .planFont(12.5)
+                    .foregroundStyle(Ink.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 6)
+
+                VStack(spacing: 7) {
+                    ForEach(facets) { facet in
+                        facetRow(facet, anchor: anchor)
+                    }
+                    facetRow(nil, anchor: anchor)
+                }
+                .padding(.top, 18)
+            }
+            .padding(.bottom, 12)
+        }
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
+    }
+
+    private func facetRow(_ facet: CineMatchFacet?, anchor: CineMatchGalleryFilm) -> some View {
+        let key = facet?.key ?? "all"
+        return choiceRow(
+            title: facet?.label ?? String(localized: "Un peu de tout", bundle: .app),
+            detail: facet == nil ? String(localized: "Au plus près de \(anchor.title)", bundle: .app) : nil,
+            isOn: pressedFacet == key,
+            isLocked: pressedFacet != nil
+        ) {
+            guard pressedFacet == nil else { return }
+            pressedFacet = key
+            Task {
+                // La ligne s'allume, puis on part : la réponse est vue prise.
+                try? await Task.sleep(for: .milliseconds(150))
+                await viewModel.chooseFacet(facet)
+                if viewModel.step == .refine { pressedFacet = nil }
+            }
+        }
+    }
+
     // MARK: La retouche
 
     /// « Comme Heat, mais… ? » : ce qu'on change au film de départ. Chaque
@@ -546,7 +600,14 @@ struct CineMatchStartView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     questionTitle(String(localized: "Comme \(anchor.title), mais… ?", bundle: .app))
 
-                    if let second = viewModel.secondFilm {
+                    if let facet = viewModel.chosenFacet {
+                        Text(String(localized: "Proche de \(anchor.title) : \(facet.label)", bundle: .app))
+                            .planFont(12.5)
+                            .foregroundStyle(Ink.ink2)
+                            .lineLimit(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 6)
+                    } else if let second = viewModel.secondFilm {
                         Text(String(localized: "Proche de \(anchor.title) et \(second.title)", bundle: .app))
                             .planFont(12.5)
                             .foregroundStyle(Ink.ink2)
@@ -572,12 +633,12 @@ struct CineMatchStartView: View {
 
     private func tweakRow(_ tweak: CineMatchTweak?, anchor: CineMatchGalleryFilm) -> some View {
         let key = tweak?.rawValue ?? "same"
-        let isOn = pressedTweak == key
-        let title = tweak?.title(series: isSeries) ?? String(localized: "Pareil", bundle: .app)
-        let consequence = tweakConsequence(tweak, anchor: anchor)
-        let shape = RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
-
-        return Button {
+        return choiceRow(
+            title: tweak?.title(series: isSeries) ?? String(localized: "Pareil", bundle: .app),
+            detail: tweakConsequence(tweak, anchor: anchor),
+            isOn: pressedTweak == key,
+            isLocked: pressedTweak != nil
+        ) {
             guard pressedTweak == nil else { return }
             pressedTweak = key
             Task {
@@ -586,14 +647,24 @@ struct CineMatchStartView: View {
                 await viewModel.chooseTweak(tweak)
                 if viewModel.step == .tweak { pressedTweak = nil }
             }
-        } label: {
+        }
+    }
+
+    /// Une réponse en ligne : son titre, et ce qu'elle fait s'il faut le dire.
+    /// Touchée, elle s'allume ; les autres se figent le temps qu'on parte.
+    private func choiceRow(title: String, detail: String?, isOn: Bool, isLocked: Bool,
+                           action: @escaping () -> Void) -> some View {
+        let shape = RoundedRectangle(cornerRadius: Metrics.radius, style: .continuous)
+        return Button(action: action) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .planFont(15, weight: .medium)
                     .foregroundStyle(isOn ? Ink.ground : Ink.ink)
-                Text(consequence)
-                    .planFont(12)
-                    .foregroundStyle(isOn ? Ink.ground.opacity(0.62) : Ink.ink2)
+                if let detail {
+                    Text(detail)
+                        .planFont(12)
+                        .foregroundStyle(isOn ? Ink.ground.opacity(0.62) : Ink.ink2)
+                }
             }
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
@@ -607,7 +678,7 @@ struct CineMatchStartView: View {
             .animation(.easeOut(duration: 0.12), value: isOn)
         }
         .buttonStyle(PressableScaleStyle(scale: 0.985))
-        .disabled(pressedTweak != nil && !isOn)
+        .disabled(isLocked && !isOn)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
     }

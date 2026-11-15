@@ -106,9 +106,11 @@ nonisolated enum DebugFixtures {
         }
     }
 
-    /// Les voisins du film choisi. Le pire cas : six films aux titres longs
-    /// ou absents d'affiche, et les quatre retouches. Le vide : ni voisin ni
-    /// retouche, les deux écrans sont passés.
+    /// Les voisins du film choisi. Le pire cas : cinq facettes, dont la plus
+    /// longue que le serveur laisse passer (huit mots) et une d'un seul mot,
+    /// six films aux titres longs ou absents d'affiche, et les quatre
+    /// retouches. Le vide : ni facette, ni voisin, ni retouche, les écrans sont
+    /// passés.
     static func cineMatchNear(anchorID: Int, format: MediaFormat) -> CineMatchNearPage? {
         switch mode {
         case nil:
@@ -119,6 +121,15 @@ nonisolated enum DebugFixtures {
             return CineMatchNearPage(
                 anchorID: anchorID,
                 films: Array(worstStarters.filter { $0.id != anchorID }.suffix(6)),
+                facets: [
+                    CineMatchFacet(key: "situation|braquage",
+                                   label: "Un braquage préparé au millimètre près, à Los Angeles"),
+                    CineMatchFacet(key: "personnages|flic et criminel", label: "Policier et voleur face à face"),
+                    CineMatchFacet(key: "lieu|ville la nuit", label: "Nuit"),
+                    CineMatchFacet(key: "ambiance|tension froide",
+                                   label: "Une tension sèche, presque silencieuse, qui ne relâche jamais"),
+                    CineMatchFacet(key: "theme|passion du métier", label: "Des vies sacrifiées au métier"),
+                ],
                 tweaks: CineMatchTweak.allCases
             )
         }

@@ -26,7 +26,6 @@ nonisolated extension StreamingPlatform {
         CurationRule(displayName: "Netflix", aliases: ["netflix"]),
         CurationRule(displayName: "Prime Video", aliases: ["primevideo", "amazonprimevideo"]),
         CurationRule(displayName: "Disney +", aliases: ["disneyplus", "disney+"]),
-        CurationRule(displayName: "Pathé Home", aliases: ["pathehome", "pathéhome"]),
         CurationRule(displayName: "Canal +", aliases: ["canal+", "canalplus"]),
         CurationRule(displayName: "Apple TV", aliases: ["appletv", "appletvplus"]),
         CurationRule(displayName: "HBO Max", aliases: ["hbomax", "max"]),
@@ -36,6 +35,12 @@ nonisolated extension StreamingPlatform {
         CurationRule(displayName: "TF1", aliases: ["tf1plus", "tf1+"]),
         CurationRule(displayName: "Molotov TV", aliases: ["molotovtv", "molotov"])
     ]
+
+    /// Les plateformes retirées de l'app, par identifiant TMDB. Pathé Home
+    /// (2601) ne fait que louer et vendre : TMDB ne lui connaît aucun film
+    /// inclus dans une offre (relu film par film le 15 novembre 2026). Une
+    /// sélection enregistrée avant son retrait la perd à la lecture.
+    static let retiredProviderIDs: Set<String> = ["2601"]
 
     /// Réduit la liste brute des providers TMDB à la sélection de plateformes affichée dans l'app.
     static func curated(from providers: [TMDBWatchProvider]) -> [StreamingPlatform] {

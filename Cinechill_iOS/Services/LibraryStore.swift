@@ -803,7 +803,7 @@ private extension LibraryStore {
                         return
                     }
                     let ids = snapshot.data()?["preferredPlatformIDs"] as? [String] ?? []
-                    self.preferredPlatformIDs = Set(ids)
+                    self.preferredPlatformIDs = Set(ids).subtracting(StreamingPlatform.retiredProviderIDs)
                     self.hasLoadedPreferencesOnce = true
                 }
             }

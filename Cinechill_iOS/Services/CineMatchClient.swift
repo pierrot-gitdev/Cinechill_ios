@@ -51,12 +51,13 @@ protocol CineMatchFetching: Sendable {
     /// ont un sens pour lui. Pas de films quand choisir parmi eux ne
     /// changerait pas la proposition : l'écran se saute.
     func near(anchorID: Int, format: MediaFormat, evening: String?) async throws -> CineMatchNearPage
-    /// Les cinq, proches de `anchorID` (et de `secondID`, retouchés par
-    /// `tweak`), ou d'après les coups de cœur sans film de départ. Avec
+    /// Les cinq, proches de `anchorID` (et de `secondID` ou de la facette
+    /// `facet`, retouchés par `tweak`), ou d'après les coups de cœur sans film
+    /// de départ. Avec
     /// `replacing`, le serveur ne renvoie que les remplaçants des films
     /// marqués.
-    func picks(situation: CineMatchSituation, anchorID: Int?, secondID: Int?, tweak: CineMatchTweak?,
-               style: CineMatchStyle?, format: MediaFormat,
+    func picks(situation: CineMatchSituation, anchorID: Int?, secondID: Int?, facet: String?,
+               tweak: CineMatchTweak?, style: CineMatchStyle?, format: MediaFormat,
                replacing: CineMatchReplacement?, evening: String?) async throws -> CineMatchFiveResponse
     /// `nil` quand aucun film ne correspond au scénario. `replacingSeen` : le
     /// film du jour qu'on vient de ranger en galerie (« Je l'ai déjà vu ») ;
@@ -127,13 +128,17 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         return CineMatchNearPage(
             anchorID: anchorID,
             films: (decoded.films ?? []).map(\.film),
+            facets: (decoded.facets ?? []).compactMap { dto in
+                guard let key = dto.key, let label = dto.label, !key.isEmpty, !label.isEmpty else { return nil }
+                return CineMatchFacet(key: key, label: label)
+            },
             // Une retouche que l'app ne connaît pas est laissée de côté.
             tweaks: (decoded.tweaks ?? []).compactMap(CineMatchTweak.init(rawValue:))
         )
     }
 
-    func picks(situation: CineMatchSituation, anchorID: Int?, secondID: Int?, tweak: CineMatchTweak?,
-               style: CineMatchStyle?, format: MediaFormat,
+    func picks(situation: CineMatchSituation, anchorID: Int?, secondID: Int?, facet: String?,
+               tweak: CineMatchTweak?, style: CineMatchStyle?, format: MediaFormat,
                replacing: CineMatchReplacement?, evening: String?) async throws -> CineMatchFiveResponse {
         var body: [String: Any] = [
             "situation": Self.payload(for: situation),
@@ -141,6 +146,7 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         ]
         if let anchorID { body["anchorId"] = anchorID }
         if let secondID { body["secondId"] = secondID }
+        if let facet { body["facet"] = facet }
         if let tweak { body["tweak"] = tweak.rawValue }
         if let style { body["style"] = style.rawValue }
         if let replacing {
@@ -369,7 +375,13 @@ private nonisolated struct StartersResponseDTO: Decodable, Sendable {
 
 private nonisolated struct NearResponseDTO: Decodable, Sendable {
     let films: [GalleryFilmDTO]?
+    let facets: [FacetDTO]?
     let tweaks: [String]?
+}
+
+private nonisolated struct FacetDTO: Decodable, Sendable {
+    let key: String?
+    let label: String?
 }
 
 private nonisolated struct FiveFilmDTO: Decodable, Sendable {

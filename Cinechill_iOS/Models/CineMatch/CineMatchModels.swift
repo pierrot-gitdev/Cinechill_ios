@@ -61,14 +61,39 @@ nonisolated enum CineMatchTweak: String, CaseIterable, Hashable, Sendable {
     case recent, lesser, lighter, darker
 }
 
-/// L'écran « Plutôt du côté de… ? » : les films de la galerie proches du
-/// film choisi, et les retouches qui ont un sens pour lui.
+/// « Tu veux retrouver quoi de Heat ? » : un aspect du film choisi, que les
+/// cinq doivent partager (une situation, un lieu, une ambiance…). `key` est
+/// ce que le serveur attend en retour ; `label`, la phrase affichée, écrite
+/// pour ce film.
+nonisolated struct CineMatchFacet: Identifiable, Hashable, Sendable {
+    let key: String
+    let label: String
+
+    var id: String { key }
+}
+
+/// L'écran qui suit le film de départ : soit ses facettes, soit les films de
+/// la galerie proches de lui (« Plutôt du côté de… ? »), et les retouches qui
+/// ont un sens pour lui.
 nonisolated struct CineMatchNearPage: Equatable, Sendable {
     let anchorID: Int
     /// Six au plus, le plus proche d'abord. Moins de deux : l'écran est passé.
     let films: [CineMatchGalleryFilm]
+    /// Cinq au plus. Deux ou plus : elles remplacent l'écran des films.
+    let facets: [CineMatchFacet]
     /// Vide : l'écran « Comme Heat, mais… ? » est passé.
     let tweaks: [CineMatchTweak]
+
+    init(anchorID: Int, films: [CineMatchGalleryFilm], facets: [CineMatchFacet] = [],
+         tweaks: [CineMatchTweak]) {
+        self.anchorID = anchorID
+        self.films = films
+        self.facets = facets
+        self.tweaks = tweaks
+    }
+
+    /// Assez de facettes pour que choisir veuille dire quelque chose.
+    var asksFacets: Bool { facets.count >= 2 }
 }
 
 /// Une tuile de l'écran de départ : un style, le nombre de films de la

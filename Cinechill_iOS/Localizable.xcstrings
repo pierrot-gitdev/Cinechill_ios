@@ -15952,6 +15952,70 @@
           }
         }
       }
+    },
+    "Tu veux retrouver quoi de %@ ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What do you want from %@?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu veux retrouver quoi de %@ ?"
+          }
+        }
+      }
+    },
+    "Choisis ce qui compte le plus." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick what matters most."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis ce qui compte le plus."
+          }
+        }
+      }
+    },
+    "Un peu de tout" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A bit of everything"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un peu de tout"
+          }
+        }
+      }
+    },
+    "Proche de %@ : %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close to %1$@: %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proche de %@ : %@"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -79,6 +79,9 @@ final class CineMatchViewModel {
     private(set) var isLoadingNear = false
     /// Le second film (« Plutôt du côté de… ? »). `nil` : « Pile comme ».
     private(set) var secondFilm: CineMatchGalleryFilm?
+    /// La facette (« Tu veux retrouver quoi de Heat ? »), qui remplace le
+    /// second film quand le serveur en propose. `nil` : « Un peu de tout ».
+    private(set) var chosenFacet: CineMatchFacet?
     /// La retouche (« Comme Heat, mais… ? »). `nil` : « Pareil ».
     private(set) var chosenTweak: CineMatchTweak?
 
@@ -153,6 +156,7 @@ final class CineMatchViewModel {
     /// calcule sur les mêmes.
     private var fiveAnchorID: Int?
     private var fiveSecondID: Int?
+    private var fiveFacet: String?
     private var fiveTweak: CineMatchTweak?
     private var fiveStyle: CineMatchStyle?
 
@@ -295,6 +299,7 @@ final class CineMatchViewModel {
         recordStarterExposure()
         anchor = film
         secondFilm = nil
+        chosenFacet = nil
         chosenTweak = nil
         nearPage = nil
         await perform { [weak self] in await self?.loadNear(for: film) }
@@ -304,6 +309,16 @@ final class CineMatchViewModel {
     func chooseSecond(_ film: CineMatchGalleryFilm) async {
         guard step == .refine, nearPage?.films.contains(where: { $0.id == film.id }) == true else { return }
         secondFilm = film
+        await advanceAfterRefine()
+    }
+
+    /// « Tu veux retrouver quoi de Heat ? » : une facette, ou `nil` pour
+    /// « Un peu de tout ».
+    func chooseFacet(_ facet: CineMatchFacet?) async {
+        guard step == .refine, nearPage?.asksFacets == true else { return }
+        if let facet, nearPage?.facets.contains(facet) != true { return }
+        chosenFacet = facet
+        secondFilm = nil
         await advanceAfterRefine()
     }
 
@@ -322,8 +337,11 @@ final class CineMatchViewModel {
         await perform { [weak self] in await self?.loadFive() }
     }
 
-    /// Assez de voisins pour que choisir parmi eux veuille dire quelque chose.
-    private var hasNearFilms: Bool { (nearPage?.films.count ?? 0) >= 2 }
+    /// Un écran entre le film de départ et la retouche : ses facettes, ou
+    /// assez de voisins pour que choisir parmi eux veuille dire quelque chose.
+    private var hasNearFilms: Bool {
+        nearPage?.asksFacets == true || (nearPage?.films.count ?? 0) >= 2
+    }
     private var hasTweaks: Bool { !(nearPage?.tweaks.isEmpty ?? true) }
 
     private func advanceAfterAnchor() async {
@@ -350,6 +368,7 @@ final class CineMatchViewModel {
         guard step == .style, pendingStyle == nil, errorMessage == nil else { return }
         anchor = nil
         secondFilm = nil
+        chosenFacet = nil
         chosenTweak = nil
         nearPage = nil
         selectedStyle = nil
@@ -375,6 +394,7 @@ final class CineMatchViewModel {
                 step = .tweak
             } else if hasNearFilms {
                 secondFilm = nil
+                chosenFacet = nil
                 step = .refine
             } else {
                 leaveRefinement()
@@ -385,6 +405,7 @@ final class CineMatchViewModel {
             chosenTweak = nil
             if hasNearFilms {
                 secondFilm = nil
+                chosenFacet = nil
                 step = .refine
             } else {
                 leaveRefinement()
@@ -412,6 +433,7 @@ final class CineMatchViewModel {
         stopInflight()
         anchor = nil
         secondFilm = nil
+        chosenFacet = nil
         chosenTweak = nil
         nearPage = nil
         step = starterPage != nil ? .anchor : .style
@@ -499,8 +521,8 @@ final class CineMatchViewModel {
         }
         do {
             let response = try await client.picks(
-                situation: situation, anchorID: fiveAnchorID, secondID: fiveSecondID, tweak: fiveTweak,
-                style: fiveStyle, format: format,
+                situation: situation, anchorID: fiveAnchorID, secondID: fiveSecondID, facet: fiveFacet,
+                tweak: fiveTweak, style: fiveStyle, format: format,
                 replacing: CineMatchReplacement(
                     sessionID: sessionID, keepIDs: keepIDs, seenIDs: seenIDs, refusedIDs: refusedIDs
                 ),
@@ -637,14 +659,15 @@ final class CineMatchViewModel {
     private func loadFive() async {
         let anchorID = anchor?.id
         let secondID = anchor == nil ? nil : secondFilm?.id
+        let facet = anchor == nil ? nil : chosenFacet?.key
         let tweak = anchor == nil ? nil : chosenTweak
         let style = anchor == nil ? nil : selectedStyle
         step = .loadingFive
         errorMessage = nil
         do {
             let response = try await client.picks(
-                situation: situation, anchorID: anchorID, secondID: secondID, tweak: tweak,
-                style: style, format: format, replacing: nil, evening: eveningID
+                situation: situation, anchorID: anchorID, secondID: secondID, facet: facet,
+                tweak: tweak, style: style, format: format, replacing: nil, evening: eveningID
             )
             guard !Task.isCancelled else { return }
             guard !response.films.isEmpty else {
@@ -655,6 +678,7 @@ final class CineMatchViewModel {
             sessionID = response.sessionID
             fiveAnchorID = anchorID
             fiveSecondID = secondID
+            fiveFacet = facet
             fiveTweak = tweak
             fiveStyle = style
             marks = [:]
@@ -775,6 +799,7 @@ final class CineMatchViewModel {
         nearPage = nil
         isLoadingNear = false
         secondFilm = nil
+        chosenFacet = nil
         chosenTweak = nil
         visitStarterIDs = []
         cycleStarterIDs = []
@@ -794,6 +819,7 @@ final class CineMatchViewModel {
         sessionID = nil
         fiveAnchorID = nil
         fiveSecondID = nil
+        fiveFacet = nil
         fiveTweak = nil
         fiveStyle = nil
     }
