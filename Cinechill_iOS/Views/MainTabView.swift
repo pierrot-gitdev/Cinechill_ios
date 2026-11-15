@@ -157,6 +157,11 @@ struct MainTabView: View {
                 )
             case .active:
                 LocalReminders.appDidBecomeActive()
+                // L'avis du lendemain, dans l'app : une fois, à la première
+                // ouverture à partir du lendemain 5 h.
+                if let item = PendingVerdict.takeDue() {
+                    presentNotificationSheet(.verdict(item))
+                }
             default:
                 break
             }

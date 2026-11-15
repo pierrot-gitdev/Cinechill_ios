@@ -165,6 +165,34 @@ nonisolated enum CineMatchReason: Hashable, Sendable {
     case loved(title: String)
 }
 
+/// Pourquoi on écarte un des cinq, en un toucher (lot 1, 16 novembre 2026).
+/// Les quatre premières ne valent que pour la soirée ; « Il ne me dit rien »
+/// l'écarte pour toujours.
+nonisolated enum CineMatchRefusalReason: String, Sendable {
+    /// « Pas ce genre » : son genre est écarté ce soir.
+    case genre
+    /// « Trop sombre » : la soirée cherche plus léger.
+    case lighter
+    /// « Trop léger » : la soirée cherche plus de tension.
+    case darker
+    /// « Trop long » : la soirée cherche plus court.
+    case shorter
+    /// « Il ne me dit rien » : plus jamais proposé.
+    case taste
+}
+
+/// Le ton d'un des cinq, d'après sa fiche : il décide si l'on propose « Trop
+/// sombre » ou « Trop léger » quand on l'écarte.
+nonisolated enum CineMatchTone: String, Sendable {
+    case dark, light
+}
+
+/// Ce qui borne une soirée sans film : son début, son abandon (et l'écran où
+/// il a eu lieu), ou « Rien ne me tente ».
+nonisolated enum CineMatchEveningEvent: String, Sendable {
+    case start, abandon, nothing
+}
+
 nonisolated struct CineMatchFilm: Identifiable, Hashable, Sendable {
     let item: MediaItem
     /// La durée du film, ou celle d'un épisode.
@@ -177,6 +205,8 @@ nonisolated struct CineMatchFilm: Identifiable, Hashable, Sendable {
     var status: CineMatchSeriesStatus? = nil
     /// La ligne de raison, s'il y en a une.
     var reason: CineMatchReason? = nil
+    /// Son ton, s'il est connu.
+    var tone: CineMatchTone? = nil
 
     var id: Int { item.tmdbId }
 
@@ -254,6 +284,9 @@ nonisolated struct CineMatchFiveResponse: Equatable, Sendable {
     let widening: CineMatchWidening?
     /// La séance écrite côté serveur : un remplacement s'y raccroche.
     var sessionID: String? = nil
+    /// Remplacement seulement : les films gardés que le serveur remplace aussi,
+    /// parce qu'un refus motivé les écarte (« Trop long » et plus long encore).
+    var dropped: [Int] = []
 }
 
 /// Remplacer les films déjà vus ou écartés d'une proposition, en un seul

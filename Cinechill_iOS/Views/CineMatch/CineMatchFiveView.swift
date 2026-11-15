@@ -58,6 +58,9 @@ struct CineMatchFiveView: View {
     @State private var synopsis: SynopsisContent?
     /// Le film dont on demande « Tu l'as aimé ? », sur place, sous l'écran.
     @State private var askingSeenID: Int?
+    /// Le film dont on demande pourquoi on l'écarte, sur place, comme « Je
+    /// l'ai déjà vu ».
+    @State private var askingRefusalID: Int?
     /// La bande-annonce passe sur l'écran de la salle.
     @State private var isTrailerOpen = false
     /// De l'affiche à l'écran au format cinéma (bande-annonce).
@@ -817,6 +820,8 @@ struct CineMatchFiveView: View {
         Group {
             if askingSeenID == film.id {
                 seenQuestion(for: film)
+            } else if askingRefusalID == film.id {
+                refusalQuestion(for: film)
             } else if mode == .five, let mark = viewModel.marks[film.id] {
                 markedActions(for: film, mark: mark)
             } else {
@@ -824,6 +829,7 @@ struct CineMatchFiveView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: askingSeenID)
+        .animation(.easeOut(duration: 0.2), value: askingRefusalID)
         .animation(.easeOut(duration: 0.2), value: viewModel.marks)
     }
 
@@ -842,6 +848,7 @@ struct CineMatchFiveView: View {
             switch mode {
             case .five:
                 markLinks(for: film)
+                nothingLink
             case .daily:
                 // Un film du jour déjà vu : on le range, et un autre arrive.
                 VStack(spacing: 0) {
@@ -898,8 +905,7 @@ struct CineMatchFiveView: View {
     /// autres au remplacement.
     private func refuseLink(for film: CineMatchFilm) -> some View {
         Button {
-            viewModel.markRefused(film)
-            advanceAfterMark()
+            askingRefusalID = film.id
         } label: {
             HStack(spacing: 8) {
                 Text(isSeries
@@ -920,6 +926,146 @@ struct CineMatchFiveView: View {
         }
         .buttonStyle(PressableScaleStyle(scale: 0.97))
         .disabled(viewModel.isReplacing)
+    }
+
+    /// « Rien ne me tente » : aucun des cinq ne fera la soirée. On le dit au
+    /// journal, et on revient à l'accueil pour repartir autrement.
+    private var nothingLink: some View {
+        Button {
+            viewModel.nothingAppeals()
+        } label: {
+            Text("Rien ne me tente", bundle: .app)
+                .planFont(13.5, weight: .medium)
+                .foregroundStyle(Ink.ink2)
+                .padding(.horizontal, 18)
+                .frame(minHeight: Metrics.control)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableScaleStyle(scale: 0.97))
+        .disabled(viewModel.isReplacing)
+    }
+
+    /// Une raison de refus : son titre, ce qu'elle fait, et ce qu'elle envoie.
+    private struct RefusalOption: Identifiable {
+        let title: String
+        let consequence: String
+        let reason: CineMatchRefusalReason?
+        var id: String { title }
+    }
+
+    /// Les raisons qui ont un sens pour ce film : « Trop long » sans durée
+    /// connue, ou « Trop sombre » sans ton connu, ne s'affichent pas. Les
+    /// séries n'ont que deux réponses : leur moteur ne lit ni genre, ni durée,
+    /// ni ton d'un refus.
+    private func refusalOptions(for film: CineMatchFilm) -> [RefusalOption] {
+        if isSeries {
+            return [
+                RefusalOption(
+                    title: String(localized: "Pas ce soir", bundle: .app),
+                    consequence: String(localized: "On en propose une autre", bundle: .app),
+                    reason: nil
+                ),
+                RefusalOption(
+                    title: String(localized: "Elle ne me dit rien", bundle: .app),
+                    consequence: String(localized: "On ne te la proposera plus", bundle: .app),
+                    reason: .taste
+                ),
+            ]
+        }
+        var options = [RefusalOption(
+            title: String(localized: "Pas ce genre", bundle: .app),
+            consequence: String(localized: "On écarte ce genre ce soir", bundle: .app),
+            reason: .genre
+        )]
+        switch film.tone {
+        case .dark:
+            options.append(RefusalOption(
+                title: String(localized: "Trop sombre", bundle: .app),
+                consequence: String(localized: "On cherche plus léger ce soir", bundle: .app),
+                reason: .lighter
+            ))
+        case .light:
+            options.append(RefusalOption(
+                title: String(localized: "Trop léger", bundle: .app),
+                consequence: String(localized: "On cherche plus de tension ce soir", bundle: .app),
+                reason: .darker
+            ))
+        case nil:
+            break
+        }
+        if (film.runtimeMinutes ?? 0) > 0 {
+            options.append(RefusalOption(
+                title: String(localized: "Trop long", bundle: .app),
+                consequence: String(localized: "On cherche plus court ce soir", bundle: .app),
+                reason: .shorter
+            ))
+        }
+        options.append(RefusalOption(
+            title: String(localized: "Il ne me dit rien", bundle: .app),
+            consequence: String(localized: "On ne te le proposera plus", bundle: .app),
+            reason: .taste
+        ))
+        return options
+    }
+
+    /// « Pourquoi pas ? », posée sur place comme « Tu l'as aimé ? » : une
+    /// réponse d'un toucher, deux par ligne tant que ça tient.
+    private func refusalQuestion(for film: CineMatchFilm) -> some View {
+        let options = refusalOptions(for: film)
+        let pairs = stride(from: 0, to: options.count, by: 2).map { Array(options[$0 ..< min($0 + 2, options.count)]) }
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Pourquoi pas ?", bundle: .app)
+                    .planTitle(18)
+                    .foregroundStyle(Ink.ink)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 8)
+                Text(isSeries
+                     ? String(localized: "Pas celle-là", bundle: .app)
+                     : String(localized: "Pas celui-là", bundle: .app))
+                    .planLabel()
+                    .foregroundStyle(Ink.ink2)
+            }
+
+            ViewThatFits(in: .horizontal) {
+                VStack(spacing: 10) {
+                    ForEach(pairs.indices, id: \.self) { row in
+                        HStack(spacing: 10) {
+                            ForEach(pairs[row]) { option in
+                                refusalButton(option, film: film)
+                            }
+                        }
+                    }
+                }
+                VStack(spacing: 8) {
+                    ForEach(options) { option in
+                        refusalButton(option, film: film)
+                    }
+                }
+            }
+
+            Button {
+                askingRefusalID = nil
+            } label: {
+                Text("Annuler", bundle: .app)
+                    .planFont(13.5, weight: .medium)
+                    .foregroundStyle(Ink.ink2)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: Metrics.control)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PressableScaleStyle(scale: 0.97))
+        }
+        .transition(.opacity)
+    }
+
+    private func refusalButton(_ option: RefusalOption, film: CineMatchFilm) -> some View {
+        PlanSecondaryButton(title: option.title, height: Metrics.button) {
+            askingRefusalID = nil
+            viewModel.markRefused(film, reason: option.reason)
+            advanceAfterMark()
+        }
+        .accessibilityHint(option.consequence)
     }
 
     /// La question posée sur place, à la place des boutons : on reste sur le
@@ -1212,6 +1358,9 @@ struct CineMatchFiveView: View {
             libraryStore.addToWatchlist(film.firstSeason, nextEpisode: 1)
         }
         viewModel.start(film)
+        // Demain, à la première ouverture de l'app, on demande comment
+        // c'était : films et séries, notifications autorisées ou non.
+        PendingVerdict.save(film.item)
         // Un film : demain à 19 h, on demande comment c'était.
         if !film.isSeries {
             Task { await NotificationPermission.shared.filmStarted(film.item) }

@@ -15,12 +15,15 @@ extension EnvironmentValues {
 /// Ce qu'une notification ouvre par-dessus les onglets.
 enum NotificationSheet: Identifiable, Equatable {
     case item(MediaItem, asksVerdict: Bool)
+    /// L'avis du lendemain, demandé à l'ouverture de l'app (`PendingVerdict`).
+    case verdict(MediaItem)
     case profile(uid: String)
     case followers
 
     var id: String {
         switch self {
         case .item(let item, let asksVerdict): "item-\(item.id)-\(asksVerdict)"
+        case .verdict(let item): "verdict-\(item.id)"
         case .profile(let uid): "profile-\(uid)"
         case .followers: "followers"
         }
@@ -41,6 +44,8 @@ struct NotificationSheetContent: View {
                 } else {
                     ItemDetailView(item: item)
                 }
+            case .verdict(let item):
+                PendingVerdictView(item: item)
             case .profile(let uid):
                 NotificationProfileView(uid: uid)
             case .followers:

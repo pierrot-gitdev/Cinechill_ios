@@ -174,7 +174,9 @@ struct FilmVerdictPrompt: View {
 
     private var question: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Tu l'as regardé ?", bundle: .app)
+            Text(isSeries
+                 ? String(localized: "Tu l'as commencée ?", bundle: .app)
+                 : String(localized: "Tu l'as regardé ?", bundle: .app))
                 .planTitle(18)
                 .foregroundStyle(Ink.ink)
                 .accessibilityAddTraits(.isHeader)
@@ -251,25 +253,41 @@ struct FilmVerdictPrompt: View {
         .accessibilityValue(isSending ? String(localized: "Enregistrement…", bundle: .app) : "")
     }
 
+    /// Une série : l'avis du lendemain porte sur ses premiers épisodes, se dit
+    /// au féminin, et ne range rien en galerie (une série s'y range saison
+    /// par saison, par un autre chemin).
+    private var isSeries: Bool { item.mediaType == .tv }
+
     private func label(_ verdict: LibraryStore.FilmVerdict) -> String {
+        if isSeries {
+            switch verdict {
+            case .loved: return String(localized: "Je l'ai adorée", bundle: .app)
+            case .liked: return String(localized: "Elle m'a plu", bundle: .app)
+            case .disliked: return String(localized: "Pas aimée", bundle: .app)
+            case .notWatched: return String(localized: "Pas commencée", bundle: .app)
+            }
+        }
         switch verdict {
-        case .loved: String(localized: "Je l'ai adoré", bundle: .app)
-        case .liked: String(localized: "Il m'a plu", bundle: .app)
-        case .disliked: String(localized: "Pas aimé", bundle: .app)
-        case .notWatched: String(localized: "Pas regardé", bundle: .app)
+        case .loved: return String(localized: "Je l'ai adoré", bundle: .app)
+        case .liked: return String(localized: "Il m'a plu", bundle: .app)
+        case .disliked: return String(localized: "Pas aimé", bundle: .app)
+        case .notWatched: return String(localized: "Pas regardé", bundle: .app)
         }
     }
 
     private func confirmation(_ verdict: LibraryStore.FilmVerdict) -> String {
+        if isSeries {
+            return String(localized: "Merci. On s'en servira pour tes prochaines séries.", bundle: .app)
+        }
         switch verdict {
         case .loved:
-            String(localized: "Rangé dans ta galerie, en coup de cœur.", bundle: .app)
+            return String(localized: "Rangé dans ta galerie, en coup de cœur.", bundle: .app)
         case .liked:
-            String(localized: "Rangé dans ta galerie.", bundle: .app)
+            return String(localized: "Rangé dans ta galerie.", bundle: .app)
         case .disliked:
-            String(localized: "Rangé dans ta galerie. Il ne comptera pas dans tes goûts.", bundle: .app)
+            return String(localized: "Rangé dans ta galerie. Il ne comptera pas dans tes goûts.", bundle: .app)
         case .notWatched:
-            libraryStore.isInWatchlist(item)
+            return libraryStore.isInWatchlist(item)
                 ? String(localized: "Il reste dans ta watchlist.", bundle: .app)
                 : String(localized: "Rien ne change dans tes listes.", bundle: .app)
         }
@@ -341,5 +359,45 @@ struct NotificationProfileView: View {
             failure = (error as? LocalizedError)?.errorDescription
                 ?? String(localized: "On n'a pas pu charger ce profil.", bundle: .app)
         }
+    }
+}
+
+// MARK: - L'avis du lendemain, à l'ouverture de l'app
+
+/// La question du lendemain, posée seule à l'ouverture de l'app : le titre
+/// lancé la veille et ses quatre réponses. Elle se ferme d'elle-même après la
+/// réponse ; « Plus tard » la ferme sans répondre, et elle ne revient pas.
+struct PendingVerdictView: View {
+    let item: MediaItem
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(item.mediaType == .tv
+                     ? String(localized: "La série d'hier soir", bundle: .app)
+                     : String(localized: "Le film d'hier soir", bundle: .app))
+                    .planLabel()
+                    .foregroundStyle(Ink.ink2)
+                    .padding(.horizontal, Metrics.margin)
+                    .padding(.top, 8)
+                Text(item.title)
+                    .planTitle(24)
+                    .foregroundStyle(Ink.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, Metrics.margin)
+                    .padding(.top, 6)
+                FilmVerdictPrompt(item: item) { dismiss() }
+            }
+            .padding(.bottom, 24)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(String(localized: "Plus tard", bundle: .app)) { dismiss() }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 }

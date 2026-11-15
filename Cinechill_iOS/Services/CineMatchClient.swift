@@ -67,8 +67,16 @@ protocol CineMatchFetching: Sendable {
     func recordExposure(kind: CineMatchExposureKind, tmdbIDs: [Int], format: MediaFormat,
                         evening: String?) async throws
     func recordLaunch(tmdbID: Int, format: MediaFormat, evening: String?) async throws
-    /// « Pas celui-là » : le refus d'un des cinq, noté dans sa séance.
-    func recordPass(tmdbID: Int, format: MediaFormat, evening: String?) async throws
+    /// « Pas celui-là » : le refus d'un des cinq, noté dans sa séance, avec sa
+    /// raison s'il y en a une.
+    func recordPass(tmdbID: Int, reason: CineMatchRefusalReason?, format: MediaFormat,
+                    evening: String?) async throws
+    /// « Je le garde, en fait » : le refus est retiré.
+    func recordUnpass(tmdbID: Int, format: MediaFormat, evening: String?) async throws
+    /// Le début d'une soirée, son abandon (et l'écran où il a eu lieu), ou
+    /// « Rien ne me tente ».
+    func recordEvening(_ event: CineMatchEveningEvent, step: String?, format: MediaFormat,
+                       evening: String) async throws
     /// La question « Lequel est le plus sombre ? » du jour, ou `nil` : déjà
     /// posée aujourd'hui, déjà apprise, ou pas deux films à comparer.
     func darkerQuestion() async throws -> CineMatchDarkerQuestion?
@@ -170,7 +178,8 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
             widening: decoded.widened.map {
                 CineMatchWidening(duration: $0.duration ?? false, platforms: $0.platforms ?? false)
             },
-            sessionID: decoded.sessionId
+            sessionID: decoded.sessionId,
+            dropped: decoded.dropped ?? []
         )
     }
 
@@ -206,10 +215,24 @@ nonisolated struct BackendCineMatchClient: CineMatchFetching, Sendable {
         ]))
     }
 
-    func recordPass(tmdbID: Int, format: MediaFormat, evening: String?) async throws {
+    func recordPass(tmdbID: Int, reason: CineMatchRefusalReason?, format: MediaFormat,
+                    evening: String?) async throws {
+        var body: [String: Any] = ["kind": "pass", "tmdbId": tmdbID, "format": format.rawValue]
+        if let reason { body["reason"] = reason.rawValue }
+        _ = try await post(to: APIEndpoints.sessionOutcome(), body: Self.adding(evening, to: body))
+    }
+
+    func recordUnpass(tmdbID: Int, format: MediaFormat, evening: String?) async throws {
         _ = try await post(to: APIEndpoints.sessionOutcome(), body: Self.adding(evening, to: [
-            "kind": "pass", "tmdbId": tmdbID, "format": format.rawValue,
+            "kind": "unpass", "tmdbId": tmdbID, "format": format.rawValue,
         ]))
+    }
+
+    func recordEvening(_ event: CineMatchEveningEvent, step: String?, format: MediaFormat,
+                       evening: String) async throws {
+        var body: [String: Any] = ["kind": event.rawValue, "format": format.rawValue]
+        if let step { body["step"] = step }
+        _ = try await post(to: APIEndpoints.sessionOutcome(), body: Self.adding(evening, to: body))
     }
 
     // MARK: - Corps de requête
@@ -400,9 +423,10 @@ private nonisolated struct FiveFilmDTO: Decodable, Sendable {
     let episodeCount: Int?
     let status: String?
     let reason: ReasonDTO?
+    let tone: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, overview, status, reason
+        case id, title, overview, status, reason, tone
         case posterPath = "poster_path"
         case releaseDate = "release_date"
         case genreIds = "genre_ids"
@@ -436,7 +460,8 @@ private nonisolated struct FiveFilmDTO: Decodable, Sendable {
             trailerKey: trailerKey,
             episodeCount: isSeries ? episodeCount : nil,
             status: isSeries ? status.flatMap(CineMatchSeriesStatus.init(rawValue:)) : nil,
-            reason: reason?.reason
+            reason: reason?.reason,
+            tone: tone.flatMap(CineMatchTone.init(rawValue:))
         )
     }
 }
@@ -467,6 +492,7 @@ private nonisolated struct FiveResponseDTO: Decodable, Sendable {
     let films: [FiveFilmDTO]
     let widened: WidenedDTO?
     let sessionId: String?
+    let dropped: [Int]?
 }
 
 private nonisolated struct AxisQuestionDTO: Decodable, Sendable {

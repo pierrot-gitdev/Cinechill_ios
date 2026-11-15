@@ -407,6 +407,7 @@ final class LibraryStore: ObservableObject {
     /// avant (pas de mise à jour optimiste, décision du 11 août 2026).
     func setFilmVerdict(_ item: MediaItem, verdict: FilmVerdict) async throws {
         try await Self.sendFilmVerdict(item: item, verdict: verdict)
+        PendingVerdict.clear(tmdbID: item.tmdbId)
         if verdict != .notWatched {
             LocalReminders.cancelVerdict(ifAnyOf: [item.id])
         }

@@ -262,6 +262,7 @@ final class CineMatchViewModel {
         widening = nil
         concludedFilm = nil
         step = .style
+        beginEvening()
         guard !stylesAreFresh else { return }
         // Posé avant la tâche : entre les deux, l'écran des styles se serait
         // cru chargé et vide.
@@ -459,6 +460,7 @@ final class CineMatchViewModel {
         lastFailedAction = nil
         eveningID = Self.newEveningID()
         step = .daily
+        beginEvening()
         await perform { [weak self] in await self?.loadDaily() }
     }
 
@@ -467,6 +469,7 @@ final class CineMatchViewModel {
         let client = client
         let format = format
         let evening = eveningID
+        eveningClosed = true
         Task { try? await client.recordLaunch(tmdbID: film.id, format: format, evening: evening) }
         concludedFilm = film
         step = .conclusion
@@ -485,19 +488,75 @@ final class CineMatchViewModel {
     /// attendu : c'est le refus d'un film précis, dans cette séance, et il
     /// compte même si l'on ne remplace rien. Revenir dessus (« Je le garde,
     /// en fait ») ne l'efface pas : l'hésitation reste un signal.
-    func markRefused(_ film: CineMatchFilm) {
+    /// « Pas celui-là », avec sa raison en un toucher. La raison part tout de
+    /// suite : le remplacement qui suit la relit dans le journal de la soirée,
+    /// et remplace aussi les films gardés qu'elle écarte.
+    func markRefused(_ film: CineMatchFilm, reason: CineMatchRefusalReason?) {
         guard step == .five, films.contains(where: { $0.id == film.id }) else { return }
         marks[film.id] = .refused
         replaceOutcome = nil
         let client = client
         let format = format
         let evening = eveningID
-        Task { try? await client.recordPass(tmdbID: film.id, format: format, evening: evening) }
+        Task {
+            try? await client.recordPass(tmdbID: film.id, reason: reason, format: format, evening: evening)
+        }
     }
 
+    /// « Je le garde, en fait » : un refus est retiré au serveur aussi, sinon
+    /// sa raison filtrerait encore la soirée.
     func unmark(_ film: CineMatchFilm) {
+        let wasRefused = marks[film.id] == .refused
         marks[film.id] = nil
         replaceOutcome = nil
+        guard wasRefused else { return }
+        let client = client
+        let format = format
+        let evening = eveningID
+        Task { try? await client.recordUnpass(tmdbID: film.id, format: format, evening: evening) }
+    }
+
+    /// « Rien ne me tente » : cinq films montrés, aucun lancé. La soirée le
+    /// dit au journal, puis on revient à l'accueil.
+    func nothingAppeals() {
+        guard step == .five else { return }
+        sendEvening(.nothing, step: "five")
+        eveningClosed = true
+        backToHome()
+    }
+
+    /// Une soirée commencée n'est close que par un film lancé ou « Rien ne
+    /// me tente » ; sinon, la quitter est un abandon.
+    private var eveningStarted = false
+    private var eveningClosed = false
+
+    private func sendEvening(_ event: CineMatchEveningEvent, step: String?) {
+        let client = client
+        let format = format
+        let evening = eveningID
+        Task { try? await client.recordEvening(event, step: step, format: format, evening: evening) }
+    }
+
+    /// Le nom d'écran que le journal garde pour un abandon.
+    private var journalStep: String {
+        switch step {
+        case .home: "home"
+        case .style: "style"
+        case .anchor: "anchor"
+        case .refine: "refine"
+        case .tweak: "tweak"
+        case .loadingFive: "loading"
+        case .five: "five"
+        case .daily: "daily"
+        case .conclusion: "conclusion"
+        }
+    }
+
+    /// Le début d'une soirée, une fois par soirée.
+    private func beginEvening() {
+        eveningStarted = true
+        eveningClosed = false
+        sendEvening(.start, step: nil)
     }
 
     /// Un seul calcul pour tous les films marqués. Les autres gardent leur
@@ -509,6 +568,9 @@ final class CineMatchViewModel {
         let marked = films.filter { marks[$0.id] != nil }
         guard !marked.isEmpty else { return }
         let keepIDs = films.filter { marks[$0.id] == nil }.map(\.id)
+        let isKept: (CineMatchFilm, Set<Int>) -> Bool = { [marks] film, dropped in
+            marks[film.id] == nil && !dropped.contains(film.id)
+        }
         let refusedIDs = marked.filter { marks[$0.id] == .refused }.map(\.id)
         let seenIDs = marked.filter { marks[$0.id] != .refused }.map(\.id)
 
@@ -529,13 +591,16 @@ final class CineMatchViewModel {
                 evening: eveningID
             )
             guard !Task.isCancelled, step == .five, replaceGeneration == generation else { return }
+            // Les films gardés qu'un refus motivé écarte cèdent leur place eux
+            // aussi : « Trop long » ne laisse pas un film plus long encore.
+            let dropped = Set(response.dropped).intersection(keepIDs)
             var spares = response.films
                 .filter { !keepIDs.contains($0.id) && marks[$0.id] == nil }
                 .makeIterator()
             var next: [CineMatchFilm] = []
             var arrived: Set<Int> = []
             for film in films {
-                if marks[film.id] == nil {
+                if isKept(film, dropped) {
                     next.append(film)
                 } else if let spare = spares.next() {
                     next.append(spare)
@@ -552,7 +617,9 @@ final class CineMatchViewModel {
             films = next
             marks = [:]
             freshFilmIDs = arrived
-            replaceOutcome = .replaced(count: arrived.count, dropped: marked.count - arrived.count, seen: seenIDs.count)
+            replaceOutcome = .replaced(
+                count: arrived.count, dropped: marked.count + dropped.count - arrived.count, seen: seenIDs.count
+            )
             currentIndex = firstArrival ?? min(currentIndex, next.count - 1)
             queueFiveExposure(films[currentIndex].id)
         } catch {
@@ -564,6 +631,10 @@ final class CineMatchViewModel {
 
     /// Conclusion, proposition du jour, erreur ou « Annuler » → accueil.
     func backToHome() {
+        if eveningStarted, !eveningClosed, step != .home {
+            sendEvening(.abandon, step: journalStep)
+        }
+        eveningStarted = false
         if step == .anchor { recordStarterExposure() }
         leaveResult()
         stopInflight()
