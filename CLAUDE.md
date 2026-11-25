@@ -141,3 +141,59 @@ feat: settings cleanup, in-app trailers and friend recommendations
 
 Ne jamais lancer `xcodebuild` ni le simulateur. Pierre compile lui-même sur
 Xcode et rapporte les erreurs.
+
+## Préférences de travail de Pierre
+
+Ces règles venaient du fichier personnel `~/.claude/CLAUDE.md`. Elles vivent ici depuis le
+25 novembre 2026 : les dépôts Footbar ont leur propre playbook.
+
+### Langue
+
+Répondre à Pierre en français. Le code, les commits et les noms de variables restent en anglais.
+
+### Jamais de push
+
+Aucun `git push`, vers aucun remote, même quand on demande de « publier » ou de « déployer ».
+S'arrêter au commit local et donner la commande à lancer. C'est toujours Pierre qui pousse.
+
+### Skills de design, sans qu'on le demande
+
+Sur tout travail d'interface (créer, retoucher, auditer un écran ou un composant), charger et
+appliquer d'office les skills qui s'appliquent, avant d'écrire du code et avant de dire que c'est
+fini.
+
+- `impeccable` : toute création, refonte, critique ou audit d'un écran ou d'un composant. Lancer
+  d'abord `impeccable context --target <fichier>`, lire `craft-floor.md` avant d'éditer, et passer
+  `impeccable detect` sur ce qui a changé avant de livrer.
+- `emil-design-eng` : chaque création ou retouche d'UI (animer ou non selon la fréquence, retour à
+  l'appui, courbes ease-out, moins de 300 ms, mouvement réduit, chiffres tabulaires).
+- `break-ui` : tout écran qui affiche des données, testé en pire cas réaliste et en vide avant
+  d'être livré (noms longs et accentués, champs absents, 0 et 1 pour les pluriels, listes vides et
+  très longues, petits et grands écrans).
+- `apple-design` : gestes, ressorts, feuilles, matières, typographie.
+- `animation-vocabulary` : pour nommer un effet.
+- `write-swift` : tout code Swift.
+
+Ces skills parlent souvent web : en garder les principes, transposés en SwiftUI/UIKit.
+
+Pire cas natif : texte agrandi au maximum (Dynamic Type AX5), plus petit écran (iPhone SE),
+allemand, mode sombre, réduction des animations. Prévoir un jeu de données pire cas et vide
+derrière un interrupteur de debug.
+
+`review-animations` est réservé à Pierre (`/review-animations`) : le lui proposer, ne pas l'imiter.
+
+### Texte : `stop-slop`, toujours
+
+Sur tout texte écrit pour un humain (libellés, fichiers de traduction, maquettes, vidéos,
+documents, messages), charger le skill `stop-slop` avant d'écrire et relire le résultat avec lui
+avant de livrer. Des phrases simples qui décrivent, jamais de figure de style ni de formule
+ramassée, pas de question rhétorique dans l'interface.
+
+### Vidéo de présentation : `brag-slim`
+
+Pour une vidéo de présentation, de lancement, de démo ou un Reel de l'app, charger le skill
+`brag-slim` avant toute autre étape et suivre sa méthode. Les livrables ne vont jamais dans le
+dépôt : ils s'écrivent dans `~/Desktop/Cinechill-video-lancement/`, un sous-dossier par version.
+Les `node_modules` restent hors du Bureau.
+
+Quand de l'UI ou du texte est livré, dire en une ligne quels skills ont été appliqués.
